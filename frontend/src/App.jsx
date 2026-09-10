@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import CadastroPage from "./pages/CadastroPage";
 import LoginPage from "./pages/LoginPage";
+import BuscaPage from "./pages/BuscaPage";
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/cadastrar" element={<CadastroPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/buscar" element={<BuscaPage />} />
       </Routes>
     </BrowserRouter>
   );
