@@ -2,12 +2,9 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import Header from "../components/Header";
 
-// ─── Simulação de "quem está logado" (vem do contexto de auth no Sprint 3) ───
-// Por enquanto: true = você está vendo seu próprio perfil
 const VISUALIZANDO_PROPRIO_PERFIL = true;
 const USUARIO_E_VETERINARIO = true;
 
-// ─── Dados mockados do tutor ──────────────────────────────────────────────────
 const TUTOR_MOCK = {
   nome: "Lucas Delgado",
   nomeCompleto: "Lucas Silva Delgado",
@@ -19,10 +16,9 @@ const TUTOR_MOCK = {
   cidade: "Viçosa - MG",
   bairro: "Centro",
   membroDesde: "24 Jan 2026",
-  role: "vet", // 'tutor' ou 'vet'
+  role: "vet",
 };
 
-// ─── Dados mockados dos animais ───────────────────────────────────────────────
 const ANIMAIS_MOCK = [
   {
     id: 1,
@@ -95,7 +91,6 @@ const ANIMAIS_MOCK = [
   },
 ];
 
-// ─── Campos de info do animal ─────────────────────────────────────────────────
 const CAMPOS_ANIMAL = [
   { icon: "pets", label: "Raça", key: "raca" },
   { icon: "monitor_weight", label: "Peso", key: "peso" },
@@ -114,7 +109,6 @@ const CAMPOS_ANIMAL = [
   },
 ];
 
-// ─── Badge de status do documento ────────────────────────────────────────────
 function DocBadge({ status }) {
   if (status === "validado")
     return (
@@ -142,7 +136,6 @@ function docBg(status) {
   return "bg-[#eeeeee]";
 }
 
-// ─── Card de animal ───────────────────────────────────────────────────────────
 function AnimalCard({ animal, isProprioTutor, isVet }) {
   const [disponivel, setDisponivel] = useState(animal.disponivel);
   const [docsAbertos, setDocsAbertos] = useState(false);
@@ -182,15 +175,10 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
           </div>
         </div>
 
-        {/* Toggle de disponibilidade — só o próprio tutor vê */}
         {isProprioTutor && (
           <button
             onClick={() => setDisponivel(!disponivel)}
-            className={`flex items-center gap-3 px-4 py-2 rounded-full transition-all duration-300 shadow-sm ${
-              disponivel
-                ? "bg-[#8e001b] text-white"
-                : "bg-[#e8e8e8] text-[#5f5e5e]"
-            }`}
+            className={`flex items-center gap-3 px-4 py-2 rounded-full transition-all duration-300 shadow-sm ${disponivel ? "bg-[#8e001b] text-white" : "bg-[#e8e8e8] text-[#5f5e5e]"}`}
           >
             <div
               className={`w-3 h-3 bg-white rounded-full ${disponivel ? "animate-pulse" : ""}`}
@@ -201,7 +189,6 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
           </button>
         )}
 
-        {/* Ações — tutor vê editar/excluir, vet vê auditar */}
         <div className="flex items-center gap-3 flex-wrap">
           {isVet && (
             <button
@@ -382,7 +369,7 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
       )}
 
       {/* Histórico de observações */}
-      {historicoLocal.length > 0 && (
+      {historicoLocal.length > 0 ? (
         <div className="mx-8 mb-6">
           <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-3">
             Histórico
@@ -403,6 +390,15 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
             ))}
           </div>
         </div>
+      ) : (
+        <div className="mx-8 mb-6">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-2">
+            Histórico
+          </p>
+          <p className="text-sm text-[#5f5e5e] italic">
+            Nenhuma observação registrada ainda.
+          </p>
+        </div>
       )}
 
       {/* Observações do tutor */}
@@ -418,7 +414,6 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
   );
 }
 
-// ─── Componente principal ─────────────────────────────────────────────────────
 function DashboardPage() {
   const { id } = useParams();
   const [telefoneVisivel, setTelefoneVisivel] = useState(false);
@@ -453,10 +448,8 @@ function DashboardPage() {
         {/* Seção do tutor */}
         <section className="mb-20">
           <div className="bg-white rounded-2xl border shadow-sm overflow-hidden border-[#8e001b]/20">
-            {/* Banner */}
             <div className="h-32 bg-gradient-to-r from-[#8e001b] to-[#b7102a]" />
 
-            {/* Avatar + nome + botão */}
             <div className="px-8 pb-6 pt-4 flex justify-between items-center flex-wrap gap-4 relative">
               <div className="flex items-center gap-6">
                 <div className="relative -mt-16">
@@ -499,7 +492,6 @@ function DashboardPage() {
               )}
             </div>
 
-            {/* Grid de informações */}
             <div className="border-t mt-6 pt-6 mx-8 border-[#e4bebc]">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-y-6 gap-x-4 mt-6 pb-8 justify-items-center">
                 {infoGrid.map((item) => (
@@ -564,7 +556,6 @@ function DashboardPage() {
             />
           ))}
 
-          {/* Botão de cadastrar novo animal — só o tutor vê */}
           {isProprioTutor && (
             <button
               className="w-full py-20 flex flex-col items-center justify-center gap-4 hover:bg-[#f3f3f3] transition-colors group rounded-2xl"

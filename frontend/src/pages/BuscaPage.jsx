@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 
-// ─── Dados mockados (substituídos pela API no Sprint 3) ──────────────────────
 const DOADORES_MOCK = [
   {
     id: 1,
@@ -80,8 +79,7 @@ const TIPOS_SANGUINEOS = [
   "DEA 7",
 ];
 
-// ─── Avatar genérico enquanto não há foto do tutor ───────────────────────────
-function AvatarPet({ nome }) {
+function AvatarPet() {
   return (
     <div className="w-20 h-20 rounded-full border-4 border-white shadow-sm bg-[#ffdad8] flex items-center justify-center shrink-0">
       <span className="material-symbols-outlined text-[#8e001b] text-4xl">
@@ -91,7 +89,6 @@ function AvatarPet({ nome }) {
   );
 }
 
-// ─── Card de doador ───────────────────────────────────────────────────────────
 function DonorCard({ doador, onClick }) {
   const disponivel = doador.status === "disponivel";
 
@@ -100,10 +97,9 @@ function DonorCard({ doador, onClick }) {
       className={`bg-white border border-[#e4bebc] rounded-xl overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-lg ${!disponivel ? "opacity-80 grayscale-[0.2]" : ""}`}
     >
       <div className="p-6 flex flex-col gap-3">
-        {/* Topo: avatar + badges */}
         <div className="flex items-start justify-between">
           <div className="relative">
-            <AvatarPet nome={doador.nome} />
+            <AvatarPet />
             <div
               className={`absolute bottom-0 right-0 w-5 h-5 border-2 border-white rounded-full ${disponivel ? "bg-green-500" : "bg-gray-400"}`}
             />
@@ -133,7 +129,6 @@ function DonorCard({ doador, onClick }) {
           </div>
         </div>
 
-        {/* Nome e raça */}
         <div>
           <h3 className="text-xl font-bold text-[#1a1c1c]">{doador.nome}</h3>
           <p className="text-[#5f5e5e] text-sm">
@@ -141,7 +136,6 @@ function DonorCard({ doador, onClick }) {
           </p>
         </div>
 
-        {/* Tags clínicas */}
         <div className="flex items-center gap-2 mt-1">
           <div className="flex items-center h-10 px-3 rounded-xl bg-[#ffdad8] border border-[#ffb3b1] shrink-0">
             <span className="text-[9px] uppercase font-bold text-[#8e001b] opacity-70 mr-2">
@@ -162,7 +156,6 @@ function DonorCard({ doador, onClick }) {
         </div>
       </div>
 
-      {/* Rodapé do card */}
       <div className="mt-auto p-4 border-t border-[#e4bebc] flex items-center justify-between bg-[#f3f3f3] min-h-[72px]">
         {disponivel ? (
           <span className="text-green-600 text-sm font-semibold flex items-center gap-1">
@@ -178,11 +171,7 @@ function DonorCard({ doador, onClick }) {
         <button
           onClick={() => disponivel && onClick(doador.id)}
           disabled={!disponivel}
-          className={`rounded-full text-sm font-bold px-8 py-2.5 transition-all ${
-            disponivel
-              ? "bg-[#8e001b] text-white hover:brightness-110 active:scale-95"
-              : "bg-[#5f5e5e] text-white cursor-not-allowed"
-          }`}
+          className={`rounded-full text-sm font-bold px-8 py-2.5 transition-all ${disponivel ? "bg-[#8e001b] text-white hover:brightness-110 active:scale-95" : "bg-[#5f5e5e] text-white cursor-not-allowed"}`}
         >
           {disponivel ? "Ver Perfil" : "Indisponível"}
         </button>
@@ -191,10 +180,8 @@ function DonorCard({ doador, onClick }) {
   );
 }
 
-// ─── Componente principal ─────────────────────────────────────────────────────
 function BuscaPage() {
   const navigate = useNavigate();
-
   const [apenasValidados, setApenasValidados] = useState(true);
   const [especie, setEspecie] = useState("cao");
   const [tiposSelecionados, setTiposSelecionados] = useState([]);
@@ -212,7 +199,6 @@ function BuscaPage() {
     setTiposSelecionados([]);
   };
 
-  // Filtragem local (substituída por query params na API futuramente)
   const doadoresFiltrados = DOADORES_MOCK.filter(
     (d) => !apenasValidados || d.validado,
   )
@@ -227,9 +213,7 @@ function BuscaPage() {
       return 0;
     });
 
-  const handleVerPerfil = (id) => {
-    navigate(`/tutor/${id}`);
-  };
+  const handleVerPerfil = (id) => navigate(`/tutor/${id}`);
 
   return (
     <>
@@ -248,7 +232,6 @@ function BuscaPage() {
               </button>
             </div>
 
-            {/* Apenas validados */}
             <div className="flex items-center justify-between p-3 bg-[#ffdad8]/30 rounded-lg mb-8 border border-[#8e001b]/20">
               <label
                 className="text-sm font-semibold text-[#1a1c1c] flex items-center gap-2"
@@ -271,7 +254,6 @@ function BuscaPage() {
               />
             </div>
 
-            {/* Espécie */}
             <div className="mb-8">
               <h3 className="text-sm font-semibold mb-3">Espécie</h3>
               <div className="flex gap-2">
@@ -282,11 +264,7 @@ function BuscaPage() {
                   <button
                     key={item.val}
                     onClick={() => setEspecie(item.val)}
-                    className={`flex-1 py-2 px-3 border rounded-lg flex items-center justify-center gap-2 text-sm font-semibold transition-all ${
-                      especie === item.val
-                        ? "bg-[#8e001b] text-white border-[#8e001b]"
-                        : "border-[#8f6f6e] hover:bg-gray-100"
-                    }`}
+                    className={`flex-1 py-2 px-3 border rounded-lg flex items-center justify-center gap-2 text-sm font-semibold transition-all ${especie === item.val ? "bg-[#8e001b] text-white border-[#8e001b]" : "border-[#8f6f6e] hover:bg-gray-100"}`}
                   >
                     <span className="material-symbols-outlined text-[18px]">
                       pets
@@ -297,7 +275,6 @@ function BuscaPage() {
               </div>
             </div>
 
-            {/* Tipo Sanguíneo */}
             <div className="mb-8">
               <h3 className="text-sm font-semibold mb-3">Tipo Sanguíneo</h3>
               <div className="flex flex-wrap gap-2">
@@ -305,11 +282,7 @@ function BuscaPage() {
                   <button
                     key={tipo}
                     onClick={() => toggleTipo(tipo)}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
-                      tiposSelecionados.includes(tipo)
-                        ? "bg-[#8e001b] text-white"
-                        : "bg-[#eeeeee] text-[#1a1c1c] hover:bg-[#8e001b] hover:text-white"
-                    }`}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${tiposSelecionados.includes(tipo) ? "bg-[#8e001b] text-white" : "bg-[#eeeeee] text-[#1a1c1c] hover:bg-[#8e001b] hover:text-white"}`}
                   >
                     {tipo}
                   </button>
@@ -317,7 +290,6 @@ function BuscaPage() {
               </div>
             </div>
 
-            {/* Peso */}
             <div className="mb-8">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-sm font-semibold">Peso (kg)</h3>
@@ -332,7 +304,6 @@ function BuscaPage() {
               />
             </div>
 
-            {/* Hospital */}
             <div className="mb-8">
               <h3 className="text-sm font-semibold mb-3">
                 Hospital de Referência
@@ -357,7 +328,6 @@ function BuscaPage() {
               </div>
             </div>
 
-            {/* Distância */}
             <div>
               <h3 className="text-sm font-semibold mb-3">Distância (km)</h3>
               <div className="relative">
@@ -402,24 +372,52 @@ function BuscaPage() {
             </div>
           </div>
 
-          {/* Grid de cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {doadoresFiltrados.map((doador) => (
-              <DonorCard
-                key={doador.id}
-                doador={doador}
-                onClick={handleVerPerfil}
-              />
-            ))}
-          </div>
+          {/* Grid de cards ou estado vazio */}
+          {doadoresFiltrados.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-32 text-center">
+              <div className="w-24 h-24 rounded-full bg-[#ffdad8] flex items-center justify-center mb-6">
+                <span className="material-symbols-outlined text-[#8e001b] text-6xl">
+                  pets
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-[#1a1c1c] mb-2">
+                Nenhum herói encontrado
+              </h3>
+              <p className="text-[#5f5e5e] text-sm max-w-xs leading-relaxed mb-8">
+                Nenhum doador corresponde aos filtros selecionados. Tente
+                ampliar sua busca.
+              </p>
+              <button
+                onClick={limparFiltros}
+                className="flex items-center gap-2 px-8 py-3 bg-[#8e001b] text-white rounded-full font-bold text-sm hover:brightness-110 transition-all"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  filter_alt_off
+                </span>
+                Limpar filtros
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {doadoresFiltrados.map((doador) => (
+                <DonorCard
+                  key={doador.id}
+                  doador={doador}
+                  onClick={handleVerPerfil}
+                />
+              ))}
+            </div>
+          )}
 
-          {/* Carregar mais */}
-          <div className="flex justify-center mt-6">
-            <button className="flex items-center gap-2 px-16 py-4 border-2 border-[#8e001b] text-[#8e001b] font-semibold rounded-full hover:bg-[#8e001b] hover:text-white transition-all text-sm">
-              <span className="material-symbols-outlined">expand_more</span>
-              Carregar mais heróis
-            </button>
-          </div>
+          {/* Carregar mais — só aparece se tiver resultados */}
+          {doadoresFiltrados.length > 0 && (
+            <div className="flex justify-center mt-6">
+              <button className="flex items-center gap-2 px-16 py-4 border-2 border-[#8e001b] text-[#8e001b] font-semibold rounded-full hover:bg-[#8e001b] hover:text-white transition-all text-sm">
+                <span className="material-symbols-outlined">expand_more</span>
+                Carregar mais heróis
+              </button>
+            </div>
+          )}
         </section>
       </main>
     </>
