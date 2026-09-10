@@ -14,6 +14,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/buscar" element={<BuscaPage />} />
         <Route path="/tutor/:id" element={<DashboardPage />} />
+        <Route path="/meu-perfil" element={<DashboardPage />} />
       </Routes>
     </BrowserRouter>
   );

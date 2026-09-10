@@ -49,11 +49,22 @@ function Header() {
           </Link>
         </div>
 
+        {/* Avatar clicável — leva pro perfil do usuário logado */}
         <Link
-          to="/cadastro"
-          className="bg-[#b7102a] text-white px-6 py-2.5 rounded-full font-bold text-[12px] uppercase tracking-widest hover:bg-[#1a1a1a] transition-all"
+          to="/meu-perfil"
+          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
         >
-          Salve Vidas
+          <div className="w-10 h-10 rounded-full border border-[#e4bebc] bg-[#e2e2e2] flex items-center justify-center">
+            <span className="material-symbols-outlined text-[#5f5e5e] text-xl">
+              person
+            </span>
+          </div>
+          <span className="font-bold text-sm text-[#1a1c1c] hidden md:block">
+            Lucas Delgado
+          </span>
+          <span className="material-symbols-outlined text-[#5f5e5e] text-[20px]">
+            expand_more
+          </span>
         </Link>
       </nav>
     </header>
