@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import heroPet from "../assets/teste.png";
+import heroPet from "../assets/cadastro-image.png";
 
 const TOTAL_STEPS = 5;
 
@@ -420,8 +420,10 @@ function CadastroPage() {
           className="absolute inset-0 h-full w-full object-cover object-center"
           alt="Pet doador"
         />
+        {/* Gradiente de baixo pra cima */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#b7102a]/80 via-transparent to-[#b7102a]/20 mix-blend-multiply" />
-
+        {/* Gradiente de cima pra baixo */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#b7102a] via-[#b7102a]/40 to-transparent h-[50%] mix-blend-multiply" />
         <div className="relative z-10 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl text-white max-w-lg p-8 mb-4 w-full">
           <div className="grid grid-cols-1 gap-6">
             {[
