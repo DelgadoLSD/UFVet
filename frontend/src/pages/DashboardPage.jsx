@@ -142,6 +142,7 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
   const [obsVet, setObsVet] = useState("");
   const [historicoLocal, setHistoricoLocal] = useState(animal.historico);
   const [adicionandoObs, setAdicionandoObs] = useState(false);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
 
   const adicionarObservacao = () => {
     if (!obsVet.trim()) return;
@@ -209,12 +210,42 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
                 </span>
                 Editar
               </button>
-              <button className="border-2 border-red-500 text-red-500 font-bold hover:bg-red-500 hover:text-white transition-colors px-4 py-1.5 rounded-full flex items-center gap-1.5 text-sm">
-                <span className="material-symbols-outlined text-[18px]">
-                  delete
-                </span>
-                Excluir
-              </button>
+
+              {/* Botão excluir com confirmação inline */}
+              {confirmandoExclusao ? (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 px-3 py-1.5 rounded-full">
+                  <span className="text-xs font-bold text-red-600">
+                    Tem certeza?
+                  </span>
+                  <button
+                    onClick={() => {
+                      setConfirmandoExclusao(false);
+                      alert(
+                        "Animal excluído! (integração com back-end em breve)",
+                      );
+                    }}
+                    className="text-[10px] font-bold bg-red-500 text-white px-3 py-1 rounded-full hover:bg-red-600 transition-colors"
+                  >
+                    Sim
+                  </button>
+                  <button
+                    onClick={() => setConfirmandoExclusao(false)}
+                    className="text-[10px] font-bold text-red-500 hover:text-red-700"
+                  >
+                    Não
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmandoExclusao(true)}
+                  className="border-2 border-red-500 text-red-500 font-bold hover:bg-red-500 hover:text-white transition-colors px-4 py-1.5 rounded-full flex items-center gap-1.5 text-sm"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    delete
+                  </span>
+                  Excluir
+                </button>
+              )}
             </>
           )}
         </div>
