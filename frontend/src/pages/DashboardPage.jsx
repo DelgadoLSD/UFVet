@@ -109,6 +109,18 @@ const CAMPOS_ANIMAL = [
   },
 ];
 
+const TIPOS_SANGUINEOS = {
+  cao: [
+    "DEA 1.1 Universal",
+    "DEA 1.1+",
+    "DEA 1.1-",
+    "DEA 4",
+    "DEA 7",
+    "Não sei",
+  ],
+  gato: ["Tipo A", "Tipo B", "Tipo AB", "Não sei"],
+};
+
 function DocBadge({ status }) {
   if (status === "validado")
     return (
@@ -136,6 +148,332 @@ function docBg(status) {
   return "bg-[#eeeeee]";
 }
 
+// ─── Modal de cadastro de animal ──────────────────────────────────────────────
+function ModalCadastroAnimal({ onClose }) {
+  const [form, setForm] = useState({
+    nome: "",
+    especie: "cao",
+    raca: "",
+    racaSRD: false,
+    sexo: "",
+    idadeConhecida: true,
+    dataNascimento: "",
+    idadeEstimada: "",
+    peso: "",
+    tipoSanguineo: "",
+    reprodutivo: "",
+    medicamentos: "",
+    transfusao: "",
+    vacinas: "",
+    observacoes: "",
+  });
+
+  const handleChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("Novo animal:", form);
+    alert("Animal cadastrado! (integração com back-end em breve)");
+    onClose();
+  };
+
+  const inputClass =
+    "w-full px-4 py-2.5 bg-white border border-[#e4bebc] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b] focus:border-[#8e001b] placeholder:text-gray-400";
+  const labelClass =
+    "block text-[11px] font-bold uppercase tracking-widest text-[#8e001b] mb-1.5";
+
+  return (
+    // Overlay escuro
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Cabeçalho do modal */}
+        <div className="sticky top-0 bg-white border-b border-[#e4bebc] px-8 py-5 flex items-center justify-between rounded-t-2xl z-10">
+          <div>
+            <h2 className="text-xl font-bold text-[#1a1c1c]">
+              Cadastrar Novo Animal
+            </h2>
+            <p className="text-xs text-[#5f5e5e] mt-0.5">
+              Preencha as informações do seu pet
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-[#f3f3f3] flex items-center justify-center hover:bg-[#e4bebc] transition-colors"
+          >
+            <span className="material-symbols-outlined text-[#5f5e5e] text-xl">
+              close
+            </span>
+          </button>
+        </div>
+
+        {/* Formulário */}
+        <form onSubmit={handleSubmit} className="px-8 py-6 space-y-6">
+          {/* Nome */}
+          <div>
+            <label className={labelClass}>Nome do animal *</label>
+            <input
+              type="text"
+              placeholder="Ex: Thor, Luna, Bolinha..."
+              value={form.nome}
+              onChange={(e) => handleChange("nome", e.target.value)}
+              required
+              className={inputClass}
+            />
+          </div>
+
+          {/* Espécie */}
+          <div>
+            <label className={labelClass}>Espécie *</label>
+            <div className="flex gap-3">
+              {[
+                { val: "cao", label: "Cão", icon: "pets" },
+                { val: "gato", label: "Gato", icon: "pets" },
+              ].map((item) => (
+                <button
+                  key={item.val}
+                  type="button"
+                  onClick={() => {
+                    handleChange("especie", item.val);
+                    handleChange("tipoSanguineo", "");
+                  }}
+                  className={`flex-1 py-2.5 px-4 border-2 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition-all ${
+                    form.especie === item.val
+                      ? "bg-[#8e001b] text-white border-[#8e001b]"
+                      : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    {item.icon}
+                  </span>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Raça */}
+          <div>
+            <label className={labelClass}>Raça</label>
+            <input
+              type="text"
+              placeholder={
+                form.racaSRD
+                  ? "SRD (Sem Raça Definida)"
+                  : "Ex: Golden Retriever, Labrador..."
+              }
+              value={form.racaSRD ? "SRD" : form.raca}
+              onChange={(e) => handleChange("raca", e.target.value)}
+              disabled={form.racaSRD}
+              className={`${inputClass} ${form.racaSRD ? "bg-[#f3f3f3] text-[#5f5e5e]" : ""}`}
+            />
+            <label className="flex items-center gap-2 mt-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.racaSRD}
+                onChange={(e) => {
+                  handleChange("racaSRD", e.target.checked);
+                  handleChange("raca", "");
+                }}
+                className="w-4 h-4 rounded accent-[#8e001b]"
+              />
+              <span className="text-xs text-[#5f5e5e] font-medium">
+                SRD / Não sei a raça
+              </span>
+            </label>
+          </div>
+
+          {/* Sexo */}
+          <div>
+            <label className={labelClass}>Sexo *</label>
+            <div className="flex gap-3">
+              {["Macho", "Fêmea"].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => handleChange("sexo", s)}
+                  className={`flex-1 py-2.5 px-4 border-2 rounded-xl text-sm font-semibold transition-all ${
+                    form.sexo === s
+                      ? "bg-[#8e001b] text-white border-[#8e001b]"
+                      : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Idade */}
+          <div>
+            <label className={labelClass}>Idade</label>
+            <div className="flex gap-3 mb-3">
+              {[
+                { val: true, label: "Sei a data de nascimento" },
+                { val: false, label: "Vou estimar" },
+              ].map((item) => (
+                <button
+                  key={String(item.val)}
+                  type="button"
+                  onClick={() => handleChange("idadeConhecida", item.val)}
+                  className={`flex-1 py-2 px-3 border-2 rounded-xl text-xs font-semibold transition-all ${
+                    form.idadeConhecida === item.val
+                      ? "bg-[#8e001b] text-white border-[#8e001b]"
+                      : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            {form.idadeConhecida ? (
+              <input
+                type="date"
+                value={form.dataNascimento}
+                onChange={(e) => handleChange("dataNascimento", e.target.value)}
+                className={inputClass}
+              />
+            ) : (
+              <input
+                type="text"
+                placeholder="Ex: aproximadamente 3 anos, entre 2 e 4 anos..."
+                value={form.idadeEstimada}
+                onChange={(e) => handleChange("idadeEstimada", e.target.value)}
+                className={inputClass}
+              />
+            )}
+          </div>
+
+          {/* Peso */}
+          <div>
+            <label className={labelClass}>Peso (kg)</label>
+            <input
+              type="number"
+              placeholder="Ex: 25"
+              min="0"
+              step="0.1"
+              value={form.peso}
+              onChange={(e) => handleChange("peso", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+
+          {/* Tipo Sanguíneo */}
+          <div>
+            <label className={labelClass}>Tipo Sanguíneo</label>
+            <div className="flex flex-wrap gap-2">
+              {TIPOS_SANGUINEOS[form.especie].map((tipo) => (
+                <button
+                  key={tipo}
+                  type="button"
+                  onClick={() => handleChange("tipoSanguineo", tipo)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                    form.tipoSanguineo === tipo
+                      ? "bg-[#8e001b] text-white border-[#8e001b]"
+                      : "bg-[#f3f3f3] text-[#1a1c1c] border-transparent hover:border-[#8e001b]"
+                  }`}
+                >
+                  {tipo}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Reprodutivo */}
+          <div>
+            <label className={labelClass}>Status Reprodutivo</label>
+            <div className="flex gap-3">
+              {[
+                {
+                  val: "Castrado",
+                  label: form.especie === "cao" ? "Castrado" : "Castrada",
+                },
+                {
+                  val: "Inteiro",
+                  label: form.especie === "cao" ? "Inteiro" : "Inteira",
+                },
+              ].map((item) => (
+                <button
+                  key={item.val}
+                  type="button"
+                  onClick={() => handleChange("reprodutivo", item.val)}
+                  className={`flex-1 py-2.5 px-4 border-2 rounded-xl text-sm font-semibold transition-all ${
+                    form.reprodutivo === item.val
+                      ? "bg-[#8e001b] text-white border-[#8e001b]"
+                      : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Perguntas sim/não */}
+          {[
+            { field: "medicamentos", label: "Está tomando algum medicamento?" },
+            { field: "transfusao", label: "Já recebeu transfusão de sangue?" },
+            { field: "vacinas", label: "Vacinas em dia?" },
+          ].map((item) => (
+            <div key={item.field}>
+              <label className={labelClass}>{item.label}</label>
+              <div className="flex gap-3">
+                {["Sim", "Não"].map((opcao) => (
+                  <button
+                    key={opcao}
+                    type="button"
+                    onClick={() => handleChange(item.field, opcao)}
+                    className={`flex-1 py-2.5 px-4 border-2 rounded-xl text-sm font-semibold transition-all ${
+                      form[item.field] === opcao
+                        ? "bg-[#8e001b] text-white border-[#8e001b]"
+                        : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"
+                    }`}
+                  >
+                    {opcao}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* Observações */}
+          <div>
+            <label className={labelClass}>Observações</label>
+            <textarea
+              placeholder="Comportamento durante exames, informações importantes para o veterinário..."
+              value={form.observacoes}
+              onChange={(e) => handleChange("observacoes", e.target.value)}
+              rows={3}
+              className={`${inputClass} resize-none`}
+            />
+          </div>
+
+          {/* Botões */}
+          <div className="flex gap-3 pt-2 pb-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 border-2 border-[#e4bebc] text-[#5f5e5e] font-bold rounded-full text-sm hover:border-[#8e001b] hover:text-[#8e001b] transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="flex-1 py-3 bg-[#8e001b] text-white font-bold rounded-full text-sm hover:brightness-110 transition-all active:scale-95"
+            >
+              Cadastrar Animal
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function AnimalCard({ animal, isProprioTutor, isVet }) {
   const [disponivel, setDisponivel] = useState(animal.disponivel);
   const [docsAbertos, setDocsAbertos] = useState(false);
@@ -158,7 +496,6 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
 
   return (
     <div className="bg-white rounded-2xl border border-[#8e001b]/20 shadow-sm overflow-hidden mb-6">
-      {/* Topo do card */}
       <div className="p-6 px-8 flex justify-between items-center flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-[#ffdad8] border border-[#e4bebc] flex items-center justify-center shrink-0">
@@ -210,8 +547,6 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
                 </span>
                 Editar
               </button>
-
-              {/* Botão excluir com confirmação inline */}
               {confirmandoExclusao ? (
                 <div className="flex items-center gap-2 bg-red-50 border border-red-200 px-3 py-1.5 rounded-full">
                   <span className="text-xs font-bold text-red-600">
@@ -253,7 +588,6 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
 
       <div className="border-t border-[#e4bebc] pt-6 mx-8" />
 
-      {/* Grid de dados clínicos */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-6 gap-x-4 pb-8 px-8">
         {CAMPOS_ANIMAL.map((campo) => (
           <div key={campo.key} className="flex flex-col items-start gap-1">
@@ -287,7 +621,6 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
         ))}
       </div>
 
-      {/* Banner de validação */}
       {animal.validacao.status === "validado" ? (
         <div className="mx-8 mb-6 bg-emerald-50 border-l-4 border-emerald-600 px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -338,7 +671,6 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
         </div>
       )}
 
-      {/* Documentos colapsáveis */}
       <div className="mx-8 mb-6">
         <button
           onClick={() => setDocsAbertos(!docsAbertos)}
@@ -366,7 +698,6 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
         )}
       </div>
 
-      {/* Formulário de observação veterinária */}
       {isVet && adicionandoObs && (
         <div className="mx-8 mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
           <p className="text-sm font-bold text-emerald-900 mb-3">
@@ -399,7 +730,6 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
         </div>
       )}
 
-      {/* Histórico de observações */}
       {historicoLocal.length > 0 ? (
         <div className="mx-8 mb-6">
           <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-3">
@@ -432,7 +762,6 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
         </div>
       )}
 
-      {/* Observações do tutor */}
       <div className="border-t border-[#e4bebc] bg-white p-4 px-8 text-[#5b403f] text-sm">
         <p className="italic">
           <strong className="font-bold text-[#1a1c1c] not-italic">
@@ -448,6 +777,7 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
 function DashboardPage() {
   const { id } = useParams();
   const [telefoneVisivel, setTelefoneVisivel] = useState(false);
+  const [modalAberto, setModalAberto] = useState(false);
 
   const isProprioTutor = VISUALIZANDO_PROPRIO_PERFIL;
   const isVet = USUARIO_E_VETERINARIO;
@@ -475,12 +805,16 @@ function DashboardPage() {
   return (
     <>
       <Header />
+
+      {/* Modal — renderiza por cima de tudo quando aberto */}
+      {modalAberto && (
+        <ModalCadastroAnimal onClose={() => setModalAberto(false)} />
+      )}
+
       <main className="pb-20 px-5 md:px-16 max-w-[1200px] mx-auto pt-28">
-        {/* Seção do tutor */}
         <section className="mb-20">
           <div className="bg-white rounded-2xl border shadow-sm overflow-hidden border-[#8e001b]/20">
             <div className="h-32 bg-gradient-to-r from-[#8e001b] to-[#b7102a]" />
-
             <div className="px-8 pb-6 pt-4 flex justify-between items-center flex-wrap gap-4 relative">
               <div className="flex items-center gap-6">
                 <div className="relative -mt-16">
@@ -512,7 +846,6 @@ function DashboardPage() {
                   </p>
                 </div>
               </div>
-
               {isProprioTutor && (
                 <button className="border-2 border-[#8e001b] text-[#8e001b] font-bold hover:bg-[#8e001b] hover:text-white transition-colors px-6 py-2 rounded-full flex items-center gap-2">
                   <span className="material-symbols-outlined text-[20px]">
@@ -522,7 +855,6 @@ function DashboardPage() {
                 </button>
               )}
             </div>
-
             <div className="border-t mt-6 pt-6 mx-8 border-[#e4bebc]">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-y-6 gap-x-4 mt-6 pb-8 justify-items-center">
                 {infoGrid.map((item) => (
@@ -562,7 +894,6 @@ function DashboardPage() {
           </div>
         </section>
 
-        {/* Seção de animais */}
         <section className="mb-12">
           <div className="flex justify-between items-end mb-6">
             <h2 className="text-2xl font-bold text-[#1a1c1c]">
@@ -576,7 +907,6 @@ function DashboardPage() {
           </div>
         </section>
 
-        {/* Cards dos animais */}
         <section className="space-y-6">
           {ANIMAIS_MOCK.map((animal) => (
             <AnimalCard
@@ -589,6 +919,7 @@ function DashboardPage() {
 
           {isProprioTutor && (
             <button
+              onClick={() => setModalAberto(true)}
               className="w-full py-20 flex flex-col items-center justify-center gap-4 hover:bg-[#f3f3f3] transition-colors group rounded-2xl"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%238F6F6EFF' stroke-width='2' stroke-dasharray='8%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e")`,
