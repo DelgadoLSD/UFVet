@@ -1,0 +1,592 @@
+import { useState } from "react";
+import { useParams } from "react-router-dom";
+import Header from "../components/Header";
+
+// ─── Simulação de "quem está logado" (vem do contexto de auth no Sprint 3) ───
+// Por enquanto: true = você está vendo seu próprio perfil
+const VISUALIZANDO_PROPRIO_PERFIL = true;
+const USUARIO_E_VETERINARIO = true;
+
+// ─── Dados mockados do tutor ──────────────────────────────────────────────────
+const TUTOR_MOCK = {
+  nome: "Lucas Delgado",
+  nomeCompleto: "Lucas Silva Delgado",
+  email: "lucas.vet@ufv.br",
+  telefone: "(11) 94002-8922",
+  crmv: "12345-SP",
+  hospital: "Hospital Veterinário UFV",
+  cep: "36570-000",
+  cidade: "Viçosa - MG",
+  bairro: "Centro",
+  membroDesde: "24 Jan 2026",
+  role: "vet", // 'tutor' ou 'vet'
+};
+
+// ─── Dados mockados dos animais ───────────────────────────────────────────────
+const ANIMAIS_MOCK = [
+  {
+    id: 1,
+    nome: "Zeus",
+    especie: "Cão",
+    raca: "Golden Retr.",
+    peso: "32kg",
+    idade: "4 anos",
+    tipo: "DEA 1.1+",
+    sexo: "Macho",
+    reprodutivo: "Castrado",
+    medicamentos: "Não",
+    transfusao: "Não",
+    vacinas: "Em dia",
+    ultimaDoacao: "15/10/2023",
+    aptidao: "Apto para doação",
+    disponivel: true,
+    observacoes:
+      "Zeus é um doador regular e se comporta muito bem durante a coleta.",
+    validacao: {
+      status: "validado",
+      veterinario: "Dra. Marina Souza",
+      crmv: "123",
+      validadoEm: "15/10/2023",
+      validoAte: "15/10/2024",
+    },
+    documentos: [
+      { nome: "Hemograma completo", status: "validado" },
+      { nome: "Sorologias", status: "pendente" },
+      { nome: "Carteira de vacinação", status: "enviado" },
+    ],
+    historico: [
+      {
+        data: "15/10/2023",
+        autor: "Dra. Marina Souza",
+        texto:
+          "Animal aprovado na triagem clínica. Hemograma dentro dos parâmetros.",
+      },
+      {
+        data: "10/10/2023",
+        autor: "Lucas Delgado",
+        texto: "Documentos enviados para validação.",
+      },
+    ],
+  },
+  {
+    id: 2,
+    nome: "Luna",
+    especie: "Gato",
+    raca: "SRD",
+    peso: "4.5kg",
+    idade: "2 anos",
+    tipo: "TIPO A",
+    sexo: "Fêmea",
+    reprodutivo: "Castrada",
+    medicamentos: "Não",
+    transfusao: "Não",
+    vacinas: "Próx: Mar/2024",
+    ultimaDoacao: "Nunca doou",
+    aptidao: "Apto para doação",
+    disponivel: false,
+    observacoes: "Luna é um pouco arisca com estranhos; requer contenção leve.",
+    validacao: { status: "pendente" },
+    documentos: [
+      { nome: "Hemograma completo", status: "pendente" },
+      { nome: "Sorologias", status: "pendente" },
+      { nome: "Carteira de vacinação", status: "pendente" },
+    ],
+    historico: [],
+  },
+];
+
+// ─── Campos de info do animal ─────────────────────────────────────────────────
+const CAMPOS_ANIMAL = [
+  { icon: "pets", label: "Raça", key: "raca" },
+  { icon: "monitor_weight", label: "Peso", key: "peso" },
+  { icon: "event", label: "Idade", key: "idade" },
+  { icon: "bloodtype", label: "Tipo Sanguíneo", key: "tipo", destaque: true },
+  { icon: "male", label: "Sexo", key: "sexo" },
+  { icon: "health_and_safety", label: "Reprodutivo", key: "reprodutivo" },
+  { icon: "medication", label: "Medicamentos", key: "medicamentos" },
+  { icon: "blood_pressure", label: "Transfusão?", key: "transfusao" },
+  { icon: "vaccines", label: "Vacinas", key: "vacinas" },
+  {
+    icon: "history",
+    label: "Última Doação",
+    key: "ultimaDoacao",
+    extra: "aptidao",
+  },
+];
+
+// ─── Badge de status do documento ────────────────────────────────────────────
+function DocBadge({ status }) {
+  if (status === "validado")
+    return (
+      <span className="text-[10px] font-bold text-emerald-800 uppercase">
+        Validado
+      </span>
+    );
+  if (status === "enviado")
+    return (
+      <span className="text-[10px] font-bold text-blue-800 uppercase">
+        Enviado
+      </span>
+    );
+  return (
+    <button className="flex items-center gap-1 text-[10px] font-bold border border-[#8e001b] text-[#8e001b] px-3 py-1 rounded-full hover:bg-[#8e001b] hover:text-white transition-colors">
+      <span className="material-symbols-outlined text-sm">upload_file</span>{" "}
+      Enviar
+    </button>
+  );
+}
+
+function docBg(status) {
+  if (status === "validado") return "bg-emerald-100";
+  if (status === "enviado") return "bg-blue-100";
+  return "bg-[#eeeeee]";
+}
+
+// ─── Card de animal ───────────────────────────────────────────────────────────
+function AnimalCard({ animal, isProprioTutor, isVet }) {
+  const [disponivel, setDisponivel] = useState(animal.disponivel);
+  const [docsAbertos, setDocsAbertos] = useState(false);
+  const [obsVet, setObsVet] = useState("");
+  const [historicoLocal, setHistoricoLocal] = useState(animal.historico);
+  const [adicionandoObs, setAdicionandoObs] = useState(false);
+
+  const adicionarObservacao = () => {
+    if (!obsVet.trim()) return;
+    const nova = {
+      data: new Date().toLocaleDateString("pt-BR"),
+      autor: "Veterinário (você)",
+      texto: obsVet.trim(),
+    };
+    setHistoricoLocal((prev) => [nova, ...prev]);
+    setObsVet("");
+    setAdicionandoObs(false);
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-[#8e001b]/20 shadow-sm overflow-hidden mb-6">
+      {/* Topo do card */}
+      <div className="p-6 px-8 flex justify-between items-center flex-wrap gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-[#ffdad8] border border-[#e4bebc] flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-[#8e001b] text-3xl">
+              pets
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <h3 className="font-bold text-xl text-[#1a1c1c] leading-tight">
+              {animal.nome}
+            </h3>
+            <span className="text-[10px] font-bold text-[#5b403f] uppercase bg-[#eeeeee] px-2 py-0.5 rounded w-fit mt-1">
+              {animal.especie}
+            </span>
+          </div>
+        </div>
+
+        {/* Toggle de disponibilidade — só o próprio tutor vê */}
+        {isProprioTutor && (
+          <button
+            onClick={() => setDisponivel(!disponivel)}
+            className={`flex items-center gap-3 px-4 py-2 rounded-full transition-all duration-300 shadow-sm ${
+              disponivel
+                ? "bg-[#8e001b] text-white"
+                : "bg-[#e8e8e8] text-[#5f5e5e]"
+            }`}
+          >
+            <div
+              className={`w-3 h-3 bg-white rounded-full ${disponivel ? "animate-pulse" : ""}`}
+            />
+            <span className="font-bold text-sm">
+              {disponivel ? "Disponível para doação" : "Indisponível"}
+            </span>
+          </button>
+        )}
+
+        {/* Ações — tutor vê editar/excluir, vet vê auditar */}
+        <div className="flex items-center gap-3 flex-wrap">
+          {isVet && (
+            <button
+              onClick={() => setAdicionandoObs(true)}
+              className="border-2 border-emerald-600 text-emerald-600 font-bold hover:bg-emerald-600 hover:text-white transition-colors px-4 py-1.5 rounded-full flex items-center gap-1.5 text-sm"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                fact_check
+              </span>
+              Auditar Informações
+            </button>
+          )}
+          {isProprioTutor && (
+            <>
+              <button className="border-2 border-[#8e001b] text-[#8e001b] font-bold hover:bg-[#8e001b] hover:text-white transition-colors px-4 py-1.5 rounded-full flex items-center gap-1.5 text-sm">
+                <span className="material-symbols-outlined text-[18px]">
+                  edit
+                </span>
+                Editar
+              </button>
+              <button className="border-2 border-red-500 text-red-500 font-bold hover:bg-red-500 hover:text-white transition-colors px-4 py-1.5 rounded-full flex items-center gap-1.5 text-sm">
+                <span className="material-symbols-outlined text-[18px]">
+                  delete
+                </span>
+                Excluir
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="border-t border-[#e4bebc] pt-6 mx-8" />
+
+      {/* Grid de dados clínicos */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-6 gap-x-4 pb-8 px-8">
+        {CAMPOS_ANIMAL.map((campo) => (
+          <div key={campo.key} className="flex flex-col items-start gap-1">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#8e001b] text-[18px]">
+                {campo.icon}
+              </span>
+              <span className="text-[#8e001b] text-[11px] font-bold uppercase tracking-widest">
+                {campo.label}
+              </span>
+            </div>
+            {campo.destaque ? (
+              <span className="text-[#8e001b] text-lg font-extrabold">
+                {animal[campo.key]}
+              </span>
+            ) : campo.extra ? (
+              <div className="flex flex-col">
+                <span className="text-[#1a1c1c] font-bold text-sm">
+                  {animal[campo.key]}
+                </span>
+                <span className="text-emerald-600 font-bold text-[10px] uppercase tracking-wider">
+                  {animal[campo.extra]}
+                </span>
+              </div>
+            ) : (
+              <span className="text-[#1a1c1c] font-semibold text-sm">
+                {animal[campo.key]}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Banner de validação */}
+      {animal.validacao.status === "validado" ? (
+        <div className="mx-8 mb-6 bg-emerald-50 border-l-4 border-emerald-600 px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="material-symbols-outlined text-emerald-600 text-[32px]">
+              verified_user
+            </span>
+            <div className="flex flex-col">
+              <span className="font-bold text-emerald-900 text-sm">
+                Validado clinicamente
+              </span>
+              <span className="text-emerald-800 text-xs">
+                {animal.validacao.veterinario} — CRMV {animal.validacao.crmv}
+              </span>
+            </div>
+          </div>
+          <div className="flex gap-8 text-xs text-emerald-800">
+            <div className="flex flex-col items-end">
+              <span className="opacity-70 uppercase font-bold text-[10px]">
+                Validado em:
+              </span>
+              <span className="font-semibold">
+                {animal.validacao.validadoEm}
+              </span>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="opacity-70 uppercase font-bold text-[10px]">
+                Válido até:
+              </span>
+              <span className="font-semibold">
+                {animal.validacao.validoAte}
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mx-8 mb-6 bg-amber-50 border-l-4 border-amber-500 px-8 py-4 flex items-center gap-4">
+          <span className="material-symbols-outlined text-amber-600 text-[32px]">
+            schedule
+          </span>
+          <div className="flex flex-col">
+            <span className="font-bold text-amber-900 text-sm">
+              Informações não validadas
+            </span>
+            <span className="text-amber-800 text-xs">
+              Aguardando revisão veterinária
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Documentos colapsáveis */}
+      <div className="mx-8 mb-6">
+        <button
+          onClick={() => setDocsAbertos(!docsAbertos)}
+          className="flex items-center gap-2 text-[#8e001b] font-bold text-sm mb-4"
+        >
+          {docsAbertos ? "Ocultar documentos ↑" : "Ver documentos ↓"}
+        </button>
+        {docsAbertos && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4">
+            {animal.documentos.map((doc) => (
+              <div
+                key={doc.nome}
+                className={`${docBg(doc.status)} p-4 rounded-xl flex items-center justify-between`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[#8e001b]">
+                    description
+                  </span>
+                  <span className="font-semibold text-sm">{doc.nome}</span>
+                </div>
+                <DocBadge status={doc.status} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Formulário de observação veterinária */}
+      {isVet && adicionandoObs && (
+        <div className="mx-8 mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <p className="text-sm font-bold text-emerald-900 mb-3">
+            Nova observação clínica
+          </p>
+          <textarea
+            value={obsVet}
+            onChange={(e) => setObsVet(e.target.value)}
+            placeholder="Descreva sua observação clínica..."
+            className="w-full border border-emerald-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+            rows={3}
+          />
+          <div className="flex gap-3 mt-3">
+            <button
+              onClick={adicionarObservacao}
+              className="bg-emerald-600 text-white px-6 py-2 rounded-full text-sm font-bold hover:bg-emerald-700 transition-colors"
+            >
+              Salvar observação
+            </button>
+            <button
+              onClick={() => {
+                setAdicionandoObs(false);
+                setObsVet("");
+              }}
+              className="text-sm font-bold text-[#5f5e5e] hover:text-[#1a1c1c]"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Histórico de observações */}
+      {historicoLocal.length > 0 && (
+        <div className="mx-8 mb-6">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-3">
+            Histórico
+          </p>
+          <div className="space-y-3">
+            {historicoLocal.map((item, i) => (
+              <div
+                key={i}
+                className="flex gap-3 text-sm border-l-2 border-[#e4bebc] pl-4"
+              >
+                <div>
+                  <p className="text-[10px] font-bold text-[#5f5e5e] uppercase tracking-wider">
+                    {item.data} — {item.autor}
+                  </p>
+                  <p className="text-[#1a1c1c] mt-0.5">{item.texto}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Observações do tutor */}
+      <div className="border-t border-[#e4bebc] bg-white p-4 px-8 text-[#5b403f] text-sm">
+        <p className="italic">
+          <strong className="font-bold text-[#1a1c1c] not-italic">
+            Observações:
+          </strong>{" "}
+          {animal.observacoes}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Componente principal ─────────────────────────────────────────────────────
+function DashboardPage() {
+  const { id } = useParams();
+  const [telefoneVisivel, setTelefoneVisivel] = useState(false);
+
+  const isProprioTutor = VISUALIZANDO_PROPRIO_PERFIL;
+  const isVet = USUARIO_E_VETERINARIO;
+
+  const infoGrid = [
+    { icon: "person", label: "Nome Completo", valor: TUTOR_MOCK.nomeCompleto },
+    { icon: "mail", label: "E-mail", valor: TUTOR_MOCK.email },
+    {
+      icon: "call",
+      label: "Telefone",
+      valor: telefoneVisivel ? TUTOR_MOCK.telefone : "•••••••••••••",
+      toggle: true,
+    },
+    ...(TUTOR_MOCK.role === "vet"
+      ? [
+          { icon: "clinical_notes", label: "CRMV", valor: TUTOR_MOCK.crmv },
+          { icon: "apartment", label: "Hospital", valor: TUTOR_MOCK.hospital },
+        ]
+      : []),
+    { icon: "markunread_mailbox", label: "CEP", valor: TUTOR_MOCK.cep },
+    { icon: "location_on", label: "Cidade", valor: TUTOR_MOCK.cidade },
+    { icon: "home", label: "Bairro", valor: TUTOR_MOCK.bairro },
+  ];
+
+  return (
+    <>
+      <Header />
+      <main className="pb-20 px-5 md:px-16 max-w-[1200px] mx-auto pt-28">
+        {/* Seção do tutor */}
+        <section className="mb-20">
+          <div className="bg-white rounded-2xl border shadow-sm overflow-hidden border-[#8e001b]/20">
+            {/* Banner */}
+            <div className="h-32 bg-gradient-to-r from-[#8e001b] to-[#b7102a]" />
+
+            {/* Avatar + nome + botão */}
+            <div className="px-8 pb-6 pt-4 flex justify-between items-center flex-wrap gap-4 relative">
+              <div className="flex items-center gap-6">
+                <div className="relative -mt-16">
+                  <div className="w-24 h-24 rounded-full border-4 border-white shadow-sm bg-[#e2e2e2] flex items-center justify-center relative z-10">
+                    <span className="material-symbols-outlined text-[#5f5e5e] text-5xl">
+                      person
+                    </span>
+                  </div>
+                </div>
+                <div className="pt-2">
+                  <h1 className="text-2xl font-bold text-[#1a1c1c]">
+                    {TUTOR_MOCK.nome}
+                  </h1>
+                  {TUTOR_MOCK.role === "vet" && (
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-[#8e001b]/10 border border-[#8e001b]/20 rounded-full mt-2 inline-flex">
+                      <span className="material-symbols-outlined text-[#8e001b] text-[14px]">
+                        medical_services
+                      </span>
+                      <span className="text-[#8e001b] font-bold text-[10px] uppercase tracking-widest">
+                        Veterinário Validado
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-[#5f5e5e] text-[12px] flex items-center gap-1 mt-1">
+                    <span className="material-symbols-outlined text-[14px]">
+                      calendar_month
+                    </span>
+                    Membro desde: {TUTOR_MOCK.membroDesde}
+                  </p>
+                </div>
+              </div>
+
+              {isProprioTutor && (
+                <button className="border-2 border-[#8e001b] text-[#8e001b] font-bold hover:bg-[#8e001b] hover:text-white transition-colors px-6 py-2 rounded-full flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[20px]">
+                    edit
+                  </span>
+                  Editar perfil
+                </button>
+              )}
+            </div>
+
+            {/* Grid de informações */}
+            <div className="border-t mt-6 pt-6 mx-8 border-[#e4bebc]">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-y-6 gap-x-4 mt-6 pb-8 justify-items-center">
+                {infoGrid.map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex flex-col items-center text-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-[#8e001b]">
+                      {item.icon}
+                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-[#8e001b] text-[11px] font-bold uppercase tracking-widest">
+                        {item.label}
+                      </span>
+                      {item.toggle ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#1a1c1c] font-semibold text-sm">
+                            {item.valor}
+                          </span>
+                          <button
+                            onClick={() => setTelefoneVisivel(!telefoneVisivel)}
+                            className="material-symbols-outlined text-[#8e001b] text-lg hover:opacity-70 transition-opacity"
+                          >
+                            {telefoneVisivel ? "visibility_off" : "visibility"}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-[#1a1c1c] font-semibold text-sm">
+                          {item.valor}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Seção de animais */}
+        <section className="mb-12">
+          <div className="flex justify-between items-end mb-6">
+            <h2 className="text-2xl font-bold text-[#1a1c1c]">
+              {isProprioTutor
+                ? "Meus Animais"
+                : "Animais de " + TUTOR_MOCK.nome}
+            </h2>
+            <span className="text-xs font-semibold text-[#5f5e5e] uppercase">
+              {ANIMAIS_MOCK.length} Animais Cadastrados
+            </span>
+          </div>
+        </section>
+
+        {/* Cards dos animais */}
+        <section className="space-y-6">
+          {ANIMAIS_MOCK.map((animal) => (
+            <AnimalCard
+              key={animal.id}
+              animal={animal}
+              isProprioTutor={isProprioTutor}
+              isVet={isVet}
+            />
+          ))}
+
+          {/* Botão de cadastrar novo animal — só o tutor vê */}
+          {isProprioTutor && (
+            <button
+              className="w-full py-20 flex flex-col items-center justify-center gap-4 hover:bg-[#f3f3f3] transition-colors group rounded-2xl"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%238F6F6EFF' stroke-width='2' stroke-dasharray='8%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e")`,
+                borderRadius: "1rem",
+              }}
+            >
+              <div className="w-12 h-12 rounded-full bg-[#ffdad8] flex items-center justify-center text-[#8e001b] group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-[32px]">
+                  add
+                </span>
+              </div>
+              <span className="text-sm font-bold text-[#8e001b] uppercase tracking-wider">
+                + Cadastrar Novo Animal
+              </span>
+            </button>
+          )}
+        </section>
+      </main>
+    </>
+  );
+}
+
+export default DashboardPage;
