@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 function Header() {
   const [floating, setFloating] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -11,6 +12,11 @@ function Header() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const navLinks = [
+    { to: "/", label: "Início" },
+    { to: "/buscar", label: "Buscar Doadores" },
+  ];
 
   return (
     <header
@@ -23,33 +29,28 @@ function Header() {
       <nav className="flex justify-between items-center h-20 px-5 md:px-8 max-w-[1200px] mx-auto w-full transition-all duration-400">
         <Link
           to="/"
-          className="font-extrabold text-2xl tracking-tighter flex items-center gap-1"
+          className="font-extrabold text-3xl tracking-tighter flex items-center"
         >
-          <span className="text-[#1a1a1a]">UFV</span>
-          <span className="text-white bg-[#b7102a] px-2 py-0.5 rounded">
-            et
-          </span>
+          <span className="text-[#1a1c1c]">UF</span>
+          <span className="text-[#b7102a]">Vet</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-8 font-semibold text-[13px] uppercase tracking-wider">
-          <Link to="/" className="border-b-2 border-[#b7102a] text-[#b7102a]">
-            Início
-          </Link>
-          <Link
-            to="/buscar"
-            className="text-gray-400 hover:text-[#b7102a] transition-all border-b-2 border-transparent"
-          >
-            Buscar Doadores
-          </Link>
-          <Link
-            to="/cadastrar"
-            className="text-gray-400 hover:text-[#b7102a] transition-all border-b-2 border-transparent"
-          >
-            Cadastrar Pets
-          </Link>
+          {navLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className={`transition-all border-b-2 ${
+                location.pathname === link.to
+                  ? "border-[#b7102a] text-[#b7102a]"
+                  : "border-transparent text-gray-400 hover:text-[#b7102a]"
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
         </div>
 
-        {/* Avatar clicável — leva pro perfil do usuário logado */}
         <Link
           to="/meu-perfil"
           className="flex items-center gap-3 hover:opacity-80 transition-opacity"

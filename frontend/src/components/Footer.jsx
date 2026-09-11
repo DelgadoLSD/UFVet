@@ -7,8 +7,8 @@ function Footer() {
         <div className="grid md:grid-cols-4 gap-16 mb-20">
           <div className="md:col-span-1">
             <div className="text-3xl font-extrabold tracking-tighter mb-8">
-              <span className="text-white">UFV</span>
-              <span className="text-[#b7102a]">et</span>
+              <span className="text-white">UF</span>
+              <span className="text-[#b7102a]">Vet</span>
             </div>
             <p className="text-gray-500 leading-relaxed text-sm">
               A primeira plataforma de integração para doação de sangue animal

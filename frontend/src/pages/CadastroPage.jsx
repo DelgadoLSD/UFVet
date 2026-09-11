@@ -411,6 +411,16 @@ function CadastroPage() {
   // Dots de progresso — step 4 só existe pra vet, então ajusta a contagem visual
   const visualStep = step === 5 && role === "tutor" ? 4 : step;
 
+  <div className="fixed top-4 left-6 z-50">
+    <Link
+      to="/"
+      className="font-extrabold text-2xl tracking-tighter flex items-center"
+    >
+      <span className="text-[#1a1c1c]">UF</span>
+      <span className="text-[#b7102a]">Vet</span>
+    </Link>
+  </div>;
+
   return (
     <main className="w-full h-screen flex flex-col md:flex-row overflow-hidden">
       {/* Coluna esquerda — imagem + value props */}
