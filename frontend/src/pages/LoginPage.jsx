@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import Header from "../components/Header";
 import heroPet from "../assets/login-image.png";
 
 function GoogleIcon() {
@@ -43,177 +44,172 @@ function LoginPage() {
     alert("Login enviado! (integração com back-end em breve)");
   };
 
-  <div className="fixed top-4 left-6 z-50">
-    <Link
-      to="/"
-      className="font-extrabold text-2xl tracking-tighter flex items-center"
-    >
-      <span className="text-[#1a1c1c]">UF</span>
-      <span className="text-[#b7102a]">Vet</span>
-    </Link>
-  </div>;
-
   return (
-    <main className="w-full h-screen flex flex-col md:flex-row overflow-hidden">
-      {/* Coluna esquerda — formulário */}
-      <section className="w-full md:w-1/2 bg-[#FFF8F7] flex flex-col items-center h-full overflow-hidden justify-between">
-        <div className="w-full max-w-[440px] h-full flex flex-col px-6 md:px-0">
-          <div className="text-center shrink-0 pt-16">
-            <h2 className="text-[#1a1c1c] font-extrabold uppercase leading-none tracking-tighter text-3xl md:text-5xl">
-              faça seu
-            </h2>
-            <h2 className="text-[#8e001b] font-extrabold uppercase leading-tight tracking-tighter text-5xl md:text-7xl mt-2 whitespace-nowrap">
-              login
-            </h2>
-          </div>
+    <>
+      <Header dark={true} />
+      <main className="w-full h-screen flex flex-col md:flex-row overflow-hidden pt-20">
+        {/* Coluna esquerda — formulário */}
+        <section className="w-full md:w-1/2 bg-[#FFF8F7] flex flex-col items-center h-full overflow-hidden justify-between">
+          <div className="w-full max-w-[440px] h-full flex flex-col px-6 md:px-0">
+            <div className="text-center shrink-0 pt-12">
+              <h2 className="text-[#1a1c1c] font-extrabold uppercase leading-none tracking-tighter text-3xl md:text-5xl">
+                faça seu
+              </h2>
+              <h2 className="text-[#8e001b] font-extrabold uppercase leading-tight tracking-tighter text-5xl md:text-7xl mt-2 whitespace-nowrap">
+                login
+              </h2>
+            </div>
 
-          <form
-            className="flex-grow flex flex-col min-h-0"
-            onSubmit={handleSubmit}
-          >
-            <div className="flex-grow flex flex-col justify-center py-4 min-h-0">
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label
-                    className="font-bold uppercase tracking-wide text-[#1a1c1c] text-[12px]"
-                    htmlFor="cpf"
-                  >
-                    CPF
-                  </label>
-                  <input
-                    id="cpf"
-                    type="text"
-                    placeholder="000.000.000-00"
-                    required
-                    value={formData.cpf}
-                    onChange={(e) => handleChange("cpf", e.target.value)}
-                    className="w-full px-5 bg-white border text-base py-3 border-[#8e001b]/10 placeholder:text-neutral-400 rounded-xl focus:outline-none focus:border-[#b7102a] focus:ring-1 focus:ring-[#b7102a]"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label
-                    className="font-bold uppercase tracking-wide text-[#1a1c1c] text-[12px]"
-                    htmlFor="password"
-                  >
-                    Senha
-                  </label>
-                  <div className="relative">
+            <form
+              className="flex-grow flex flex-col min-h-0"
+              onSubmit={handleSubmit}
+            >
+              <div className="flex-grow flex flex-col justify-center py-4 min-h-0">
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label
+                      className="font-bold uppercase tracking-wide text-[#1a1c1c] text-[12px]"
+                      htmlFor="cpf"
+                    >
+                      CPF
+                    </label>
                     <input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Sua senha"
+                      id="cpf"
+                      type="text"
+                      placeholder="000.000.000-00"
                       required
-                      value={formData.password}
-                      onChange={(e) => handleChange("password", e.target.value)}
-                      className="w-full px-5 bg-white border text-base pr-12 py-3 border-[#8e001b]/10 placeholder:text-neutral-400 rounded-xl focus:outline-none focus:border-[#b7102a] focus:ring-1 focus:ring-[#b7102a]"
+                      value={formData.cpf}
+                      onChange={(e) => handleChange("cpf", e.target.value)}
+                      className="w-full px-5 bg-white border text-base py-3 border-[#8e001b]/10 placeholder:text-neutral-400 rounded-xl focus:outline-none focus:border-[#b7102a] focus:ring-1 focus:ring-[#b7102a]"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#5f5e5e] text-lg hover:text-[#8e001b] transition-colors"
-                    >
-                      {showPassword ? "visibility_off" : "visibility"}
-                    </button>
                   </div>
-                  <div className="text-right">
-                    <a
-                      href="#"
-                      className="text-[10px] font-bold text-[#8e001b] hover:underline"
+                  <div className="space-y-1">
+                    <label
+                      className="font-bold uppercase tracking-wide text-[#1a1c1c] text-[12px]"
+                      htmlFor="password"
                     >
-                      Esqueceu sua senha?
-                    </a>
+                      Senha
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Sua senha"
+                        required
+                        value={formData.password}
+                        onChange={(e) =>
+                          handleChange("password", e.target.value)
+                        }
+                        className="w-full px-5 bg-white border text-base pr-12 py-3 border-[#8e001b]/10 placeholder:text-neutral-400 rounded-xl focus:outline-none focus:border-[#b7102a] focus:ring-1 focus:ring-[#b7102a]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#5f5e5e] text-lg hover:text-[#8e001b] transition-colors"
+                      >
+                        {showPassword ? "visibility_off" : "visibility"}
+                      </button>
+                    </div>
+                    <div className="text-right">
+                      <a
+                        href="#"
+                        className="text-[10px] font-bold text-[#8e001b] hover:underline"
+                      >
+                        Esqueceu sua senha?
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Botões */}
-            <div className="shrink-0 flex flex-col gap-4 pb-12">
-              <button
-                type="submit"
-                className="w-full px-8 text-white font-bold uppercase tracking-widest hover:brightness-110 transition-all active:scale-[0.98] shadow-md text-base bg-[#8e001b] rounded-full py-4"
-              >
-                Entrar
-              </button>
-
-              <div className="flex items-center gap-4">
-                <div className="h-[1px] flex-1 bg-neutral-200" />
-                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
-                  ou
-                </span>
-                <div className="h-[1px] flex-1 bg-neutral-200" />
-              </div>
-
-              <button
-                type="button"
-                className="w-full flex items-center justify-center gap-3 bg-black text-white font-semibold hover:bg-neutral-800 transition-all text-sm rounded-full py-4"
-              >
-                <GoogleIcon />
-                Entrar com Google
-              </button>
-
-              <div className="text-center">
-                <p className="text-sm font-medium text-[#5f5e5e]">
-                  Não tem uma conta?{" "}
-                  <Link
-                    to="/cadastrar"
-                    className="text-[#8e001b] font-bold hover:underline"
-                  >
-                    Cadastre-se
-                  </Link>
-                </p>
-              </div>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      {/* Coluna direita — imagem */}
-      <section className="hidden md:flex md:w-1/2 bg-black relative overflow-hidden p-12 flex-col justify-end items-center h-full">
-        <img
-          src={heroPet}
-          className="absolute inset-0 h-full w-full object-cover object-center"
-          alt="Pets"
-        />
-        {/* Gradiente de baixo pra cima */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#b7102a]/80 via-transparent to-[#b7102a]/20 mix-blend-multiply" />
-        {/* Gradiente de cima pra baixo */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#b7102a] via-[#b7102a]/40 to-transparent h-[50%] mix-blend-multiply" />
-        <div className="relative z-10 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl text-white max-w-lg p-8 mb-4 w-full">
-          <div className="grid grid-cols-1 gap-6">
-            {[
-              {
-                title: "Emergências Rápidas",
-                desc: "Encontre doadores compatíveis em segundos quando cada minuto conta.",
-              },
-              {
-                title: "Doadores Voluntários",
-                desc: "Cadastre seus animais e ajude a salvar vidas de outros pets na sua região.",
-              },
-              {
-                title: "Rede Validada",
-                desc: "Dados conferidos por médicos veterinários para total segurança.",
-              },
-            ].map((item) => (
-              <div key={item.title} className="flex gap-4 items-center">
-                <span className="material-symbols-outlined text-[#8e001b] bg-white p-1 rounded-full text-lg shadow-lg shrink-0">
-                  done
-                </span>
-                <div>
-                  <p className="font-bold text-lg uppercase tracking-tight">
-                    {item.title}
-                  </p>
-                  <p className="text-sm opacity-90 leading-relaxed">
-                    {item.desc}
+              <div className="shrink-0 flex flex-col gap-4 pb-12">
+                <button
+                  type="submit"
+                  className="w-full px-8 text-white font-bold uppercase tracking-widest hover:brightness-110 transition-all active:scale-[0.98] shadow-md text-base bg-[#8e001b] rounded-full py-4"
+                >
+                  Entrar
+                </button>
+                <div className="flex items-center gap-4">
+                  <div className="h-[1px] flex-1 bg-neutral-200" />
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                    ou
+                  </span>
+                  <div className="h-[1px] flex-1 bg-neutral-200" />
+                </div>
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-center gap-3 bg-black text-white font-semibold hover:bg-neutral-800 transition-all text-sm rounded-full py-4"
+                >
+                  <GoogleIcon />
+                  Entrar com Google
+                </button>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-[#5f5e5e]">
+                    Não tem uma conta?{" "}
+                    <Link
+                      to="/cadastrar"
+                      className="text-[#8e001b] font-bold hover:underline"
+                    >
+                      Cadastre-se
+                    </Link>
+                    <span className="mx-2 text-[#636262]/50">•</span>
+                    <Link
+                      to="/"
+                      className="text-[#8e001b] font-bold hover:underline"
+                    >
+                      Voltar ao início
+                    </Link>
                   </p>
                 </div>
               </div>
-            ))}
+            </form>
           </div>
-        </div>
-      </section>
-    </main>
+        </section>
+
+        {/* Coluna direita — imagem */}
+        <section className="hidden md:flex md:w-1/2 bg-black relative overflow-hidden p-12 flex-col justify-end items-center h-full">
+          <img
+            src={heroPet}
+            className="absolute inset-0 h-full w-full object-cover object-center"
+            alt="Pets"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#b7102a]/80 via-transparent to-[#b7102a]/20 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#b7102a] via-[#b7102a]/40 to-transparent h-[50%] mix-blend-multiply" />
+          <div className="relative z-10 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl text-white max-w-lg p-8 mb-4 w-full">
+            <div className="grid grid-cols-1 gap-6">
+              {[
+                {
+                  title: "Emergências Rápidas",
+                  desc: "Encontre doadores compatíveis em segundos quando cada minuto conta.",
+                },
+                {
+                  title: "Doadores Voluntários",
+                  desc: "Cadastre seus animais e ajude a salvar vidas de outros pets na sua região.",
+                },
+                {
+                  title: "Rede Validada",
+                  desc: "Dados conferidos por médicos veterinários para total segurança.",
+                },
+              ].map((item) => (
+                <div key={item.title} className="flex gap-4 items-center">
+                  <span className="material-symbols-outlined text-[#8e001b] bg-white p-1 rounded-full text-lg shadow-lg shrink-0">
+                    done
+                  </span>
+                  <div>
+                    <p className="font-bold text-lg uppercase tracking-tight">
+                      {item.title}
+                    </p>
+                    <p className="text-sm opacity-90 leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+    </>
   );
 }
 

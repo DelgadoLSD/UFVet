@@ -248,19 +248,19 @@ function DonorCard({ doador, onClick }) {
 
         {/* Tags clínicas */}
         <div className="flex items-center gap-2 mt-1">
-          <div className="flex items-center h-10 px-3 rounded-xl bg-[#ffdad8] border border-[#ffb3b1] shrink-0">
-            <span className="text-[9px] uppercase font-bold text-[#8e001b] opacity-70 mr-2">
-              Tipo
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#8e001b]">
+            <span className="material-symbols-outlined text-[#8e001b] text-[15px]">
+              bloodtype
             </span>
-            <span className="text-sm font-semibold text-[#8e001b] whitespace-nowrap">
+            <span className="text-sm font-bold text-[#8e001b] whitespace-nowrap">
               {doador.tipo}
             </span>
           </div>
-          <div className="flex items-center h-10 px-3 rounded-xl bg-[#f3f3f3] border border-[#e4bebc] flex-1">
-            <span className="text-[9px] uppercase font-bold text-[#5f5e5e] mr-2">
-              Peso
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f3f3f3] border border-[#e4bebc]">
+            <span className="material-symbols-outlined text-[#5f5e5e] text-[15px]">
+              monitor_weight
             </span>
-            <span className="text-sm font-semibold text-[#1a1c1c]">
+            <span className="text-sm font-bold text-[#1a1c1c] whitespace-nowrap">
               {doador.peso}kg
             </span>
           </div>
@@ -346,7 +346,7 @@ function BuscaPage() {
 
   return (
     <>
-      <Header />
+      <Header dark={true} />
       <main className="max-w-[1536px] mx-auto flex flex-col md:flex-row gap-6 px-5 md:px-16 py-12 pt-28">
         {/* Sidebar de filtros */}
         <aside className="w-full md:w-1/4 flex flex-col gap-6">

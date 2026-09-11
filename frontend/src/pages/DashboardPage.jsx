@@ -804,7 +804,7 @@ function DashboardPage() {
 
   return (
     <>
-      <Header />
+      <Header dark={true} />
 
       {/* Modal — renderiza por cima de tudo quando aberto */}
       {modalAberto && (
