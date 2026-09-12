@@ -1,6 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Header from "../components/Header";
+import dog1 from "../assets/dog1-image.jpg";
+import dog1_1 from "../assets/dog1_1-image.jpg";
+import dog1_2 from "../assets/dog1_2-image.jpg";
+import dog2 from "../assets/dog2-image.jpg";
 
 const VISUALIZANDO_PROPRIO_PERFIL = true;
 const USUARIO_E_VETERINARIO = true;
@@ -23,6 +27,7 @@ const ANIMAIS_MOCK = [
   {
     id: 1,
     nome: "Zeus",
+    fotos: [dog1, dog1_1, dog1_2],
     especie: "Cão",
     raca: "Golden Retr.",
     peso: "32kg",
@@ -67,6 +72,7 @@ const ANIMAIS_MOCK = [
   {
     id: 2,
     nome: "Luna",
+    fotos: [dog2],
     especie: "Gato",
     raca: "SRD",
     peso: "4.5kg",
@@ -148,7 +154,71 @@ function docBg(status) {
   return "bg-[#eeeeee]";
 }
 
-// ─── Modal de cadastro de animal ──────────────────────────────────────────────
+// ─── Carrossel de fotos do animal ─────────────────────────────────────────────
+function CarrosselFotos({ fotos, nome }) {
+  const [atual, setAtual] = useState(0);
+  const [pausado, setPausado] = useState(false);
+
+  // Placeholder quando não há fotos
+  if (!fotos || fotos.length === 0) {
+    return (
+      <div className="w-full h-56 lg:h-full min-h-[240px] bg-[#faf0f0] border-2 border-dashed border-[#e4bebc] flex flex-col items-center justify-center gap-2 rounded-2xl">
+        <span className="material-symbols-outlined text-[#c9a5a5] text-5xl">
+          photo_camera
+        </span>
+        <span className="text-[#c9a5a5] text-xs font-semibold">
+          Sem foto ainda
+        </span>
+      </div>
+    );
+  }
+
+  // Auto-play a cada 3s, pausa no hover — só se tiver mais de uma foto
+  useEffect(() => {
+    if (fotos.length <= 1 || pausado) return;
+    const timer = setInterval(() => {
+      setAtual((prev) => (prev + 1) % fotos.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [fotos.length, pausado]);
+
+  return (
+    <div
+      className="relative w-full h-56 lg:h-full min-h-[240px] rounded-2xl overflow-hidden border border-[#e4bebc] group"
+      onMouseEnter={() => setPausado(true)}
+      onMouseLeave={() => setPausado(false)}
+    >
+      {/* Fotos empilhadas com fade */}
+      {fotos.map((foto, i) => (
+        <img
+          key={i}
+          src={foto}
+          alt={`${nome} — foto ${i + 1}`}
+          className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ${
+            i === atual ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      ))}
+
+      {/* Bolinhas indicadoras — só se tiver mais de uma foto */}
+      {fotos.length > 1 && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+          {fotos.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setAtual(i)}
+              className={`h-1.5 rounded-full transition-all ${
+                i === atual ? "w-4 bg-white" : "w-1.5 bg-white/50"
+              }`}
+              aria-label={`Ir para foto ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ModalCadastroAnimal({ onClose }) {
   const [form, setForm] = useState({
     nome: "",
@@ -167,15 +237,34 @@ function ModalCadastroAnimal({ onClose }) {
     vacinas: "",
     observacoes: "",
   });
+  const [fotos, setFotos] = useState([]);
 
-  const handleChange = (field, value) => {
+  const handleChange = (field, value) =>
     setForm((prev) => ({ ...prev, [field]: value }));
+
+  const handleFotos = (e) => {
+    const arquivos = Array.from(e.target.files);
+    const total = fotos.length + arquivos.length;
+    const permitidos =
+      total > 5 ? arquivos.slice(0, 5 - fotos.length) : arquivos;
+    const novas = permitidos.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+    setFotos((prev) => [...prev, ...novas]);
+  };
+
+  const removerFoto = (index) => {
+    setFotos((prev) => {
+      URL.revokeObjectURL(prev[index].preview);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Novo animal:", form);
     alert("Animal cadastrado! (integração com back-end em breve)");
+    fotos.forEach((f) => URL.revokeObjectURL(f.preview));
     onClose();
   };
 
@@ -185,13 +274,11 @@ function ModalCadastroAnimal({ onClose }) {
     "block text-[11px] font-bold uppercase tracking-widest text-[#8e001b] mb-1.5";
 
   return (
-    // Overlay escuro
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Cabeçalho do modal */}
         <div className="sticky top-0 bg-white border-b border-[#e4bebc] px-8 py-5 flex items-center justify-between rounded-t-2xl z-10">
           <div>
             <h2 className="text-xl font-bold text-[#1a1c1c]">
@@ -211,7 +298,6 @@ function ModalCadastroAnimal({ onClose }) {
           </button>
         </div>
 
-        {/* Formulário */}
         <form onSubmit={handleSubmit} className="px-8 py-6 space-y-6">
           {/* Nome */}
           <div>
@@ -231,8 +317,8 @@ function ModalCadastroAnimal({ onClose }) {
             <label className={labelClass}>Espécie *</label>
             <div className="flex gap-3">
               {[
-                { val: "cao", label: "Cão", icon: "pets" },
-                { val: "gato", label: "Gato", icon: "pets" },
+                { val: "cao", label: "Cão" },
+                { val: "gato", label: "Gato" },
               ].map((item) => (
                 <button
                   key={item.val}
@@ -241,14 +327,10 @@ function ModalCadastroAnimal({ onClose }) {
                     handleChange("especie", item.val);
                     handleChange("tipoSanguineo", "");
                   }}
-                  className={`flex-1 py-2.5 px-4 border-2 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition-all ${
-                    form.especie === item.val
-                      ? "bg-[#8e001b] text-white border-[#8e001b]"
-                      : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"
-                  }`}
+                  className={`flex-1 py-2.5 px-4 border-2 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition-all ${form.especie === item.val ? "bg-[#8e001b] text-white border-[#8e001b]" : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"}`}
                 >
                   <span className="material-symbols-outlined text-[18px]">
-                    {item.icon}
+                    pets
                   </span>
                   {item.label}
                 </button>
@@ -296,11 +378,7 @@ function ModalCadastroAnimal({ onClose }) {
                   key={s}
                   type="button"
                   onClick={() => handleChange("sexo", s)}
-                  className={`flex-1 py-2.5 px-4 border-2 rounded-xl text-sm font-semibold transition-all ${
-                    form.sexo === s
-                      ? "bg-[#8e001b] text-white border-[#8e001b]"
-                      : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"
-                  }`}
+                  className={`flex-1 py-2.5 px-4 border-2 rounded-xl text-sm font-semibold transition-all ${form.sexo === s ? "bg-[#8e001b] text-white border-[#8e001b]" : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"}`}
                 >
                   {s}
                 </button>
@@ -320,11 +398,7 @@ function ModalCadastroAnimal({ onClose }) {
                   key={String(item.val)}
                   type="button"
                   onClick={() => handleChange("idadeConhecida", item.val)}
-                  className={`flex-1 py-2 px-3 border-2 rounded-xl text-xs font-semibold transition-all ${
-                    form.idadeConhecida === item.val
-                      ? "bg-[#8e001b] text-white border-[#8e001b]"
-                      : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"
-                  }`}
+                  className={`flex-1 py-2 px-3 border-2 rounded-xl text-xs font-semibold transition-all ${form.idadeConhecida === item.val ? "bg-[#8e001b] text-white border-[#8e001b]" : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"}`}
                 >
                   {item.label}
                 </button>
@@ -340,7 +414,7 @@ function ModalCadastroAnimal({ onClose }) {
             ) : (
               <input
                 type="text"
-                placeholder="Ex: aproximadamente 3 anos, entre 2 e 4 anos..."
+                placeholder="Ex: aproximadamente 3 anos..."
                 value={form.idadeEstimada}
                 onChange={(e) => handleChange("idadeEstimada", e.target.value)}
                 className={inputClass}
@@ -371,11 +445,7 @@ function ModalCadastroAnimal({ onClose }) {
                   key={tipo}
                   type="button"
                   onClick={() => handleChange("tipoSanguineo", tipo)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
-                    form.tipoSanguineo === tipo
-                      ? "bg-[#8e001b] text-white border-[#8e001b]"
-                      : "bg-[#f3f3f3] text-[#1a1c1c] border-transparent hover:border-[#8e001b]"
-                  }`}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${form.tipoSanguineo === tipo ? "bg-[#8e001b] text-white border-[#8e001b]" : "bg-[#f3f3f3] text-[#1a1c1c] border-transparent hover:border-[#8e001b]"}`}
                 >
                   {tipo}
                 </button>
@@ -401,11 +471,7 @@ function ModalCadastroAnimal({ onClose }) {
                   key={item.val}
                   type="button"
                   onClick={() => handleChange("reprodutivo", item.val)}
-                  className={`flex-1 py-2.5 px-4 border-2 rounded-xl text-sm font-semibold transition-all ${
-                    form.reprodutivo === item.val
-                      ? "bg-[#8e001b] text-white border-[#8e001b]"
-                      : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"
-                  }`}
+                  className={`flex-1 py-2.5 px-4 border-2 rounded-xl text-sm font-semibold transition-all ${form.reprodutivo === item.val ? "bg-[#8e001b] text-white border-[#8e001b]" : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"}`}
                 >
                   {item.label}
                 </button>
@@ -413,7 +479,7 @@ function ModalCadastroAnimal({ onClose }) {
             </div>
           </div>
 
-          {/* Perguntas sim/não */}
+          {/* Medicamentos / Transfusão / Vacinas */}
           {[
             { field: "medicamentos", label: "Está tomando algum medicamento?" },
             { field: "transfusao", label: "Já recebeu transfusão de sangue?" },
@@ -427,11 +493,7 @@ function ModalCadastroAnimal({ onClose }) {
                     key={opcao}
                     type="button"
                     onClick={() => handleChange(item.field, opcao)}
-                    className={`flex-1 py-2.5 px-4 border-2 rounded-xl text-sm font-semibold transition-all ${
-                      form[item.field] === opcao
-                        ? "bg-[#8e001b] text-white border-[#8e001b]"
-                        : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"
-                    }`}
+                    className={`flex-1 py-2.5 px-4 border-2 rounded-xl text-sm font-semibold transition-all ${form[item.field] === opcao ? "bg-[#8e001b] text-white border-[#8e001b]" : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"}`}
                   >
                     {opcao}
                   </button>
@@ -444,12 +506,96 @@ function ModalCadastroAnimal({ onClose }) {
           <div>
             <label className={labelClass}>Observações</label>
             <textarea
-              placeholder="Comportamento durante exames, informações importantes para o veterinário..."
+              placeholder="Comportamento durante exames..."
               value={form.observacoes}
               onChange={(e) => handleChange("observacoes", e.target.value)}
               rows={3}
               className={`${inputClass} resize-none`}
             />
+          </div>
+
+          {/* ── Fotos do animal ── */}
+          <div>
+            <label className={labelClass}>
+              Fotos do animal
+              <span className="ml-2 text-[#5f5e5e] normal-case font-normal tracking-normal">
+                ({fotos.length}/5)
+              </span>
+            </label>
+            <p className="text-xs text-[#5f5e5e] mb-3">
+              Adicione até 5 fotos do seu pet. A primeira foto será a principal
+              exibida no perfil.
+            </p>
+
+            {/* Previews das fotos */}
+            {fotos.length > 0 && (
+              <div className="flex gap-3 flex-wrap mb-4">
+                {fotos.map((foto, i) => (
+                  <div
+                    key={i}
+                    className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-[#e4bebc] group"
+                  >
+                    <img
+                      src={foto.preview}
+                      alt={`Foto ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    {i === 0 && (
+                      <div className="absolute top-1 left-1 bg-[#8e001b] text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
+                        Principal
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removerFoto(i)}
+                      className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                    >
+                      <span className="material-symbols-outlined text-white text-xl">
+                        delete
+                      </span>
+                    </button>
+                  </div>
+                ))}
+
+                {/* Slot de adicionar mais — aparece se ainda há espaço */}
+                {fotos.length < 5 && (
+                  <label className="w-20 h-20 rounded-xl border-2 border-dashed border-[#e4bebc] flex flex-col items-center justify-center cursor-pointer hover:border-[#8e001b] hover:bg-[#faf0f0] transition-all">
+                    <span className="material-symbols-outlined text-[#c9a5a5] text-2xl">
+                      add_photo_alternate
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleFotos}
+                    />
+                  </label>
+                )}
+              </div>
+            )}
+
+            {/* Área de upload — aparece só se não tem nenhuma foto ainda */}
+            {fotos.length === 0 && (
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#e4bebc] rounded-xl cursor-pointer hover:border-[#8e001b] hover:bg-[#faf0f0] transition-all">
+                <span className="material-symbols-outlined text-[#c9a5a5] text-4xl mb-2">
+                  photo_camera
+                </span>
+                <span className="text-sm font-semibold text-[#5f5e5e]">
+                  Clique para adicionar fotos
+                </span>
+                <span className="text-xs text-[#c9a5a5] mt-1">
+                  JPG, PNG — até 5 fotos
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFotos}
+                />
+              </label>
+            )}
           </div>
 
           {/* Botões */}
@@ -484,71 +630,94 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
 
   const adicionarObservacao = () => {
     if (!obsVet.trim()) return;
-    const nova = {
-      data: new Date().toLocaleDateString("pt-BR"),
-      autor: "Veterinário (você)",
-      texto: obsVet.trim(),
-    };
-    setHistoricoLocal((prev) => [nova, ...prev]);
+    setHistoricoLocal((prev) => [
+      {
+        data: new Date().toLocaleDateString("pt-BR"),
+        autor: "Veterinário (você)",
+        texto: obsVet.trim(),
+      },
+      ...prev,
+    ]);
     setObsVet("");
     setAdicionandoObs(false);
   };
 
+  const btnBase =
+    "flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-xs transition-all active:scale-95";
+
   return (
     <div className="bg-white rounded-2xl border border-[#8e001b]/20 shadow-sm overflow-hidden mb-6">
-      <div className="p-6 px-8 flex justify-between items-center flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-[#ffdad8] border border-[#e4bebc] flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-[#8e001b] text-3xl">
-              pets
+      {/* ── Cabeçalho ── */}
+      <div className="px-8 pt-6 pb-4 flex justify-between items-center gap-4 flex-wrap border-b border-[#e4bebc]">
+        <div className="flex items-center gap-3 flex-wrap">
+          <h3 className="font-extrabold text-2xl text-[#8e001b] leading-none">
+            {animal.nome}
+          </h3>
+          <span className="text-xs font-bold text-[#5b403f] uppercase bg-[#eeeeee] px-2.5 py-1 rounded">
+            {animal.especie}
+          </span>
+          {isProprioTutor ? (
+            <button
+              onClick={() => setDisponivel(!disponivel)}
+              title="Clique para alterar a disponibilidade"
+              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full transition-all active:scale-95 ${
+                disponivel
+                  ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  : "bg-[#eeeeee] text-[#5f5e5e] hover:bg-[#e0e0e0]"
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${disponivel ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`}
+              />
+              {disponivel
+                ? "Disponível para doação"
+                : "Indisponível para doação"}
+              <span className="material-symbols-outlined text-[14px] opacity-60">
+                swap_horiz
+              </span>
+            </button>
+          ) : (
+            <span
+              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${
+                disponivel
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-[#eeeeee] text-[#5f5e5e]"
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${disponivel ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`}
+              />
+              {disponivel
+                ? "Disponível para doação"
+                : "Indisponível para doação"}
             </span>
-          </div>
-          <div className="flex flex-col">
-            <h3 className="font-bold text-xl text-[#1a1c1c] leading-tight">
-              {animal.nome}
-            </h3>
-            <span className="text-[10px] font-bold text-[#5b403f] uppercase bg-[#eeeeee] px-2 py-0.5 rounded w-fit mt-1">
-              {animal.especie}
-            </span>
-          </div>
+          )}
         </div>
 
-        {isProprioTutor && (
-          <button
-            onClick={() => setDisponivel(!disponivel)}
-            className={`flex items-center gap-3 px-4 py-2 rounded-full transition-all duration-300 shadow-sm ${disponivel ? "bg-[#8e001b] text-white" : "bg-[#e8e8e8] text-[#5f5e5e]"}`}
-          >
-            <div
-              className={`w-3 h-3 bg-white rounded-full ${disponivel ? "animate-pulse" : ""}`}
-            />
-            <span className="font-bold text-sm">
-              {disponivel ? "Disponível para doação" : "Indisponível"}
-            </span>
-          </button>
-        )}
-
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {isVet && (
             <button
               onClick={() => setAdicionandoObs(true)}
-              className="border-2 border-emerald-600 text-emerald-600 font-bold hover:bg-emerald-600 hover:text-white transition-colors px-4 py-1.5 rounded-full flex items-center gap-1.5 text-sm"
+              className={`${btnBase} bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white`}
             >
-              <span className="material-symbols-outlined text-[18px]">
+              <span className="material-symbols-outlined text-[16px]">
                 fact_check
               </span>
-              Auditar Informações
+              Auditar
             </button>
           )}
           {isProprioTutor && (
             <>
-              <button className="border-2 border-[#8e001b] text-[#8e001b] font-bold hover:bg-[#8e001b] hover:text-white transition-colors px-4 py-1.5 rounded-full flex items-center gap-1.5 text-sm">
-                <span className="material-symbols-outlined text-[18px]">
+              <button
+                className={`${btnBase} bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white`}
+              >
+                <span className="material-symbols-outlined text-[16px]">
                   edit
                 </span>
                 Editar
               </button>
               {confirmandoExclusao ? (
-                <div className="flex items-center gap-2 bg-red-50 border border-red-200 px-3 py-1.5 rounded-full">
+                <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">
                   <span className="text-xs font-bold text-red-600">
                     Tem certeza?
                   </span>
@@ -559,13 +728,13 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
                         "Animal excluído! (integração com back-end em breve)",
                       );
                     }}
-                    className="text-[10px] font-bold bg-red-500 text-white px-3 py-1 rounded-full hover:bg-red-600 transition-colors"
+                    className="text-[10px] font-bold bg-red-500 text-white px-2 py-0.5 rounded-full hover:bg-red-600"
                   >
                     Sim
                   </button>
                   <button
                     onClick={() => setConfirmandoExclusao(false)}
-                    className="text-[10px] font-bold text-red-500 hover:text-red-700"
+                    className="text-[10px] font-bold text-red-500"
                   >
                     Não
                   </button>
@@ -573,9 +742,9 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
               ) : (
                 <button
                   onClick={() => setConfirmandoExclusao(true)}
-                  className="border-2 border-red-500 text-red-500 font-bold hover:bg-red-500 hover:text-white transition-colors px-4 py-1.5 rounded-full flex items-center gap-1.5 text-sm"
+                  className={`${btnBase} bg-[#f5f5f5] text-[#5f5e5e] hover:bg-red-500 hover:text-white`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">
+                  <span className="material-symbols-outlined text-[16px]">
                     delete
                   </span>
                   Excluir
@@ -586,182 +755,196 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
         </div>
       </div>
 
-      <div className="border-t border-[#e4bebc] pt-6 mx-8" />
+      {/* ── Corpo: foto alta à esquerda + todo o conteúdo à direita ── */}
+      <div className="flex gap-6 flex-col lg:flex-row p-8">
+        {/* Foto — ocupa toda a altura do corpo */}
+        <div className="w-full lg:w-64 shrink-0">
+          <CarrosselFotos fotos={animal.fotos} nome={animal.nome} />
+        </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-6 gap-x-4 pb-8 px-8">
-        {CAMPOS_ANIMAL.map((campo) => (
-          <div key={campo.key} className="flex flex-col items-start gap-1">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#8e001b] text-[18px]">
-                {campo.icon}
-              </span>
-              <span className="text-[#8e001b] text-[11px] font-bold uppercase tracking-widest">
-                {campo.label}
-              </span>
-            </div>
-            {campo.destaque ? (
-              <span className="text-[#8e001b] text-lg font-extrabold">
-                {animal[campo.key]}
-              </span>
-            ) : campo.extra ? (
-              <div className="flex flex-col">
-                <span className="text-[#1a1c1c] font-bold text-sm">
-                  {animal[campo.key]}
+        {/* Coluna direita: dados + validação + documentos + histórico */}
+        <div className="flex-1 min-w-0 flex flex-col gap-6">
+          {/* Grid de dados */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {CAMPOS_ANIMAL.map((campo) => (
+              <div
+                key={campo.key}
+                className="bg-[#fafafa] border border-[#f0e6e6] rounded-xl p-3 flex flex-col items-center justify-center text-center gap-1.5"
+              >
+                <span className="text-[#8e001b] text-[11px] font-bold uppercase tracking-widest">
+                  {campo.label}
                 </span>
-                <span className="text-emerald-600 font-bold text-[10px] uppercase tracking-wider">
-                  {animal[campo.extra]}
+                {campo.destaque ? (
+                  <span className="text-[#8e001b] text-lg font-extrabold leading-tight">
+                    {animal[campo.key]}
+                  </span>
+                ) : campo.extra ? (
+                  <div className="flex flex-col items-center">
+                    <span className="text-[#1a1c1c] font-bold text-[15px] leading-tight">
+                      {animal[campo.key]}
+                    </span>
+                    <span className="text-emerald-600 font-bold text-[9px] uppercase tracking-wider mt-0.5">
+                      {animal[campo.extra]}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-[#1a1c1c] font-semibold text-[15px] leading-tight">
+                    {animal[campo.key]}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Banner de validação */}
+          {animal.validacao.status === "validado" ? (
+            <div className="bg-emerald-50 border-l-4 border-emerald-600 px-6 py-4 flex items-center justify-between rounded-r-lg">
+              <div className="flex items-center gap-4">
+                <span className="material-symbols-outlined text-emerald-600 text-[32px]">
+                  verified_user
+                </span>
+                <div className="flex flex-col">
+                  <span className="font-bold text-emerald-900 text-sm">
+                    Validado clinicamente
+                  </span>
+                  <span className="text-emerald-800 text-xs">
+                    {animal.validacao.veterinario} — CRMV{" "}
+                    {animal.validacao.crmv}
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-8 text-xs text-emerald-800">
+                <div className="flex flex-col items-end">
+                  <span className="opacity-70 uppercase font-bold text-[10px]">
+                    Validado em:
+                  </span>
+                  <span className="font-semibold">
+                    {animal.validacao.validadoEm}
+                  </span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="opacity-70 uppercase font-bold text-[10px]">
+                    Válido até:
+                  </span>
+                  <span className="font-semibold">
+                    {animal.validacao.validoAte}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-amber-50 border-l-4 border-amber-500 px-6 py-4 flex items-center gap-4 rounded-r-lg">
+              <span className="material-symbols-outlined text-amber-600 text-[32px]">
+                schedule
+              </span>
+              <div className="flex flex-col">
+                <span className="font-bold text-amber-900 text-sm">
+                  Informações não validadas
+                </span>
+                <span className="text-amber-800 text-xs">
+                  Aguardando revisão veterinária
                 </span>
               </div>
-            ) : (
-              <span className="text-[#1a1c1c] font-semibold text-sm">
-                {animal[campo.key]}
-              </span>
+            </div>
+          )}
+
+          {/* Documentos */}
+          <div>
+            <button
+              onClick={() => setDocsAbertos(!docsAbertos)}
+              className="flex items-center gap-2 text-[#8e001b] font-bold text-sm mb-4"
+            >
+              {docsAbertos ? "Ocultar documentos ↑" : "Ver documentos ↓"}
+            </button>
+            {docsAbertos && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {animal.documentos.map((doc) => (
+                  <div
+                    key={doc.nome}
+                    className={`${docBg(doc.status)} p-4 rounded-xl flex items-center justify-between`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-[#8e001b]">
+                        description
+                      </span>
+                      <span className="font-semibold text-sm">{doc.nome}</span>
+                    </div>
+                    <DocBadge status={doc.status} />
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-        ))}
+
+          {/* Formulário de observação */}
+          {isVet && adicionandoObs && (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+              <p className="text-sm font-bold text-emerald-900 mb-3">
+                Nova observação clínica
+              </p>
+              <textarea
+                value={obsVet}
+                onChange={(e) => setObsVet(e.target.value)}
+                placeholder="Descreva sua observação clínica..."
+                className="w-full border border-emerald-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                rows={3}
+              />
+              <div className="flex gap-3 mt-3">
+                <button
+                  onClick={adicionarObservacao}
+                  className="bg-emerald-600 text-white px-6 py-2 rounded-full text-sm font-bold hover:bg-emerald-700 transition-colors"
+                >
+                  Salvar observação
+                </button>
+                <button
+                  onClick={() => {
+                    setAdicionandoObs(false);
+                    setObsVet("");
+                  }}
+                  className="text-sm font-bold text-[#5f5e5e] hover:text-[#1a1c1c]"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Histórico */}
+          {historicoLocal.length > 0 ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-3">
+                Histórico
+              </p>
+              <div className="space-y-3">
+                {historicoLocal.map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex gap-3 text-sm border-l-2 border-[#e4bebc] pl-4"
+                  >
+                    <div>
+                      <p className="text-[10px] font-bold text-[#5f5e5e] uppercase tracking-wider">
+                        {item.data} — {item.autor}
+                      </p>
+                      <p className="text-[#1a1c1c] mt-0.5">{item.texto}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-2">
+                Histórico
+              </p>
+              <p className="text-sm text-[#5f5e5e] italic">
+                Nenhuma observação registrada ainda.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {animal.validacao.status === "validado" ? (
-        <div className="mx-8 mb-6 bg-emerald-50 border-l-4 border-emerald-600 px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="material-symbols-outlined text-emerald-600 text-[32px]">
-              verified_user
-            </span>
-            <div className="flex flex-col">
-              <span className="font-bold text-emerald-900 text-sm">
-                Validado clinicamente
-              </span>
-              <span className="text-emerald-800 text-xs">
-                {animal.validacao.veterinario} — CRMV {animal.validacao.crmv}
-              </span>
-            </div>
-          </div>
-          <div className="flex gap-8 text-xs text-emerald-800">
-            <div className="flex flex-col items-end">
-              <span className="opacity-70 uppercase font-bold text-[10px]">
-                Validado em:
-              </span>
-              <span className="font-semibold">
-                {animal.validacao.validadoEm}
-              </span>
-            </div>
-            <div className="flex flex-col items-end">
-              <span className="opacity-70 uppercase font-bold text-[10px]">
-                Válido até:
-              </span>
-              <span className="font-semibold">
-                {animal.validacao.validoAte}
-              </span>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="mx-8 mb-6 bg-amber-50 border-l-4 border-amber-500 px-8 py-4 flex items-center gap-4">
-          <span className="material-symbols-outlined text-amber-600 text-[32px]">
-            schedule
-          </span>
-          <div className="flex flex-col">
-            <span className="font-bold text-amber-900 text-sm">
-              Informações não validadas
-            </span>
-            <span className="text-amber-800 text-xs">
-              Aguardando revisão veterinária
-            </span>
-          </div>
-        </div>
-      )}
-
-      <div className="mx-8 mb-6">
-        <button
-          onClick={() => setDocsAbertos(!docsAbertos)}
-          className="flex items-center gap-2 text-[#8e001b] font-bold text-sm mb-4"
-        >
-          {docsAbertos ? "Ocultar documentos ↑" : "Ver documentos ↓"}
-        </button>
-        {docsAbertos && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4">
-            {animal.documentos.map((doc) => (
-              <div
-                key={doc.nome}
-                className={`${docBg(doc.status)} p-4 rounded-xl flex items-center justify-between`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[#8e001b]">
-                    description
-                  </span>
-                  <span className="font-semibold text-sm">{doc.nome}</span>
-                </div>
-                <DocBadge status={doc.status} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {isVet && adicionandoObs && (
-        <div className="mx-8 mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-          <p className="text-sm font-bold text-emerald-900 mb-3">
-            Nova observação clínica
-          </p>
-          <textarea
-            value={obsVet}
-            onChange={(e) => setObsVet(e.target.value)}
-            placeholder="Descreva sua observação clínica..."
-            className="w-full border border-emerald-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-            rows={3}
-          />
-          <div className="flex gap-3 mt-3">
-            <button
-              onClick={adicionarObservacao}
-              className="bg-emerald-600 text-white px-6 py-2 rounded-full text-sm font-bold hover:bg-emerald-700 transition-colors"
-            >
-              Salvar observação
-            </button>
-            <button
-              onClick={() => {
-                setAdicionandoObs(false);
-                setObsVet("");
-              }}
-              className="text-sm font-bold text-[#5f5e5e] hover:text-[#1a1c1c]"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      )}
-
-      {historicoLocal.length > 0 ? (
-        <div className="mx-8 mb-6">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-3">
-            Histórico
-          </p>
-          <div className="space-y-3">
-            {historicoLocal.map((item, i) => (
-              <div
-                key={i}
-                className="flex gap-3 text-sm border-l-2 border-[#e4bebc] pl-4"
-              >
-                <div>
-                  <p className="text-[10px] font-bold text-[#5f5e5e] uppercase tracking-wider">
-                    {item.data} — {item.autor}
-                  </p>
-                  <p className="text-[#1a1c1c] mt-0.5">{item.texto}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="mx-8 mb-6">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-2">
-            Histórico
-          </p>
-          <p className="text-sm text-[#5f5e5e] italic">
-            Nenhuma observação registrada ainda.
-          </p>
-        </div>
-      )}
-
+      {/* ── Observações — largura total no rodapé ── */}
       <div className="border-t border-[#e4bebc] bg-white p-4 px-8 text-[#5b403f] text-sm">
         <p className="italic">
           <strong className="font-bold text-[#1a1c1c] not-italic">
@@ -773,7 +956,6 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
     </div>
   );
 }
-
 function DashboardPage() {
   const { id } = useParams();
   const [telefoneVisivel, setTelefoneVisivel] = useState(false);
@@ -805,8 +987,6 @@ function DashboardPage() {
   return (
     <>
       <Header dark={true} />
-
-      {/* Modal — renderiza por cima de tudo quando aberto */}
       {modalAberto && (
         <ModalCadastroAnimal onClose={() => setModalAberto(false)} />
       )}
@@ -916,7 +1096,6 @@ function DashboardPage() {
               isVet={isVet}
             />
           ))}
-
           {isProprioTutor && (
             <button
               onClick={() => setModalAberto(true)}
