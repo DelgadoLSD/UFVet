@@ -1,13 +1,26 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
+import dog2 from "../assets/dogs/dog2_0-image.jpg";
+import dog3 from "../assets/dogs/dog3_0-image.jpg";
+import dog4 from "../assets/dogs/dog4_0-image.jpg";
+import dog5 from "../assets/dogs/dog5_0-image.jpg";
+import dog6 from "../assets/dogs/dog6_0-image.jpg";
+import cat1 from "../assets/cats/cat1_0-image.jpg";
+import cat2 from "../assets/cats/cat2_0-image.jpg";
+import cat3 from "../assets/cats/cat3_0-image.jpg";
+import cat4 from "../assets/cats/cat4_0-image.jpg";
+import cat5 from "../assets/cats/cat5_0-image.jpg";
+import cat6 from "../assets/cats/cat6_0-image.jpg";
 
-// ─── Dados mockados ───────────────────────────────────────────────────────────
 const DOADORES_MOCK = [
-  // Cães
   {
     id: 1,
+    codigo: "A1B2C3",
     nome: "Thor",
+    tutor: "Lucas Delgado",
+    tutorCodigo: "T7X9K2",
+    foto: dog2,
     especie: "cao",
     raca: "Golden Retriever",
     idade: 4,
@@ -20,7 +33,11 @@ const DOADORES_MOCK = [
   },
   {
     id: 2,
+    codigo: "D4E5F6",
     nome: "Luna",
+    tutor: "Marina Souza",
+    tutorCodigo: "T3M8P1",
+    foto: dog3,
     especie: "cao",
     raca: "Labrador",
     idade: 3,
@@ -33,7 +50,11 @@ const DOADORES_MOCK = [
   },
   {
     id: 3,
+    codigo: "G7H8I9",
     nome: "Max",
+    tutor: "Pedro Alves",
+    tutorCodigo: "T5K2W7",
+    foto: dog4,
     especie: "cao",
     raca: "Beagle",
     idade: 5,
@@ -46,7 +67,11 @@ const DOADORES_MOCK = [
   },
   {
     id: 4,
+    codigo: "J1K2L3",
     nome: "Barão",
+    tutor: "Ana Ferreira",
+    tutorCodigo: "T9R4B6",
+    foto: dog5,
     especie: "cao",
     raca: "Bernese",
     idade: 6,
@@ -59,7 +84,11 @@ const DOADORES_MOCK = [
   },
   {
     id: 5,
+    codigo: "M4N5O6",
     nome: "Rex",
+    tutor: "Carlos Lima",
+    tutorCodigo: "T2P7X3",
+    foto: dog6,
     especie: "cao",
     raca: "Pastor Alemão",
     idade: 2,
@@ -72,20 +101,11 @@ const DOADORES_MOCK = [
   },
   {
     id: 6,
-    nome: "Maya",
-    especie: "cao",
-    raca: "Border Collie",
-    idade: 3,
-    tipo: "DEA 1.1+",
-    peso: 22,
-    distancia: 0.8,
-    bairro: "Centro",
-    status: "disponivel",
-    validado: true,
-  },
-  {
-    id: 7,
+    codigo: "P7Q8R9",
     nome: "Bolt",
+    tutor: "Julia Castro",
+    tutorCodigo: "T6W1M4",
+    foto: null,
     especie: "cao",
     raca: "Dálmata",
     idade: 4,
@@ -97,22 +117,12 @@ const DOADORES_MOCK = [
     validado: false,
   },
   {
-    id: 8,
-    nome: "Hera",
-    especie: "cao",
-    raca: "Rottweiler",
-    idade: 3,
-    tipo: "DEA 1.1+",
-    peso: 42,
-    distancia: 6.1,
-    bairro: "São Sebastião",
-    status: "disponivel",
-    validado: true,
-  },
-  // Gatos
-  {
-    id: 9,
+    id: 7,
+    codigo: "S1T2U3",
     nome: "Mia",
+    tutor: "Rafael Gomes",
+    tutorCodigo: "T8B3K9",
+    foto: cat1,
     especie: "gato",
     raca: "SRD",
     idade: 3,
@@ -124,8 +134,12 @@ const DOADORES_MOCK = [
     validado: true,
   },
   {
-    id: 10,
+    id: 8,
+    codigo: "V4W5X6",
     nome: "Simba",
+    tutor: "Beatriz Rocha",
+    tutorCodigo: "T1X6P2",
+    foto: cat2,
     especie: "gato",
     raca: "Maine Coon",
     idade: 4,
@@ -137,8 +151,12 @@ const DOADORES_MOCK = [
     validado: true,
   },
   {
-    id: 11,
+    id: 9,
+    codigo: "Y7Z8A9",
     nome: "Nala",
+    tutor: "Thiago Martins",
+    tutorCodigo: "T4M9R5",
+    foto: cat3,
     especie: "gato",
     raca: "Persa",
     idade: 2,
@@ -150,8 +168,12 @@ const DOADORES_MOCK = [
     validado: false,
   },
   {
-    id: 12,
+    id: 10,
+    codigo: "B1C2D3",
     nome: "Gizmo",
+    tutor: "Fernanda Dias",
+    tutorCodigo: "T7K4W8",
+    foto: cat4,
     especie: "gato",
     raca: "SRD",
     idade: 5,
@@ -161,6 +183,40 @@ const DOADORES_MOCK = [
     bairro: "Santa Clara",
     status: "disponivel",
     validado: true,
+  },
+  {
+    id: 11,
+    codigo: "E4F5G6",
+    nome: "Frajola",
+    tutor: "Bruno Teixeira",
+    tutorCodigo: "T2R8M1",
+    foto: cat5,
+    especie: "gato",
+    raca: "SRD",
+    idade: 3,
+    tipo: "Tipo A",
+    peso: 4.5,
+    distancia: 4.7,
+    bairro: "Centro",
+    status: "disponivel",
+    validado: true,
+  },
+  {
+    id: 12,
+    codigo: "H7I8J9",
+    nome: "Amora",
+    tutor: "Camila Nunes",
+    tutorCodigo: "T5W2K6",
+    foto: cat6,
+    especie: "gato",
+    raca: "Siamês",
+    idade: 4,
+    tipo: "Tipo B",
+    peso: 3.9,
+    distancia: 9.2,
+    bairro: "Belvedere",
+    status: "disponivel",
+    validado: false,
   },
 ];
 
@@ -172,118 +228,122 @@ const TIPOS_SANGUINEOS = {
 const PESO_MIN = { cao: 10, gato: 2 };
 const PESO_MAX = { cao: 60, gato: 10 };
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
-function AvatarPet({ especie }) {
-  return (
-    <div
-      className={`w-20 h-20 rounded-full border-4 border-white shadow-sm flex items-center justify-center shrink-0 ${
-        especie === "gato" ? "bg-blue-100" : "bg-[#ffdad8]"
-      }`}
-    >
-      <span
-        className={`material-symbols-outlined text-4xl ${
-          especie === "gato" ? "text-blue-400" : "text-[#8e001b]"
-        }`}
-      >
-        pets
-      </span>
-    </div>
-  );
-}
-
-// ─── Card de doador ───────────────────────────────────────────────────────────
 function DonorCard({ doador, onClick }) {
   const disponivel = doador.status === "disponivel";
 
   return (
     <div
-      className={`bg-white border border-[#e4bebc] rounded-xl overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-lg ${!disponivel ? "opacity-80 grayscale-[0.2]" : ""}`}
+      className={`bg-white border border-[#e4bebc] rounded-2xl overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-lg ${!disponivel ? "opacity-80 grayscale-[0.2]" : ""}`}
     >
-      <div className="p-6 flex flex-col gap-3">
-        {/* Topo: avatar + badges */}
-        <div className="flex items-start justify-between">
-          <div className="relative">
-            <AvatarPet especie={doador.especie} />
-            <div
-              className={`absolute bottom-0 right-0 w-5 h-5 border-2 border-white rounded-full ${disponivel ? "bg-green-500" : "bg-gray-400"}`}
+      <div className="p-5 flex gap-4 items-stretch">
+        {/* Foto lateral */}
+        <div className="w-36 shrink-0 rounded-xl overflow-hidden border border-[#e4bebc]">
+          {doador.foto ? (
+            <img
+              src={doador.foto}
+              alt={doador.nome}
+              className="w-full h-full object-cover object-center"
             />
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            {doador.validado ? (
-              <span className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-0.5 rounded-full text-xs font-semibold">
-                <span
-                  className="material-symbols-outlined text-[13px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  verified_user
-                </span>
-                Validado
+          ) : (
+            <div className="w-full h-full bg-[#faf0f0] flex flex-col items-center justify-center gap-1">
+              <span className="material-symbols-outlined text-[#c9a5a5] text-3xl">
+                photo_camera
               </span>
-            ) : (
-              <span className="flex items-center gap-1 bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 h-fit mt-0.5">
-                <span className="material-symbols-outlined text-[11px]">
-                  schedule
-                </span>
-                Pendente
-              </span>
-            )}
-            {/* Localização: bairro + distância */}
-            <span className="text-[#5f5e5e] text-xs flex items-center gap-1">
-              <span className="material-symbols-outlined text-[13px]">
-                location_on
-              </span>
-              {doador.bairro}
-              {doador.distancia ? ` • ${doador.distancia} km` : ""}
-            </span>
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* Nome, raça e idade */}
-        <div>
-          <h3 className="text-xl font-bold text-[#1a1c1c]">{doador.nome}</h3>
+        {/* Dados à direita */}
+        <div className="flex-1 min-w-0 flex flex-col gap-2 py-0.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-lg font-bold text-[#1a1c1c] leading-none">
+              {doador.nome}
+            </h3>
+            <span className="text-xs font-bold text-[#8e001b] bg-[#faf0f0] px-2 py-0.5 rounded-lg shrink-0">
+              #{doador.codigo}
+            </span>
+          </div>
+
           <p className="text-[#5f5e5e] text-sm">
             {doador.raca} • {doador.idade} anos
           </p>
-        </div>
 
-        {/* Tags clínicas */}
-        <div className="flex items-center gap-2 mt-1">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#8e001b]">
-            <span className="material-symbols-outlined text-[#8e001b] text-[15px]">
-              bloodtype
+          {doador.validado ? (
+            <span className="flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-[11px] font-bold w-fit">
+              <span
+                className="material-symbols-outlined text-[14px]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                verified_user
+              </span>
+              Validado clinicamente
             </span>
-            <span className="text-sm font-bold text-[#8e001b] whitespace-nowrap">
-              {doador.tipo}
+          ) : (
+            <span className="flex items-center gap-1.5 bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full text-[11px] font-bold w-fit">
+              <span className="material-symbols-outlined text-[14px]">
+                schedule
+              </span>
+              Pendente de validação
+            </span>
+          )}
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="material-symbols-outlined text-[#5f5e5e] text-[15px]">
+              person
+            </span>
+            <span className="font-semibold text-[#1a1c1c] text-sm">
+              {doador.tutor}
+            </span>
+            <span className="text-xs font-bold text-[#8e001b] bg-[#faf0f0] px-2 py-0.5 rounded-lg shrink-0">
+              #{doador.tutorCodigo}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f3f3f3] border border-[#e4bebc]">
-            <span className="material-symbols-outlined text-[#5f5e5e] text-[15px]">
-              monitor_weight
+
+          <div className="flex items-center gap-1.5 text-sm text-[#5f5e5e]">
+            <span className="material-symbols-outlined text-[15px]">
+              location_on
             </span>
-            <span className="text-sm font-bold text-[#1a1c1c] whitespace-nowrap">
-              {doador.peso}kg
-            </span>
+            {doador.bairro}
+            {doador.distancia ? ` • ${doador.distancia} km` : ""}
           </div>
         </div>
       </div>
 
+      {/* Tags clínicas */}
+      <div className="px-5 pb-4 flex items-center gap-3">
+        <div className="flex-1 bg-white border border-[#8e001b] rounded-xl px-3 py-2 flex flex-col items-center">
+          <span className="text-[#8e001b] text-[9px] font-bold uppercase tracking-widest">
+            Tipo Sanguíneo
+          </span>
+          <span className="text-[#8e001b] text-sm font-extrabold">
+            {doador.tipo}
+          </span>
+        </div>
+        <div className="flex-1 bg-[#f3f3f3] border border-[#e4bebc] rounded-xl px-3 py-2 flex flex-col items-center">
+          <span className="text-[#5f5e5e] text-[9px] font-bold uppercase tracking-widest">
+            Peso
+          </span>
+          <span className="text-[#1a1c1c] text-sm font-extrabold">
+            {doador.peso}kg
+          </span>
+        </div>
+      </div>
+
       {/* Rodapé */}
-      <div className="mt-auto p-4 border-t border-[#e4bebc] flex items-center justify-between bg-[#f3f3f3] min-h-[72px]">
+      <div className="mt-auto px-5 py-3 border-t border-[#e4bebc] flex items-center justify-between bg-[#f3f3f3]">
         {disponivel ? (
-          <span className="text-green-600 text-sm font-semibold flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-green-600" />
-            Disponível
+          <span className="text-green-600 text-sm font-semibold flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-green-600" /> Disponível
           </span>
         ) : (
-          <span className="text-[#5f5e5e] text-sm font-semibold flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-gray-400" />
-            Ocupado
+          <span className="text-[#5f5e5e] text-sm font-semibold flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-gray-400" /> Ocupado
           </span>
         )}
         <button
           onClick={() => disponivel && onClick(doador.id)}
           disabled={!disponivel}
-          className={`rounded-full text-sm font-bold px-8 py-2.5 transition-all ${disponivel ? "bg-[#8e001b] text-white hover:brightness-110 active:scale-95" : "bg-[#5f5e5e] text-white cursor-not-allowed"}`}
+          className={`rounded-full text-sm font-bold px-7 py-2 transition-all ${disponivel ? "bg-[#8e001b] text-white hover:brightness-110 active:scale-95" : "bg-[#5f5e5e] text-white cursor-not-allowed"}`}
         >
           {disponivel ? "Ver Perfil" : "Indisponível"}
         </button>
@@ -292,10 +352,10 @@ function DonorCard({ doador, onClick }) {
   );
 }
 
-// ─── Página principal ─────────────────────────────────────────────────────────
 function BuscaPage() {
   const navigate = useNavigate();
 
+  const [busca, setBusca] = useState("");
   const [apenasValidados, setApenasValidados] = useState(true);
   const [especie, setEspecie] = useState("cao");
   const [tiposSelecionados, setTiposSelecionados] = useState([]);
@@ -313,6 +373,7 @@ function BuscaPage() {
   };
 
   const limparFiltros = () => {
+    setBusca("");
     setApenasValidados(false);
     setEspecie("cao");
     setTiposSelecionados([]);
@@ -321,13 +382,14 @@ function BuscaPage() {
     setVisiveis(4);
   };
 
-  // Quando muda espécie, limpa tipos selecionados e reseta peso
   const handleEspecieChange = (novaEspecie) => {
     setEspecie(novaEspecie);
     setTiposSelecionados([]);
     setPesoMax(PESO_MAX[novaEspecie]);
     setVisiveis(4);
   };
+
+  const termoBusca = busca.trim().toLowerCase().replace("#", "");
 
   const doadoresFiltrados = DOADORES_MOCK.filter((d) => d.especie === especie)
     .filter((d) => !apenasValidados || d.validado)
@@ -337,6 +399,16 @@ function BuscaPage() {
     )
     .filter((d) => d.peso <= pesoMax)
     .filter((d) => !distanciaMax || d.distancia <= Number(distanciaMax))
+    .filter((d) => {
+      if (!termoBusca) return true;
+      return (
+        d.nome.toLowerCase().includes(termoBusca) ||
+        d.tutor.toLowerCase().includes(termoBusca) ||
+        d.codigo.toLowerCase().includes(termoBusca) ||
+        d.tutorCodigo.toLowerCase().includes(termoBusca) ||
+        d.bairro.toLowerCase().includes(termoBusca)
+      );
+    })
     .sort((a, b) => {
       if (ordenar === "validados") return b.validado - a.validado;
       if (ordenar === "proximos") return a.distancia - b.distancia;
@@ -348,7 +420,7 @@ function BuscaPage() {
     <>
       <Header dark={true} />
       <main className="max-w-[1536px] mx-auto flex flex-col md:flex-row gap-6 px-5 md:px-16 py-12 pt-28">
-        {/* Sidebar de filtros */}
+        {/* Sidebar */}
         <aside className="w-full md:w-1/4 flex flex-col gap-6">
           <div className="bg-white border border-[#e4bebc] p-6 rounded-xl shadow-sm">
             <div className="flex items-center justify-between mb-8">
@@ -361,7 +433,6 @@ function BuscaPage() {
               </button>
             </div>
 
-            {/* Apenas validados */}
             <div className="flex items-center justify-between p-3 bg-[#ffdad8]/30 rounded-lg mb-8 border border-[#8e001b]/20">
               <label
                 className="text-sm font-semibold text-[#1a1c1c] flex items-center gap-2"
@@ -384,7 +455,6 @@ function BuscaPage() {
               />
             </div>
 
-            {/* Espécie */}
             <div className="mb-8">
               <h3 className="text-sm font-semibold mb-3">Espécie</h3>
               <div className="flex gap-2">
@@ -406,7 +476,6 @@ function BuscaPage() {
               </div>
             </div>
 
-            {/* Tipo Sanguíneo — muda conforme espécie */}
             <div className="mb-8">
               <h3 className="text-sm font-semibold mb-1">Tipo Sanguíneo</h3>
               <p className="text-[10px] text-[#5f5e5e] mb-3">
@@ -427,7 +496,6 @@ function BuscaPage() {
               </div>
             </div>
 
-            {/* Peso — slider conectado com valor dinâmico */}
             <div className="mb-8">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-sm font-semibold">Peso máximo</h3>
@@ -449,7 +517,6 @@ function BuscaPage() {
               </div>
             </div>
 
-            {/* Distância */}
             <div>
               <h3 className="text-sm font-semibold mb-3">
                 Distância máxima (km)
@@ -469,13 +536,9 @@ function BuscaPage() {
                   className="w-full pl-9 pr-4 py-2 bg-white border border-[#e4bebc] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b]"
                 />
               </div>
-              {distanciaMax && (
-                <p className="text-[10px] text-[#5f5e5e] mt-1">
-                  Mostrando pets em até {distanciaMax}km
-                </p>
-              )}
             </div>
           </div>
+
           <div className="bg-white border border-[#e4bebc] p-5 rounded-xl shadow-sm">
             <h3 className="text-sm font-bold text-[#1a1c1c] mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[#8e001b] text-[18px]">
@@ -494,7 +557,7 @@ function BuscaPage() {
                   </span>
                   Validado
                 </span>
-                <p className="text-xs text-[#5f5e5e] leading-relaxed">
+                <p className="text-xs text-[#5f5e5e] leading-relaxed text-justify">
                   Os dados clínicos deste pet foram conferidos por um médico
                   veterinário cadastrado na plataforma. A triagem no hospital
                   pode ser mais ágil.
@@ -507,7 +570,7 @@ function BuscaPage() {
                   </span>
                   Pendente
                 </span>
-                <p className="text-xs text-[#5f5e5e] leading-relaxed">
+                <p className="text-xs text-[#5f5e5e] leading-relaxed text-justify">
                   O cadastro foi feito pelo tutor, mas ainda não passou por
                   revisão veterinária. A triagem completa será necessária no
                   momento da doação.
@@ -519,6 +582,36 @@ function BuscaPage() {
 
         {/* Área de resultados */}
         <section className="w-full md:w-3/4 flex flex-col gap-6">
+          {/* Barra de pesquisa */}
+          <div className="relative">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+              <span className="material-symbols-outlined text-[#8f6f6e]">
+                search
+              </span>
+            </span>
+            <input
+              type="text"
+              value={busca}
+              onChange={(e) => {
+                setBusca(e.target.value);
+                setVisiveis(4);
+              }}
+              placeholder="Buscar por nome do animal, tutor, código (#) ou bairro..."
+              className="w-full pl-12 pr-4 py-3.5 bg-white border border-[#e4bebc] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b] shadow-sm"
+            />
+            {busca && (
+              <button
+                onClick={() => setBusca("")}
+                className="absolute inset-y-0 right-0 flex items-center pr-4"
+              >
+                <span className="material-symbols-outlined text-[#8f6f6e] hover:text-[#8e001b]">
+                  close
+                </span>
+              </button>
+            )}
+          </div>
+
+          {/* Cabeçalho de resultados */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <h1 className="text-3xl font-bold text-[#1a1c1c]">
@@ -542,11 +635,7 @@ function BuscaPage() {
                 <button
                   key={op.val}
                   onClick={() => setOrdenar(op.val)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                    ordenar === op.val
-                      ? "bg-[#8e001b] text-white border-[#8e001b]"
-                      : "bg-white text-[#5f5e5e] border-[#e4bebc] hover:border-[#8e001b] hover:text-[#8e001b]"
-                  }`}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${ordenar === op.val ? "bg-[#8e001b] text-white border-[#8e001b]" : "bg-white text-[#5f5e5e] border-[#e4bebc] hover:border-[#8e001b] hover:text-[#8e001b]"}`}
                 >
                   {op.label}
                 </button>
@@ -566,8 +655,8 @@ function BuscaPage() {
                 Nenhum doador encontrado
               </h3>
               <p className="text-[#5f5e5e] text-sm max-w-xs leading-relaxed mb-8">
-                Nenhum pet corresponde aos filtros selecionados. Tente ampliar
-                sua busca.
+                Nenhum pet corresponde aos filtros ou à busca. Tente ampliar os
+                critérios.
               </p>
               <button
                 onClick={limparFiltros}
@@ -581,7 +670,7 @@ function BuscaPage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 {doadoresFiltrados.slice(0, visiveis).map((doador) => (
                   <DonorCard
                     key={doador.id}
@@ -592,15 +681,27 @@ function BuscaPage() {
               </div>
 
               {visiveis < doadoresFiltrados.length && (
-                <div className="flex flex-col items-center gap-2 mt-6">
+                <div className="flex flex-col items-center gap-3 mt-4">
+                  {/* Aviso de que há mais resultados */}
+                  <div className="flex items-center gap-2 text-[#8e001b] text-sm font-semibold animate-pulse">
+                    <span className="material-symbols-outlined text-[20px]">
+                      keyboard_double_arrow_down
+                    </span>
+                    Mais {doadoresFiltrados.length - visiveis}{" "}
+                    {doadoresFiltrados.length - visiveis === 1
+                      ? "doador disponível"
+                      : "doadores disponíveis"}{" "}
+                    abaixo
+                  </div>
                   <button
                     onClick={() => setVisiveis((prev) => prev + 4)}
-                    className="flex items-center gap-2 px-16 py-4 border-2 border-[#8e001b] text-[#8e001b] font-semibold rounded-full hover:bg-[#8e001b] hover:text-white transition-all text-sm"
+                    className="flex items-center gap-2 px-16 py-4 bg-[#8e001b] text-white font-bold rounded-full hover:brightness-110 active:scale-95 transition-all text-sm shadow-md"
                   >
                     <span className="material-symbols-outlined">
                       expand_more
                     </span>
-                    Carregar mais
+                    Carregar mais{" "}
+                    {Math.min(4, doadoresFiltrados.length - visiveis)}
                   </button>
                   <p className="text-xs text-[#5f5e5e]">
                     Mostrando {Math.min(visiveis, doadoresFiltrados.length)} de{" "}

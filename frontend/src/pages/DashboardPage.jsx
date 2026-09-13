@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Header from "../components/Header";
-import dog1 from "../assets/dog1-image.jpg";
-import dog1_1 from "../assets/dog1_1-image.jpg";
-import dog1_2 from "../assets/dog1_2-image.jpg";
-import dog2 from "../assets/dog2-image.jpg";
+import dog1 from "../assets/dogs/dog1_0-image.jpg";
+import dog1_1 from "../assets/dogs/dog1_1-image.jpg";
+import dog1_2 from "../assets/dogs/dog1_2-image.jpg";
+import cat1 from "../assets/cats/cat1_0-image.jpg";
 
 const VISUALIZANDO_PROPRIO_PERFIL = true;
 const USUARIO_E_VETERINARIO = true;
@@ -72,7 +72,7 @@ const ANIMAIS_MOCK = [
   {
     id: 2,
     nome: "Luna",
-    fotos: [dog2],
+    fotos: [cat1],
     especie: "Gato",
     raca: "SRD",
     peso: "4.5kg",
