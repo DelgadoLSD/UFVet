@@ -6,16 +6,43 @@ const LOGADO = true;
 const USUARIO_MOCK = { nome: "Lucas Delgado" };
 
 function Header({ dark = false }) {
-  const [floating, setFloating] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [escondido, setEscondido] = useState(false);
   const location = useLocation();
+  const isLandingPage = location.pathname === "/";
 
+  // Zera o estado de scroll ao trocar de rota (ajuste durante a renderização,
+  // não em efeito — evita o header ficar escondido/encolhido de uma página
+  // para outra).
+  const [rotaAnterior, setRotaAnterior] = useState(location.pathname);
+  if (rotaAnterior !== location.pathname) {
+    setRotaAnterior(location.pathname);
+    setScrolled(false);
+    setEscondido(false);
+  }
+
+  // Landing page: header encolhe em pill ao rolar.
+  // Demais páginas: header some ao rolar para baixo e reaparece ao rolar
+  // para cima — dá mais espaço de leitura sem esconder a navegação de vez.
   useEffect(() => {
+    if (isLandingPage) {
+      const handleScroll = () => setScrolled(window.scrollY > 80);
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      return () => window.removeEventListener("scroll", handleScroll);
+    }
+
+    let ultimoY = window.scrollY;
     const handleScroll = () => {
-      setFloating(window.scrollY > 80);
+      const y = window.scrollY;
+      const rolandoParaBaixo = y > ultimoY;
+      setEscondido(rolandoParaBaixo && y > 120);
+      ultimoY = y;
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [isLandingPage]);
+
+  const floating = isLandingPage && scrolled;
 
   const navLinks = [
     { to: "/", label: "Início" },
@@ -48,8 +75,8 @@ function Header({ dark = false }) {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-400 ${
-        floating ? `mt-3 mx-6 rounded-full ${bg}` : bg
-      }`}
+        escondido ? "-translate-y-full" : "translate-y-0"
+      } ${floating ? `mt-3 mx-6 rounded-full ${bg}` : bg}`}
     >
       <nav className="flex justify-between items-center h-20 px-5 md:px-8 max-w-[1200px] mx-auto w-full">
         {/* Logo */}
