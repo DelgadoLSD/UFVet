@@ -886,7 +886,7 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
                 value={obsVet}
                 onChange={(e) => setObsVet(e.target.value)}
                 placeholder="Descreva sua observação clínica..."
-                className="w-full border border-emerald-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                className="w-full bg-white text-gray-900 [color-scheme:light] border border-emerald-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                 rows={3}
               />
               <div className="flex gap-3 mt-3">
