@@ -8,6 +8,7 @@ import cat1 from "../assets/cats/cat1_0-image.jpg";
 import hemogramaImg from "../assets/documents/hemograma.png";
 import sorologiaImg from "../assets/documents/sorologia.png";
 import carteiraVacinacaoImg from "../assets/documents/carteira_vacinacao.jpg";
+import mulherFoto from "../assets/people/women1_0-image.jpg";
 
 const VISUALIZANDO_PROPRIO_PERFIL = false;
 const USUARIO_E_VETERINARIO = true;
@@ -24,6 +25,7 @@ const USUARIO_LOGADO = {
   bairro: "Centro",
   membroDesde: "24 Jan 2026",
   role: "vet",
+  genero: "M",
 };
 
 const TUTOR_MOCK = {
@@ -36,6 +38,15 @@ const TUTOR_MOCK = {
   bairro: "Ramos",
   membroDesde: "08 Mar 2026",
   role: "tutor",
+  genero: "F",
+  foto: mulherFoto,
+};
+
+// O rótulo de papel acompanha o gênero da pessoa
+const rotuloPapel = ({ role, genero }) => {
+  const f = genero === "F";
+  if (role === "vet") return f ? "Veterinária Validada" : "Veterinário Validado";
+  return f ? "Tutora" : "Tutor";
 };
 
 const validado = (por, crmv, em, nota = "") => ({
@@ -67,7 +78,7 @@ const ANIMAIS_MOCK = [
     especie: "Cão",
     raca: "Golden Retr.",
     peso: "32kg",
-    idade: "4 anos",
+    nascimento: "2021-08-20",
     tipo: "DEA 1.1+",
     sexo: "Macho",
     reprodutivo: "Castrado",
@@ -75,10 +86,30 @@ const ANIMAIS_MOCK = [
     transfusao: "Não",
     vacinas: "Em dia",
     ultimaDoacao: "15/10/2023",
-    aptidao: "Apto para doação",
     disponivel: true,
-    observacoes:
-      "Zeus é um doador regular e se comporta muito bem durante a coleta.",
+    observacoesClinicas: [
+      {
+        data: "15/10/2025",
+        hora: "14:32",
+        autor: "Dr. Paulo Rezende",
+        texto:
+          "Triagem clínica realizada. Hemograma dentro dos parâmetros. Peso e última doação pendentes de reconferência.",
+      },
+      {
+        data: "10/10/2025",
+        hora: "09:15",
+        autor: "Dr. Paulo Rezende",
+        texto:
+          "Zeus é um doador regular e se comporta muito bem durante a coleta.",
+      },
+      {
+        data: "12/11/2024",
+        hora: "16:05",
+        autor: "Dr. Paulo Rezende",
+        texto:
+          "Zeus apresentou reação alérgica (urticária) à Dipirona durante atendimento anterior. Evitar esse medicamento em futuras consultas ou coletas.",
+      },
+    ],
     validacaoCampos: {
       raca: validado("Dr. Paulo Rezende", "88214-MG", "15/10/2025"),
       idade: validado("Dr. Paulo Rezende", "88214-MG", "15/10/2025"),
@@ -92,6 +123,10 @@ const ANIMAIS_MOCK = [
       reprodutivo: validado("Dr. Paulo Rezende", "88214-MG", "15/10/2025"),
       medicamentos: validado("Dr. Paulo Rezende", "88214-MG", "15/10/2025"),
       transfusao: validado("Dr. Paulo Rezende", "88214-MG", "15/10/2025"),
+      // Datado de propósito há mais de 1 ano para demonstrar o estado
+      // "vencido" — peso é o campo que de fato faz sentido expirar por
+      // tempo (o animal pode ter engordado/emagrecido desde então).
+      peso: validado("Dr. Paulo Rezende", "88214-MG", "10/06/2024"),
     },
     documentos: [
       {
@@ -116,13 +151,8 @@ const ANIMAIS_MOCK = [
     ],
     historico: [
       {
-        data: "15/10/2025",
-        autor: "Dr. Paulo Rezende",
-        texto:
-          "Triagem clínica realizada. Hemograma dentro dos parâmetros. Peso e última doação pendentes de reconferência.",
-      },
-      {
         data: "10/10/2025",
+        hora: "18:47",
         autor: "Marina Souza",
         texto: "Documentos enviados para validação.",
       },
@@ -135,7 +165,7 @@ const ANIMAIS_MOCK = [
     especie: "Gato",
     raca: "SRD",
     peso: "4.5kg",
-    idade: "2 anos",
+    nascimento: "2024-06-10",
     tipo: "TIPO A",
     sexo: "Fêmea",
     reprodutivo: "Castrada",
@@ -143,15 +173,16 @@ const ANIMAIS_MOCK = [
     transfusao: "Não",
     vacinas: "Próx: Mar/2024",
     ultimaDoacao: "Nunca doou",
-    aptidao: "Apto para doação",
     disponivel: false,
-    observacoes: "Luna é um pouco arisca com estranhos; requer contenção leve.",
+    observacoesClinicas: [],
     validacaoCampos: {},
     documentos: [
       { nome: "Hemograma completo", versoes: [] },
       {
         nome: "Sorologias",
-        versoes: [versaoDoc(sorologiaImg, "01/03/2026", "enviado", "Marina Souza")],
+        versoes: [
+          versaoDoc(sorologiaImg, "01/03/2026", "enviado", "Marina Souza"),
+        ],
       },
       { nome: "Carteira de vacinação", versoes: [] },
     ],
@@ -159,44 +190,111 @@ const ANIMAIS_MOCK = [
   },
 ];
 
+// Idade é derivada da data de nascimento a cada carregamento da página — nunca
+// fica desatualizada como um texto estático "4 anos" ficaria.
+function calcularIdade(nascimentoISO) {
+  if (!nascimentoISO) return "—";
+  const nascimento = new Date(`${nascimentoISO}T00:00:00`);
+  const agora = new Date();
+  let anos = agora.getFullYear() - nascimento.getFullYear();
+  const aindaNaoFezAniversario =
+    agora.getMonth() < nascimento.getMonth() ||
+    (agora.getMonth() === nascimento.getMonth() &&
+      agora.getDate() < nascimento.getDate());
+  if (aindaNaoFezAniversario) anos -= 1;
+  if (anos <= 0) return "Menos de 1 ano";
+  return `${anos} ano${anos > 1 ? "s" : ""}`;
+}
+
+// Intervalo mínimo de recuperação entre doações — aproximação ilustrativa
+// para a demo; a regra clínica definitiva cabe à equipe veterinária real.
+const INTERVALO_DOACAO_DIAS = { Cão: 60, Gato: 90 };
+
+function proximaDoacaoLiberada(ultimaDoacao, especie) {
+  if (!ultimaDoacao || /nunca/i.test(ultimaDoacao)) {
+    return { apto: true, texto: "Apto para doação" };
+  }
+  const [dia, mes, ano] = ultimaDoacao.split("/").map(Number);
+  const dataUltima = new Date(ano, mes - 1, dia);
+  const dataLiberada = new Date(dataUltima);
+  dataLiberada.setDate(
+    dataLiberada.getDate() + (INTERVALO_DOACAO_DIAS[especie] ?? 60),
+  );
+  const apto = new Date() >= dataLiberada;
+  return {
+    apto,
+    texto: apto
+      ? "Apto para doação"
+      : `Recuperação até ${dataLiberada.toLocaleDateString("pt-BR")}`,
+  };
+}
+
 const CAMPOS_ANIMAL = [
-  { icon: "pets", label: "Raça", key: "raca" },
+  { icon: "pets", label: "Raça", key: "raca", permanente: true },
   { icon: "monitor_weight", label: "Peso", key: "peso" },
-  { icon: "event", label: "Idade", key: "idade" },
+  {
+    icon: "event",
+    label: "Idade",
+    key: "idade",
+    origem: "nascimento",
+    permanente: true,
+    tipoData: true,
+    calcularExibicao: calcularIdade,
+  },
   {
     icon: "bloodtype",
     label: "Tipo Sanguíneo",
     key: "tipo",
     destaque: true,
     opcoesPorEspecie: true,
+    permanente: true,
   },
-  { icon: "male", label: "Sexo", key: "sexo", opcoes: ["Macho", "Fêmea"] },
+  {
+    icon: "male",
+    label: "Sexo",
+    key: "sexo",
+    opcoes: ["Macho", "Fêmea"],
+    permanente: true,
+  },
   {
     icon: "health_and_safety",
     label: "Reprodutivo",
     key: "reprodutivo",
     opcoes: ["Castrado", "Castrada", "Inteiro", "Inteira"],
+    permanente: true,
   },
   {
     icon: "medication",
     label: "Medicamentos",
     key: "medicamentos",
     opcoes: ["Sim", "Não"],
+    // Não vence por tempo: um "Não" validado hoje pode ficar desatualizado
+    // amanhã se o animal começar a tomar um medicamento novo. Um relógio de
+    // 1 ano não protege contra isso — quem cobre esse risco é a triagem
+    // feita a cada doação (ver "sujeito à triagem" na disponibilidade).
+    permanente: true,
   },
   {
     icon: "blood_pressure",
     label: "Transfusão?",
     key: "transfusao",
     opcoes: ["Sim", "Não"],
+    permanente: true,
   },
   { icon: "vaccines", label: "Vacinas", key: "vacinas" },
   {
     icon: "history",
     label: "Última Doação",
     key: "ultimaDoacao",
-    extra: "aptidao",
+    calculado: true,
+    calcularExtra: (valor, animal) =>
+      proximaDoacaoLiberada(valor, animal.especie),
   },
 ];
+
+// Campos que de fato passam por auditoria (o computado "Última Doação" fica
+// de fora — ele é um estado derivado, não um dado a validar/contestar).
+const CAMPOS_AUDITAVEIS = CAMPOS_ANIMAL.filter((c) => !c.calculado);
 
 const TIPOS_SANGUINEOS = {
   cao: [
@@ -212,32 +310,67 @@ const TIPOS_SANGUINEOS = {
 
 const hoje = () => new Date().toLocaleDateString("pt-BR");
 
+// Timestamp completo (data + hora) usado em histórico e observações — só a
+// data pode esconder a ordem de eventos no mesmo dia.
+const agora = () => {
+  const d = new Date();
+  return {
+    data: d.toLocaleDateString("pt-BR"),
+    hora: d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+  };
+};
+
 // Validação clínica vale por 1 ano a partir da data informada (dd/mm/aaaa)
+const VALIDADE_DIAS = 365;
+
 const umAnoApos = (data) => {
   const [dia, mes, ano] = data.split("/");
   return `${dia}/${mes}/${Number(ano) + 1}`;
 };
 
+const diasDesde = (dataBR) => {
+  const [dia, mes, ano] = dataBR.split("/").map(Number);
+  const data = new Date(ano, mes - 1, dia);
+  return Math.floor((new Date() - data) / 86400000);
+};
+
+// Status efetivo de um campo: campos permanentes (fatos biológicos fixos, ex.
+// sexo, raça) nunca precisam ser reconferidos depois de validados. Os demais
+// "vencem" depois de 1 ano e voltam a pedir atenção do veterinário.
+function statusEfetivoCampo(campo, validacao) {
+  if (!validacao) return "pendente";
+  if (validacao.status !== "validado") return validacao.status;
+  if (campo.permanente) return "validado";
+  return diasDesde(validacao.em) > VALIDADE_DIAS ? "vencido" : "validado";
+}
+
 // Status geral do animal derivado dos selos individuais de cada campo
 function resumoValidacao(validacoes) {
-  const total = CAMPOS_ANIMAL.length;
-  const entradas = CAMPOS_ANIMAL.map((c) => validacoes[c.key]).filter(Boolean);
-  const validados = entradas.filter((v) => v.status === "validado");
-  const contestados = entradas.filter((v) => v.status === "contestado");
+  const total = CAMPOS_AUDITAVEIS.length;
+  const situacoes = CAMPOS_AUDITAVEIS.map((c) => ({
+    campo: c,
+    validacao: validacoes[c.key],
+    status: statusEfetivoCampo(c, validacoes[c.key]),
+  }));
+  const validados = situacoes.filter((s) => s.status === "validado");
+  const contestados = situacoes.filter((s) => s.status === "contestado");
+  const vencidos = situacoes.filter((s) => s.status === "vencido");
 
   let status = "pendente";
   if (contestados.length > 0) status = "contestado";
+  else if (vencidos.length > 0) status = "vencido";
   else if (validados.length === total) status = "validado";
   else if (validados.length > 0) status = "parcial";
 
   // O selo geral leva o nome do vet que fechou a validação (o mais recente)
-  const ultimo = validados[validados.length - 1];
+  const ultimo = validados[validados.length - 1]?.validacao;
 
   return {
     status,
     total,
     validados: validados.length,
     contestados: contestados.length,
+    vencidos: vencidos.length,
     veterinario: ultimo?.por,
     crmv: ultimo?.crmv,
     validadoEm: ultimo?.em,
@@ -278,9 +411,7 @@ function DocBadge({ status }) {
     <span
       className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${e.badge}`}
     >
-      <span className="material-symbols-outlined text-[13px]">
-        {e.icone}
-      </span>
+      <span className="material-symbols-outlined text-[13px]">{e.icone}</span>
       {e.texto}
     </span>
   );
@@ -297,9 +428,7 @@ function BotaoEnviarDocumento({ label, onSelecionar, destaque = false }) {
           : "border border-[#8e001b] text-[#8e001b] hover:bg-[#8e001b] hover:text-white"
       }`}
     >
-      <span className="material-symbols-outlined text-[15px]">
-        upload_file
-      </span>
+      <span className="material-symbols-outlined text-[15px]">upload_file</span>
       {label}
       <input
         type="file"
@@ -327,6 +456,9 @@ function DocumentoCard({
   const estilo = ESTILO_DOC[status];
   const podeEnviar = isVet || isProprioTutor;
 
+  // Cada ação ocupa uma faixa de altura fixa, presente em todo card — vazia
+  // quando não se aplica. Assim o botão de cada ação sempre cai no mesmo
+  // lugar, esteja o documento pendente, enviado, validado ou recusado.
   return (
     <div
       className={`bg-white border-2 ${estilo.borda} rounded-2xl p-5 flex flex-col items-center text-center gap-3`}
@@ -335,47 +467,53 @@ function DocumentoCard({
 
       <DocBadge status={status} />
 
-      {doc.versoes.length > 1 && (
-        <p className="-mt-1.5 text-[10px] text-[#5f5e5e]">
-          {doc.versoes.length} versões enviadas
-        </p>
-      )}
+      <div className="h-3.5 -mt-1.5">
+        {doc.versoes.length > 1 && (
+          <p className="text-[10px] text-[#5f5e5e]">
+            {doc.versoes.length} versões enviadas
+          </p>
+        )}
+      </div>
 
       <div className="w-full flex flex-col gap-2 mt-1">
-        {isVet && status === "enviado" && (
-          <div className="flex gap-2">
-            <button
-              onClick={() => onAvaliar(doc.nome, "validado")}
-              className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 text-white text-[11px] font-bold py-2 rounded-full hover:bg-emerald-700 transition-colors active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[14px]">
-                check
-              </span>
-              Validar
-            </button>
-            <button
-              onClick={() => onAvaliar(doc.nome, "recusado")}
-              className="flex-1 flex items-center justify-center gap-1 border border-red-300 text-red-600 text-[11px] font-bold py-2 rounded-full hover:bg-red-500 hover:text-white transition-colors active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[14px]">
-                close
-              </span>
-              Recusar
-            </button>
-          </div>
-        )}
+        <div className="h-9">
+          {isVet && status === "enviado" && (
+            <div className="flex gap-2 h-full">
+              <button
+                onClick={() => onAvaliar(doc.nome, "validado")}
+                className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 text-white text-[11px] font-bold rounded-full hover:bg-emerald-700 transition-colors active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[14px]">
+                  check
+                </span>
+                Validar
+              </button>
+              <button
+                onClick={() => onAvaliar(doc.nome, "recusado")}
+                className="flex-1 flex items-center justify-center gap-1 border border-red-300 text-red-600 text-[11px] font-bold rounded-full hover:bg-red-500 hover:text-white transition-colors active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[14px]">
+                  close
+                </span>
+                Recusar
+              </button>
+            </div>
+          )}
+        </div>
 
-        {doc.versoes.length > 0 && (
-          <button
-            onClick={onAbrir}
-            className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-[#8e001b] hover:underline py-1"
-          >
-            <span className="material-symbols-outlined text-[14px]">
-              open_in_new
-            </span>
-            {doc.versoes.length > 1 ? "Ver versões" : "Abrir documento"}
-          </button>
-        )}
+        <div className="h-7">
+          {doc.versoes.length > 0 && (
+            <button
+              onClick={onAbrir}
+              className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-[#8e001b] hover:underline h-full w-full"
+            >
+              <span className="material-symbols-outlined text-[14px]">
+                open_in_new
+              </span>
+              {doc.versoes.length > 1 ? "Ver versões" : "Abrir documento"}
+            </button>
+          )}
+        </div>
 
         {podeEnviar && (
           <BotaoEnviarDocumento
@@ -404,12 +542,49 @@ const ESTILO_CAMPO = {
     icone: "flag",
     cor: "text-amber-600",
   },
+  vencido: {
+    card: "bg-orange-50/70 border-orange-300",
+    icone: "update",
+    cor: "text-orange-600",
+  },
   pendente: {
     card: "bg-[#fafafa] border-[#f0e6e6]",
     icone: "schedule",
     cor: "text-[#c9a5a5]",
   },
 };
+
+// Campo informativo/calculado (ex.: "Última Doação") — não é auditado, só
+// mostra o estado atual derivado dos dados, sem selo nem botões de validação.
+function CampoCalculado({ campo, valor, animal, auditando, onEditar }) {
+  const { apto, texto } = campo.calcularExtra(valor, animal);
+  return (
+    <div className="border border-[#f0e6e6] bg-[#fafafa] rounded-xl p-3 flex flex-col items-center justify-center text-center gap-1.5">
+      <span className="text-[#8e001b] text-[11px] font-bold uppercase tracking-widest">
+        {campo.label}
+      </span>
+      {auditando ? (
+        <input
+          value={valor}
+          onChange={(e) => onEditar(campo.key, e.target.value)}
+          placeholder="dd/mm/aaaa"
+          className="w-full bg-white text-gray-900 [color-scheme:light] border border-[#e4bebc] rounded-lg px-2 py-1.5 text-[13px] font-semibold text-center focus:outline-none focus:ring-2 focus:ring-[#8e001b]"
+        />
+      ) : (
+        <span className="text-[#1a1c1c] font-bold text-[15px] leading-tight">
+          {valor}
+        </span>
+      )}
+      <span
+        className={`font-bold text-[9px] uppercase tracking-wider mt-0.5 ${
+          apto ? "text-emerald-600" : "text-amber-600"
+        }`}
+      >
+        {texto}
+      </span>
+    </div>
+  );
+}
 
 // ─── Campo do animal: exibe o selo e, em auditoria, permite editar/validar ────
 function CampoAuditavel({
@@ -426,8 +601,24 @@ function CampoAuditavel({
   const [contestando, setContestando] = useState(false);
   const [nota, setNota] = useState("");
 
-  const status = validacao?.status ?? "pendente";
+  if (campo.calculado) {
+    return (
+      <CampoCalculado
+        campo={campo}
+        valor={valor}
+        animal={animal}
+        auditando={auditando}
+        onEditar={onEditar}
+      />
+    );
+  }
+
+  const status = statusEfetivoCampo(campo, validacao);
   const estilo = ESTILO_CAMPO[status];
+  const precisaAcao = status === "pendente" || status === "vencido";
+  const exibicao = campo.calcularExibicao
+    ? campo.calcularExibicao(valor)
+    : valor;
 
   const opcoes = campo.opcoesPorEspecie
     ? TIPOS_SANGUINEOS[animal.especie === "Gato" ? "gato" : "cao"]
@@ -436,9 +627,11 @@ function CampoAuditavel({
   const titulo =
     status === "validado"
       ? `Validado por ${validacao.por} (CRMV ${validacao.crmv}) em ${validacao.em}${validacao.nota ? ` — ${validacao.nota}` : ""}`
-      : status === "contestado"
-        ? `Contestado por ${validacao.por} em ${validacao.em} — ${validacao.nota}`
-        : "Aguardando validação veterinária";
+      : status === "vencido"
+        ? `Validado por ${validacao.por} em ${validacao.em} — validade de 1 ano vencida, revalidação necessária`
+        : status === "contestado"
+          ? `Contestado por ${validacao.por} em ${validacao.em} — ${validacao.nota}`
+          : "Aguardando validação veterinária";
 
   const enviarContestacao = () => {
     if (!nota.trim()) return;
@@ -458,7 +651,7 @@ function CampoAuditavel({
         {estilo.icone}
       </span>
 
-      <span className="text-[#8e001b] text-[11px] font-bold uppercase tracking-widest">
+      <span className="w-full text-center pr-4 text-[#8e001b] text-[11px] font-bold uppercase tracking-widest">
         {campo.label}
       </span>
 
@@ -476,6 +669,13 @@ function CampoAuditavel({
               </option>
             ))}
           </select>
+        ) : campo.tipoData ? (
+          <input
+            type="date"
+            value={valor}
+            onChange={(e) => onEditar(campo.key, e.target.value)}
+            className="w-full bg-white text-gray-900 [color-scheme:light] border border-[#e4bebc] rounded-lg px-2 py-1.5 text-[13px] font-semibold text-center focus:outline-none focus:ring-2 focus:ring-[#8e001b]"
+          />
         ) : (
           <input
             value={valor}
@@ -485,26 +685,23 @@ function CampoAuditavel({
         )
       ) : campo.destaque ? (
         <span className="text-[#8e001b] text-lg font-extrabold leading-tight">
-          {valor}
+          {exibicao}
         </span>
-      ) : campo.extra ? (
-        <div className="flex flex-col items-center">
-          <span className="text-[#1a1c1c] font-bold text-[15px] leading-tight">
-            {valor}
-          </span>
-          <span className="text-emerald-600 font-bold text-[9px] uppercase tracking-wider mt-0.5">
-            {animal[campo.extra]}
-          </span>
-        </div>
       ) : (
         <span className="text-[#1a1c1c] font-semibold text-[15px] leading-tight">
-          {valor}
+          {exibicao}
         </span>
       )}
 
       {!auditando && status === "contestado" && (
         <span className="text-amber-800 text-[10px] font-semibold leading-snug">
           {validacao.nota}
+        </span>
+      )}
+
+      {!auditando && status === "vencido" && (
+        <span className="text-orange-800 text-[10px] font-semibold leading-snug">
+          Revalidação necessária
         </span>
       )}
 
@@ -537,17 +734,21 @@ function CampoAuditavel({
               </button>
             </div>
           </div>
-        ) : status === "pendente" ? (
+        ) : precisaAcao ? (
           <div className="flex gap-1 w-full mt-1">
             <button
               onClick={() => onValidar(campo.key)}
-              title="Validar este campo"
+              title={
+                status === "vencido"
+                  ? "Revalidar este campo"
+                  : "Validar este campo"
+              }
               className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-full hover:bg-emerald-700 transition-colors active:scale-95"
             >
               <span className="material-symbols-outlined text-[13px]">
                 check
               </span>
-              Validar
+              {status === "vencido" ? "Revalidar" : "Validar"}
             </button>
             <button
               onClick={() => setContestando(true)}
@@ -1080,7 +1281,9 @@ function BadgeVersao({ status }) {
 
 // ─── Visualizador de documento: imagem grande + histórico de versões ─────────
 function ModalDocumento({ nomeDocumento, versoes, onClose }) {
-  const [indiceSelecionado, setIndiceSelecionado] = useState(versoes.length - 1);
+  const [indiceSelecionado, setIndiceSelecionado] = useState(
+    versoes.length - 1,
+  );
   const versaoAtual = versoes[indiceSelecionado];
   const temVarias = versoes.length > 1;
 
@@ -1096,8 +1299,8 @@ function ModalDocumento({ nomeDocumento, versoes, onClose }) {
               {nomeDocumento}
             </h2>
             <p className="text-xs text-[#5f5e5e] mt-0.5">
-              {versoes.length} versão{versoes.length !== 1 ? "ões" : ""}{" "}
-              enviada{versoes.length !== 1 ? "s" : ""}
+              {versoes.length} versão{versoes.length !== 1 ? "ões" : ""} enviada
+              {versoes.length !== 1 ? "s" : ""}
             </p>
           </div>
           <button
@@ -1200,7 +1403,33 @@ function ModalDocumento({ nomeDocumento, versoes, onClose }) {
   );
 }
 
-function ModalHistorico({ animal, historico, onClose }) {
+// Uma linha de histórico/observação. "tema" dá o tom padrão da lista
+// (auditoria = neutro, clinica = verde) e uma contestação sempre ganha um
+// destaque âmbar sutil por cima, independente do tema da lista.
+function RegistroItem({ item }) {
+  const destaqueContestacao = item.tipo === "contestacao";
+  const borda = destaqueContestacao
+    ? "border-amber-400"
+    : item.tema === "clinica"
+      ? "border-emerald-300"
+      : "border-[#e4bebc]";
+  const fundo = destaqueContestacao ? "bg-amber-50/60" : "";
+
+  return (
+    <div
+      className={`flex gap-3 text-sm border-l-2 pl-4 py-0.5 rounded-r ${borda} ${fundo}`}
+    >
+      <div>
+        <p className="text-[10px] font-bold text-[#5f5e5e] uppercase tracking-wider">
+          {item.data} às {item.hora} — {item.autor}
+        </p>
+        <p className="text-[#1a1c1c] mt-0.5">{item.texto}</p>
+      </div>
+    </div>
+  );
+}
+
+function ModalRegistros({ titulo, itens, tema, onClose }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
@@ -1209,11 +1438,9 @@ function ModalHistorico({ animal, historico, onClose }) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[80vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-[#e4bebc] px-8 py-5 flex items-center justify-between rounded-t-2xl z-10">
           <div>
-            <h2 className="text-xl font-bold text-[#1a1c1c]">
-              Histórico completo — {animal.nome}
-            </h2>
+            <h2 className="text-xl font-bold text-[#1a1c1c]">{titulo}</h2>
             <p className="text-xs text-[#5f5e5e] mt-0.5">
-              {historico.length} registro{historico.length !== 1 ? "s" : ""}
+              {itens.length} registro{itens.length !== 1 ? "s" : ""}
             </p>
           </div>
           <button
@@ -1227,18 +1454,8 @@ function ModalHistorico({ animal, historico, onClose }) {
         </div>
 
         <div className="px-8 py-6 space-y-3">
-          {historico.map((item, i) => (
-            <div
-              key={i}
-              className="flex gap-3 text-sm border-l-2 border-[#e4bebc] pl-4"
-            >
-              <div>
-                <p className="text-[10px] font-bold text-[#5f5e5e] uppercase tracking-wider">
-                  {item.data} — {item.autor}
-                </p>
-                <p className="text-[#1a1c1c] mt-0.5">{item.texto}</p>
-              </div>
-            </div>
+          {itens.map((item, i) => (
+            <RegistroItem key={i} item={{ ...item, tema }} />
           ))}
         </div>
       </div>
@@ -1307,6 +1524,29 @@ function BannerValidacao({ resumo }) {
     );
   }
 
+  if (resumo.status === "vencido") {
+    return (
+      <div className="bg-orange-50 border-l-4 border-orange-500 px-6 py-4 flex items-center justify-between gap-4 flex-wrap rounded-r-lg">
+        <div className="flex items-center gap-4">
+          <span className="material-symbols-outlined text-orange-600 text-[32px]">
+            update
+          </span>
+          <div className="flex flex-col">
+            <span className="font-bold text-orange-900 text-sm">
+              {resumo.vencidos} campo(s) com validade vencida (mais de 1 ano)
+            </span>
+            <span className="text-orange-800 text-xs">
+              Recomenda-se revalidar antes da próxima doação.
+            </span>
+          </div>
+        </div>
+        <span className="text-orange-800 text-xs font-semibold">
+          {resumo.validados}/{resumo.total} válidos
+        </span>
+      </div>
+    );
+  }
+
   if (resumo.status === "parcial") {
     return (
       <div className="bg-blue-50 border-l-4 border-blue-500 px-6 py-4 flex flex-col gap-3 rounded-r-lg">
@@ -1359,15 +1599,21 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
   const [docsAbertos, setDocsAbertos] = useState(false);
   const [obsVet, setObsVet] = useState("");
   const [historicoLocal, setHistoricoLocal] = useState(animal.historico);
+  const [observacoesLocal, setObservacoesLocal] = useState(
+    animal.observacoesClinicas,
+  );
   const [adicionandoObs, setAdicionandoObs] = useState(false);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [modalHistoricoAberto, setModalHistoricoAberto] = useState(false);
+  const [modalObservacoesAberto, setModalObservacoesAberto] = useState(false);
   const [documentoAberto, setDocumentoAberto] = useState(null);
 
   const [auditando, setAuditando] = useState(false);
   // valoresSalvos = o que já foi confirmado; valores = o rascunho em edição
   const [valoresSalvos, setValoresSalvos] = useState(() =>
-    Object.fromEntries(CAMPOS_ANIMAL.map((c) => [c.key, animal[c.key]])),
+    Object.fromEntries(
+      CAMPOS_ANIMAL.map((c) => [c.key, animal[c.origem ?? c.key]]),
+    ),
   );
   const [valores, setValores] = useState(valoresSalvos);
   const [validacoes, setValidacoes] = useState(animal.validacaoCampos);
@@ -1379,22 +1625,42 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
     crmv: USUARIO_LOGADO.crmv,
   };
 
-  const registrar = (texto) =>
+  // Registro de auditoria (mudanças de dados, documentos etc.) — distinto das
+  // observações clínicas, que têm seu próprio espaço de destaque.
+  const registrar = (texto, tipo = "padrao") => {
+    const { data, hora } = agora();
     setHistoricoLocal((prev) => [
-      { data: hoje(), autor: `${USUARIO_LOGADO.nome} (você)`, texto },
+      { data, hora, autor: `${USUARIO_LOGADO.nome} (você)`, texto, tipo },
       ...prev,
     ]);
+  };
 
   const rotulo = (key) => CAMPOS_ANIMAL.find((c) => c.key === key).label;
+  const exibirValor = (key, valor) => {
+    const campo = CAMPOS_ANIMAL.find((c) => c.key === key);
+    return campo.calcularExibicao ? campo.calcularExibicao(valor) : valor;
+  };
 
   const editarCampo = (key, valor) =>
     setValores((prev) => ({ ...prev, [key]: valor }));
+
+  // Campos calculados (ex.: Última Doação) não têm selo — a edição já é a
+  // ação em si, sem "validar" para confirmar, então grava direto.
+  const editarCampoDireto = (key, valor) => {
+    setValores((prev) => ({ ...prev, [key]: valor }));
+    setValoresSalvos((prev) => ({ ...prev, [key]: valor }));
+  };
 
   // Ao validar, o vet assume o valor que está em tela — se ele corrigiu, a
   // correção entra no histórico junto com o selo.
   const validarCampo = (key, silencioso = false) => {
     const original = valoresSalvos[key];
     const atual = valores[key];
+    const jaEstavaVencido =
+      statusEfetivoCampo(
+        CAMPOS_ANIMAL.find((c) => c.key === key),
+        validacoes[key],
+      ) === "vencido";
     setValidacoes((prev) => ({
       ...prev,
       [key]: { status: "validado", ...assinatura, em: hoje(), nota: "" },
@@ -1403,8 +1669,8 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
     if (silencioso) return;
     registrar(
       atual !== original
-        ? `${rotulo(key)} corrigido de "${original}" para "${atual}" e validado.`
-        : `${rotulo(key)} validado.`,
+        ? `${rotulo(key)} corrigido de "${exibirValor(key, original)}" para "${exibirValor(key, atual)}" e validado.`
+        : `${rotulo(key)} ${jaEstavaVencido ? "revalidado" : "validado"}.`,
     );
   };
 
@@ -1413,7 +1679,7 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
       ...prev,
       [key]: { status: "contestado", ...assinatura, em: hoje(), nota },
     }));
-    registrar(`${rotulo(key)} contestado: ${nota}`);
+    registrar(`${rotulo(key)} contestado: ${nota}`, "contestacao");
   };
 
   const reabrirCampo = (key) => {
@@ -1468,7 +1734,13 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
     setDocumentos((prev) =>
       prev.map((d) =>
         d.nome === nome
-          ? { ...d, versoes: [...d.versoes, versaoDoc(arquivo, hoje(), status, enviadoPor)] }
+          ? {
+              ...d,
+              versoes: [
+                ...d.versoes,
+                versaoDoc(arquivo, hoje(), status, enviadoPor),
+              ],
+            }
           : d,
       ),
     );
@@ -1485,15 +1757,37 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
     setValores(valoresSalvos);
   };
 
+  // Observações clínicas ficam num espaço separado do histórico de auditoria
+  // — carregam mais peso (ex.: reação alérgica) e não deveriam se perder no
+  // meio de "peso corrigido de X para Y".
   const adicionarObservacao = () => {
     if (!obsVet.trim()) return;
-    registrar(obsVet.trim());
+    const { data, hora } = agora();
+    setObservacoesLocal((prev) => [
+      { data, hora, autor: USUARIO_LOGADO.nome, texto: obsVet.trim() },
+      ...prev,
+    ]);
     setObsVet("");
     setAdicionandoObs(false);
   };
 
   const btnBase =
     "flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-xs transition-all active:scale-95";
+
+  // A disponibilidade continua sendo escolha do tutor — um campo pendente ou
+  // contestado não bloqueia a doação, só indica que a triagem presencial na
+  // coleta vai precisar checar aquele dado com mais atenção.
+  const precisaTriagem = resumo.status !== "validado";
+  const textoDisponibilidade = disponivel
+    ? precisaTriagem
+      ? "Apto para doação — sujeito à triagem"
+      : "Disponível para doação"
+    : "Indisponível para doação";
+  const corPontoDisponibilidade = !disponivel
+    ? "bg-gray-400"
+    : precisaTriagem
+      ? "bg-amber-500 animate-pulse"
+      : "bg-emerald-500 animate-pulse";
 
   return (
     <div className="bg-white rounded-2xl border border-[#8e001b]/20 shadow-sm overflow-hidden mb-6">
@@ -1512,16 +1806,16 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
               title="Clique para alterar a disponibilidade"
               className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full transition-all active:scale-95 ${
                 disponivel
-                  ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  ? precisaTriagem
+                    ? "bg-amber-50 text-amber-800 hover:bg-amber-100"
+                    : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                   : "bg-[#eeeeee] text-[#5f5e5e] hover:bg-[#e0e0e0]"
               }`}
             >
               <span
-                className={`w-2 h-2 rounded-full ${disponivel ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`}
+                className={`w-2 h-2 rounded-full ${corPontoDisponibilidade}`}
               />
-              {disponivel
-                ? "Disponível para doação"
-                : "Indisponível para doação"}
+              {textoDisponibilidade}
               <span className="material-symbols-outlined text-[14px] opacity-60">
                 swap_horiz
               </span>
@@ -1530,16 +1824,16 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
             <span
               className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${
                 disponivel
-                  ? "bg-emerald-50 text-emerald-700"
+                  ? precisaTriagem
+                    ? "bg-amber-50 text-amber-800"
+                    : "bg-emerald-50 text-emerald-700"
                   : "bg-[#eeeeee] text-[#5f5e5e]"
               }`}
             >
               <span
-                className={`w-2 h-2 rounded-full ${disponivel ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`}
+                className={`w-2 h-2 rounded-full ${corPontoDisponibilidade}`}
               />
-              {disponivel
-                ? "Disponível para doação"
-                : "Indisponível para doação"}
+              {textoDisponibilidade}
             </span>
           )}
         </div>
@@ -1622,75 +1916,79 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
         </div>
       </div>
 
-      {/* ── Corpo: foto alta à esquerda + todo o conteúdo à direita ── */}
-      <div className="flex gap-6 flex-col lg:flex-row p-8">
-        {/* Foto — ocupa toda a altura do corpo */}
-        <div className="w-full lg:w-64 shrink-0">
-          <CarrosselFotos fotos={animal.fotos} nome={animal.nome} />
-        </div>
-
-        {/* Coluna direita: dados + validação + documentos + histórico */}
-        <div className="flex-1 min-w-0 flex flex-col gap-6">
-          {/* Barra de auditoria */}
-          {auditando && (
-            <div className="bg-[#8e001b] text-white rounded-xl px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[26px]">
-                  fact_check
-                </span>
-                <div className="flex flex-col">
-                  <span className="font-bold text-sm">Modo auditoria</span>
-                  <span className="text-white/80 text-xs">
-                    Confira cada campo, corrija o que estiver errado e aplique o
-                    selo. Tudo fica registrado no histórico em seu nome.
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={validarRestantes}
-                disabled={resumo.validados === resumo.total}
-                className="flex items-center gap-1.5 bg-white text-[#8e001b] px-4 py-2 rounded-full text-xs font-bold hover:bg-white/90 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <span className="material-symbols-outlined text-[16px]">
-                  done_all
-                </span>
-                Validar restantes ({resumo.total - resumo.validados})
-              </button>
-            </div>
-          )}
-
-          {/* Grid de dados */}
-          <div
-            className={`grid gap-3 ${
-              auditando
-                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
-                : "grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
-            }`}
-          >
-            {CAMPOS_ANIMAL.map((campo) => (
-              <CampoAuditavel
-                key={campo.key}
-                campo={campo}
-                animal={animal}
-                valor={valores[campo.key]}
-                validacao={validacoes[campo.key]}
-                auditando={auditando}
-                onEditar={editarCampo}
-                onValidar={validarCampo}
-                onContestar={contestarCampo}
-                onReabrir={reabrirCampo}
-              />
-            ))}
+      {/* ── Corpo: foto ao lado dos dados, com altura própria — o restante
+          (documentos, observações, histórico) fica abaixo, em largura total,
+          sem esticar a foto conforme esse conteúdo cresce ── */}
+      <div className="p-8">
+        <div className="flex gap-6 flex-col lg:flex-row">
+          {/* Foto — altura alinhada com a coluna de dados ao lado, não com
+              tudo que vem abaixo */}
+          <div className="w-full lg:w-64 shrink-0">
+            <CarrosselFotos fotos={animal.fotos} nome={animal.nome} />
           </div>
 
-          {/* Banner de validação — reflete os selos de cada campo */}
-          <BannerValidacao resumo={resumo} />
+          {/* Coluna direita: dados + validação + atalho para documentos */}
+          <div className="flex-1 min-w-0 flex flex-col gap-6">
+            {/* Barra de auditoria */}
+            {auditando && (
+              <div className="bg-[#8e001b] text-white rounded-xl px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[26px]">
+                    fact_check
+                  </span>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-sm">Modo auditoria</span>
+                    <span className="text-white/80 text-xs">
+                      Confira cada campo, corrija o que estiver errado e aplique
+                      o selo. Tudo fica registrado no histórico em seu nome.
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={validarRestantes}
+                  disabled={resumo.validados === resumo.total}
+                  className="flex items-center gap-1.5 bg-white text-[#8e001b] px-4 py-2 rounded-full text-xs font-bold hover:bg-white/90 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-[16px]">
+                    done_all
+                  </span>
+                  Validar restantes ({resumo.total - resumo.validados})
+                </button>
+              </div>
+            )}
 
-          {/* Documentos */}
-          <div>
+            {/* Grid de dados */}
+            <div
+              className={`grid gap-3 ${
+                auditando
+                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+                  : "grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
+              }`}
+            >
+              {CAMPOS_ANIMAL.map((campo) => (
+                <CampoAuditavel
+                  key={campo.key}
+                  campo={campo}
+                  animal={animal}
+                  valor={valores[campo.key]}
+                  validacao={validacoes[campo.key]}
+                  auditando={auditando}
+                  onEditar={campo.calculado ? editarCampoDireto : editarCampo}
+                  onValidar={validarCampo}
+                  onContestar={contestarCampo}
+                  onReabrir={reabrirCampo}
+                />
+              ))}
+            </div>
+
+            {/* Banner de validação — reflete os selos de cada campo */}
+            <BannerValidacao resumo={resumo} />
+
+            {/* Atalho para documentos — o painel em si fica abaixo, em largura
+              total, para não esticar a foto quando ele expandir */}
             <button
               onClick={() => setDocsAbertos(!docsAbertos)}
-              className="flex items-center gap-2 text-[#8e001b] font-bold text-sm mb-4"
+              className="flex items-center gap-2 text-[#8e001b] font-bold text-sm"
             >
               {docsAbertos ? "Ocultar documentos ↑" : "Ver documentos ↓"}
               <span className="text-[10px] font-bold text-[#5f5e5e] bg-[#eeeeee] px-2 py-0.5 rounded-full uppercase">
@@ -1701,22 +1999,27 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
                 /{documentos.length} validados
               </span>
             </button>
-            {docsAbertos && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {documentos.map((doc) => (
-                  <DocumentoCard
-                    key={doc.nome}
-                    doc={doc}
-                    isVet={isVet}
-                    isProprioTutor={isProprioTutor}
-                    onAvaliar={avaliarDocumento}
-                    onEnviar={enviarDocumento}
-                    onAbrir={() => setDocumentoAberto(doc.nome)}
-                  />
-                ))}
-              </div>
-            )}
           </div>
+        </div>
+
+        {/* ── Abaixo da foto e dos dados: documentos, observações e
+            histórico, sempre em largura total ── */}
+        <div className="flex flex-col gap-6 mt-6">
+          {docsAbertos && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {documentos.map((doc) => (
+                <DocumentoCard
+                  key={doc.nome}
+                  doc={doc}
+                  isVet={isVet}
+                  isProprioTutor={isProprioTutor}
+                  onAvaliar={avaliarDocumento}
+                  onEnviar={enviarDocumento}
+                  onAbrir={() => setDocumentoAberto(doc.nome)}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Formulário de observação */}
           {isVet && adicionandoObs && (
@@ -1751,58 +2054,92 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
             </div>
           )}
 
-          {/* Histórico */}
-          {historicoLocal.length > 0 ? (
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-3">
-                Histórico
-              </p>
-              <div className="space-y-3">
-                {historicoLocal.slice(0, HISTORICO_VISIVEL).map((item, i) => (
-                  <div
-                    key={i}
-                    className="flex gap-3 text-sm border-l-2 border-[#e4bebc] pl-4"
+          {/* Observações clínicas e histórico técnico usam a mesma caixa —
+              só muda a cor — para não parecerem duas seções desalinhadas */}
+          <div className="bg-emerald-50/40 border border-emerald-100 rounded-xl p-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-800 mb-3">
+              Observações clínicas
+            </p>
+            {observacoesLocal.length > 0 ? (
+              <>
+                <div className="space-y-3">
+                  {observacoesLocal
+                    .slice(0, HISTORICO_VISIVEL)
+                    .map((item, i) => (
+                      <RegistroItem
+                        key={i}
+                        item={{ ...item, tema: "clinica" }}
+                      />
+                    ))}
+                </div>
+                {observacoesLocal.length > HISTORICO_VISIVEL && (
+                  <button
+                    onClick={() => setModalObservacoesAberto(true)}
+                    className="flex items-center gap-1.5 text-emerald-800 font-bold text-xs mt-4 hover:underline"
                   >
-                    <div>
-                      <p className="text-[10px] font-bold text-[#5f5e5e] uppercase tracking-wider">
-                        {item.data} — {item.autor}
-                      </p>
-                      <p className="text-[#1a1c1c] mt-0.5">{item.texto}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {historicoLocal.length > HISTORICO_VISIVEL && (
-                <button
-                  onClick={() => setModalHistoricoAberto(true)}
-                  className="flex items-center gap-1.5 text-[#8e001b] font-bold text-xs mt-4 hover:underline"
-                >
-                  <span className="material-symbols-outlined text-[16px]">
-                    unfold_more
-                  </span>
-                  Ver histórico completo (
-                  {historicoLocal.length - HISTORICO_VISIVEL} mais)
-                </button>
-              )}
-            </div>
-          ) : (
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-2">
-                Histórico
-              </p>
+                    <span className="material-symbols-outlined text-[16px]">
+                      unfold_more
+                    </span>
+                    Ver observações completas (
+                    {observacoesLocal.length - HISTORICO_VISIVEL} mais)
+                  </button>
+                )}
+              </>
+            ) : (
               <p className="text-sm text-[#5f5e5e] italic">
-                Nenhuma observação registrada ainda.
+                Nenhuma observação clínica registrada ainda.
               </p>
-            </div>
-          )}
+            )}
+          </div>
+
+          <div className="bg-[#fafafa] border border-[#f0e6e6] rounded-xl p-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-3">
+              Histórico
+            </p>
+            {historicoLocal.length > 0 ? (
+              <>
+                <div className="space-y-3">
+                  {historicoLocal.slice(0, HISTORICO_VISIVEL).map((item, i) => (
+                    <RegistroItem key={i} item={item} />
+                  ))}
+                </div>
+                {historicoLocal.length > HISTORICO_VISIVEL && (
+                  <button
+                    onClick={() => setModalHistoricoAberto(true)}
+                    className="flex items-center gap-1.5 text-[#8e001b] font-bold text-xs mt-4 hover:underline"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">
+                      unfold_more
+                    </span>
+                    Ver histórico completo (
+                    {historicoLocal.length - HISTORICO_VISIVEL} mais)
+                  </button>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-[#5f5e5e] italic">
+                Nenhuma alteração registrada ainda.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
       {modalHistoricoAberto && (
-        <ModalHistorico
-          animal={animal}
-          historico={historicoLocal}
+        <ModalRegistros
+          titulo={`Histórico completo — ${animal.nome}`}
+          itens={historicoLocal}
+          tema="padrao"
           onClose={() => setModalHistoricoAberto(false)}
+        />
+      )}
+
+      {modalObservacoesAberto && (
+        <ModalRegistros
+          titulo={`Observações clínicas — ${animal.nome}`}
+          itens={observacoesLocal}
+          tema="clinica"
+          onClose={() => setModalObservacoesAberto(false)}
         />
       )}
 
@@ -1830,23 +2167,22 @@ function DashboardPage() {
   const perfil = isProprioTutor ? USUARIO_LOGADO : TUTOR_MOCK;
 
   const infoGrid = [
-    { icon: "person", label: "Nome Completo", valor: perfil.nomeCompleto },
-    { icon: "mail", label: "E-mail", valor: perfil.email },
+    { label: "Nome Completo", valor: perfil.nomeCompleto },
+    { label: "E-mail", valor: perfil.email },
     {
-      icon: "call",
       label: "Telefone",
       valor: telefoneVisivel ? perfil.telefone : "•••••••••••••",
       toggle: true,
     },
     ...(perfil.role === "vet"
       ? [
-          { icon: "clinical_notes", label: "CRMV", valor: perfil.crmv },
-          { icon: "apartment", label: "Hospital", valor: perfil.hospital },
+          { label: "CRMV", valor: perfil.crmv },
+          { label: "Hospital", valor: perfil.hospital },
         ]
       : []),
-    { icon: "markunread_mailbox", label: "CEP", valor: perfil.cep },
-    { icon: "location_on", label: "Cidade", valor: perfil.cidade },
-    { icon: "home", label: "Bairro", valor: perfil.bairro },
+    { label: "CEP", valor: perfil.cep },
+    { label: "Cidade", valor: perfil.cidade },
+    { label: "Bairro", valor: perfil.bairro },
   ];
 
   return (
@@ -1857,83 +2193,107 @@ function DashboardPage() {
       )}
 
       <main className="pb-20 px-5 md:px-16 max-w-[1200px] mx-auto pt-28">
-        <section className="mb-20">
+        <section className="mb-10">
           <div className="bg-white rounded-2xl border shadow-sm overflow-hidden border-[#8e001b]/20">
-            <div className="h-32 bg-gradient-to-r from-[#8e001b] to-[#b7102a]" />
-            <div className="px-8 pb-6 pt-4 flex justify-between items-center flex-wrap gap-4 relative">
-              <div className="flex items-center gap-6">
-                <div className="relative -mt-16">
-                  <div className="w-24 h-24 rounded-full border-4 border-white shadow-sm bg-[#e2e2e2] flex items-center justify-center relative z-10">
-                    <span className="material-symbols-outlined text-[#5f5e5e] text-5xl">
-                      person
-                    </span>
+            {/* Faixa fina no topo — mantém a cor da marca sem repetir o
+                banner cheio dos cards de animal */}
+            <div className="h-1.5 bg-gradient-to-r from-[#8e001b] to-[#b7102a]" />
+
+            {/* Identidade + dados na esquerda; a foto sangra até a borda
+                direita do card, ancorando a composição em vez de flutuar
+                solta dentro do padding */}
+            <div className="flex flex-col-reverse lg:flex-row lg:items-stretch">
+              <div className="flex-1 min-w-0 flex flex-col gap-4 p-6">
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div>
+                    <h1 className="text-2xl font-bold text-[#1a1c1c]">
+                      {perfil.nome}
+                    </h1>
+
+                    <p className="flex items-center gap-1.5 text-[#5f5e5e] text-xs mt-1.5">
+                      <span className="material-symbols-outlined text-[15px]">
+                        calendar_month
+                      </span>
+                      Membro desde {perfil.membroDesde}
+                    </p>
                   </div>
-                </div>
-                <div className="pt-2">
-                  <h1 className="text-2xl font-bold text-[#1a1c1c]">
-                    {perfil.nome}
-                  </h1>
-                  {perfil.role === "vet" && (
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-[#8e001b]/10 border border-[#8e001b]/20 rounded-full mt-2 inline-flex">
-                      <span className="material-symbols-outlined text-[#8e001b] text-[14px]">
-                        medical_services
+
+                  {isProprioTutor && (
+                    <button className="border-2 border-[#8e001b] text-[#8e001b] font-bold hover:bg-[#8e001b] hover:text-white transition-colors px-5 py-1.5 rounded-full flex items-center gap-2 text-xs">
+                      <span className="material-symbols-outlined text-[16px]">
+                        edit
                       </span>
-                      <span className="text-[#8e001b] font-bold text-[10px] uppercase tracking-widest">
-                        Veterinário Validado
-                      </span>
-                    </div>
+                      Editar perfil
+                    </button>
                   )}
-                  <p className="text-[#5f5e5e] text-[12px] flex items-center gap-1 mt-1">
-                    <span className="material-symbols-outlined text-[14px]">
-                      calendar_month
-                    </span>
-                    Membro desde: {perfil.membroDesde}
-                  </p>
                 </div>
-              </div>
-              {isProprioTutor && (
-                <button className="border-2 border-[#8e001b] text-[#8e001b] font-bold hover:bg-[#8e001b] hover:text-white transition-colors px-6 py-2 rounded-full flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[20px]">
-                    edit
-                  </span>
-                  Editar perfil
-                </button>
-              )}
-            </div>
-            <div className="border-t mt-6 pt-6 mx-8 border-[#e4bebc]">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-y-6 gap-x-4 mt-6 pb-8 justify-items-center">
-                {infoGrid.map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex flex-col items-center text-center gap-2"
-                  >
-                    <span className="material-symbols-outlined text-[#8e001b]">
-                      {item.icon}
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="text-[#8e001b] text-[11px] font-bold uppercase tracking-widest">
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                  {infoGrid.map((item) => (
+                    <div
+                      key={item.label}
+                      className="bg-[#fafafa] border border-[#f0e6e6] rounded-xl px-3 py-2 flex flex-col items-center justify-center text-center gap-0.5"
+                    >
+                      <span className="text-[#8e001b] text-[10px] font-bold uppercase tracking-widest">
                         {item.label}
                       </span>
                       {item.toggle ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-[#1a1c1c] font-semibold text-sm">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[#1a1c1c] font-semibold text-[13px]">
                             {item.valor}
                           </span>
                           <button
                             onClick={() => setTelefoneVisivel(!telefoneVisivel)}
-                            className="material-symbols-outlined text-[#8e001b] text-lg hover:opacity-70 transition-opacity"
+                            className="material-symbols-outlined text-[#8e001b] text-base hover:opacity-70 transition-opacity"
                           >
                             {telefoneVisivel ? "visibility_off" : "visibility"}
                           </button>
                         </div>
                       ) : (
-                        <span className="text-[#1a1c1c] font-semibold text-sm">
+                        <span className="text-[#1a1c1c] font-semibold text-[13px] leading-tight break-words">
                           {item.valor}
                         </span>
                       )}
                     </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Foto sangrando na borda direita. A imagem é absoluta para
+                  não impor a própria altura ao card — quem manda na altura é
+                  a coluna de dados à esquerda. */}
+              <div className="relative w-full h-56 lg:h-auto lg:w-60 shrink-0 bg-[#faf0f0]">
+                {perfil.foto ? (
+                  <img
+                    src={perfil.foto}
+                    alt={perfil.nome}
+                    className="absolute inset-0 w-full h-full object-cover object-top"
+                  />
+                ) : (
+                  <div className="absolute inset-0 border-l border-[#e4bebc] flex flex-col items-center justify-center gap-2">
+                    <span className="material-symbols-outlined text-[#c9a5a5] text-5xl">
+                      person
+                    </span>
+                    <span className="text-[#c9a5a5] text-xs font-semibold">
+                      Sem foto ainda
+                    </span>
                   </div>
-                ))}
+                )}
+
+                {/* Papel sobreposto na foto — ganha um lugar deliberado em vez
+                    de ficar boiando ao lado do nome */}
+                <span
+                  className={`absolute bottom-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-md ${
+                    perfil.role === "vet"
+                      ? "bg-[#8e001b] text-white"
+                      : "bg-white/95 text-[#5b403f] backdrop-blur-sm"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[15px]">
+                    {perfil.role === "vet" ? "medical_services" : "pets"}
+                  </span>
+                  {rotuloPapel(perfil)}
+                </span>
               </div>
             </div>
           </div>
@@ -1959,7 +2319,7 @@ function DashboardPage() {
           )}
           <div className="flex justify-between items-end mb-6">
             <h2 className="text-2xl font-bold text-[#1a1c1c]">
-              {isProprioTutor ? "Meus Animais" : "Animais de " + perfil.nome}
+              {isProprioTutor ? "Meus Animais" : "Pets de " + perfil.nome}
             </h2>
             <span className="text-xs font-semibold text-[#5f5e5e] uppercase">
               {ANIMAIS_MOCK.length} Animais Cadastrados
