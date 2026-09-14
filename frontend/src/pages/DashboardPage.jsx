@@ -5,6 +5,9 @@ import dog1 from "../assets/dogs/dog1_0-image.jpg";
 import dog1_1 from "../assets/dogs/dog1_1-image.jpg";
 import dog1_2 from "../assets/dogs/dog1_2-image.jpg";
 import cat1 from "../assets/cats/cat1_0-image.jpg";
+import hemogramaImg from "../assets/documents/hemograma.png";
+import sorologiaImg from "../assets/documents/sorologia.png";
+import carteiraVacinacaoImg from "../assets/documents/carteira_vacinacao.jpg";
 
 const VISUALIZANDO_PROPRIO_PERFIL = false;
 const USUARIO_E_VETERINARIO = true;
@@ -43,6 +46,19 @@ const validado = (por, crmv, em, nota = "") => ({
   nota,
 });
 
+// Cada documento pode ter mais de uma versão ao longo do tempo (ex.: hemograma
+// reenviado). O status do documento é sempre o da versão mais recente, mas
+// as versões antigas ficam acessíveis para consulta.
+const versaoDoc = (arquivo, data, status, enviadoPor) => ({
+  arquivo,
+  data,
+  status,
+  enviadoPor,
+});
+
+const statusDocumento = (doc) =>
+  doc.versoes.length === 0 ? "pendente" : doc.versoes.at(-1).status;
+
 const ANIMAIS_MOCK = [
   {
     id: 1,
@@ -78,9 +94,25 @@ const ANIMAIS_MOCK = [
       transfusao: validado("Dr. Paulo Rezende", "88214-MG", "15/10/2025"),
     },
     documentos: [
-      { nome: "Hemograma completo", status: "validado" },
-      { nome: "Sorologias", status: "pendente" },
-      { nome: "Carteira de vacinação", status: "enviado" },
+      {
+        nome: "Hemograma completo",
+        versoes: [
+          versaoDoc(hemogramaImg, "10/10/2025", "validado", "Marina Souza"),
+          versaoDoc(hemogramaImg, "02/03/2026", "enviado", "Marina Souza"),
+        ],
+      },
+      { nome: "Sorologias", versoes: [] },
+      {
+        nome: "Carteira de vacinação",
+        versoes: [
+          versaoDoc(
+            carteiraVacinacaoImg,
+            "10/10/2025",
+            "enviado",
+            "Marina Souza",
+          ),
+        ],
+      },
     ],
     historico: [
       {
@@ -116,9 +148,12 @@ const ANIMAIS_MOCK = [
     observacoes: "Luna é um pouco arisca com estranhos; requer contenção leve.",
     validacaoCampos: {},
     documentos: [
-      { nome: "Hemograma completo", status: "pendente" },
-      { nome: "Sorologias", status: "pendente" },
-      { nome: "Carteira de vacinação", status: "pendente" },
+      { nome: "Hemograma completo", versoes: [] },
+      {
+        nome: "Sorologias",
+        versoes: [versaoDoc(sorologiaImg, "01/03/2026", "enviado", "Marina Souza")],
+      },
+      { nome: "Carteira de vacinação", versoes: [] },
     ],
     historico: [],
   },
@@ -210,38 +245,152 @@ function resumoValidacao(validacoes) {
   };
 }
 
+const ESTILO_DOC = {
+  validado: {
+    texto: "Validado",
+    badge: "bg-emerald-100 text-emerald-800",
+    borda: "border-emerald-300",
+    icone: "check_circle",
+  },
+  enviado: {
+    texto: "Aguardando conferência",
+    badge: "bg-blue-100 text-blue-800",
+    borda: "border-blue-300",
+    icone: "schedule",
+  },
+  recusado: {
+    texto: "Recusado",
+    badge: "bg-red-100 text-red-700",
+    borda: "border-red-300",
+    icone: "cancel",
+  },
+  pendente: {
+    texto: "Nenhum documento enviado",
+    badge: "bg-[#eeeeee] text-[#5f5e5e]",
+    borda: "border-[#e4bebc]",
+    icone: "hourglass_empty",
+  },
+};
+
 function DocBadge({ status }) {
-  if (status === "validado")
-    return (
-      <span className="text-[10px] font-bold text-emerald-800 uppercase">
-        Validado
-      </span>
-    );
-  if (status === "enviado")
-    return (
-      <span className="text-[10px] font-bold text-blue-800 uppercase">
-        Aguardando conferência
-      </span>
-    );
-  if (status === "recusado")
-    return (
-      <span className="text-[10px] font-bold text-red-700 uppercase">
-        Recusado
-      </span>
-    );
+  const e = ESTILO_DOC[status];
   return (
-    <button className="flex items-center gap-1 text-[10px] font-bold border border-[#8e001b] text-[#8e001b] px-3 py-1 rounded-full hover:bg-[#8e001b] hover:text-white transition-colors">
-      <span className="material-symbols-outlined text-sm">upload_file</span>{" "}
-      Enviar
-    </button>
+    <span
+      className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${e.badge}`}
+    >
+      <span className="material-symbols-outlined text-[13px]">
+        {e.icone}
+      </span>
+      {e.texto}
+    </span>
   );
 }
 
-function docBg(status) {
-  if (status === "validado") return "bg-emerald-100";
-  if (status === "enviado") return "bg-blue-100";
-  if (status === "recusado") return "bg-red-100";
-  return "bg-[#eeeeee]";
+// Botão de envio de arquivo — usado tanto para o primeiro envio quanto para
+// substituir/adicionar uma nova versão de um documento já existente.
+function BotaoEnviarDocumento({ label, onSelecionar, destaque = false }) {
+  return (
+    <label
+      className={`flex items-center justify-center gap-1.5 text-xs font-bold rounded-full py-2 cursor-pointer transition-colors ${
+        destaque
+          ? "bg-[#8e001b] text-white hover:brightness-110"
+          : "border border-[#8e001b] text-[#8e001b] hover:bg-[#8e001b] hover:text-white"
+      }`}
+    >
+      <span className="material-symbols-outlined text-[15px]">
+        upload_file
+      </span>
+      {label}
+      <input
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          onSelecionar(e.target.files[0]);
+          e.target.value = "";
+        }}
+      />
+    </label>
+  );
+}
+
+// ─── Card de documento clínico: nome, selo de status e ações centralizados ──
+function DocumentoCard({
+  doc,
+  isVet,
+  isProprioTutor,
+  onAvaliar,
+  onEnviar,
+  onAbrir,
+}) {
+  const status = statusDocumento(doc);
+  const estilo = ESTILO_DOC[status];
+  const podeEnviar = isVet || isProprioTutor;
+
+  return (
+    <div
+      className={`bg-white border-2 ${estilo.borda} rounded-2xl p-5 flex flex-col items-center text-center gap-3`}
+    >
+      <p className="font-bold text-sm text-[#1a1c1c]">{doc.nome}</p>
+
+      <DocBadge status={status} />
+
+      {doc.versoes.length > 1 && (
+        <p className="-mt-1.5 text-[10px] text-[#5f5e5e]">
+          {doc.versoes.length} versões enviadas
+        </p>
+      )}
+
+      <div className="w-full flex flex-col gap-2 mt-1">
+        {isVet && status === "enviado" && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => onAvaliar(doc.nome, "validado")}
+              className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 text-white text-[11px] font-bold py-2 rounded-full hover:bg-emerald-700 transition-colors active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[14px]">
+                check
+              </span>
+              Validar
+            </button>
+            <button
+              onClick={() => onAvaliar(doc.nome, "recusado")}
+              className="flex-1 flex items-center justify-center gap-1 border border-red-300 text-red-600 text-[11px] font-bold py-2 rounded-full hover:bg-red-500 hover:text-white transition-colors active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[14px]">
+                close
+              </span>
+              Recusar
+            </button>
+          </div>
+        )}
+
+        {doc.versoes.length > 0 && (
+          <button
+            onClick={onAbrir}
+            className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-[#8e001b] hover:underline py-1"
+          >
+            <span className="material-symbols-outlined text-[14px]">
+              open_in_new
+            </span>
+            {doc.versoes.length > 1 ? "Ver versões" : "Abrir documento"}
+          </button>
+        )}
+
+        {podeEnviar && (
+          <BotaoEnviarDocumento
+            label={
+              doc.versoes.length === 0
+                ? "Enviar documento"
+                : "Enviar nova versão"
+            }
+            destaque={doc.versoes.length === 0}
+            onSelecionar={(file) => onEnviar(doc.nome, file)}
+          />
+        )}
+      </div>
+    </div>
+  );
 }
 
 const ESTILO_CAMPO = {
@@ -909,6 +1058,148 @@ function ModalCadastroAnimal({ onClose }) {
 
 const HISTORICO_VISIVEL = 3;
 
+function BadgeVersao({ status }) {
+  const estilos = {
+    validado: "bg-emerald-100 text-emerald-800",
+    enviado: "bg-blue-100 text-blue-800",
+    recusado: "bg-red-100 text-red-700",
+  };
+  const rotulos = {
+    validado: "Validado",
+    enviado: "Aguardando conferência",
+    recusado: "Recusado",
+  };
+  return (
+    <span
+      className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${estilos[status]}`}
+    >
+      {rotulos[status]}
+    </span>
+  );
+}
+
+// ─── Visualizador de documento: imagem grande + histórico de versões ─────────
+function ModalDocumento({ nomeDocumento, versoes, onClose }) {
+  const [indiceSelecionado, setIndiceSelecionado] = useState(versoes.length - 1);
+  const versaoAtual = versoes[indiceSelecionado];
+  const temVarias = versoes.length > 1;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[95vh] flex flex-col">
+        <div className="bg-white border-b border-[#e4bebc] px-8 py-5 flex items-center justify-between rounded-t-2xl shrink-0">
+          <div>
+            <h2 className="text-xl font-bold text-[#1a1c1c]">
+              {nomeDocumento}
+            </h2>
+            <p className="text-xs text-[#5f5e5e] mt-0.5">
+              {versoes.length} versão{versoes.length !== 1 ? "ões" : ""}{" "}
+              enviada{versoes.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-[#f3f3f3] flex items-center justify-center hover:bg-[#e4bebc] transition-colors"
+          >
+            <span className="material-symbols-outlined text-[#5f5e5e] text-xl">
+              close
+            </span>
+          </button>
+        </div>
+
+        <div className="px-8 py-6 flex flex-col gap-5 overflow-y-auto flex-1 min-h-0">
+          {/* Imagem do documento selecionado */}
+          <div className="flex flex-col gap-2 min-h-0">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-[#1a1c1c]">
+                  {versaoAtual.data}
+                </span>
+                <BadgeVersao status={versaoAtual.status} />
+                {indiceSelecionado === versoes.length - 1 && temVarias && (
+                  <span className="text-[9px] font-bold uppercase text-[#8e001b] bg-[#faf0f0] px-2 py-0.5 rounded-full">
+                    Mais recente
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-[#5f5e5e]">
+                  Enviado por {versaoAtual.enviadoPor}
+                </span>
+                <a
+                  href={versaoAtual.arquivo}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 text-xs font-bold text-[#8e001b] hover:underline"
+                >
+                  <span className="material-symbols-outlined text-[15px]">
+                    open_in_new
+                  </span>
+                  Abrir em nova aba
+                </a>
+              </div>
+            </div>
+            {/* Fundo escuro + zoom em nova aba resolvem o problema de laudos
+                com letra miúda — aqui priorizamos a largura da imagem em vez
+                de encolhê-la para caber numa altura fixa. */}
+            <div className="w-full rounded-xl border border-[#e4bebc] bg-[#2a2a2a] overflow-auto max-h-[65vh]">
+              <img
+                src={versaoAtual.arquivo}
+                alt={`${nomeDocumento} — ${versaoAtual.data}`}
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+
+          {/* Lista de versões — só aparece quando há mais de uma */}
+          {temVarias && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-3">
+                Histórico de envios
+              </p>
+              <div className="space-y-2">
+                {versoes
+                  .map((v, i) => ({ ...v, i }))
+                  .reverse()
+                  .map((v) => (
+                    <button
+                      key={v.i}
+                      onClick={() => setIndiceSelecionado(v.i)}
+                      className={`w-full flex items-center justify-between gap-3 text-left px-4 py-2.5 rounded-xl border transition-colors ${
+                        v.i === indiceSelecionado
+                          ? "border-[#8e001b] bg-[#faf0f0]"
+                          : "border-[#e4bebc] hover:border-[#8e001b]/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-[#8e001b] text-[18px]">
+                          description
+                        </span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-[#1a1c1c]">
+                            {v.data}
+                            {v.i === versoes.length - 1 && " — mais recente"}
+                          </span>
+                          <span className="text-[11px] text-[#5f5e5e]">
+                            Enviado por {v.enviadoPor}
+                          </span>
+                        </div>
+                      </div>
+                      <BadgeVersao status={v.status} />
+                    </button>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ModalHistorico({ animal, historico, onClose }) {
   return (
     <div
@@ -1063,7 +1354,7 @@ function BannerValidacao({ resumo }) {
   );
 }
 
-function AnimalCard({ animal, isProprioTutor, isVet }) {
+function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
   const [disponivel, setDisponivel] = useState(animal.disponivel);
   const [docsAbertos, setDocsAbertos] = useState(false);
   const [obsVet, setObsVet] = useState("");
@@ -1071,6 +1362,7 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
   const [adicionandoObs, setAdicionandoObs] = useState(false);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [modalHistoricoAberto, setModalHistoricoAberto] = useState(false);
+  const [documentoAberto, setDocumentoAberto] = useState(null);
 
   const [auditando, setAuditando] = useState(false);
   // valoresSalvos = o que já foi confirmado; valores = o rascunho em edição
@@ -1144,14 +1436,46 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
     );
   };
 
+  // Avalia sempre a versão mais recente do documento (a que está aguardando conferência)
   const avaliarDocumento = (nome, status) => {
     setDocumentos((prev) =>
-      prev.map((d) => (d.nome === nome ? { ...d, status } : d)),
+      prev.map((d) => {
+        if (d.nome !== nome || d.versoes.length === 0) return d;
+        const versoes = [...d.versoes];
+        versoes[versoes.length - 1] = {
+          ...versoes[versoes.length - 1],
+          status,
+        };
+        return { ...d, versoes };
+      }),
     );
     registrar(
       status === "validado"
         ? `Documento "${nome}" conferido e validado.`
         : `Documento "${nome}" recusado — reenvio necessário.`,
+    );
+  };
+
+  // Quando o veterinário envia o documento ele mesmo já conferiu o conteúdo
+  // (ex.: recebeu o PDF por fora e já confirma o laudo), então a versão entra
+  // validada direto. Quando é o tutor, entra como "enviado", aguardando o vet.
+  const enviarDocumento = (nome, file) => {
+    if (!file) return;
+    const arquivo = URL.createObjectURL(file);
+    const status = isVet ? "validado" : "enviado";
+    const enviadoPor = isVet ? USUARIO_LOGADO.nome : nomeTutor;
+
+    setDocumentos((prev) =>
+      prev.map((d) =>
+        d.nome === nome
+          ? { ...d, versoes: [...d.versoes, versaoDoc(arquivo, hoje(), status, enviadoPor)] }
+          : d,
+      ),
+    );
+    registrar(
+      isVet
+        ? `Documento "${nome}" enviado e validado por ${USUARIO_LOGADO.nome} (CRMV ${USUARIO_LOGADO.crmv}).`
+        : `Documento "${nome}" enviado por ${enviadoPor} — aguardando conferência.`,
     );
   };
 
@@ -1370,65 +1694,25 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
             >
               {docsAbertos ? "Ocultar documentos ↑" : "Ver documentos ↓"}
               <span className="text-[10px] font-bold text-[#5f5e5e] bg-[#eeeeee] px-2 py-0.5 rounded-full uppercase">
-                {documentos.filter((d) => d.status === "validado").length}/
-                {documentos.length} validados
+                {
+                  documentos.filter((d) => statusDocumento(d) === "validado")
+                    .length
+                }
+                /{documentos.length} validados
               </span>
             </button>
             {docsAbertos && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {documentos.map((doc) => (
-                  <div
+                  <DocumentoCard
                     key={doc.nome}
-                    className={`${docBg(doc.status)} p-4 rounded-xl flex flex-col gap-3`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="material-symbols-outlined text-[#8e001b]">
-                          description
-                        </span>
-                        <span className="font-semibold text-sm truncate">
-                          {doc.nome}
-                        </span>
-                      </div>
-                      <DocBadge status={doc.status} />
-                    </div>
-
-                    {isVet && doc.status === "enviado" && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() =>
-                            avaliarDocumento(doc.nome, "validado")
-                          }
-                          className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-full hover:bg-emerald-700 transition-colors active:scale-95"
-                        >
-                          <span className="material-symbols-outlined text-[13px]">
-                            check
-                          </span>
-                          Validar
-                        </button>
-                        <button
-                          onClick={() =>
-                            avaliarDocumento(doc.nome, "recusado")
-                          }
-                          className="flex-1 flex items-center justify-center gap-1 border border-red-300 text-red-600 text-[10px] font-bold py-1.5 rounded-full hover:bg-red-500 hover:text-white transition-colors active:scale-95"
-                        >
-                          <span className="material-symbols-outlined text-[13px]">
-                            close
-                          </span>
-                          Recusar
-                        </button>
-                      </div>
-                    )}
-
-                    {doc.status !== "pendente" && (
-                      <button className="flex items-center justify-center gap-1 text-[10px] font-bold text-[#8e001b] hover:underline">
-                        <span className="material-symbols-outlined text-[13px]">
-                          open_in_new
-                        </span>
-                        Abrir documento
-                      </button>
-                    )}
-                  </div>
+                    doc={doc}
+                    isVet={isVet}
+                    isProprioTutor={isProprioTutor}
+                    onAvaliar={avaliarDocumento}
+                    onEnviar={enviarDocumento}
+                    onAbrir={() => setDocumentoAberto(doc.nome)}
+                  />
                 ))}
               </div>
             )}
@@ -1514,16 +1798,6 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
         </div>
       </div>
 
-      {/* ── Observações — largura total no rodapé ── */}
-      <div className="border-t border-[#e4bebc] bg-white p-4 px-8 text-[#5b403f] text-sm">
-        <p className="italic">
-          <strong className="font-bold text-[#1a1c1c] not-italic">
-            Observações:
-          </strong>{" "}
-          {animal.observacoes}
-        </p>
-      </div>
-
       {modalHistoricoAberto && (
         <ModalHistorico
           animal={animal}
@@ -1531,6 +1805,18 @@ function AnimalCard({ animal, isProprioTutor, isVet }) {
           onClose={() => setModalHistoricoAberto(false)}
         />
       )}
+
+      {documentoAberto &&
+        (() => {
+          const doc = documentos.find((d) => d.nome === documentoAberto);
+          return (
+            <ModalDocumento
+              nomeDocumento={doc.nome}
+              versoes={doc.versoes}
+              onClose={() => setDocumentoAberto(null)}
+            />
+          );
+        })()}
     </div>
   );
 }
@@ -1688,6 +1974,7 @@ function DashboardPage() {
               animal={animal}
               isProprioTutor={isProprioTutor}
               isVet={isVet}
+              nomeTutor={perfil.nome}
             />
           ))}
           {isProprioTutor && (
