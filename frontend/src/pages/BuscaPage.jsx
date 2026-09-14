@@ -228,16 +228,16 @@ const TIPOS_SANGUINEOS = {
 const PESO_MIN = { cao: 10, gato: 2 };
 const PESO_MAX = { cao: 60, gato: 10 };
 
-function DonorCard({ doador, onClick }) {
+function DonorCard({ doador, onClick, mostrarDistancia }) {
   const disponivel = doador.status === "disponivel";
 
   return (
     <div
       className={`bg-white border border-[#e4bebc] rounded-2xl overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-lg ${!disponivel ? "opacity-80 grayscale-[0.2]" : ""}`}
     >
-      <div className="p-5 flex gap-4 items-stretch">
-        {/* Foto lateral */}
-        <div className="w-36 shrink-0 rounded-xl overflow-hidden border border-[#e4bebc]">
+      <div className="p-5 flex gap-4">
+        {/* Foto — tamanho fixo */}
+        <div className="w-48 h-52 shrink-0 rounded-xl overflow-hidden border border-[#e4bebc]">
           {doador.foto ? (
             <img
               src={doador.foto}
@@ -246,17 +246,18 @@ function DonorCard({ doador, onClick }) {
             />
           ) : (
             <div className="w-full h-full bg-[#faf0f0] flex flex-col items-center justify-center gap-1">
-              <span className="material-symbols-outlined text-[#c9a5a5] text-3xl">
+              <span className="material-symbols-outlined text-[#c9a5a5] text-4xl">
                 photo_camera
               </span>
             </div>
           )}
         </div>
 
-        {/* Dados à direita */}
-        <div className="flex-1 min-w-0 flex flex-col gap-2 py-0.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-lg font-bold text-[#1a1c1c] leading-none">
+        {/* Dados — altura fixa igual à da foto, distribuídos uniformemente */}
+        <div className="flex-1 min-w-0 h-52 flex flex-col justify-between py-0.5">
+          {/* Nome + código */}
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-[#1a1c1c] leading-none truncate">
               {doador.nome}
             </h3>
             <span className="text-xs font-bold text-[#8e001b] bg-[#faf0f0] px-2 py-0.5 rounded-lg shrink-0">
@@ -264,12 +265,14 @@ function DonorCard({ doador, onClick }) {
             </span>
           </div>
 
-          <p className="text-[#5f5e5e] text-sm">
+          {/* Raça e idade */}
+          <p className="text-[#5f5e5e] text-sm truncate">
             {doador.raca} • {doador.idade} anos
           </p>
 
+          {/* Badge de validação */}
           {doador.validado ? (
-            <span className="flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-[11px] font-bold w-fit">
+            <span className="flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-[11px] font-bold w-fit whitespace-nowrap">
               <span
                 className="material-symbols-outlined text-[14px]"
                 style={{ fontVariationSettings: "'FILL' 1" }}
@@ -279,7 +282,7 @@ function DonorCard({ doador, onClick }) {
               Validado clinicamente
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full text-[11px] font-bold w-fit">
+            <span className="flex items-center gap-1.5 bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full text-[11px] font-bold w-fit whitespace-nowrap">
               <span className="material-symbols-outlined text-[14px]">
                 schedule
               </span>
@@ -287,11 +290,12 @@ function DonorCard({ doador, onClick }) {
             </span>
           )}
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="material-symbols-outlined text-[#5f5e5e] text-[15px]">
+          {/* Tutor + código */}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="material-symbols-outlined text-[#5f5e5e] text-[15px] shrink-0">
               person
             </span>
-            <span className="font-semibold text-[#1a1c1c] text-sm">
+            <span className="font-semibold text-[#1a1c1c] text-sm truncate">
               {doador.tutor}
             </span>
             <span className="text-xs font-bold text-[#8e001b] bg-[#faf0f0] px-2 py-0.5 rounded-lg shrink-0">
@@ -299,33 +303,31 @@ function DonorCard({ doador, onClick }) {
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-sm text-[#5f5e5e]">
-            <span className="material-symbols-outlined text-[15px]">
+          {/* Localização */}
+          <div className="flex items-center gap-1.5 text-sm text-[#5f5e5e] truncate">
+            <span className="material-symbols-outlined text-[15px] shrink-0">
               location_on
             </span>
             {doador.bairro}
-            {doador.distancia ? ` • ${doador.distancia} km` : ""}
+            {mostrarDistancia && doador.distancia
+              ? ` • ${doador.distancia} km`
+              : ""}
           </div>
-        </div>
-      </div>
 
-      {/* Tags clínicas */}
-      <div className="px-5 pb-4 flex items-center gap-3">
-        <div className="flex-1 bg-white border border-[#8e001b] rounded-xl px-3 py-2 flex flex-col items-center">
-          <span className="text-[#8e001b] text-[9px] font-bold uppercase tracking-widest">
-            Tipo Sanguíneo
-          </span>
-          <span className="text-[#8e001b] text-sm font-extrabold">
-            {doador.tipo}
-          </span>
-        </div>
-        <div className="flex-1 bg-[#f3f3f3] border border-[#e4bebc] rounded-xl px-3 py-2 flex flex-col items-center">
-          <span className="text-[#5f5e5e] text-[9px] font-bold uppercase tracking-widest">
-            Peso
-          </span>
-          <span className="text-[#1a1c1c] text-sm font-extrabold">
-            {doador.peso}kg
-          </span>
+          {/* Tipo sanguíneo + peso */}
+          <div className="flex items-center gap-3">
+            <span className="bg-[#8e001b] text-white text-sm font-extrabold px-3 py-1.5 rounded-lg whitespace-nowrap shrink-0">
+              {doador.tipo}
+            </span>
+            <div className="flex items-center gap-1.5 text-sm text-[#5f5e5e] shrink-0">
+              <span className="material-symbols-outlined text-[15px]">
+                monitor_weight
+              </span>
+              <span className="font-semibold text-[#1a1c1c]">
+                {doador.peso}kg
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -363,6 +365,7 @@ function BuscaPage() {
   const [distanciaMax, setDistanciaMax] = useState("");
   const [ordenar, setOrdenar] = useState("validados");
   const [visiveis, setVisiveis] = useState(4);
+  const [localReferencia, setLocalReferencia] = useState("");
 
   const handleVerPerfil = (id) => navigate(`/tutor/${id}`);
 
@@ -379,6 +382,7 @@ function BuscaPage() {
     setTiposSelecionados([]);
     setPesoMax(60);
     setDistanciaMax("");
+    setLocalReferencia("");
     setVisiveis(4);
   };
 
@@ -398,7 +402,6 @@ function BuscaPage() {
         tiposSelecionados.length === 0 || tiposSelecionados.includes(d.tipo),
     )
     .filter((d) => d.peso <= pesoMax)
-    .filter((d) => !distanciaMax || d.distancia <= Number(distanciaMax))
     .filter((d) => {
       if (!termoBusca) return true;
       return (
@@ -409,6 +412,12 @@ function BuscaPage() {
         d.bairro.toLowerCase().includes(termoBusca)
       );
     })
+    .filter(
+      (d) =>
+        !localReferencia ||
+        !distanciaMax ||
+        d.distancia <= Number(distanciaMax),
+    )
     .sort((a, b) => {
       if (ordenar === "validados") return b.validado - a.validado;
       if (ordenar === "proximos") return a.distancia - b.distancia;
@@ -421,7 +430,7 @@ function BuscaPage() {
       <Header dark={true} />
       <main className="max-w-[1536px] mx-auto flex flex-col md:flex-row gap-6 px-5 md:px-16 py-12 pt-28">
         {/* Sidebar */}
-        <aside className="w-full md:w-1/4 flex flex-col gap-6">
+        <aside className="w-full md:w-1/3 flex flex-col gap-6">
           <div className="bg-white border border-[#e4bebc] p-6 rounded-xl shadow-sm">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-bold text-[#1a1c1c]">Filtros</h2>
@@ -435,7 +444,7 @@ function BuscaPage() {
 
             <div className="flex items-center justify-between p-3 bg-[#ffdad8]/30 rounded-lg mb-8 border border-[#8e001b]/20">
               <label
-                className="text-sm font-semibold text-[#1a1c1c] flex items-center gap-2"
+                className="text-sm font-semibold text-[#1a1c1c] flex items-center gap-2 cursor-pointer"
                 htmlFor="verified-toggle"
               >
                 <span
@@ -446,13 +455,15 @@ function BuscaPage() {
                 </span>
                 Apenas validados
               </label>
-              <input
+              <button
                 id="verified-toggle"
-                type="checkbox"
-                checked={apenasValidados}
-                onChange={(e) => setApenasValidados(e.target.checked)}
-                className="w-5 h-5 rounded accent-[#8e001b] cursor-pointer"
-              />
+                onClick={() => setApenasValidados(!apenasValidados)}
+                className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${apenasValidados ? "bg-[#8e001b]" : "bg-[#d0d0d0]"}`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${apenasValidados ? "translate-x-5" : "translate-x-0"}`}
+                />
+              </button>
             </div>
 
             <div className="mb-8">
@@ -519,34 +530,69 @@ function BuscaPage() {
 
             <div>
               <h3 className="text-sm font-semibold mb-3">
+                Local de referência
+              </h3>
+              <div className="relative mb-4">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <span className="material-symbols-outlined text-[18px] text-[#8f6f6e]">
+                    my_location
+                  </span>
+                </span>
+                <select
+                  value={localReferencia}
+                  onChange={(e) => setLocalReferencia(e.target.value)}
+                  className="w-full pl-9 pr-8 py-2 bg-white border border-[#e4bebc] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b] appearance-none cursor-pointer"
+                >
+                  <option value="">Selecione um local...</option>
+                  <option value="hv-ufv">Hospital Veterinário UFV</option>
+                  <option value="atual">Minha localização atual</option>
+                </select>
+                <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <span className="material-symbols-outlined text-[#8f6f6e]">
+                    expand_more
+                  </span>
+                </span>
+              </div>
+
+              <h3 className="text-sm font-semibold mb-3">
                 Distância máxima (km)
               </h3>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <span className="material-symbols-outlined text-[18px] text-[#8f6f6e]">
+                  <span
+                    className={`material-symbols-outlined text-[18px] ${localReferencia ? "text-[#8f6f6e]" : "text-[#d0d0d0]"}`}
+                  >
                     distance
                   </span>
                 </span>
                 <input
                   type="number"
-                  placeholder="Ex: 10"
+                  placeholder={
+                    localReferencia ? "Ex: 10" : "Selecione um local primeiro"
+                  }
                   min="0"
                   value={distanciaMax}
+                  disabled={!localReferencia}
                   onChange={(e) => setDistanciaMax(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-[#e4bebc] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b]"
+                  className={`w-full pl-9 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b] ${localReferencia ? "bg-white border-[#e4bebc]" : "bg-[#f5f5f5] border-[#e8e8e8] text-[#b0b0b0] cursor-not-allowed"}`}
                 />
               </div>
+              {!localReferencia && (
+                <p className="text-[10px] text-[#8f6f6e] mt-2 leading-relaxed">
+                  Escolha um local de referência para calcular as distâncias.
+                </p>
+              )}
             </div>
           </div>
 
           <div className="bg-white border border-[#e4bebc] p-5 rounded-xl shadow-sm">
-            <h3 className="text-sm font-bold text-[#1a1c1c] mb-4 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-[#1a1c1c] mb-3 flex items-center gap-2">
               <span className="material-symbols-outlined text-[#8e001b] text-[18px]">
                 info
               </span>
               O que significam os selos?
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="flex gap-3">
                 <span className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 h-fit mt-0.5">
                   <span
@@ -557,7 +603,7 @@ function BuscaPage() {
                   </span>
                   Validado
                 </span>
-                <p className="text-xs text-[#5f5e5e] leading-relaxed text-justify">
+                <p className="text-sm text-[#5f5e5e] leading-snug text-justify">
                   Os dados clínicos deste pet foram conferidos por um médico
                   veterinário cadastrado na plataforma. A triagem no hospital
                   pode ser mais ágil.
@@ -570,7 +616,7 @@ function BuscaPage() {
                   </span>
                   Pendente
                 </span>
-                <p className="text-xs text-[#5f5e5e] leading-relaxed text-justify">
+                <p className="text-sm text-[#5f5e5e] leading-snug text-justify">
                   O cadastro foi feito pelo tutor, mas ainda não passou por
                   revisão veterinária. A triagem completa será necessária no
                   momento da doação.
@@ -581,7 +627,7 @@ function BuscaPage() {
         </aside>
 
         {/* Área de resultados */}
-        <section className="w-full md:w-3/4 flex flex-col gap-6">
+        <section className="w-full md:w-2/3 flex flex-col gap-6">
           {/* Barra de pesquisa */}
           <div className="relative">
             <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
@@ -676,32 +722,23 @@ function BuscaPage() {
                     key={doador.id}
                     doador={doador}
                     onClick={handleVerPerfil}
+                    mostrarDistancia={!!localReferencia}
                   />
                 ))}
               </div>
 
               {visiveis < doadoresFiltrados.length && (
-                <div className="flex flex-col items-center gap-3 mt-4">
-                  {/* Aviso de que há mais resultados */}
-                  <div className="flex items-center gap-2 text-[#8e001b] text-sm font-semibold animate-pulse">
-                    <span className="material-symbols-outlined text-[20px]">
-                      keyboard_double_arrow_down
-                    </span>
-                    Mais {doadoresFiltrados.length - visiveis}{" "}
-                    {doadoresFiltrados.length - visiveis === 1
-                      ? "doador disponível"
-                      : "doadores disponíveis"}{" "}
-                    abaixo
-                  </div>
+                <div className="flex flex-col items-center gap-2">
                   <button
                     onClick={() => setVisiveis((prev) => prev + 4)}
-                    className="flex items-center gap-2 px-16 py-4 bg-[#8e001b] text-white font-bold rounded-full hover:brightness-110 active:scale-95 transition-all text-sm shadow-md"
+                    className="flex items-center gap-2 px-12 py-3 bg-[#8e001b] text-white font-bold rounded-full hover:brightness-110 active:scale-95 transition-all text-sm shadow-md"
                   >
-                    <span className="material-symbols-outlined">
+                    <span className="material-symbols-outlined text-[20px]">
                       expand_more
                     </span>
                     Carregar mais{" "}
-                    {Math.min(4, doadoresFiltrados.length - visiveis)}
+                    {Math.min(4, doadoresFiltrados.length - visiveis)} de{" "}
+                    {doadoresFiltrados.length - visiveis}
                   </button>
                   <p className="text-xs text-[#5f5e5e]">
                     Mostrando {Math.min(visiveis, doadoresFiltrados.length)} de{" "}
