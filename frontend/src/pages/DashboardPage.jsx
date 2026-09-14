@@ -9,24 +9,36 @@ import hemogramaImg from "../assets/documents/hemograma.png";
 import sorologiaImg from "../assets/documents/sorologia.png";
 import carteiraVacinacaoImg from "../assets/documents/carteira_vacinacao.jpg";
 import mulherFoto from "../assets/people/women1_0-image.jpg";
+import homemFoto from "../assets/people/man1_0-image.jpg";
+import dog7 from "../assets/dogs/dogs7_0-image.jpg";
+import cat7 from "../assets/cats/cat7_0-image.jpg";
 
-const VISUALIZANDO_PROPRIO_PERFIL = false;
-const USUARIO_E_VETERINARIO = true;
-
+// O usuário logado é sempre este veterinário neste mock. "Ver perfil" a
+// partir da busca sempre leva a um tutor de exemplo (Marina) — ver
+// DashboardPage, onde a rota decide qual dos dois exibir.
 const USUARIO_LOGADO = {
-  nome: "Lucas Delgado",
-  nomeCompleto: "Lucas Silva Delgado",
-  email: "lucas.vet@ufv.br",
-  telefone: "(11) 94002-8922",
-  crmv: "12345-SP",
+  nome: "Victor Hugo",
+  nomeCompleto: "Victor Hugo Martins",
+  email: "victor.hugo@ufv.br",
+  telefone: "(31) 99204-7715",
+  crmv: "78120-MG",
   hospital: "Hospital Veterinário UFV",
   cep: "36570-000",
   cidade: "Viçosa - MG",
   bairro: "Centro",
-  membroDesde: "24 Jan 2026",
+  membroDesde: "12 Fev 2025",
   role: "vet",
   genero: "M",
+  foto: homemFoto,
+  // Foto de rosto mais baixo no quadro (bastante teto acima dele) — sem
+  // isso o corte padrão no topo mostra só a sala, cortando o rosto.
+  fotoPosicao: "center 28%",
+  // Foto tirada de longe (sala inteira no quadro) — o recorte sozinho não
+  // basta, precisa de zoom de verdade pra o rosto ficar visível.
+  fotoZoom: 1.7,
 };
+
+const USUARIO_E_VETERINARIO = USUARIO_LOGADO.role === "vet";
 
 const TUTOR_MOCK = {
   nome: "Marina Souza",
@@ -40,6 +52,7 @@ const TUTOR_MOCK = {
   role: "tutor",
   genero: "F",
   foto: mulherFoto,
+  fotoPosicao: "center top",
 };
 
 // O rótulo de papel acompanha o gênero da pessoa
@@ -82,7 +95,8 @@ const ANIMAIS_MOCK = [
     tipo: "DEA 1.1+",
     sexo: "Macho",
     reprodutivo: "Castrado",
-    medicamentos: "Não",
+    medicamentos: "Sim",
+    medicamentosDetalhe: "Prednisolona 5mg, 1x ao dia — preventivo após a reação alérgica registrada.",
     transfusao: "Não",
     vacinas: "Em dia",
     ultimaDoacao: "15/10/2023",
@@ -190,6 +204,166 @@ const ANIMAIS_MOCK = [
   },
 ];
 
+// Animais do próprio veterinário — cenários deliberadamente diferentes dos
+// da Marina: um totalmente validado (documentos inclusive) e outro com um
+// dado contestado e um documento recusado, casos que a tutora não cobre.
+const ANIMAIS_MOCK_VET = [
+  {
+    id: 3,
+    nome: "Bela",
+    fotos: [dog7],
+    especie: "Cão",
+    raca: "Labrador",
+    peso: "28kg",
+    nascimento: "2023-05-10",
+    tipo: "DEA 1.1-",
+    sexo: "Fêmea",
+    reprodutivo: "Castrada",
+    medicamentos: "Não",
+    transfusao: "Não",
+    vacinas: "Em dia",
+    ultimaDoacao: "10/06/2026",
+    disponivel: true,
+    observacoesClinicas: [
+      {
+        data: "20/08/2026",
+        hora: "11:10",
+        autor: "Dra. Camila Duarte",
+        texto:
+          "Bela é bastante tranquila durante a coleta e já doou 3 vezes sem intercorrências.",
+      },
+    ],
+    validacaoCampos: {
+      raca: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
+      idade: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
+      tipo: validado(
+        "Dra. Camila Duarte",
+        "45210-MG",
+        "20/08/2026",
+        "DEA 1.1 negativo — doadora universal para cães.",
+      ),
+      sexo: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
+      reprodutivo: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
+      medicamentos: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
+      transfusao: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
+      vacinas: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
+      peso: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
+    },
+    documentos: [
+      {
+        nome: "Hemograma completo",
+        versoes: [
+          versaoDoc(hemogramaImg, "20/08/2026", "validado", "Victor Hugo"),
+        ],
+      },
+      {
+        nome: "Sorologias",
+        versoes: [
+          versaoDoc(sorologiaImg, "20/08/2026", "validado", "Victor Hugo"),
+        ],
+      },
+      {
+        nome: "Carteira de vacinação",
+        versoes: [
+          versaoDoc(
+            carteiraVacinacaoImg,
+            "20/08/2026",
+            "validado",
+            "Victor Hugo",
+          ),
+        ],
+      },
+    ],
+    historico: [
+      {
+        data: "20/08/2026",
+        hora: "11:00",
+        autor: "Dra. Camila Duarte",
+        texto:
+          "Revisão clínica completa realizada. Todos os dados e documentos conferidos e validados.",
+      },
+    ],
+  },
+  {
+    id: 4,
+    nome: "Nina",
+    fotos: [cat7],
+    especie: "Gato",
+    raca: "Persa",
+    peso: "3.8kg",
+    nascimento: "2022-02-14",
+    tipo: "Tipo B",
+    sexo: "Fêmea",
+    reprodutivo: "Inteira",
+    medicamentos: "Não",
+    transfusao: "Não",
+    vacinas: "Próx: Jan/2027",
+    ultimaDoacao: "20/08/2026",
+    disponivel: false,
+    observacoesClinicas: [
+      {
+        data: "05/09/2026",
+        hora: "15:40",
+        autor: "Dra. Camila Duarte",
+        texto:
+          "Nina se mostra receosa no manuseio; recomenda-se contenção leve e ambiente silencioso durante a coleta.",
+      },
+    ],
+    validacaoCampos: {
+      raca: validado("Dra. Camila Duarte", "45210-MG", "05/09/2026"),
+      idade: validado("Dra. Camila Duarte", "45210-MG", "05/09/2026"),
+      tipo: validado("Dra. Camila Duarte", "45210-MG", "05/09/2026"),
+      sexo: validado("Dra. Camila Duarte", "45210-MG", "05/09/2026"),
+      reprodutivo: validado("Dra. Camila Duarte", "45210-MG", "05/09/2026"),
+      transfusao: validado("Dra. Camila Duarte", "45210-MG", "05/09/2026"),
+      medicamentos: {
+        status: "contestado",
+        por: "Dra. Camila Duarte",
+        crmv: "45210-MG",
+        em: "05/09/2026",
+        nota:
+          "Prontuário do hospital indica tratamento antiparasitário em andamento — cadastro precisa ser atualizado para \"Sim\".",
+      },
+    },
+    documentos: [
+      {
+        nome: "Hemograma completo",
+        versoes: [
+          versaoDoc(hemogramaImg, "28/08/2026", "recusado", "Victor Hugo"),
+        ],
+      },
+      { nome: "Sorologias", versoes: [] },
+      {
+        nome: "Carteira de vacinação",
+        versoes: [
+          versaoDoc(
+            carteiraVacinacaoImg,
+            "05/09/2026",
+            "validado",
+            "Victor Hugo",
+          ),
+        ],
+      },
+    ],
+    historico: [
+      {
+        data: "05/09/2026",
+        hora: "15:30",
+        autor: "Dra. Camila Duarte",
+        texto:
+          "Medicamentos contestado: prontuário do hospital indica tratamento antiparasitário em andamento — cadastro precisa ser atualizado.",
+      },
+      {
+        data: "28/08/2026",
+        hora: "09:20",
+        autor: "Dra. Camila Duarte",
+        texto:
+          "Documento \"Hemograma completo\" recusado — imagem ilegível, reenvio necessário.",
+      },
+    ],
+  },
+];
+
 // Idade é derivada da data de nascimento a cada carregamento da página — nunca
 // fica desatualizada como um texto estático "4 anos" ficaria.
 function calcularIdade(nascimentoISO) {
@@ -273,6 +447,10 @@ const CAMPOS_ANIMAL = [
     // 1 ano não protege contra isso — quem cobre esse risco é a triagem
     // feita a cada doação (ver "sujeito à triagem" na disponibilidade).
     permanente: true,
+    // Quais medicamentos, sempre visível no card quando a resposta é "Sim"
+    // — não precisa clicar em nada pra saber do que se trata.
+    detalhe: (valor, animal) =>
+      valor === "Sim" ? animal.medicamentosDetalhe : null,
   },
   {
     icon: "blood_pressure",
@@ -536,23 +714,148 @@ const ESTILO_CAMPO = {
     card: "bg-emerald-50/60 border-emerald-200",
     icone: "verified",
     cor: "text-emerald-600",
+    badge: "bg-emerald-100 text-emerald-800",
+    ponto: "bg-emerald-600",
   },
   contestado: {
     card: "bg-amber-50/70 border-amber-300",
     icone: "flag",
     cor: "text-amber-600",
+    badge: "bg-amber-100 text-amber-800",
+    ponto: "bg-amber-500",
   },
   vencido: {
     card: "bg-orange-50/70 border-orange-300",
     icone: "update",
     cor: "text-orange-600",
+    badge: "bg-orange-100 text-orange-800",
+    ponto: "bg-orange-500",
   },
   pendente: {
     card: "bg-[#fafafa] border-[#f0e6e6]",
     icone: "schedule",
     cor: "text-[#c9a5a5]",
+    badge: "bg-[#eeeeee] text-[#5f5e5e]",
+    ponto: "bg-[#c9a5a5]",
   },
 };
+
+const ROTULO_STATUS_CAMPO = {
+  validado: "Validado",
+  contestado: "Contestado",
+  vencido: "Vencido",
+  pendente: "Pendente",
+};
+
+// Explica em português simples o que cada status representa — pensado pra
+// tirar dúvida tipo "isso me impede de doar?" sem o usuário ter que adivinhar.
+const EXPLICACAO_STATUS_CAMPO = {
+  validado: "Esse dado foi conferido por um veterinário e está em dia.",
+  vencido:
+    "Esse dado foi validado há mais de 1 ano. Isso não impede a doação — é só um lembrete para o veterinário reconferir na próxima visita.",
+  contestado:
+    "Um veterinário identificou um problema com esse dado e sinalizou para correção.",
+  pendente: "Esse dado ainda não foi conferido por nenhum veterinário.",
+};
+
+// Campos autodeclarados: o tutor preenche, o veterinário não tem como
+// atestar por conta própria — só sinalizar quando desconfia que está errado.
+const CAMPO_AUTODECLARADO = { medicamentos: true, transfusao: true };
+
+function ModalDetalheCampo({ campo, animal, valor, validacao, status, onClose }) {
+  const estilo = ESTILO_CAMPO[status];
+  const exibicao = campo.calcularExibicao
+    ? campo.calcularExibicao(valor)
+    : valor;
+  const detalhe = campo.detalhe && campo.detalhe(valor, animal);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="px-6 py-5 flex items-start justify-between gap-4 border-b border-[#e4bebc]">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e5e]">
+              {animal.nome}
+            </p>
+            <h2 className="text-lg font-bold text-[#1a1c1c] mt-0.5">
+              {campo.label}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-[#f3f3f3] flex items-center justify-center hover:bg-[#e4bebc] transition-colors shrink-0"
+          >
+            <span className="material-symbols-outlined text-[#5f5e5e] text-lg">
+              close
+            </span>
+          </button>
+        </div>
+
+        <div className="px-6 py-5 flex flex-col gap-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className={`inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full ${estilo.badge}`}
+            >
+              <span className="material-symbols-outlined text-[15px]">
+                {estilo.icone}
+              </span>
+              {ROTULO_STATUS_CAMPO[status]}
+            </span>
+            <span className="text-[#1a1c1c] font-semibold text-sm">
+              {exibicao}
+            </span>
+          </div>
+
+          <p className="text-sm text-[#5b403f] leading-relaxed">
+            {EXPLICACAO_STATUS_CAMPO[status]}
+            {status === "contestado" && CAMPO_AUTODECLARADO[campo.key] && (
+              <>
+                {" "}
+                Esse dado é preenchido pelo tutor no cadastro — o
+                veterinário não pode alterá-lo diretamente, só sinalizar; a
+                correção precisa vir do tutor.
+              </>
+            )}
+          </p>
+
+          {detalhe && (
+            <div className="bg-[#fafafa] border border-[#f0e6e6] rounded-xl p-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#8e001b] mb-1">
+                Detalhes
+              </p>
+              <p className="text-sm text-[#1a1c1c] leading-relaxed">
+                {detalhe}
+              </p>
+            </div>
+          )}
+
+          {(status === "validado" || status === "vencido") && validacao && (
+            <p className="text-xs text-[#5f5e5e] leading-relaxed">
+              Validado por{" "}
+              <strong className="text-[#1a1c1c]">{validacao.por}</strong>{" "}
+              (CRMV {validacao.crmv}) em {validacao.em}
+              {validacao.nota && <> — {validacao.nota}</>}
+            </p>
+          )}
+
+          {status === "contestado" && validacao && (
+            <p className="text-xs text-[#5f5e5e] leading-relaxed">
+              Contestado por{" "}
+              <strong className="text-[#1a1c1c]">{validacao.por}</strong> em{" "}
+              {validacao.em}:
+              <span className="block mt-1 text-amber-800 font-medium">
+                {validacao.nota}
+              </span>
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Campo informativo/calculado (ex.: "Última Doação") — não é auditado, só
 // mostra o estado atual derivado dos dados, sem selo nem botões de validação.
@@ -600,6 +903,7 @@ function CampoAuditavel({
 }) {
   const [contestando, setContestando] = useState(false);
   const [nota, setNota] = useState("");
+  const [modalAberto, setModalAberto] = useState(false);
 
   if (campo.calculado) {
     return (
@@ -624,15 +928,6 @@ function CampoAuditavel({
     ? TIPOS_SANGUINEOS[animal.especie === "Gato" ? "gato" : "cao"]
     : campo.opcoes;
 
-  const titulo =
-    status === "validado"
-      ? `Validado por ${validacao.por} (CRMV ${validacao.crmv}) em ${validacao.em}${validacao.nota ? ` — ${validacao.nota}` : ""}`
-      : status === "vencido"
-        ? `Validado por ${validacao.por} em ${validacao.em} — validade de 1 ano vencida, revalidação necessária`
-        : status === "contestado"
-          ? `Contestado por ${validacao.por} em ${validacao.em} — ${validacao.nota}`
-          : "Aguardando validação veterinária";
-
   const enviarContestacao = () => {
     if (!nota.trim()) return;
     onContestar(campo.key, nota.trim());
@@ -642,18 +937,30 @@ function CampoAuditavel({
 
   return (
     <div
-      title={titulo}
       className={`relative border rounded-xl p-3 flex flex-col items-center justify-center text-center gap-1.5 transition-colors ${estilo.card}`}
     >
-      <span
-        className={`material-symbols-outlined absolute top-1.5 right-1.5 text-[15px] ${estilo.cor}`}
+      {/* Selo de status como bolinha no vértice do card: sai do fluxo do
+          conteúdo, então o label centraliza sozinho sem disputar espaço.
+          Clicável — abre o detalhe completo do campo. */}
+      <button
+        type="button"
+        onClick={() => setModalAberto(true)}
+        title="Ver detalhes deste campo"
+        className={`absolute -top-2 -right-2 z-10 w-6 h-6 rounded-full ring-2 ring-white flex items-center justify-center text-white shadow-sm transition-transform hover:scale-110 active:scale-95 ${estilo.ponto}`}
       >
-        {estilo.icone}
-      </span>
+        <span className="material-symbols-outlined text-[14px]">
+          {estilo.icone}
+        </span>
+      </button>
 
-      <span className="w-full text-center pr-4 text-[#8e001b] text-[11px] font-bold uppercase tracking-widest">
+      <button
+        type="button"
+        onClick={() => setModalAberto(true)}
+        title="Ver detalhes deste campo"
+        className="w-full text-center text-[#8e001b] text-[11px] font-bold uppercase tracking-widest rounded-lg py-0.5 hover:bg-black/5 transition-colors"
+      >
         {campo.label}
-      </span>
+      </button>
 
       {auditando ? (
         opcoes ? (
@@ -693,8 +1000,17 @@ function CampoAuditavel({
         </span>
       )}
 
+      {/* Detalhe informativo do campo (ex.: qual medicamento) — sempre
+          visível quando existe, sem precisar clicar em nada. Passa por
+          "title" no card inteiro também, pra quem preferir passar o mouse. */}
+      {campo.detalhe && campo.detalhe(valor, animal) && (
+        <span className="text-[#5f5e5e] text-[10px] leading-snug line-clamp-2">
+          {campo.detalhe(valor, animal)}
+        </span>
+      )}
+
       {!auditando && status === "contestado" && (
-        <span className="text-amber-800 text-[10px] font-semibold leading-snug">
+        <span className="text-amber-800 text-[10px] font-semibold leading-snug line-clamp-2">
           {validacao.nota}
         </span>
       )}
@@ -768,6 +1084,17 @@ function CampoAuditavel({
             Reabrir campo
           </button>
         ))}
+
+      {modalAberto && (
+        <ModalDetalheCampo
+          campo={campo}
+          animal={animal}
+          valor={valor}
+          validacao={validacao}
+          status={status}
+          onClose={() => setModalAberto(false)}
+        />
+      )}
     </div>
   );
 }
@@ -1870,7 +2197,7 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
           {isProprioTutor && (
             <>
               <button
-                className={`${btnBase} bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white`}
+                className={`${btnBase} bg-violet-50 text-violet-700 hover:bg-violet-600 hover:text-white`}
               >
                 <span className="material-symbols-outlined text-[16px]">
                   edit
@@ -2158,13 +2485,17 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
   );
 }
 function DashboardPage() {
+  // Sem :id na rota → /meu-perfil, o próprio veterinário logado.
+  // Com :id → /tutor/:id, sempre a tutora mockada (Marina), independente
+  // de qual animal levou até aqui.
   const { id } = useParams();
   const [telefoneVisivel, setTelefoneVisivel] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
 
-  const isProprioTutor = VISUALIZANDO_PROPRIO_PERFIL;
+  const isProprioTutor = !id;
   const isVet = USUARIO_E_VETERINARIO;
   const perfil = isProprioTutor ? USUARIO_LOGADO : TUTOR_MOCK;
+  const animaisPerfil = isProprioTutor ? ANIMAIS_MOCK_VET : ANIMAIS_MOCK;
 
   const infoGrid = [
     { label: "Nome Completo", valor: perfil.nomeCompleto },
@@ -2262,12 +2593,17 @@ function DashboardPage() {
               {/* Foto sangrando na borda direita. A imagem é absoluta para
                   não impor a própria altura ao card — quem manda na altura é
                   a coluna de dados à esquerda. */}
-              <div className="relative w-full h-56 lg:h-auto lg:w-60 shrink-0 bg-[#faf0f0]">
+              <div className="relative w-full h-56 lg:h-auto lg:w-60 shrink-0 bg-[#faf0f0] overflow-hidden">
                 {perfil.foto ? (
                   <img
                     src={perfil.foto}
                     alt={perfil.nome}
-                    className="absolute inset-0 w-full h-full object-cover object-top"
+                    style={{
+                      objectPosition: perfil.fotoPosicao || "center top",
+                      transform: `scale(${perfil.fotoZoom || 1})`,
+                      transformOrigin: perfil.fotoPosicao || "center top",
+                    }}
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                 ) : (
                   <div className="absolute inset-0 border-l border-[#e4bebc] flex flex-col items-center justify-center gap-2">
@@ -2322,13 +2658,13 @@ function DashboardPage() {
               {isProprioTutor ? "Meus Animais" : "Pets de " + perfil.nome}
             </h2>
             <span className="text-xs font-semibold text-[#5f5e5e] uppercase">
-              {ANIMAIS_MOCK.length} Animais Cadastrados
+              {animaisPerfil.length} Animais Cadastrados
             </span>
           </div>
         </section>
 
         <section className="space-y-6">
-          {ANIMAIS_MOCK.map((animal) => (
+          {animaisPerfil.map((animal) => (
             <AnimalCard
               key={animal.id}
               animal={animal}

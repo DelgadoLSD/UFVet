@@ -1,9 +1,17 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import homemFoto from "../assets/people/man1_0-image.jpg";
 
 // Simula estado de autenticação — vira true quando back-end estiver pronto
 const LOGADO = true;
-const USUARIO_MOCK = { nome: "Lucas Delgado" };
+const USUARIO_MOCK = {
+  nome: "Victor Hugo",
+  foto: homemFoto,
+  // Rosto fica mais abaixo no quadro dessa foto — sem isso o corte central
+  // padrão pega o peito, não o rosto.
+  fotoPosicao: "center 28%",
+  fotoZoom: 1.7,
+};
 
 function Header({ dark = false }) {
   const [scrolled, setScrolled] = useState(false);
@@ -110,13 +118,26 @@ function Header({ dark = false }) {
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
             <div
-              className={`w-10 h-10 rounded-full border flex items-center justify-center ${avatarBg}`}
+              className={`w-10 h-10 rounded-full border overflow-hidden flex items-center justify-center ${avatarBg}`}
             >
-              <span
-                className={`material-symbols-outlined text-xl ${avatarIcon}`}
-              >
-                person
-              </span>
+              {USUARIO_MOCK.foto ? (
+                <img
+                  src={USUARIO_MOCK.foto}
+                  alt={USUARIO_MOCK.nome}
+                  style={{
+                    objectPosition: USUARIO_MOCK.fotoPosicao,
+                    transform: `scale(${USUARIO_MOCK.fotoZoom || 1})`,
+                    transformOrigin: USUARIO_MOCK.fotoPosicao,
+                  }}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span
+                  className={`material-symbols-outlined text-xl ${avatarIcon}`}
+                >
+                  person
+                </span>
+              )}
             </div>
             <span className={`font-bold text-sm hidden md:block ${nomeColor}`}>
               {USUARIO_MOCK.nome}
