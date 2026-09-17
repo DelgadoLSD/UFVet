@@ -53,7 +53,7 @@ function ModalComoFuncionaValidacao({ onClose }) {
               últimos 12 meses.
             </p>
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-800 mb-2">
+              <p className="text-sm font-semibold text-emerald-900 mb-2">
                 No hospital
               </p>
               <ul className="flex flex-col gap-1.5">
@@ -70,7 +70,7 @@ function ModalComoFuncionaValidacao({ onClose }) {
             </p>
           </div>
 
-          <div className="border border-[#e4bebc] bg-[#fafafa] rounded-xl p-5 flex flex-col gap-3">
+          <div className="border border-[#eadede] bg-[#fafafa] rounded-xl p-5 flex flex-col gap-3">
             <div className="flex items-center gap-2.5">
               <span className="w-9 h-9 rounded-full bg-[#8f6f6e] text-white flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-[20px]">
@@ -86,7 +86,7 @@ function ModalComoFuncionaValidacao({ onClose }) {
               conferidos por um veterinário aqui.
             </p>
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-[#8e001b] mb-2">
+              <p className="text-sm font-semibold text-[#1a1c1c] mb-2">
                 No hospital
               </p>
               <ul className="flex flex-col gap-1.5">
@@ -109,7 +109,7 @@ function ModalComoFuncionaValidacao({ onClose }) {
         </div>
 
         <div className="flex flex-col gap-2">
-          <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#8e001b]">
+          <h3 className="text-base font-bold text-[#1a1c1c]">
             Na prática, por que isso importa?
           </h3>
           <p>
@@ -122,7 +122,7 @@ function ModalComoFuncionaValidacao({ onClose }) {
         </div>
 
         <div className="flex flex-col gap-2">
-          <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#8e001b]">
+          <h3 className="text-base font-bold text-[#1a1c1c]">
             E os documentos?
           </h3>
           <p>

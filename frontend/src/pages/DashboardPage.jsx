@@ -5,7 +5,6 @@ import Modal from "../components/Modal";
 import Ajuda from "../components/Ajuda";
 import Botao from "../components/Botao";
 import CodigoCopiavel from "../components/CodigoCopiavel";
-import IconeEspecie from "../components/IconeEspecie";
 import ModalComoFuncionaValidacao from "../components/ComoFuncionaValidacao";
 import dog1 from "../assets/dogs/dog1_0-image.jpg";
 import dog1_1 from "../assets/dogs/dog1_1-image.jpg";
@@ -432,7 +431,7 @@ function CarrosselFotos({ fotos, nome }) {
   }
 
   return (
-    <div className="relative w-full h-56 lg:h-full min-h-[240px] rounded-2xl overflow-hidden border border-[#e4bebc] group">
+    <div className="relative w-full h-56 lg:h-full min-h-[240px] rounded-2xl overflow-hidden border border-[#eadede] group">
       {fotos.map((foto, i) => (
         <img
           key={i}
@@ -560,8 +559,7 @@ function ModalCadastroAnimal({ onClose }) {
 
   const inputClass =
     "w-full px-4 py-2.5 bg-white border border-[#e4bebc] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b] focus:border-[#8e001b] placeholder:text-gray-400";
-  const rotuloClass =
-    "text-[11px] font-bold uppercase tracking-widest text-[#8e001b]";
+  const rotuloClass = "text-sm font-semibold text-[#1a1c1c]";
   const labelClass = `block mb-1.5 ${rotuloClass}`;
 
   return (
@@ -615,16 +613,8 @@ function ModalCadastroAnimal({ onClose }) {
             <label className={labelClass}>Espécie *</label>
             <Segmentado
               opcoes={[
-                {
-                  val: "cao",
-                  label: "Cão",
-                  icone: <IconeEspecie especie="cao" />,
-                },
-                {
-                  val: "gato",
-                  label: "Gato",
-                  icone: <IconeEspecie especie="gato" />,
-                },
+                { val: "cao", label: "Cão" },
+                { val: "gato", label: "Gato" },
               ]}
               valor={form.especie}
               onEscolher={(val) => {
@@ -937,7 +927,7 @@ function PainelValidacao({
               <div className="text-xs text-[#5f5e5e] mt-0.5 space-y-0.5">
               <p className="flex items-center gap-1">
                 <span>
-                  {validacao.por} — CRMV {validacao.crmv}
+                  {validacao.por}, CRMV {validacao.crmv}
                 </span>
                 <Ajuda titulo="Assinatura do veterinário">
                   <p>
@@ -948,7 +938,7 @@ function PainelValidacao({
                 </Ajuda>
               </p>
               <p>
-                Em {validacao.em} ·{" "}
+                Em {validacao.em},{" "}
                 {status === "vencida" ? "venceu em" : "válida até"}{" "}
                 {umAnoApos(validacao.em)}
               </p>
@@ -1075,7 +1065,7 @@ function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
   return (
     <Modal
       titulo={`Validar doador — ${animal.nome}`}
-      subtitulo={`${animal.especie} · ${animal.tipo} · ${formatarPeso(animal.peso)} · ${textoIdade(idadeEmAnos(animal.nascimento))}`}
+      subtitulo={`${animal.especie}, ${animal.tipo}, ${formatarPeso(animal.peso)}, ${textoIdade(idadeEmAnos(animal.nascimento))}`}
       onClose={onClose}
       rodape={
         <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -1083,8 +1073,8 @@ function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
             Assinado por{" "}
             <strong className="text-[#1a1c1c]">
               {nomeProfissional(USUARIO_LOGADO)}
-            </strong>{" "}
-            — CRMV {USUARIO_LOGADO.crmv}
+            </strong>
+            , CRMV {USUARIO_LOGADO.crmv}
           </p>
           <div className="flex gap-2">
             <Botao variante="secundario" onClick={onClose}>
@@ -1162,7 +1152,7 @@ function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold uppercase tracking-widest text-[#8e001b] mb-1.5">
+          <label className="block text-sm font-semibold text-[#1a1c1c] mb-1.5">
             Nota (opcional)
           </label>
           <textarea
@@ -1182,8 +1172,11 @@ function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
 function ItemObservacao({ item }) {
   return (
     <div className="border-l-2 border-[#e4bebc] pl-4 py-0.5">
-      <p className="text-[10px] font-bold text-[#5f5e5e] uppercase tracking-wider">
-        {item.data} às {item.hora} — {item.autor}
+      <p className="flex flex-wrap items-baseline gap-x-2 text-xs">
+        <span className="font-semibold text-[#1a1c1c]">{item.autor}</span>
+        <span className="text-[#5f5e5e]">
+          {item.data} às {item.hora}
+        </span>
       </p>
       <p className="text-sm text-[#1a1c1c] mt-0.5 leading-relaxed">
         {item.texto}
@@ -1212,7 +1205,7 @@ function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
     <section className="border border-[#f0e6e6] bg-[#fafafa] rounded-xl p-5 flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#8e001b]">
+          <h4 className="flex items-center gap-1.5 text-base font-bold text-[#1a1c1c]">
             Observações para a coleta
             <Ajuda titulo="Observações para a coleta">
               <p>
@@ -1343,12 +1336,12 @@ function ModalDocumento({ nomeDocumento, versoes, onClose }) {
                 {versao.data}
               </span>
               {temVarias && indice === versoes.length - 1 && (
-                <span className="text-[9px] font-bold uppercase text-[#8e001b] bg-[#faf0f0] px-2 py-0.5 rounded-full">
+                <span className="text-[11px] font-semibold text-[#8e001b] bg-[#faf0f0] px-2 py-0.5 rounded-full">
                   Mais recente
                 </span>
               )}
               <span className="text-xs text-[#5f5e5e]">
-                · enviado por {versao.enviadoPor}
+                Enviado por {versao.enviadoPor}
               </span>
             </div>
             <Botao
@@ -1374,7 +1367,7 @@ function ModalDocumento({ nomeDocumento, versoes, onClose }) {
 
           {temVarias && (
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-3">
+              <p className="text-sm font-semibold text-[#1a1c1c] mb-3">
                 Versões enviadas
               </p>
               <div className="space-y-2">
@@ -1393,7 +1386,7 @@ function ModalDocumento({ nomeDocumento, versoes, onClose }) {
                     >
                       <span className="text-sm font-semibold text-[#1a1c1c]">
                         {v.data}
-                        {v.i === versoes.length - 1 && " — mais recente"}
+                        {v.i === versoes.length - 1 && " (mais recente)"}
                       </span>
                       <span className="text-[11px] text-[#5f5e5e]">
                         Enviado por {v.enviadoPor}
@@ -1416,7 +1409,7 @@ function SecaoDocumentos({ documentos, podeEnviar, onEnviar }) {
   return (
     <section className="border border-[#f0e6e6] bg-[#fafafa] rounded-xl p-5 flex flex-col gap-4">
       <div>
-        <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#8e001b]">
+        <h4 className="flex items-center gap-1.5 text-base font-bold text-[#1a1c1c]">
           Exames e documentos
           <Ajuda titulo="Por que enviar documentos?">
             <p>
@@ -1449,7 +1442,7 @@ function SecaoDocumentos({ documentos, podeEnviar, onEnviar }) {
                   className={`text-xs mt-0.5 ${ultima ? "text-[#5f5e5e]" : "text-[#c9a5a5] italic"}`}
                 >
                   {ultima
-                    ? `Enviado em ${ultima.data}${qtd > 1 ? ` · ${qtd} versões` : ""}`
+                    ? `Enviado em ${ultima.data}${qtd > 1 ? `, ${qtd} versões` : ""}`
                     : "Não enviado"}
                 </p>
               </div>
@@ -1527,8 +1520,8 @@ function DadoDoador({ label, valor, detalhe, alerta, destaque, ajuda }) {
         </Ajuda>
       )}
       <span
-        className={`text-[11px] font-bold uppercase tracking-widest ${
-          destaque ? "text-white/75" : "text-[#8e001b]"
+        className={`text-xs font-semibold ${
+          destaque ? "text-white/80" : "text-[#5f5e5e]"
         }`}
       >
         {label}
@@ -1672,19 +1665,15 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
   );
 
   return (
-    <div className="bg-white rounded-2xl border border-[#8e001b]/20 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-[#eadede] shadow-[0_1px_2px_rgba(26,28,28,0.04)] overflow-hidden">
       {/* ── Cabeçalho ── */}
-      <div className="px-8 py-5 flex justify-between items-center gap-4 flex-wrap border-b border-[#e4bebc]">
+      <div className="px-8 py-5 flex justify-between items-center gap-4 flex-wrap border-b border-[#eadede]">
         <div className="flex flex-col gap-1.5 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
             <h3 className="font-extrabold text-2xl text-[#8e001b] leading-none">
               {animal.nome}
             </h3>
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#5b403f] uppercase bg-[#eeeeee] px-2.5 py-1 rounded-md">
-              <IconeEspecie
-                especie={chaveEspecie(animal.especie)}
-                className="w-3.5 h-3.5"
-              />
+            <span className="text-xs font-semibold text-[#5b403f] bg-[#f3eeee] px-2.5 py-1 rounded-md">
               {animal.especie}
             </span>
             <div className="flex items-center gap-1.5">
@@ -1715,7 +1704,8 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
           </div>
           <div className="flex items-center gap-2.5 flex-wrap">
             <p className="text-sm text-[#5f5e5e]">
-              {animal.raca} · {animal.sexo} · {textoCastracao(animal)}
+              {animal.raca}, {animal.sexo.toLowerCase()},{" "}
+              {textoCastracao(animal).toLowerCase()}
             </p>
             <CodigoCopiavel codigo={animal.codigo} />
           </div>
@@ -1748,17 +1738,21 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
               </div>
             ) : (
               <>
-                <Botao variante="editar" tamanho="sm" icone="edit">
-                  Editar
-                </Botao>
+                <Botao
+                  variante="editar"
+                  tamanho="md"
+                  icone="edit"
+                  aria-label={`Editar ${animal.nome}`}
+                  title="Editar"
+                />
                 <Botao
                   variante="perigo"
-                  tamanho="sm"
+                  tamanho="md"
                   icone="delete"
+                  aria-label={`Excluir ${animal.nome}`}
+                  title="Excluir"
                   onClick={() => setConfirmandoExclusao(true)}
-                >
-                  Excluir
-                </Botao>
+                />
               </>
             )}
           </div>
@@ -1918,7 +1912,7 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
 function Estatistica({ label, valor, detalhe, destaque }) {
   return (
     <div
-      className={`rounded-xl border px-3 py-3 flex flex-col items-center justify-center text-center gap-0.5 ${
+      className={`rounded-xl border px-2 sm:px-3 py-3 flex flex-col items-center justify-center text-center gap-0.5 ${
         destaque
           ? "bg-[#8e001b] border-[#8e001b]"
           : "bg-[#fafafa] border-[#f0e6e6]"
@@ -1926,14 +1920,14 @@ function Estatistica({ label, valor, detalhe, destaque }) {
     >
       <span
         className={`font-extrabold leading-tight ${
-          destaque ? "text-white text-2xl" : "text-[#1a1c1c] text-xl"
+          destaque ? "text-white text-2xl" : "text-[#1a1c1c] text-base sm:text-xl"
         }`}
       >
         {valor}
       </span>
       <span
-        className={`text-[10px] font-bold uppercase tracking-widest ${
-          destaque ? "text-white/80" : "text-[#8e001b]"
+        className={`text-xs font-semibold ${
+          destaque ? "text-white/85" : "text-[#5f5e5e]"
         }`}
       >
         {label}
@@ -1952,9 +1946,7 @@ function Estatistica({ label, valor, detalhe, destaque }) {
 function GrupoInfo({ titulo, children }) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-[#8e001b] mb-2">
-        {titulo}
-      </p>
+      <p className="text-xs font-semibold text-[#8f6f6e] mb-2">{titulo}</p>
       <ul className="flex flex-col gap-2">{children}</ul>
     </div>
   );
@@ -2016,7 +2008,7 @@ function CardPerfil({ perfil, animais, ehProprio }) {
       ];
 
   return (
-    <div className="bg-white rounded-2xl border shadow-sm overflow-hidden border-[#8e001b]/20">
+    <div className="bg-white rounded-2xl border border-[#eadede] shadow-[0_1px_2px_rgba(26,28,28,0.04)] overflow-hidden">
       <div className="h-1.5 bg-gradient-to-r from-[#8e001b] to-[#b7102a]" />
 
       <div className="flex flex-col-reverse lg:flex-row lg:items-stretch">
@@ -2032,9 +2024,13 @@ function CardPerfil({ perfil, animais, ehProprio }) {
               </div>
             </div>
             {ehProprio && (
-              <Botao variante="editar" tamanho="sm" icone="edit">
-                Editar perfil
-              </Botao>
+              <Botao
+                variante="editar"
+                tamanho="md"
+                icone="edit"
+                aria-label="Editar perfil"
+                title="Editar perfil"
+              />
             )}
           </div>
 
@@ -2100,7 +2096,7 @@ function CardPerfil({ perfil, animais, ehProprio }) {
               className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
-            <div className="absolute inset-0 border-l border-[#e4bebc] flex flex-col items-center justify-center gap-2">
+            <div className="absolute inset-0 border-l border-[#eadede] flex flex-col items-center justify-center gap-2">
               <span className="material-symbols-outlined text-[#c9a5a5] text-5xl">
                 person
               </span>
@@ -2144,7 +2140,7 @@ function DashboardPage() {
         </section>
 
         {isVet && !isProprioTutor && (
-          <div className="mb-8 bg-[#faf0f0] border border-[#e4bebc] rounded-2xl px-6 py-4 flex items-center gap-4">
+          <div className="mb-8 bg-[#fdecee] rounded-2xl px-6 py-4 flex items-center gap-4">
             <span className="material-symbols-outlined text-[#8e001b] text-[28px]">
               medical_services
             </span>
@@ -2155,7 +2151,7 @@ function DashboardPage() {
               <span className="text-[#5b403f] text-xs leading-relaxed">
                 Você pode validar os critérios de doação e registrar
                 observações para a coleta. Sua assinatura (
-                {nomeProfissional(USUARIO_LOGADO)} — CRMV{" "}
+                {nomeProfissional(USUARIO_LOGADO)}, CRMV{" "}
                 {USUARIO_LOGADO.crmv}) fica visível aos tutores.
               </span>
             </div>
@@ -2166,7 +2162,7 @@ function DashboardPage() {
           <h2 className="text-2xl font-bold text-[#1a1c1c]">
             {isProprioTutor ? "Meus animais" : `Animais de ${perfil.nome}`}
           </h2>
-          <span className="text-xs font-semibold text-[#5f5e5e] uppercase">
+          <span className="text-sm text-[#5f5e5e]">
             {animaisPerfil.length}{" "}
             {animaisPerfil.length === 1 ? "animal cadastrado" : "animais cadastrados"}
           </span>
@@ -2185,10 +2181,10 @@ function DashboardPage() {
           {isProprioTutor && (
             <button
               onClick={() => setModalAberto(true)}
-              className="w-full py-14 flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[#e4bebc] bg-white/40 hover:border-[#8e001b]/40 hover:bg-[#faf6f6] transition-colors group"
+              className="w-full py-9 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#e2cfcf] hover:border-[#b7102a]/50 hover:bg-[#fffafa] transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a]"
             >
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-b from-[#b7102a] to-[#8e001b] shadow-[0_6px_16px_-4px_rgba(142,0,27,0.45)] flex items-center justify-center text-white group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-[28px]">add</span>
+              <div className="w-11 h-11 rounded-full bg-[#b7102a] flex items-center justify-center text-white mb-1 transition-colors group-hover:bg-[#8e001b]">
+                <span className="material-symbols-outlined text-[26px]">add</span>
               </div>
               <span className="text-sm font-semibold text-[#1a1c1c]">
                 Cadastrar novo animal

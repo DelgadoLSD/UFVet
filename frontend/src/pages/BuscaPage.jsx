@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Ajuda from "../components/Ajuda";
 import Botao from "../components/Botao";
-import IconeEspecie from "../components/IconeEspecie";
 import Selecao from "../components/Selecao";
 import ModalComoFuncionaValidacao from "../components/ComoFuncionaValidacao";
 import dog2 from "../assets/dogs/dog2_0-image.jpg";
@@ -247,7 +246,7 @@ function DonorCard({ doador, onClick, mostrarDistancia }) {
 
   return (
     <article
-      className={`bg-white border border-[#e4bebc] rounded-2xl overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-lg ${
+      className={`bg-white border border-[#eadede] rounded-2xl overflow-hidden flex flex-col transition-[border-color,box-shadow] duration-200 hover:border-[#dccaca] hover:shadow-[0_12px_28px_-16px_rgba(26,28,28,0.28)] ${
         disponivel ? "" : "opacity-75"
       }`}
     >
@@ -284,7 +283,7 @@ function DonorCard({ doador, onClick, mostrarDistancia }) {
         </div>
 
         <p className="text-sm text-[#5f5e5e] truncate">
-          {doador.raca} · {doador.idade} anos · {numeroBR(doador.peso)} kg
+          {doador.raca}, {doador.idade} anos, {numeroBR(doador.peso)} kg
         </p>
 
         <p className="flex items-center gap-1 text-sm text-[#5f5e5e] truncate">
@@ -292,7 +291,7 @@ function DonorCard({ doador, onClick, mostrarDistancia }) {
             location_on
           </span>
           {doador.bairro}
-          {mostrarDistancia && ` · a ${numeroBR(doador.distancia)} km`}
+          {mostrarDistancia && `, a ${numeroBR(doador.distancia)} km`}
         </p>
 
         {/* Status de validação acompanhado do que ele muda na prática */}
@@ -311,10 +310,12 @@ function DonorCard({ doador, onClick, mostrarDistancia }) {
             {doador.validado ? "verified_user" : "schedule"}
           </span>
           <span>
-            <strong>{doador.validado ? "Validado" : "Ainda não validado"}</strong>
+            <strong className="block font-semibold">
+              {doador.validado ? "Validado" : "Ainda não validado"}
+            </strong>
             {doador.validado
-              ? " · triagem rápida no hospital"
-              : " · exames antes da coleta"}
+              ? "Triagem rápida no hospital"
+              : "Exames antes da coleta"}
           </span>
         </div>
       </div>
@@ -362,7 +363,7 @@ function DonorCard({ doador, onClick, mostrarDistancia }) {
 // fim da barra lateral.
 function LegendaValidacao({ onEntender }) {
   return (
-    <div className="bg-white border border-[#e4bebc] rounded-xl p-4 flex flex-col lg:flex-row lg:items-center gap-4">
+    <div className="bg-white border border-[#eadede] rounded-2xl p-4 flex flex-col lg:flex-row lg:items-center gap-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
         <div className="flex items-start gap-2.5">
           <span className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
@@ -371,9 +372,11 @@ function LegendaValidacao({ onEntender }) {
             </span>
           </span>
           <p className="text-xs text-[#5b403f] leading-relaxed">
-            <strong className="text-emerald-800">Validado</strong> — exames já
-            conferidos por um veterinário. No hospital, só uma checagem rápida
-            antes da coleta.
+            <strong className="block text-sm font-semibold text-emerald-800">
+              Validado
+            </strong>
+            Exames já conferidos por um veterinário. No hospital, só uma
+            checagem rápida antes da coleta.
           </p>
         </div>
         <div className="flex items-start gap-2.5">
@@ -383,8 +386,10 @@ function LegendaValidacao({ onEntender }) {
             </span>
           </span>
           <p className="text-xs text-[#5b403f] leading-relaxed">
-            <strong className="text-[#1a1c1c]">Ainda não validado</strong> —
-            pode doar normalmente; os exames de triagem são feitos no hospital,
+            <strong className="block text-sm font-semibold text-[#1a1c1c]">
+              Ainda não validado
+            </strong>
+            Pode doar normalmente. Os exames de triagem são feitos no hospital,
             antes da coleta.
           </p>
         </div>
@@ -487,7 +492,7 @@ function BuscaPage() {
       <main className="max-w-[1536px] mx-auto flex flex-col md:flex-row gap-6 px-5 md:px-16 py-12 pt-28">
         {/* Filtros */}
         <aside className="w-full md:w-72 xl:w-80 shrink-0">
-          <div className="bg-white border border-[#e4bebc] p-6 rounded-xl shadow-sm md:sticky md:top-24">
+          <div className="bg-white border border-[#eadede] p-6 rounded-2xl md:sticky md:top-24">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-[#1a1c1c]">Filtros</h2>
               <button
@@ -498,7 +503,7 @@ function BuscaPage() {
               </button>
             </div>
 
-            <div className="flex items-center justify-between gap-3 p-3 bg-[#ffdad8]/30 rounded-lg mb-7 border border-[#8e001b]/20">
+            <div className="flex items-center justify-between gap-3 p-3 bg-[#fdecee] rounded-xl mb-7">
               <div className="flex items-center gap-2">
                 <label
                   className="text-sm font-semibold text-[#1a1c1c] flex items-center gap-2 cursor-pointer"
@@ -549,13 +554,13 @@ function BuscaPage() {
                   <button
                     key={item.val}
                     onClick={() => handleEspecieChange(item.val)}
-                    className={`flex-1 h-9 rounded-lg flex items-center justify-center gap-1.5 text-sm font-semibold transition-all ${
+                    aria-pressed={especie === item.val}
+                    className={`flex-1 h-9 rounded-lg flex items-center justify-center text-sm font-semibold transition-colors ${
                       especie === item.val
-                        ? "bg-white text-[#8e001b] shadow-[0_1px_3px_rgba(26,28,28,0.12)]"
+                        ? "bg-[#b7102a] text-white shadow-[0_1px_3px_rgba(142,0,27,0.3)]"
                         : "text-[#5f5e5e] hover:text-[#1a1c1c]"
                     }`}
                   >
-                    <IconeEspecie especie={item.val} />
                     {item.label}
                   </button>
                 ))}
@@ -591,7 +596,8 @@ function BuscaPage() {
                   <button
                     key={tipo}
                     onClick={() => toggleTipo(tipo)}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${tiposSelecionados.includes(tipo) ? "bg-[#8e001b] text-white" : "bg-[#eeeeee] text-[#1a1c1c] hover:bg-[#8e001b] hover:text-white"}`}
+                    aria-pressed={tiposSelecionados.includes(tipo)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${tiposSelecionados.includes(tipo) ? "bg-[#8e001b] border-[#8e001b] text-white" : "bg-white border-[#e2d6d6] text-[#1a1c1c] hover:border-[#8e001b] hover:text-[#8e001b]"}`}
                   >
                     {tipo}
                   </button>
@@ -602,7 +608,7 @@ function BuscaPage() {
             <div className="mb-7">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-sm font-semibold">Peso máximo</h3>
-                <span className="text-xs font-bold text-[#8e001b] bg-[#ffdad8] px-2 py-0.5 rounded-full">
+                <span className="text-xs font-bold text-[#8e001b] bg-[#fdecee] px-2 py-0.5 rounded-full">
                   até {pesoMax} kg
                 </span>
               </div>
@@ -671,7 +677,7 @@ function BuscaPage() {
                   value={distanciaMax}
                   disabled={!localReferencia}
                   onChange={(e) => setDistanciaMax(e.target.value)}
-                  className={`w-full h-11 pl-9 pr-4 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b]/30 focus:border-[#8e001b] ${localReferencia ? "bg-white border-[#e4bebc] shadow-[0_1px_2px_rgba(26,28,28,0.05)]" : "bg-[#f7f4f4] border-[#ece6e6] text-[#b0b0b0] cursor-not-allowed"}`}
+                  className={`w-full h-11 pl-9 pr-4 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b]/30 focus:border-[#8e001b] ${localReferencia ? "bg-white border-[#dccfcf] shadow-[0_1px_2px_rgba(26,28,28,0.04)]" : "bg-[#f7f4f4] border-[#ece6e6] text-[#b0b0b0] cursor-not-allowed"}`}
                 />
               </div>
               {!localReferencia && (
@@ -700,7 +706,7 @@ function BuscaPage() {
                 setVisiveis(POR_PAGINA);
               }}
               placeholder="Buscar por nome, raça, bairro ou código (#)..."
-              className="w-full pl-12 pr-12 py-3.5 bg-white border border-[#e4bebc] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b] shadow-sm"
+              className="w-full pl-12 pr-12 py-3.5 bg-white border border-[#dccfcf] rounded-2xl text-sm shadow-[0_1px_2px_rgba(26,28,28,0.04)] transition-colors hover:border-[#c9b6b6] focus:outline-none focus:border-[#b7102a] focus:ring-4 focus:ring-[#b7102a]/10"
             />
             {busca && (
               <button
@@ -738,7 +744,8 @@ function BuscaPage() {
                 <button
                   key={op.val}
                   onClick={() => setOrdenar(op.val)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border ${ordenar === op.val ? "bg-[#8e001b] text-white border-[#8e001b]" : "bg-white text-[#5f5e5e] border-[#e4bebc] hover:border-[#8e001b] hover:text-[#8e001b]"}`}
+                  aria-pressed={ordenar === op.val}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors border ${ordenar === op.val ? "bg-[#8e001b] text-white border-[#8e001b]" : "bg-white text-[#5f5e5e] border-[#e2d6d6] hover:border-[#8e001b] hover:text-[#8e001b]"}`}
                 >
                   {op.label}
                 </button>
@@ -750,7 +757,7 @@ function BuscaPage() {
 
           {doadoresFiltrados.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="w-24 h-24 rounded-full bg-[#ffdad8] flex items-center justify-center mb-6">
+              <div className="w-24 h-24 rounded-full bg-[#fdecee] flex items-center justify-center mb-6">
                 <span className="material-symbols-outlined text-[#8e001b] text-6xl">
                   pets
                 </span>

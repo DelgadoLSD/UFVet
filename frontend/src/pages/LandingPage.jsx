@@ -818,8 +818,8 @@ function ChamadaSection() {
                 Seu animal precisa de sangue?
               </h2>
               <p className="text-lg text-white/75 leading-relaxed mb-10 max-w-md flex-1">
-                Filtre por espécie e validação, veja quem está mais perto e fale
-                direto com o tutor do doador.{" "}
+                Filtre por espécie, tipo sanguíneo e distância, veja quem já foi
+                validado e fale direto com o tutor do doador.{" "}
                 <button
                   type="button"
                   onClick={() => setExplicacaoAberta(true)}

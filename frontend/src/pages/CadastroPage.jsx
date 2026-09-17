@@ -1,202 +1,147 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import Header from "../components/Header";
 import Botao from "../components/Botao";
-import heroPet from "../assets/cadastro-image.png";
+import Campo from "../components/Campo";
+import LayoutAutenticacao, {
+  BotaoGoogle,
+} from "../components/LayoutAutenticacao";
+// Foto de Nikolett Emmert (Unsplash, uso livre)
+import fotoGatoPreto from "../assets/auth/gato-preto.jpg";
 
-const TOTAL_STEPS = 5;
+// Título e explicação de cada etapa. A etapa 4 (registro profissional) só
+// existe para veterinários.
+const ETAPAS = {
+  1: { titulo: "Como você vai usar o UFVet?" },
+  2: { titulo: "Seus dados" },
+  3: {
+    titulo: "Contato e endereço",
+    texto: "Para que quem precisa de um doador consiga falar com você.",
+  },
+  4: {
+    titulo: "Registro profissional",
+    texto: "Seu CRMV aparece nas validações que você assinar.",
+  },
+  5: { titulo: "Senha e termos" },
+};
 
-function GoogleIcon() {
-  return (
-    <svg
-      className="w-4 h-4"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-        fill="#4285F4"
-      />
-      <path
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-        fill="#34A853"
-      />
-      <path
-        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-        fill="#FBBC05"
-      />
-      <path
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-        fill="#EA4335"
-      />
-    </svg>
-  );
-}
+const PERFIS = [
+  {
+    valor: "tutor",
+    icone: "pets",
+    titulo: "Sou tutor",
+    texto: "Quero cadastrar meus animais como doadores ou buscar um doador.",
+  },
+  {
+    valor: "vet",
+    icone: "stethoscope",
+    titulo: "Sou veterinário",
+    texto: "Quero conferir e validar os dados dos doadores.",
+  },
+];
 
-function GoogleButton() {
-  return (
-    <>
-      <div className="flex items-center gap-4">
-        <div className="h-[1px] flex-1 bg-neutral-200" />
-        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
-          ou entre com
-        </span>
-        <div className="h-[1px] flex-1 bg-neutral-200" />
-      </div>
-      <button
-        type="button"
-        className="w-full h-12 flex items-center justify-center gap-3 bg-[#1a1c1c] text-white font-semibold hover:bg-black transition-all active:scale-[0.97] text-sm rounded-xl shadow-[0_1px_2px_rgba(26,28,28,0.2)]"
-      >
-        <GoogleIcon />
-        Cadastrar com Google
-      </button>
-    </>
-  );
-}
+const CLASSE_SELECT =
+  "w-full h-12 pl-4 pr-10 bg-white border border-[#dccfcf] rounded-xl text-base text-[#1a1c1c] shadow-[0_1px_2px_rgba(26,28,28,0.04)] transition-colors hover:border-[#c9b6b6] focus:outline-none focus:border-[#b7102a] focus:ring-4 focus:ring-[#b7102a]/10";
 
 function Step1({ onSelect }) {
   return (
-    <div className="space-y-4">
-      <p className="font-bold uppercase tracking-wide text-[#1a1c1c] text-[14px] text-center">
-        Como você deseja usar o UFVet?
-      </p>
-      <div className="grid grid-cols-2 gap-4">
+    <div className="space-y-3">
+      {PERFIS.map((perfil) => (
         <button
+          key={perfil.valor}
           type="button"
-          onClick={() => onSelect("tutor")}
-          className="group bg-white border border-[#8e001b]/10 hover:border-[#8e001b] rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.98] shadow-sm flex flex-col items-center text-center gap-3"
+          onClick={() => onSelect(perfil.valor)}
+          className="group w-full flex items-center gap-4 p-4 rounded-2xl bg-white border border-[#eadede] text-left transition-colors hover:border-[#b7102a] hover:bg-[#fffafa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a]"
         >
-          <div className="w-12 h-12 rounded-full bg-[#ffdad8] flex items-center justify-center text-[#8e001b] group-hover:bg-[#8e001b] group-hover:text-white transition-colors">
-            <span className="material-symbols-outlined text-2xl">pets</span>
-          </div>
-          <div>
-            <p className="font-bold text-[#1a1c1c] uppercase text-sm leading-tight">
-              Sou Tutor
-            </p>
-            <p className="text-[10px] text-[#5b403f] mt-1">
-              Quero cadastrar pets ou buscar doadores.
-            </p>
-          </div>
-        </button>
-        <button
-          type="button"
-          onClick={() => onSelect("vet")}
-          className="group bg-white border border-[#8e001b]/10 hover:border-[#8e001b] rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.98] shadow-sm flex flex-col items-center text-center gap-3"
-        >
-          <div className="w-12 h-12 rounded-full bg-[#ffdad8] flex items-center justify-center text-[#8e001b] group-hover:bg-[#8e001b] group-hover:text-white transition-colors">
-            <span className="material-symbols-outlined text-2xl">
-              medical_services
+          <span className="w-12 h-12 rounded-xl bg-[#fdecee] text-[#8e001b] flex items-center justify-center shrink-0 transition-colors group-hover:bg-[#b7102a] group-hover:text-white">
+            <span className="material-symbols-outlined">{perfil.icone}</span>
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-bold text-[#1a1c1c]">
+              {perfil.titulo}
             </span>
-          </div>
-          <div>
-            <p className="font-bold text-[#1a1c1c] uppercase text-sm leading-tight">
-              Sou Veterinário
-            </p>
-            <p className="text-[10px] text-[#5b403f] mt-1">
-              Quero validar clinicamente os doadores.
-            </p>
-          </div>
+            <span className="block text-sm text-[#5f5e5e] mt-0.5 leading-snug">
+              {perfil.texto}
+            </span>
+          </span>
+          <span className="material-symbols-outlined text-[#b9a9a9] transition-colors group-hover:text-[#8e001b]">
+            chevron_right
+          </span>
         </button>
-      </div>
+      ))}
     </div>
   );
 }
 
 function Step2({ data, onChange }) {
   return (
-    <div className="space-y-4">
-      {[
-        {
-          id: "name",
-          label: "Nome completo",
-          placeholder: "Ex: João Silva",
-          type: "text",
-        },
-        {
-          id: "cpf",
-          label: "CPF",
-          placeholder: "000.000.000-00",
-          type: "text",
-        },
-        {
-          id: "email",
-          label: "E-mail",
-          placeholder: "seu@email.com",
-          type: "email",
-        },
-      ].map((field) => (
-        <div key={field.id} className="space-y-1">
-          <label
-            className="font-bold uppercase tracking-wide text-[#1a1c1c] text-[10px]"
-            htmlFor={field.id}
-          >
-            {field.label}
-          </label>
-          <input
-            id={field.id}
-            type={field.type}
-            placeholder={field.placeholder}
-            value={data[field.id] || ""}
-            onChange={(e) => onChange(field.id, e.target.value)}
-            className="w-full px-5 bg-white border text-base py-2 border-[#8e001b]/10 placeholder:text-neutral-400 rounded-xl focus:outline-none focus:border-[#b7102a] focus:ring-1 focus:ring-[#b7102a]"
-          />
-        </div>
-      ))}
+    <div className="space-y-5">
+      <Campo
+        id="name"
+        rotulo="Nome completo"
+        placeholder="Ex.: João Silva"
+        autoComplete="name"
+        value={data.name || ""}
+        onChange={(e) => onChange("name", e.target.value)}
+      />
+      <Campo
+        id="cpf"
+        rotulo="CPF"
+        placeholder="000.000.000-00"
+        inputMode="numeric"
+        value={data.cpf || ""}
+        onChange={(e) => onChange("cpf", e.target.value)}
+      />
+      <Campo
+        id="email"
+        rotulo="E-mail"
+        type="email"
+        placeholder="seu@email.com"
+        autoComplete="email"
+        value={data.email || ""}
+        onChange={(e) => onChange("email", e.target.value)}
+      />
     </div>
   );
 }
 
 function Step3({ data, onChange }) {
   return (
-    <div className="space-y-4">
-      {[
-        {
-          id: "phone",
-          label: "Telefone",
-          placeholder: "(00) 00000-0000",
-          type: "tel",
-        },
-        { id: "cep", label: "CEP", placeholder: "00000-000", type: "text" },
-      ].map((field) => (
-        <div key={field.id} className="space-y-1">
-          <label
-            className="font-bold uppercase tracking-wide text-[#1a1c1c] text-[10px]"
-            htmlFor={field.id}
-          >
-            {field.label}
-          </label>
-          <input
-            id={field.id}
-            type={field.type}
-            placeholder={field.placeholder}
-            value={data[field.id] || ""}
-            onChange={(e) => onChange(field.id, e.target.value)}
-            className="w-full px-5 bg-white border text-base py-2 border-[#8e001b]/10 placeholder:text-neutral-400 rounded-xl focus:outline-none focus:border-[#b7102a] focus:ring-1 focus:ring-[#b7102a]"
-          />
-        </div>
-      ))}
+    <div className="space-y-5">
+      <div className="grid grid-cols-[1.4fr_1fr] gap-4">
+        <Campo
+          id="phone"
+          rotulo="Telefone"
+          type="tel"
+          placeholder="(00) 00000-0000"
+          autoComplete="tel"
+          value={data.phone || ""}
+          onChange={(e) => onChange("phone", e.target.value)}
+        />
+        <Campo
+          id="cep"
+          rotulo="CEP"
+          placeholder="00000-000"
+          inputMode="numeric"
+          autoComplete="postal-code"
+          value={data.cep || ""}
+          onChange={(e) => onChange("cep", e.target.value)}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-4">
-        {[
-          { id: "city", label: "Cidade", placeholder: "Ex: Viçosa" },
-          { id: "neighborhood", label: "Bairro", placeholder: "Ex: Centro" },
-        ].map((field) => (
-          <div key={field.id} className="space-y-1">
-            <label
-              className="font-bold uppercase tracking-wide text-[#1a1c1c] text-[10px]"
-              htmlFor={field.id}
-            >
-              {field.label}
-            </label>
-            <input
-              id={field.id}
-              type="text"
-              placeholder={field.placeholder}
-              value={data[field.id] || ""}
-              onChange={(e) => onChange(field.id, e.target.value)}
-              className="w-full px-5 bg-white border text-base py-2 border-[#8e001b]/10 placeholder:text-neutral-400 rounded-xl focus:outline-none focus:border-[#b7102a] focus:ring-1 focus:ring-[#b7102a]"
-            />
-          </div>
-        ))}
+        <Campo
+          id="city"
+          rotulo="Cidade"
+          placeholder="Ex.: Viçosa"
+          value={data.city || ""}
+          onChange={(e) => onChange("city", e.target.value)}
+        />
+        <Campo
+          id="neighborhood"
+          rotulo="Bairro"
+          placeholder="Ex.: Centro"
+          value={data.neighborhood || ""}
+          onChange={(e) => onChange("neighborhood", e.target.value)}
+        />
       </div>
     </div>
   );
@@ -204,28 +149,20 @@ function Step3({ data, onChange }) {
 
 function Step4({ data, onChange }) {
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2 space-y-1">
+    <div className="space-y-5">
+      <div className="grid grid-cols-[1fr_7rem] gap-4">
+        <Campo
+          id="crmv"
+          rotulo="Número do CRMV"
+          placeholder="00000"
+          inputMode="numeric"
+          value={data.crmv || ""}
+          onChange={(e) => onChange("crmv", e.target.value)}
+        />
+        <div>
           <label
-            className="font-bold uppercase tracking-wide text-[#1a1c1c] text-[10px]"
-            htmlFor="crmv"
-          >
-            Número do CRMV
-          </label>
-          <input
-            id="crmv"
-            type="text"
-            placeholder="00000"
-            value={data.crmv || ""}
-            onChange={(e) => onChange("crmv", e.target.value)}
-            className="w-full px-5 bg-white border text-base py-2 border-[#8e001b]/10 placeholder:text-neutral-400 rounded-xl focus:outline-none focus:border-[#b7102a] focus:ring-1 focus:ring-[#b7102a]"
-          />
-        </div>
-        <div className="space-y-1">
-          <label
-            className="font-bold uppercase tracking-wide text-[#1a1c1c] text-[10px]"
             htmlFor="uf_crmv"
+            className="block text-sm font-semibold text-[#1a1c1c] mb-2"
           >
             UF
           </label>
@@ -233,7 +170,7 @@ function Step4({ data, onChange }) {
             id="uf_crmv"
             value={data.uf_crmv || "MG"}
             onChange={(e) => onChange("uf_crmv", e.target.value)}
-            className="w-full px-5 bg-white border text-base py-2 border-[#8e001b]/10 rounded-xl focus:outline-none focus:border-[#b7102a] focus:ring-1 focus:ring-[#b7102a]"
+            className={CLASSE_SELECT}
           >
             {["MG", "SP", "RJ", "ES", "BA", "PR", "RS", "SC"].map((uf) => (
               <option key={uf} value={uf}>
@@ -243,123 +180,83 @@ function Step4({ data, onChange }) {
           </select>
         </div>
       </div>
-      <div className="space-y-1">
-        <label
-          className="font-bold uppercase tracking-wide text-[#1a1c1c] text-[10px]"
-          htmlFor="workplace"
-        >
-          Local de Atuação
-        </label>
-        <input
-          id="workplace"
-          type="text"
-          placeholder="Nome da Clínica ou Hospital"
-          value={data.workplace || ""}
-          onChange={(e) => onChange("workplace", e.target.value)}
-          className="w-full px-5 bg-white border text-base py-2 border-[#8e001b]/10 placeholder:text-neutral-400 rounded-xl focus:outline-none focus:border-[#b7102a] focus:ring-1 focus:ring-[#b7102a]"
-        />
-      </div>
+      <Campo
+        id="workplace"
+        rotulo="Local de atuação"
+        placeholder="Nome da clínica ou hospital"
+        value={data.workplace || ""}
+        onChange={(e) => onChange("workplace", e.target.value)}
+      />
+    </div>
+  );
+}
+
+function Confirmacao({ id, checked, onChange, children }) {
+  return (
+    <div className="flex gap-3 items-start">
+      <input
+        id={id}
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        className="mt-0.5 w-5 h-5 shrink-0 rounded-md border-[#cfbcbc] text-[#b7102a] cursor-pointer focus:ring-2 focus:ring-[#b7102a]/30 focus:ring-offset-0"
+      />
+      <label
+        htmlFor={id}
+        className="text-sm text-[#5b403f] leading-snug cursor-pointer"
+      >
+        {children}
+      </label>
     </div>
   );
 }
 
 function Step5({ data, onChange }) {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-
   return (
-    <div className="space-y-4">
-      <div className="space-y-1">
-        <label
-          className="font-bold uppercase tracking-wide text-[#1a1c1c] text-[10px]"
-          htmlFor="password"
+    <div className="space-y-5">
+      <Campo
+        id="password"
+        rotulo="Senha"
+        senha
+        placeholder="Pelo menos 8 caracteres"
+        autoComplete="new-password"
+        value={data.password || ""}
+        onChange={(e) => onChange("password", e.target.value)}
+      />
+      <Campo
+        id="confirm_password"
+        rotulo="Confirmar senha"
+        senha
+        placeholder="Digite a senha de novo"
+        autoComplete="new-password"
+        value={data.confirm_password || ""}
+        onChange={(e) => onChange("confirm_password", e.target.value)}
+      />
+      <div className="space-y-4 pt-2">
+        <Confirmacao
+          id="terms"
+          checked={data.terms || false}
+          onChange={(e) => onChange("terms", e.target.checked)}
         >
-          Senha
-        </label>
-        <div className="relative">
-          <input
-            id="password"
-            type={showPassword ? "text" : "password"}
-            placeholder="8+ caracteres"
-            value={data.password || ""}
-            onChange={(e) => onChange("password", e.target.value)}
-            className="w-full px-5 bg-white border text-base pr-12 py-2 border-[#8e001b]/10 placeholder:text-neutral-400 rounded-xl focus:outline-none focus:border-[#b7102a] focus:ring-1 focus:ring-[#b7102a]"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#5f5e5e] text-lg hover:text-[#8e001b] transition-colors"
-          >
-            {showPassword ? "visibility_off" : "visibility"}
-          </button>
-        </div>
-      </div>
-      <div className="space-y-1">
-        <label
-          className="font-bold uppercase tracking-wide text-[#1a1c1c] text-[10px]"
-          htmlFor="confirm_password"
+          Li e aceito os{" "}
+          <a href="#" className="font-semibold text-[#8e001b] hover:underline">
+            Termos de uso
+          </a>{" "}
+          e a{" "}
+          <a href="#" className="font-semibold text-[#8e001b] hover:underline">
+            Política de privacidade
+          </a>
+          .
+        </Confirmacao>
+        <Confirmacao
+          id="awareness"
+          checked={data.awareness || false}
+          onChange={(e) => onChange("awareness", e.target.checked)}
         >
-          Confirmar Senha
-        </label>
-        <div className="relative">
-          <input
-            id="confirm_password"
-            type={showConfirm ? "text" : "password"}
-            placeholder="Confirmar Senha"
-            value={data.confirm_password || ""}
-            onChange={(e) => onChange("confirm_password", e.target.value)}
-            className="w-full px-5 bg-white border text-base pr-12 py-2 border-[#8e001b]/10 placeholder:text-neutral-400 rounded-xl focus:outline-none focus:border-[#b7102a] focus:ring-1 focus:ring-[#b7102a]"
-          />
-          <button
-            type="button"
-            onClick={() => setShowConfirm(!showConfirm)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#5f5e5e] text-lg hover:text-[#8e001b] transition-colors"
-          >
-            {showConfirm ? "visibility_off" : "visibility"}
-          </button>
-        </div>
-      </div>
-      <div className="space-y-3 pt-2">
-        <div className="flex gap-3 items-start">
-          <input
-            id="terms"
-            type="checkbox"
-            checked={data.terms || false}
-            onChange={(e) => onChange("terms", e.target.checked)}
-            className="rounded border-gray-300 text-[#8e001b] w-4 h-4 cursor-pointer mt-0.5"
-          />
-          <label
-            className="text-[11px] text-[#636262] leading-snug"
-            htmlFor="terms"
-          >
-            Li e aceito os{" "}
-            <a href="#" className="text-[#8e001b] font-bold hover:underline">
-              Termos de Uso
-            </a>{" "}
-            e a{" "}
-            <a href="#" className="text-[#8e001b] font-bold hover:underline">
-              Política de Privacidade
-            </a>
-            .
-          </label>
-        </div>
-        <div className="flex gap-3 items-start">
-          <input
-            id="awareness"
-            type="checkbox"
-            checked={data.awareness || false}
-            onChange={(e) => onChange("awareness", e.target.checked)}
-            className="rounded border-gray-300 text-[#8e001b] w-4 h-4 cursor-pointer mt-0.5"
-          />
-          <label
-            className="text-[11px] text-[#636262] leading-snug"
-            htmlFor="awareness"
-          >
-            Estou ciente de que a doação é gratuita e assumo a responsabilidade
-            financeira sobre os insumos hospitalares caso meu animal seja o
-            receptor.
-          </label>
-        </div>
+          Estou ciente de que a doação é gratuita e assumo a responsabilidade
+          financeira sobre os insumos hospitalares caso meu animal seja o
+          receptor.
+        </Confirmacao>
       </div>
     </div>
   );
@@ -395,156 +292,88 @@ function CadastroPage() {
     }
   };
 
+  // "Continuar" é o botão de envio do formulário: assim o Enter também avança
+  // a etapa. Só a última etapa envia o cadastro de fato.
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (step < 5) {
+      handleContinue();
+      return;
+    }
     console.log("Dados do formulário:", { role, ...formData });
     alert("Cadastro enviado! (integração com back-end em breve)");
   };
 
-  const visualStep = step === 5 && role === "tutor" ? 4 : step;
+  const totalEtapas = role === "vet" ? 5 : 4;
+  const etapaVisual = step === 5 && role === "tutor" ? 4 : step;
+  const etapa = ETAPAS[step];
 
   return (
-    <>
-      <Header dark={true} />
-      <main className="w-full h-screen flex flex-col md:flex-row overflow-hidden pt-20">
-        {/* Coluna esquerda — imagem */}
-        <section className="hidden md:flex md:w-1/2 bg-black relative overflow-hidden p-12 flex-col justify-end items-center">
-          <img
-            src={heroPet}
-            className="absolute inset-0 h-full w-full object-cover object-center"
-            alt="Pet doador"
+    <LayoutAutenticacao
+      foto={fotoGatoPreto}
+      fotoPosicao="center 85%"
+      corFundo="#fdb0b8"
+      legendaNoTopo
+      fotoAEsquerda
+      legenda="Leva poucos minutos e pode ajudar numa emergência."
+    >
+      <div className="flex items-center justify-between gap-4 text-sm">
+        <span className="font-semibold text-[#1a1c1c]">Criar conta</span>
+        <span className="text-[#5f5e5e]">
+          Etapa {etapaVisual} de {totalEtapas}
+        </span>
+      </div>
+      <div className="mt-3 flex gap-1.5" aria-hidden="true">
+        {Array.from({ length: totalEtapas }).map((_, i) => (
+          <span
+            key={i}
+            className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
+              i < etapaVisual ? "bg-[#b7102a]" : "bg-[#eadede]"
+            }`}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#b7102a]/80 via-transparent to-[#b7102a]/20 mix-blend-multiply" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#b7102a] via-[#b7102a]/40 to-transparent h-[50%] mix-blend-multiply" />
-          <div className="relative z-10 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl text-white max-w-lg p-8 mb-4 w-full">
-            <div className="grid grid-cols-1 gap-6">
-              {[
-                {
-                  title: "Emergências Rápidas",
-                  desc: "Encontre doadores compatíveis em segundos quando cada minuto conta.",
-                },
-                {
-                  title: "Doadores Voluntários",
-                  desc: "Cadastre seus animais e ajude a salvar vidas de outros pets na sua região.",
-                },
-                {
-                  title: "Rede Validada",
-                  desc: "Dados conferidos por médicos veterinários para total segurança.",
-                },
-              ].map((item) => (
-                <div key={item.title} className="flex gap-4 items-center">
-                  <span className="material-symbols-outlined text-[#8e001b] bg-white p-1 rounded-full text-lg shadow-lg shrink-0">
-                    done
-                  </span>
-                  <div>
-                    <p className="font-bold text-lg uppercase tracking-tight">
-                      {item.title}
-                    </p>
-                    <p className="text-sm opacity-90 leading-relaxed">
-                      {item.desc}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        ))}
+      </div>
 
-        {/* Coluna direita — wizard */}
-        <section className="w-full md:w-1/2 bg-[#FFF8F7] flex flex-col items-center h-full overflow-y-auto">
-          <div className="w-full max-w-[440px] h-full flex flex-col px-6 md:px-0">
-            <div className="text-center shrink-0 pt-12">
-              <h2 className="text-[#1a1c1c] font-extrabold uppercase leading-none tracking-tighter text-3xl md:text-5xl">
-                CRIE SUA CONTA E
-              </h2>
-              <h2 className="text-[#8e001b] font-extrabold uppercase leading-none tracking-tighter text-5xl md:text-7xl whitespace-nowrap">
-                SALVE VIDAS
-              </h2>
-              <div className="flex justify-center gap-3 mt-4">
-                {Array.from({ length: role === "vet" ? TOTAL_STEPS : 4 }).map(
-                  (_, i) => (
-                    <div
-                      key={i}
-                      className={`w-3 h-3 rounded-full transition-colors duration-300 ${i < visualStep ? "bg-[#8e001b]" : "bg-[#dadada]"}`}
-                    />
-                  ),
-                )}
-              </div>
-            </div>
+      <h1 className="mt-10 text-3xl md:text-4xl font-extrabold tracking-tight text-[#1a1c1c]">
+        {etapa.titulo}
+      </h1>
+      {etapa.texto && (
+        <p className="mt-2 text-[#5b403f] leading-relaxed">{etapa.texto}</p>
+      )}
 
-            <form
-              className="flex-grow flex flex-col min-h-0 justify-start gap-6"
-              onSubmit={handleSubmit}
+      <form onSubmit={handleSubmit} className="mt-8">
+        {step === 1 && <Step1 onSelect={handleRoleSelect} />}
+        {step === 2 && <Step2 data={formData} onChange={handleChange} />}
+        {step === 3 && <Step3 data={formData} onChange={handleChange} />}
+        {step === 4 && <Step4 data={formData} onChange={handleChange} />}
+        {step === 5 && <Step5 data={formData} onChange={handleChange} />}
+
+        {step > 1 && (
+          <div className="mt-8 flex gap-3">
+            <Botao
+              variante="secundario"
+              tamanho="lg"
+              icone="arrow_back"
+              onClick={handleBack}
             >
-              <div className="flex-grow flex flex-col justify-center py-4 min-h-0">
-                {step === 1 && <Step1 onSelect={handleRoleSelect} />}
-                {step === 2 && (
-                  <Step2 data={formData} onChange={handleChange} />
-                )}
-                {step === 3 && (
-                  <Step3 data={formData} onChange={handleChange} />
-                )}
-                {step === 4 && (
-                  <Step4 data={formData} onChange={handleChange} />
-                )}
-                {step === 5 && (
-                  <Step5 data={formData} onChange={handleChange} />
-                )}
-              </div>
-
-              <div className="shrink-0 flex flex-col pb-6 mt-4 gap-y-4">
-                {step > 1 && step < 5 && (
-                  <Botao
-                    tamanho="lg"
-                    onClick={handleContinue}
-                    className="w-full"
-                  >
-                    Continuar
-                  </Botao>
-                )}
-                {step === 5 && (
-                  <Botao type="submit" tamanho="lg" className="w-full">
-                    Finalizar cadastro
-                  </Botao>
-                )}
-                {step > 1 && <GoogleButton />}
-                {step > 1 && (
-                  <div className="flex justify-center">
-                    <Botao
-                      variante="fantasma"
-                      tamanho="sm"
-                      icone="arrow_back"
-                      onClick={handleBack}
-                      className="text-[#5f5e5e] hover:text-[#8e001b]"
-                    >
-                      Voltar
-                    </Botao>
-                  </div>
-                )}
-                <div className="text-center pt-2">
-                  <p className="text-[#636262] text-xs font-medium">
-                    Já tem uma conta?{" "}
-                    <Link
-                      to="/login"
-                      className="text-[#8e001b] font-extrabold hover:underline ml-1"
-                    >
-                      Fazer login
-                    </Link>
-                    <span className="mx-2 text-[#636262]/50">•</span>
-                    <Link
-                      to="/"
-                      className="text-[#8e001b] font-extrabold hover:underline ml-1"
-                    >
-                      Voltar ao início
-                    </Link>
-                  </p>
-                </div>
-              </div>
-            </form>
+              Voltar
+            </Botao>
+            <Botao type="submit" tamanho="lg" className="flex-1">
+              {step < 5 ? "Continuar" : "Finalizar cadastro"}
+            </Botao>
           </div>
-        </section>
-      </main>
-    </>
+        )}
+      </form>
+
+      {step === 2 && <BotaoGoogle>Cadastrar com Google</BotaoGoogle>}
+
+      <p className="mt-10 text-sm text-[#5f5e5e]">
+        Já tem uma conta?{" "}
+        <Link to="/login" className="font-semibold text-[#8e001b] hover:underline">
+          Entrar
+        </Link>
+      </p>
+    </LayoutAutenticacao>
   );
 }
 

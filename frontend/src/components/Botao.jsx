@@ -6,10 +6,11 @@ const VARIANTES = {
     "text-white bg-gradient-to-b from-[#b7102a] to-[#8e001b] shadow-[0_1px_2px_rgba(142,0,27,0.3),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_6px_16px_-4px_rgba(142,0,27,0.45),inset_0_1px_0_rgba(255,255,255,0.15)] hover:brightness-110",
   secundario:
     "text-[#1a1c1c] bg-white border border-[#e6dcdc] shadow-[0_1px_2px_rgba(26,28,28,0.06)] hover:bg-[#faf6f6] hover:border-[#d6c3c3]",
+  // Editar é uma ação comum, não um destaque: botão neutro, no tom da página.
   editar:
-    "text-blue-700 bg-blue-50 border border-blue-100 hover:bg-blue-100 hover:border-blue-200",
-  perigo:
-    "text-[#5f5e5e] bg-white border border-[#e6dcdc] hover:text-red-600 hover:bg-red-50 hover:border-red-200",
+    "text-[#1a1c1c] bg-[#f4efef] hover:bg-[#ebe3e3]",
+  // Excluir tem o mesmo formato de editar e só assume o vermelho no hover.
+  perigo: "text-[#5f5e5e] bg-[#f4efef] hover:text-red-600 hover:bg-red-50",
   perigoSolido:
     "text-white bg-red-600 shadow-[0_1px_2px_rgba(220,38,38,0.3)] hover:bg-red-700",
   fantasma: "text-[#8e001b] hover:bg-[#8e001b]/[0.06]",
@@ -32,12 +33,14 @@ function Botao({
 }) {
   const t = TAMANHOS[tamanho];
   const extras = Componente === "button" ? { type: "button" } : {};
+  // Só ícone, sem texto: botão quadrado (use aria-label para dar nome a ele).
+  const soIcone = icone && !children ? "aspect-square !px-0" : "";
 
   return (
     <Componente
       {...extras}
       {...props}
-      className={`inline-flex items-center justify-center font-semibold whitespace-nowrap select-none cursor-pointer transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8e001b]/40 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ${t.classe} ${VARIANTES[variante]} ${className}`}
+      className={`inline-flex items-center justify-center font-semibold whitespace-nowrap select-none cursor-pointer transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8e001b]/40 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ${t.classe} ${soIcone} ${VARIANTES[variante]} ${className}`}
     >
       {icone && (
         <span className={`material-symbols-outlined ${t.icone}`} aria-hidden="true">
