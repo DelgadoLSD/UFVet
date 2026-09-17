@@ -6,6 +6,21 @@ import Ajuda from "../components/Ajuda";
 import Botao from "../components/Botao";
 import CodigoCopiavel from "../components/CodigoCopiavel";
 import ModalComoFuncionaValidacao from "../components/ComoFuncionaValidacao";
+import ModalComoFuncionaContato from "../components/ComoFuncionaContato";
+import BlocoContato from "../components/BlocoContato";
+import PainelAcessoContatos from "../components/PainelAcessoContatos";
+import ModalLiberarAcesso from "../components/ModalLiberarAcesso";
+import ModalRegistroConsultas from "../components/ModalRegistroConsultas";
+import {
+  TUTORES_CADASTRADOS,
+  CONSULTAS_RECEBIDAS,
+  useAcessoContatos,
+  liberacoesAtivas,
+  liberarAcesso,
+  renovarAcesso,
+  encerrarAcesso,
+  registrarConsulta,
+} from "../util/acessoContatos";
 import dog1 from "../assets/dogs/dog1_0-image.jpg";
 import dog1_1 from "../assets/dogs/dog1_1-image.jpg";
 import dog1_2 from "../assets/dogs/dog1_2-image.jpg";
@@ -1965,8 +1980,17 @@ function LinhaInfo({ icone, children }) {
   );
 }
 
-function CardPerfil({ perfil, animais, ehProprio }) {
-  const [telefoneVisivel, setTelefoneVisivel] = useState(false);
+function CardPerfil({
+  perfil,
+  animais,
+  ehProprio,
+  acesso,
+  consultasRecebidas,
+  meuCodigo,
+  onConsultarContato,
+  onComoFuncionaContato,
+  onVerRegistro,
+}) {
   const ehVet = perfil.role === "vet";
   const doacoes = animais.reduce((soma, a) => soma + a.totalDoacoes, 0);
   const f = perfil.genero === "F";
@@ -2045,25 +2069,17 @@ function CardPerfil({ perfil, animais, ehProprio }) {
               ehVet ? "xl:grid-cols-3" : ""
             }`}
           >
-            <GrupoInfo titulo="Contato">
-              <LinhaInfo icone="mail">
-                <span className="truncate">{perfil.email}</span>
-              </LinhaInfo>
-              <LinhaInfo icone="call">
-                <span className={telefoneVisivel ? "" : "tracking-wider"}>
-                  {telefoneVisivel ? perfil.telefone : "(••) •••••-••••"}
-                </span>
-                <button
-                  onClick={() => setTelefoneVisivel(!telefoneVisivel)}
-                  aria-label={
-                    telefoneVisivel ? "Ocultar telefone" : "Mostrar telefone"
-                  }
-                  className="material-symbols-outlined text-[18px] text-[#8e001b] hover:opacity-70 transition-opacity"
-                >
-                  {telefoneVisivel ? "visibility_off" : "visibility"}
-                </button>
-              </LinhaInfo>
-            </GrupoInfo>
+            <BlocoContato
+              perfil={perfil}
+              primeiroNome={primeiroNome(perfil.nome)}
+              ehProprio={ehProprio}
+              acesso={acesso}
+              consultasRecebidas={consultasRecebidas}
+              meuCodigo={meuCodigo}
+              onConsultar={onConsultarContato}
+              onComoFunciona={onComoFuncionaContato}
+              onVerRegistro={onVerRegistro}
+            />
 
             <GrupoInfo titulo="Localização">
               <LinhaInfo icone="location_on">
@@ -2117,17 +2133,69 @@ function DashboardPage() {
   // Com :id → /tutor/:id, sempre a tutora mockada (Marina).
   const { id } = useParams();
   const [modalAberto, setModalAberto] = useState(false);
+  const { liberacoes, consultas } = useAcessoContatos();
+  const [modalLiberar, setModalLiberar] = useState(false);
+  const [registroAberto, setRegistroAberto] = useState(null);
+  const [comoFuncionaContato, setComoFuncionaContato] = useState(false);
 
   const isProprioTutor = !id;
   const isVet = USUARIO_E_VETERINARIO;
   const perfil = isProprioTutor ? USUARIO_LOGADO : TUTOR_MOCK;
   const animaisPerfil = isProprioTutor ? ANIMAIS_MOCK_VET : ANIMAIS_MOCK;
 
+  const ativas = liberacoesAtivas(liberacoes);
+
+  // Veterinário vê contatos sempre; tutor, só com liberação ativa.
+  const minhaLiberacao = ativas.find(
+    (l) => l.codigo === USUARIO_LOGADO.codigo,
+  );
+  const acesso = isVet
+    ? { pode: true, motivo: "veterinario" }
+    : {
+        pode: !!minhaLiberacao,
+        motivo: "liberacao",
+        ateTexto: minhaLiberacao
+          ? new Date(minhaLiberacao.expiraEm).toLocaleDateString("pt-BR")
+          : null,
+      };
+
+  const consultarContato = () =>
+    registrarConsulta({
+      nome: perfil.nome,
+      codigo: perfil.codigo,
+      permissao: isVet ? "veterinario" : minhaLiberacao?.liberadoPor,
+      codigoQuemViu: USUARIO_LOGADO.codigo,
+    });
+
   return (
     <>
       <Header dark={true} />
       {modalAberto && (
         <ModalCadastroAnimal onClose={() => setModalAberto(false)} />
+      )}
+      {modalLiberar && (
+        <ModalLiberarAcesso
+          tutores={TUTORES_CADASTRADOS}
+          liberacoes={ativas}
+          onConfirmar={(dados) => {
+            liberarAcesso(dados);
+            setModalLiberar(false);
+          }}
+          onClose={() => setModalLiberar(false)}
+        />
+      )}
+      {registroAberto && (
+        <ModalRegistroConsultas
+          feitas={consultas}
+          recebidas={CONSULTAS_RECEBIDAS}
+          abaInicial={registroAberto}
+          onClose={() => setRegistroAberto(null)}
+        />
+      )}
+      {comoFuncionaContato && (
+        <ModalComoFuncionaContato
+          onClose={() => setComoFuncionaContato(false)}
+        />
       )}
 
       <main className="pb-20 px-5 md:px-16 max-w-[1200px] mx-auto pt-28">
@@ -2136,8 +2204,28 @@ function DashboardPage() {
             perfil={perfil}
             animais={animaisPerfil}
             ehProprio={isProprioTutor}
+            acesso={acesso}
+            consultasRecebidas={CONSULTAS_RECEBIDAS.length}
+            meuCodigo={USUARIO_LOGADO.codigo}
+            onConsultarContato={consultarContato}
+            onComoFuncionaContato={() => setComoFuncionaContato(true)}
+            onVerRegistro={() => setRegistroAberto("recebidas")}
           />
         </section>
+
+        {isProprioTutor && isVet && (
+          <section className="mb-10">
+            <PainelAcessoContatos
+              liberacoes={ativas}
+              consultasFeitas={consultas.length}
+              onLiberar={() => setModalLiberar(true)}
+              onRenovar={renovarAcesso}
+              onEncerrar={encerrarAcesso}
+              onVerRegistro={() => setRegistroAberto("feitas")}
+              onComoFunciona={() => setComoFuncionaContato(true)}
+            />
+          </section>
+        )}
 
         {isVet && !isProprioTutor && (
           <div className="mb-8 bg-[#fdecee] rounded-2xl px-6 py-4 flex items-center gap-4">
