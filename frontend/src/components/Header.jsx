@@ -14,57 +14,36 @@ const USUARIO_MOCK = {
 };
 
 function Header({ dark = false }) {
-  const [scrolled, setScrolled] = useState(false);
   const [escondido, setEscondido] = useState(false);
   const location = useLocation();
-  const isLandingPage = location.pathname === "/";
 
-  // Zera o estado de scroll ao trocar de rota (ajuste durante a renderização,
-  // não em efeito — evita o header ficar escondido/encolhido de uma página
-  // para outra).
+  // Zera o estado ao trocar de rota (ajuste durante a renderização, não em
+  // efeito) — evita chegar numa página nova com o header escondido.
   const [rotaAnterior, setRotaAnterior] = useState(location.pathname);
   if (rotaAnterior !== location.pathname) {
     setRotaAnterior(location.pathname);
-    setScrolled(false);
     setEscondido(false);
   }
 
-  // Landing page: header encolhe em pill ao rolar.
-  // Demais páginas: header some ao rolar para baixo e reaparece ao rolar
-  // para cima — dá mais espaço de leitura sem esconder a navegação de vez.
+  // Em todas as páginas o header some ao rolar para baixo e reaparece ao
+  // rolar para cima — dá espaço de leitura sem esconder a navegação de vez.
   useEffect(() => {
-    if (isLandingPage) {
-      const handleScroll = () => setScrolled(window.scrollY > 80);
-      window.addEventListener("scroll", handleScroll, { passive: true });
-      return () => window.removeEventListener("scroll", handleScroll);
-    }
-
     let ultimoY = window.scrollY;
     const handleScroll = () => {
       const y = window.scrollY;
-      const rolandoParaBaixo = y > ultimoY;
-      setEscondido(rolandoParaBaixo && y > 120);
+      setEscondido(y > ultimoY && y > 120);
       ultimoY = y;
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isLandingPage]);
-
-  const floating = isLandingPage && scrolled;
+  }, []);
 
   const navLinks = [
     { to: "/", label: "Início" },
     { to: "/buscar", label: "Buscar Doadores" },
   ];
 
-  // Cores baseadas no modo dark ou light
-  const bg = dark
-    ? floating
-      ? "bg-[#1a1a1a]/95 backdrop-blur-xl border border-white/10 shadow-lg"
-      : "bg-[#1a1a1a]"
-    : floating
-      ? "bg-white/95 backdrop-blur-xl border border-black/8 shadow-lg"
-      : "bg-white/95";
+  const bg = dark ? "bg-[#1a1a1a]" : "bg-white/95";
 
   const logoEscuro = dark ? "text-white" : "text-[#1a1c1c]";
   const linkAtivo = dark
@@ -82,9 +61,9 @@ function Header({ dark = false }) {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-400 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
         escondido ? "-translate-y-full" : "translate-y-0"
-      } ${floating ? `mt-3 mx-6 rounded-full ${bg}` : bg}`}
+      } ${bg}`}
     >
       <nav className="flex justify-between items-center h-20 px-5 md:px-8 max-w-[1200px] mx-auto w-full">
         {/* Logo */}

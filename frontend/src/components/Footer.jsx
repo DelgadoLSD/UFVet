@@ -11,8 +11,8 @@ function Footer() {
               <span className="text-[#b7102a]">Vet</span>
             </div>
             <p className="text-gray-500 leading-relaxed text-sm">
-              A primeira plataforma de integração para doação de sangue animal
-              validada pela UFV.
+              Portal que conecta doadores voluntários de sangue animal a quem
+              precisa — e explica como a doação funciona.
             </p>
           </div>
 
