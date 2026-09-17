@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
+import Botao from "../components/Botao";
 import heroPet from "../assets/login-image.png";
 
 function GoogleIcon() {
@@ -123,12 +124,9 @@ function LoginPage() {
               </div>
 
               <div className="shrink-0 flex flex-col gap-4 pb-12">
-                <button
-                  type="submit"
-                  className="w-full px-8 text-white font-bold uppercase tracking-widest hover:brightness-110 transition-all active:scale-[0.98] shadow-md text-base bg-[#8e001b] rounded-full py-4"
-                >
+                <Botao type="submit" tamanho="lg" className="w-full">
                   Entrar
-                </button>
+                </Botao>
                 <div className="flex items-center gap-4">
                   <div className="h-[1px] flex-1 bg-neutral-200" />
                   <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
@@ -138,7 +136,7 @@ function LoginPage() {
                 </div>
                 <button
                   type="button"
-                  className="w-full flex items-center justify-center gap-3 bg-black text-white font-semibold hover:bg-neutral-800 transition-all text-sm rounded-full py-4"
+                  className="w-full h-12 flex items-center justify-center gap-3 bg-[#1a1c1c] text-white font-semibold hover:bg-black transition-all active:scale-[0.97] text-sm rounded-xl shadow-[0_1px_2px_rgba(26,28,28,0.2)]"
                 >
                   <GoogleIcon />
                   Entrar com Google

@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import Header from "../components/Header";
+import Modal from "../components/Modal";
+import Ajuda from "../components/Ajuda";
+import Botao from "../components/Botao";
+import CodigoCopiavel from "../components/CodigoCopiavel";
+import IconeEspecie from "../components/IconeEspecie";
+import ModalComoFuncionaValidacao from "../components/ComoFuncionaValidacao";
 import dog1 from "../assets/dogs/dog1_0-image.jpg";
 import dog1_1 from "../assets/dogs/dog1_1-image.jpg";
 import dog1_2 from "../assets/dogs/dog1_2-image.jpg";
@@ -17,6 +23,7 @@ import cat7 from "../assets/cats/cat7_0-image.jpg";
 // partir da busca sempre leva a um tutor de exemplo (Marina) — ver
 // DashboardPage, onde a rota decide qual dos dois exibir.
 const USUARIO_LOGADO = {
+  codigo: "V7H4M2",
   nome: "Victor Hugo",
   nomeCompleto: "Victor Hugo Martins",
   email: "victor.hugo@ufv.br",
@@ -29,18 +36,18 @@ const USUARIO_LOGADO = {
   membroDesde: "12 Fev 2025",
   role: "vet",
   genero: "M",
+  validacoesRealizadas: 27,
   foto: homemFoto,
-  // Foto de rosto mais baixo no quadro (bastante teto acima dele) — sem
-  // isso o corte padrão no topo mostra só a sala, cortando o rosto.
+  // Rosto fica mais abaixo no quadro e a foto foi tirada de longe — sem
+  // posição e zoom próprios o recorte mostra só a sala.
   fotoPosicao: "center 28%",
-  // Foto tirada de longe (sala inteira no quadro) — o recorte sozinho não
-  // basta, precisa de zoom de verdade pra o rosto ficar visível.
   fotoZoom: 1.7,
 };
 
 const USUARIO_E_VETERINARIO = USUARIO_LOGADO.role === "vet";
 
 const TUTOR_MOCK = {
+  codigo: "T3M8P1",
   nome: "Marina Souza",
   nomeCompleto: "Marina Souza Andrade",
   email: "marina.souza@gmail.com",
@@ -55,424 +62,68 @@ const TUTOR_MOCK = {
   fotoPosicao: "center top",
 };
 
-// O rótulo de papel acompanha o gênero da pessoa
-const rotuloPapel = ({ role, genero }) => {
-  const f = genero === "F";
-  if (role === "vet") return f ? "Veterinária Validada" : "Veterinário Validado";
-  return f ? "Tutora" : "Tutor";
+const nomeProfissional = ({ nome, genero }) =>
+  `${genero === "F" ? "Dra." : "Dr."} ${nome}`;
+
+const primeiroNome = (nome) => nome.split(" ")[0];
+
+// "12 Fev 2025" → "fev/2025"
+const mesAno = (data) => {
+  const [, mes, ano] = data.split(" ");
+  return `${mes.toLowerCase()}/${ano}`;
 };
 
-const validado = (por, crmv, em, nota = "") => ({
-  status: "validado",
-  por,
-  crmv,
-  em,
-  nota,
-});
+// ─── Critérios de doação ──────────────────────────────────────────────────────
+// Baseados na Nota Técnica nº 3 (2024) da ABVHMT — Associação Brasileira
+// Veterinária de Hematologia e Medicina Transfusional. Confirmar com a equipe
+// do Hospital Veterinário antes de ir para produção.
+const REFERENCIA_DOADOR = {
+  cao: {
+    pesoMin: 25,
+    idadeMin: 1,
+    idadeMax: 8,
+    intervaloDias: 90,
+    sorologias: "Babesia, Ehrlichia, Anaplasma e Leishmania",
+  },
+  gato: {
+    pesoMin: 4,
+    idadeMin: 1,
+    idadeMax: 8,
+    intervaloDias: 90,
+    sorologias: "FeLV, FIV e Mycoplasma",
+  },
+};
 
-// Cada documento pode ter mais de uma versão ao longo do tempo (ex.: hemograma
-// reenviado). O status do documento é sempre o da versão mais recente, mas
-// as versões antigas ficam acessíveis para consulta.
-const versaoDoc = (arquivo, data, status, enviadoPor) => ({
-  arquivo,
-  data,
-  status,
-  enviadoPor,
-});
-
-const statusDocumento = (doc) =>
-  doc.versoes.length === 0 ? "pendente" : doc.versoes.at(-1).status;
-
-const ANIMAIS_MOCK = [
+// A validação veterinária é um checklist do que importa para doar sangue — o
+// restante do histórico clínico do animal vive no sistema do hospital.
+const CRITERIOS_DOACAO = [
   {
-    id: 1,
-    nome: "Zeus",
-    fotos: [dog1, dog1_1, dog1_2],
-    especie: "Cão",
-    raca: "Golden Retr.",
-    peso: "32kg",
-    nascimento: "2021-08-20",
-    tipo: "DEA 1.1+",
-    sexo: "Macho",
-    reprodutivo: "Castrado",
-    medicamentos: "Sim",
-    medicamentosDetalhe: "Prednisolona 5mg, 1x ao dia — preventivo após a reação alérgica registrada.",
-    transfusao: "Não",
-    vacinas: "Em dia",
-    ultimaDoacao: "15/10/2023",
-    disponivel: true,
-    observacoesClinicas: [
-      {
-        data: "15/10/2025",
-        hora: "14:32",
-        autor: "Dr. Paulo Rezende",
-        texto:
-          "Triagem clínica realizada. Hemograma dentro dos parâmetros. Peso e última doação pendentes de reconferência.",
-      },
-      {
-        data: "10/10/2025",
-        hora: "09:15",
-        autor: "Dr. Paulo Rezende",
-        texto:
-          "Zeus é um doador regular e se comporta muito bem durante a coleta.",
-      },
-      {
-        data: "12/11/2024",
-        hora: "16:05",
-        autor: "Dr. Paulo Rezende",
-        texto:
-          "Zeus apresentou reação alérgica (urticária) à Dipirona durante atendimento anterior. Evitar esse medicamento em futuras consultas ou coletas.",
-      },
-    ],
-    validacaoCampos: {
-      raca: validado("Dr. Paulo Rezende", "88214-MG", "15/10/2025"),
-      idade: validado("Dr. Paulo Rezende", "88214-MG", "15/10/2025"),
-      tipo: validado(
-        "Dr. Paulo Rezende",
-        "88214-MG",
-        "15/10/2025",
-        "Tipagem confirmada por cartão de tipagem sanguínea.",
-      ),
-      sexo: validado("Dr. Paulo Rezende", "88214-MG", "15/10/2025"),
-      reprodutivo: validado("Dr. Paulo Rezende", "88214-MG", "15/10/2025"),
-      medicamentos: validado("Dr. Paulo Rezende", "88214-MG", "15/10/2025"),
-      transfusao: validado("Dr. Paulo Rezende", "88214-MG", "15/10/2025"),
-      // Datado de propósito há mais de 1 ano para demonstrar o estado
-      // "vencido" — peso é o campo que de fato faz sentido expirar por
-      // tempo (o animal pode ter engordado/emagrecido desde então).
-      peso: validado("Dr. Paulo Rezende", "88214-MG", "10/06/2024"),
-    },
-    documentos: [
-      {
-        nome: "Hemograma completo",
-        versoes: [
-          versaoDoc(hemogramaImg, "10/10/2025", "validado", "Marina Souza"),
-          versaoDoc(hemogramaImg, "02/03/2026", "enviado", "Marina Souza"),
-        ],
-      },
-      { nome: "Sorologias", versoes: [] },
-      {
-        nome: "Carteira de vacinação",
-        versoes: [
-          versaoDoc(
-            carteiraVacinacaoImg,
-            "10/10/2025",
-            "enviado",
-            "Marina Souza",
-          ),
-        ],
-      },
-    ],
-    historico: [
-      {
-        data: "10/10/2025",
-        hora: "18:47",
-        autor: "Marina Souza",
-        texto: "Documentos enviados para validação.",
-      },
-    ],
+    key: "tipagem",
+    label: "Tipagem sanguínea confirmada",
+    descricao: () => "O tipo informado confere com o exame de tipagem.",
   },
   {
-    id: 2,
-    nome: "Luna",
-    fotos: [cat1],
-    especie: "Gato",
-    raca: "SRD",
-    peso: "4.5kg",
-    nascimento: "2024-06-10",
-    tipo: "TIPO A",
-    sexo: "Fêmea",
-    reprodutivo: "Castrada",
-    medicamentos: "Não",
-    transfusao: "Não",
-    vacinas: "Próx: Mar/2024",
-    ultimaDoacao: "Nunca doou",
-    disponivel: false,
-    observacoesClinicas: [],
-    validacaoCampos: {},
-    documentos: [
-      { nome: "Hemograma completo", versoes: [] },
-      {
-        nome: "Sorologias",
-        versoes: [
-          versaoDoc(sorologiaImg, "01/03/2026", "enviado", "Marina Souza"),
-        ],
-      },
-      { nome: "Carteira de vacinação", versoes: [] },
-    ],
-    historico: [],
+    key: "pesoIdade",
+    label: "Peso e idade dentro dos critérios",
+    descricao: (ref) =>
+      `Mínimo de ${ref.pesoMin} kg e idade entre ${ref.idadeMin} e ${ref.idadeMax} anos.`,
+  },
+  {
+    key: "vacinacao",
+    label: "Vacinação e vermifugação em dia",
+    descricao: () => "Vacinas e vermífugo dentro da validade.",
+  },
+  {
+    key: "sorologias",
+    label: "Sorologias negativas",
+    descricao: (ref) => `Negativo para ${ref.sorologias}.`,
+  },
+  {
+    key: "semTransfusao",
+    label: "Nunca recebeu transfusão",
+    descricao: () => "Animais já transfundidos não são aceitos como doadores.",
   },
 ];
-
-// Animais do próprio veterinário — cenários deliberadamente diferentes dos
-// da Marina: um totalmente validado (documentos inclusive) e outro com um
-// dado contestado e um documento recusado, casos que a tutora não cobre.
-const ANIMAIS_MOCK_VET = [
-  {
-    id: 3,
-    nome: "Bela",
-    fotos: [dog7],
-    especie: "Cão",
-    raca: "Labrador",
-    peso: "28kg",
-    nascimento: "2023-05-10",
-    tipo: "DEA 1.1-",
-    sexo: "Fêmea",
-    reprodutivo: "Castrada",
-    medicamentos: "Não",
-    transfusao: "Não",
-    vacinas: "Em dia",
-    ultimaDoacao: "10/06/2026",
-    disponivel: true,
-    observacoesClinicas: [
-      {
-        data: "20/08/2026",
-        hora: "11:10",
-        autor: "Dra. Camila Duarte",
-        texto:
-          "Bela é bastante tranquila durante a coleta e já doou 3 vezes sem intercorrências.",
-      },
-    ],
-    validacaoCampos: {
-      raca: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
-      idade: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
-      tipo: validado(
-        "Dra. Camila Duarte",
-        "45210-MG",
-        "20/08/2026",
-        "DEA 1.1 negativo — doadora universal para cães.",
-      ),
-      sexo: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
-      reprodutivo: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
-      medicamentos: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
-      transfusao: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
-      vacinas: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
-      peso: validado("Dra. Camila Duarte", "45210-MG", "20/08/2026"),
-    },
-    documentos: [
-      {
-        nome: "Hemograma completo",
-        versoes: [
-          versaoDoc(hemogramaImg, "20/08/2026", "validado", "Victor Hugo"),
-        ],
-      },
-      {
-        nome: "Sorologias",
-        versoes: [
-          versaoDoc(sorologiaImg, "20/08/2026", "validado", "Victor Hugo"),
-        ],
-      },
-      {
-        nome: "Carteira de vacinação",
-        versoes: [
-          versaoDoc(
-            carteiraVacinacaoImg,
-            "20/08/2026",
-            "validado",
-            "Victor Hugo",
-          ),
-        ],
-      },
-    ],
-    historico: [
-      {
-        data: "20/08/2026",
-        hora: "11:00",
-        autor: "Dra. Camila Duarte",
-        texto:
-          "Revisão clínica completa realizada. Todos os dados e documentos conferidos e validados.",
-      },
-    ],
-  },
-  {
-    id: 4,
-    nome: "Nina",
-    fotos: [cat7],
-    especie: "Gato",
-    raca: "Persa",
-    peso: "3.8kg",
-    nascimento: "2022-02-14",
-    tipo: "Tipo B",
-    sexo: "Fêmea",
-    reprodutivo: "Inteira",
-    medicamentos: "Não",
-    transfusao: "Não",
-    vacinas: "Próx: Jan/2027",
-    ultimaDoacao: "20/08/2026",
-    disponivel: false,
-    observacoesClinicas: [
-      {
-        data: "05/09/2026",
-        hora: "15:40",
-        autor: "Dra. Camila Duarte",
-        texto:
-          "Nina se mostra receosa no manuseio; recomenda-se contenção leve e ambiente silencioso durante a coleta.",
-      },
-    ],
-    validacaoCampos: {
-      raca: validado("Dra. Camila Duarte", "45210-MG", "05/09/2026"),
-      idade: validado("Dra. Camila Duarte", "45210-MG", "05/09/2026"),
-      tipo: validado("Dra. Camila Duarte", "45210-MG", "05/09/2026"),
-      sexo: validado("Dra. Camila Duarte", "45210-MG", "05/09/2026"),
-      reprodutivo: validado("Dra. Camila Duarte", "45210-MG", "05/09/2026"),
-      transfusao: validado("Dra. Camila Duarte", "45210-MG", "05/09/2026"),
-      medicamentos: {
-        status: "contestado",
-        por: "Dra. Camila Duarte",
-        crmv: "45210-MG",
-        em: "05/09/2026",
-        nota:
-          "Prontuário do hospital indica tratamento antiparasitário em andamento — cadastro precisa ser atualizado para \"Sim\".",
-      },
-    },
-    documentos: [
-      {
-        nome: "Hemograma completo",
-        versoes: [
-          versaoDoc(hemogramaImg, "28/08/2026", "recusado", "Victor Hugo"),
-        ],
-      },
-      { nome: "Sorologias", versoes: [] },
-      {
-        nome: "Carteira de vacinação",
-        versoes: [
-          versaoDoc(
-            carteiraVacinacaoImg,
-            "05/09/2026",
-            "validado",
-            "Victor Hugo",
-          ),
-        ],
-      },
-    ],
-    historico: [
-      {
-        data: "05/09/2026",
-        hora: "15:30",
-        autor: "Dra. Camila Duarte",
-        texto:
-          "Medicamentos contestado: prontuário do hospital indica tratamento antiparasitário em andamento — cadastro precisa ser atualizado.",
-      },
-      {
-        data: "28/08/2026",
-        hora: "09:20",
-        autor: "Dra. Camila Duarte",
-        texto:
-          "Documento \"Hemograma completo\" recusado — imagem ilegível, reenvio necessário.",
-      },
-    ],
-  },
-];
-
-// Idade é derivada da data de nascimento a cada carregamento da página — nunca
-// fica desatualizada como um texto estático "4 anos" ficaria.
-function calcularIdade(nascimentoISO) {
-  if (!nascimentoISO) return "—";
-  const nascimento = new Date(`${nascimentoISO}T00:00:00`);
-  const agora = new Date();
-  let anos = agora.getFullYear() - nascimento.getFullYear();
-  const aindaNaoFezAniversario =
-    agora.getMonth() < nascimento.getMonth() ||
-    (agora.getMonth() === nascimento.getMonth() &&
-      agora.getDate() < nascimento.getDate());
-  if (aindaNaoFezAniversario) anos -= 1;
-  if (anos <= 0) return "Menos de 1 ano";
-  return `${anos} ano${anos > 1 ? "s" : ""}`;
-}
-
-// Intervalo mínimo de recuperação entre doações — aproximação ilustrativa
-// para a demo; a regra clínica definitiva cabe à equipe veterinária real.
-const INTERVALO_DOACAO_DIAS = { Cão: 60, Gato: 90 };
-
-function proximaDoacaoLiberada(ultimaDoacao, especie) {
-  if (!ultimaDoacao || /nunca/i.test(ultimaDoacao)) {
-    return { apto: true, texto: "Apto para doação" };
-  }
-  const [dia, mes, ano] = ultimaDoacao.split("/").map(Number);
-  const dataUltima = new Date(ano, mes - 1, dia);
-  const dataLiberada = new Date(dataUltima);
-  dataLiberada.setDate(
-    dataLiberada.getDate() + (INTERVALO_DOACAO_DIAS[especie] ?? 60),
-  );
-  const apto = new Date() >= dataLiberada;
-  return {
-    apto,
-    texto: apto
-      ? "Apto para doação"
-      : `Recuperação até ${dataLiberada.toLocaleDateString("pt-BR")}`,
-  };
-}
-
-const CAMPOS_ANIMAL = [
-  { icon: "pets", label: "Raça", key: "raca", permanente: true },
-  { icon: "monitor_weight", label: "Peso", key: "peso" },
-  {
-    icon: "event",
-    label: "Idade",
-    key: "idade",
-    origem: "nascimento",
-    permanente: true,
-    tipoData: true,
-    calcularExibicao: calcularIdade,
-  },
-  {
-    icon: "bloodtype",
-    label: "Tipo Sanguíneo",
-    key: "tipo",
-    destaque: true,
-    opcoesPorEspecie: true,
-    permanente: true,
-  },
-  {
-    icon: "male",
-    label: "Sexo",
-    key: "sexo",
-    opcoes: ["Macho", "Fêmea"],
-    permanente: true,
-  },
-  {
-    icon: "health_and_safety",
-    label: "Reprodutivo",
-    key: "reprodutivo",
-    opcoes: ["Castrado", "Castrada", "Inteiro", "Inteira"],
-    permanente: true,
-  },
-  {
-    icon: "medication",
-    label: "Medicamentos",
-    key: "medicamentos",
-    opcoes: ["Sim", "Não"],
-    // Não vence por tempo: um "Não" validado hoje pode ficar desatualizado
-    // amanhã se o animal começar a tomar um medicamento novo. Um relógio de
-    // 1 ano não protege contra isso — quem cobre esse risco é a triagem
-    // feita a cada doação (ver "sujeito à triagem" na disponibilidade).
-    permanente: true,
-    // Quais medicamentos, sempre visível no card quando a resposta é "Sim"
-    // — não precisa clicar em nada pra saber do que se trata.
-    detalhe: (valor, animal) =>
-      valor === "Sim" ? animal.medicamentosDetalhe : null,
-  },
-  {
-    icon: "blood_pressure",
-    label: "Transfusão?",
-    key: "transfusao",
-    opcoes: ["Sim", "Não"],
-    permanente: true,
-  },
-  { icon: "vaccines", label: "Vacinas", key: "vacinas" },
-  {
-    icon: "history",
-    label: "Última Doação",
-    key: "ultimaDoacao",
-    calculado: true,
-    calcularExtra: (valor, animal) =>
-      proximaDoacaoLiberada(valor, animal.especie),
-  },
-];
-
-// Campos que de fato passam por auditoria (o computado "Última Doação" fica
-// de fora — ele é um estado derivado, não um dado a validar/contestar).
-const CAMPOS_AUDITAVEIS = CAMPOS_ANIMAL.filter((c) => !c.calculado);
 
 const TIPOS_SANGUINEOS = {
   cao: [
@@ -486,10 +137,19 @@ const TIPOS_SANGUINEOS = {
   gato: ["Tipo A", "Tipo B", "Tipo AB", "Não sei"],
 };
 
+const TIPOS_UNIVERSAIS = ["DEA 1.1-", "DEA 1.1 Universal"];
+
+const VALIDADE_DIAS = 365;
+
+const chaveEspecie = (especie) => (especie === "Gato" ? "gato" : "cao");
+
+const textoCastracao = ({ sexo, castrado }) => {
+  const final = sexo === "Fêmea" ? "a" : "o";
+  return castrado ? `Castrad${final}` : `Não castrad${final}`;
+};
+
 const hoje = () => new Date().toLocaleDateString("pt-BR");
 
-// Timestamp completo (data + hora) usado em histórico e observações — só a
-// data pode esconder a ordem de eventos no mesmo dia.
 const agora = () => {
   const d = new Date();
   return {
@@ -498,606 +158,255 @@ const agora = () => {
   };
 };
 
-// Validação clínica vale por 1 ano a partir da data informada (dd/mm/aaaa)
-const VALIDADE_DIAS = 365;
+const paraData = (dataBR) => {
+  const [dia, mes, ano] = dataBR.split("/").map(Number);
+  return new Date(ano, mes - 1, dia);
+};
 
-const umAnoApos = (data) => {
-  const [dia, mes, ano] = data.split("/");
+const diasDesde = (dataBR) =>
+  Math.floor((new Date() - paraData(dataBR)) / 86400000);
+
+const umAnoApos = (dataBR) => {
+  const [dia, mes, ano] = dataBR.split("/");
   return `${dia}/${mes}/${Number(ano) + 1}`;
 };
 
-const diasDesde = (dataBR) => {
-  const [dia, mes, ano] = dataBR.split("/").map(Number);
-  const data = new Date(ano, mes - 1, dia);
-  return Math.floor((new Date() - data) / 86400000);
-};
-
-// Status efetivo de um campo: campos permanentes (fatos biológicos fixos, ex.
-// sexo, raça) nunca precisam ser reconferidos depois de validados. Os demais
-// "vencem" depois de 1 ano e voltam a pedir atenção do veterinário.
-function statusEfetivoCampo(campo, validacao) {
-  if (!validacao) return "pendente";
-  if (validacao.status !== "validado") return validacao.status;
-  if (campo.permanente) return "validado";
-  return diasDesde(validacao.em) > VALIDADE_DIAS ? "vencido" : "validado";
+// Idade derivada da data de nascimento — nunca fica desatualizada
+function idadeEmAnos(nascimentoISO) {
+  const nascimento = new Date(`${nascimentoISO}T00:00:00`);
+  const hojeData = new Date();
+  let anos = hojeData.getFullYear() - nascimento.getFullYear();
+  const aindaNaoFezAniversario =
+    hojeData.getMonth() < nascimento.getMonth() ||
+    (hojeData.getMonth() === nascimento.getMonth() &&
+      hojeData.getDate() < nascimento.getDate());
+  if (aindaNaoFezAniversario) anos -= 1;
+  return anos;
 }
 
-// Status geral do animal derivado dos selos individuais de cada campo
-function resumoValidacao(validacoes) {
-  const total = CAMPOS_AUDITAVEIS.length;
-  const situacoes = CAMPOS_AUDITAVEIS.map((c) => ({
-    campo: c,
-    validacao: validacoes[c.key],
-    status: statusEfetivoCampo(c, validacoes[c.key]),
-  }));
-  const validados = situacoes.filter((s) => s.status === "validado");
-  const contestados = situacoes.filter((s) => s.status === "contestado");
-  const vencidos = situacoes.filter((s) => s.status === "vencido");
+const textoIdade = (anos) =>
+  anos <= 0 ? "Menos de 1 ano" : `${anos} ano${anos > 1 ? "s" : ""}`;
 
-  let status = "pendente";
-  if (contestados.length > 0) status = "contestado";
-  else if (vencidos.length > 0) status = "vencido";
-  else if (validados.length === total) status = "validado";
-  else if (validados.length > 0) status = "parcial";
+const formatarPeso = (kg) => `${kg.toLocaleString("pt-BR")} kg`;
 
-  // O selo geral leva o nome do vet que fechou a validação (o mais recente)
-  const ultimo = validados[validados.length - 1]?.validacao;
-
+function situacaoRecuperacao(ultimaDoacao, ref) {
+  if (!ultimaDoacao) return { apto: true };
+  const liberada = paraData(ultimaDoacao);
+  liberada.setDate(liberada.getDate() + ref.intervaloDias);
   return {
-    status,
-    total,
-    validados: validados.length,
-    contestados: contestados.length,
-    vencidos: vencidos.length,
-    veterinario: ultimo?.por,
-    crmv: ultimo?.crmv,
-    validadoEm: ultimo?.em,
-    validoAte: ultimo ? umAnoApos(ultimo.em) : null,
+    apto: new Date() >= liberada,
+    liberadaEm: liberada.toLocaleDateString("pt-BR"),
   };
 }
 
-const ESTILO_DOC = {
-  validado: {
-    texto: "Validado",
-    badge: "bg-emerald-100 text-emerald-800",
-    borda: "border-emerald-300",
-    icone: "check_circle",
-  },
-  enviado: {
-    texto: "Aguardando conferência",
-    badge: "bg-blue-100 text-blue-800",
-    borda: "border-blue-300",
-    icone: "schedule",
-  },
-  recusado: {
-    texto: "Recusado",
-    badge: "bg-red-100 text-red-700",
-    borda: "border-red-300",
-    icone: "cancel",
-  },
-  pendente: {
-    texto: "Nenhum documento enviado",
-    badge: "bg-[#eeeeee] text-[#5f5e5e]",
-    borda: "border-[#e4bebc]",
-    icone: "hourglass_empty",
-  },
-};
-
-function DocBadge({ status }) {
-  const e = ESTILO_DOC[status];
-  return (
-    <span
-      className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${e.badge}`}
-    >
-      <span className="material-symbols-outlined text-[13px]">{e.icone}</span>
-      {e.texto}
-    </span>
-  );
+function statusValidacao(validacao) {
+  if (!validacao) return "pendente";
+  if (diasDesde(validacao.em) > VALIDADE_DIAS) return "vencida";
+  const completa = CRITERIOS_DOACAO.every((c) => validacao.criterios[c.key]);
+  return completa ? "validado" : "pendencias";
 }
 
-// Botão de envio de arquivo — usado tanto para o primeiro envio quanto para
-// substituir/adicionar uma nova versão de um documento já existente.
-function BotaoEnviarDocumento({ label, onSelecionar, destaque = false }) {
-  return (
-    <label
-      className={`flex items-center justify-center gap-1.5 text-xs font-bold rounded-full py-2 cursor-pointer transition-colors ${
-        destaque
-          ? "bg-[#8e001b] text-white hover:brightness-110"
-          : "border border-[#8e001b] text-[#8e001b] hover:bg-[#8e001b] hover:text-white"
-      }`}
-    >
-      <span className="material-symbols-outlined text-[15px]">upload_file</span>
-      {label}
-      <input
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          onSelecionar(e.target.files[0]);
-          e.target.value = "";
-        }}
-      />
-    </label>
-  );
-}
+const todosCriterios = (valor) =>
+  Object.fromEntries(CRITERIOS_DOACAO.map((c) => [c.key, valor]));
 
-// ─── Card de documento clínico: nome, selo de status e ações centralizados ──
-function DocumentoCard({
-  doc,
-  isVet,
-  isProprioTutor,
-  onAvaliar,
-  onEnviar,
-  onAbrir,
-}) {
-  const status = statusDocumento(doc);
-  const estilo = ESTILO_DOC[status];
-  const podeEnviar = isVet || isProprioTutor;
+const versaoDoc = (arquivo, data, enviadoPor) => ({ arquivo, data, enviadoPor });
 
-  // Cada ação ocupa uma faixa de altura fixa, presente em todo card — vazia
-  // quando não se aplica. Assim o botão de cada ação sempre cai no mesmo
-  // lugar, esteja o documento pendente, enviado, validado ou recusado.
-  return (
-    <div
-      className={`bg-white border-2 ${estilo.borda} rounded-2xl p-5 flex flex-col items-center text-center gap-3`}
-    >
-      <p className="font-bold text-sm text-[#1a1c1c]">{doc.nome}</p>
-
-      <DocBadge status={status} />
-
-      <div className="h-3.5 -mt-1.5">
-        {doc.versoes.length > 1 && (
-          <p className="text-[10px] text-[#5f5e5e]">
-            {doc.versoes.length} versões enviadas
-          </p>
-        )}
-      </div>
-
-      <div className="w-full flex flex-col gap-2 mt-1">
-        <div className="h-9">
-          {isVet && status === "enviado" && (
-            <div className="flex gap-2 h-full">
-              <button
-                onClick={() => onAvaliar(doc.nome, "validado")}
-                className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 text-white text-[11px] font-bold rounded-full hover:bg-emerald-700 transition-colors active:scale-95"
-              >
-                <span className="material-symbols-outlined text-[14px]">
-                  check
-                </span>
-                Validar
-              </button>
-              <button
-                onClick={() => onAvaliar(doc.nome, "recusado")}
-                className="flex-1 flex items-center justify-center gap-1 border border-red-300 text-red-600 text-[11px] font-bold rounded-full hover:bg-red-500 hover:text-white transition-colors active:scale-95"
-              >
-                <span className="material-symbols-outlined text-[14px]">
-                  close
-                </span>
-                Recusar
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="h-7">
-          {doc.versoes.length > 0 && (
-            <button
-              onClick={onAbrir}
-              className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-[#8e001b] hover:underline h-full w-full"
-            >
-              <span className="material-symbols-outlined text-[14px]">
-                open_in_new
-              </span>
-              {doc.versoes.length > 1 ? "Ver versões" : "Abrir documento"}
-            </button>
-          )}
-        </div>
-
-        {podeEnviar && (
-          <BotaoEnviarDocumento
-            label={
-              doc.versoes.length === 0
-                ? "Enviar documento"
-                : "Enviar nova versão"
-            }
-            destaque={doc.versoes.length === 0}
-            onSelecionar={(file) => onEnviar(doc.nome, file)}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-const ESTILO_CAMPO = {
-  validado: {
-    card: "bg-emerald-50/60 border-emerald-200",
-    icone: "verified",
-    cor: "text-emerald-600",
-    badge: "bg-emerald-100 text-emerald-800",
-    ponto: "bg-emerald-600",
+// ─── Mocks ────────────────────────────────────────────────────────────────────
+// Os quatro animais cobrem os quatro estados de validação: vencida (Zeus),
+// nunca validado (Luna), validado (Bela) e com pendências (Nina).
+const ANIMAIS_MOCK = [
+  {
+    id: 1,
+    codigo: "Z7R2K4",
+    nome: "Zeus",
+    fotos: [dog1, dog1_1, dog1_2],
+    especie: "Cão",
+    raca: "Golden Retriever",
+    sexo: "Macho",
+    castrado: true,
+    nascimento: "2021-08-20",
+    peso: 32,
+    tipo: "DEA 1.1+",
+    totalDoacoes: 6,
+    ultimaDoacao: "05/09/2026",
+    disponivel: true,
+    validacao: {
+      criterios: todosCriterios(true),
+      por: "Dr. Paulo Rezende",
+      crmv: "88214-MG",
+      em: "10/08/2025",
+      nota: "",
+    },
+    observacoes: [
+      {
+        data: "05/09/2026",
+        hora: "14:20",
+        autor: "Dr. Paulo Rezende",
+        texto:
+          "Dócil e muito colaborativo. Coleta tranquila, sem necessidade de sedação.",
+      },
+      {
+        data: "10/03/2026",
+        hora: "10:05",
+        autor: "Dra. Camila Duarte",
+        texto:
+          "Acesso venoso fácil pela jugular; procedimento levou cerca de 10 minutos.",
+      },
+      {
+        data: "22/10/2025",
+        hora: "16:40",
+        autor: "Dr. Paulo Rezende",
+        texto: "Fica mais calmo com a presença da tutora durante a coleta.",
+      },
+      {
+        data: "15/10/2023",
+        hora: "09:30",
+        autor: "Dr. Paulo Rezende",
+        texto: "Primeira doação. Ficou um pouco agitado no início, mas logo se acalmou.",
+      },
+    ],
+    documentos: [
+      {
+        nome: "Hemograma completo",
+        versoes: [
+          versaoDoc(hemogramaImg, "10/10/2025", "Marina Souza"),
+          versaoDoc(hemogramaImg, "02/03/2026", "Marina Souza"),
+        ],
+      },
+      { nome: "Sorologias", versoes: [] },
+      {
+        nome: "Carteira de vacinação",
+        versoes: [versaoDoc(carteiraVacinacaoImg, "10/10/2025", "Marina Souza")],
+      },
+    ],
   },
-  contestado: {
-    card: "bg-amber-50/70 border-amber-300",
-    icone: "flag",
-    cor: "text-amber-600",
-    badge: "bg-amber-100 text-amber-800",
-    ponto: "bg-amber-500",
+  {
+    id: 2,
+    codigo: "L4N8C1",
+    nome: "Luna",
+    fotos: [cat1],
+    especie: "Gato",
+    raca: "SRD",
+    sexo: "Fêmea",
+    castrado: true,
+    nascimento: "2024-06-10",
+    peso: 4.5,
+    tipo: "Tipo A",
+    totalDoacoes: 0,
+    ultimaDoacao: null,
+    disponivel: false,
+    validacao: null,
+    observacoes: [],
+    documentos: [
+      { nome: "Hemograma completo", versoes: [] },
+      {
+        nome: "Sorologias",
+        versoes: [versaoDoc(sorologiaImg, "01/03/2026", "Marina Souza")],
+      },
+      { nome: "Carteira de vacinação", versoes: [] },
+    ],
   },
-  vencido: {
-    card: "bg-orange-50/70 border-orange-300",
-    icone: "update",
-    cor: "text-orange-600",
-    badge: "bg-orange-100 text-orange-800",
-    ponto: "bg-orange-500",
+];
+
+const ANIMAIS_MOCK_VET = [
+  {
+    id: 3,
+    codigo: "B3L6D9",
+    nome: "Bela",
+    fotos: [dog7],
+    especie: "Cão",
+    raca: "Labrador",
+    sexo: "Fêmea",
+    castrado: true,
+    nascimento: "2023-05-10",
+    peso: 28,
+    tipo: "DEA 1.1-",
+    totalDoacoes: 3,
+    ultimaDoacao: "10/06/2026",
+    disponivel: true,
+    validacao: {
+      criterios: todosCriterios(true),
+      por: "Dra. Camila Duarte",
+      crmv: "45210-MG",
+      em: "20/08/2026",
+      nota: "",
+    },
+    observacoes: [
+      {
+        data: "10/06/2026",
+        hora: "11:10",
+        autor: "Dra. Camila Duarte",
+        texto:
+          "Bastante tranquila durante a coleta; já doou 3 vezes sem intercorrências.",
+      },
+    ],
+    documentos: [
+      {
+        nome: "Hemograma completo",
+        versoes: [versaoDoc(hemogramaImg, "20/08/2026", "Victor Hugo")],
+      },
+      {
+        nome: "Sorologias",
+        versoes: [versaoDoc(sorologiaImg, "20/08/2026", "Victor Hugo")],
+      },
+      {
+        nome: "Carteira de vacinação",
+        versoes: [versaoDoc(carteiraVacinacaoImg, "20/08/2026", "Victor Hugo")],
+      },
+    ],
   },
-  pendente: {
-    card: "bg-[#fafafa] border-[#f0e6e6]",
-    icone: "schedule",
-    cor: "text-[#c9a5a5]",
-    badge: "bg-[#eeeeee] text-[#5f5e5e]",
-    ponto: "bg-[#c9a5a5]",
+  {
+    id: 4,
+    codigo: "N9P2F5",
+    nome: "Nina",
+    fotos: [cat7],
+    especie: "Gato",
+    raca: "Persa",
+    sexo: "Fêmea",
+    castrado: false,
+    nascimento: "2022-02-14",
+    peso: 3.8,
+    tipo: "Tipo B",
+    totalDoacoes: 0,
+    ultimaDoacao: null,
+    disponivel: false,
+    validacao: {
+      criterios: {
+        tipagem: true,
+        pesoIdade: false,
+        vacinacao: true,
+        sorologias: false,
+        semTransfusao: true,
+      },
+      por: "Dra. Camila Duarte",
+      crmv: "45210-MG",
+      em: "05/09/2026",
+      nota: "Peso abaixo do mínimo para gatas doadoras e sorologia de FeLV/FIV ainda não apresentada.",
+    },
+    observacoes: [
+      {
+        data: "05/09/2026",
+        hora: "15:40",
+        autor: "Dra. Camila Duarte",
+        texto:
+          "Receosa no manuseio; recomenda-se ambiente silencioso e contenção leve.",
+      },
+    ],
+    documentos: [
+      {
+        nome: "Hemograma completo",
+        versoes: [versaoDoc(hemogramaImg, "28/08/2026", "Victor Hugo")],
+      },
+      { nome: "Sorologias", versoes: [] },
+      {
+        nome: "Carteira de vacinação",
+        versoes: [versaoDoc(carteiraVacinacaoImg, "05/09/2026", "Victor Hugo")],
+      },
+    ],
   },
-};
+];
 
-const ROTULO_STATUS_CAMPO = {
-  validado: "Validado",
-  contestado: "Contestado",
-  vencido: "Vencido",
-  pendente: "Pendente",
-};
-
-// Explica em português simples o que cada status representa — pensado pra
-// tirar dúvida tipo "isso me impede de doar?" sem o usuário ter que adivinhar.
-const EXPLICACAO_STATUS_CAMPO = {
-  validado: "Esse dado foi conferido por um veterinário e está em dia.",
-  vencido:
-    "Esse dado foi validado há mais de 1 ano. Isso não impede a doação — é só um lembrete para o veterinário reconferir na próxima visita.",
-  contestado:
-    "Um veterinário identificou um problema com esse dado e sinalizou para correção.",
-  pendente: "Esse dado ainda não foi conferido por nenhum veterinário.",
-};
-
-// Campos autodeclarados: o tutor preenche, o veterinário não tem como
-// atestar por conta própria — só sinalizar quando desconfia que está errado.
-const CAMPO_AUTODECLARADO = { medicamentos: true, transfusao: true };
-
-function ModalDetalheCampo({ campo, animal, valor, validacao, status, onClose }) {
-  const estilo = ESTILO_CAMPO[status];
-  const exibicao = campo.calcularExibicao
-    ? campo.calcularExibicao(valor)
-    : valor;
-  const detalhe = campo.detalhe && campo.detalhe(valor, animal);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="px-6 py-5 flex items-start justify-between gap-4 border-b border-[#e4bebc]">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e5e]">
-              {animal.nome}
-            </p>
-            <h2 className="text-lg font-bold text-[#1a1c1c] mt-0.5">
-              {campo.label}
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#f3f3f3] flex items-center justify-center hover:bg-[#e4bebc] transition-colors shrink-0"
-          >
-            <span className="material-symbols-outlined text-[#5f5e5e] text-lg">
-              close
-            </span>
-          </button>
-        </div>
-
-        <div className="px-6 py-5 flex flex-col gap-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span
-              className={`inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full ${estilo.badge}`}
-            >
-              <span className="material-symbols-outlined text-[15px]">
-                {estilo.icone}
-              </span>
-              {ROTULO_STATUS_CAMPO[status]}
-            </span>
-            <span className="text-[#1a1c1c] font-semibold text-sm">
-              {exibicao}
-            </span>
-          </div>
-
-          <p className="text-sm text-[#5b403f] leading-relaxed">
-            {EXPLICACAO_STATUS_CAMPO[status]}
-            {status === "contestado" && CAMPO_AUTODECLARADO[campo.key] && (
-              <>
-                {" "}
-                Esse dado é preenchido pelo tutor no cadastro — o
-                veterinário não pode alterá-lo diretamente, só sinalizar; a
-                correção precisa vir do tutor.
-              </>
-            )}
-          </p>
-
-          {detalhe && (
-            <div className="bg-[#fafafa] border border-[#f0e6e6] rounded-xl p-3">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#8e001b] mb-1">
-                Detalhes
-              </p>
-              <p className="text-sm text-[#1a1c1c] leading-relaxed">
-                {detalhe}
-              </p>
-            </div>
-          )}
-
-          {(status === "validado" || status === "vencido") && validacao && (
-            <p className="text-xs text-[#5f5e5e] leading-relaxed">
-              Validado por{" "}
-              <strong className="text-[#1a1c1c]">{validacao.por}</strong>{" "}
-              (CRMV {validacao.crmv}) em {validacao.em}
-              {validacao.nota && <> — {validacao.nota}</>}
-            </p>
-          )}
-
-          {status === "contestado" && validacao && (
-            <p className="text-xs text-[#5f5e5e] leading-relaxed">
-              Contestado por{" "}
-              <strong className="text-[#1a1c1c]">{validacao.por}</strong> em{" "}
-              {validacao.em}:
-              <span className="block mt-1 text-amber-800 font-medium">
-                {validacao.nota}
-              </span>
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Campo informativo/calculado (ex.: "Última Doação") — não é auditado, só
-// mostra o estado atual derivado dos dados, sem selo nem botões de validação.
-function CampoCalculado({ campo, valor, animal, auditando, onEditar }) {
-  const { apto, texto } = campo.calcularExtra(valor, animal);
-  return (
-    <div className="border border-[#f0e6e6] bg-[#fafafa] rounded-xl p-3 flex flex-col items-center justify-center text-center gap-1.5">
-      <span className="text-[#8e001b] text-[11px] font-bold uppercase tracking-widest">
-        {campo.label}
-      </span>
-      {auditando ? (
-        <input
-          value={valor}
-          onChange={(e) => onEditar(campo.key, e.target.value)}
-          placeholder="dd/mm/aaaa"
-          className="w-full bg-white text-gray-900 [color-scheme:light] border border-[#e4bebc] rounded-lg px-2 py-1.5 text-[13px] font-semibold text-center focus:outline-none focus:ring-2 focus:ring-[#8e001b]"
-        />
-      ) : (
-        <span className="text-[#1a1c1c] font-bold text-[15px] leading-tight">
-          {valor}
-        </span>
-      )}
-      <span
-        className={`font-bold text-[9px] uppercase tracking-wider mt-0.5 ${
-          apto ? "text-emerald-600" : "text-amber-600"
-        }`}
-      >
-        {texto}
-      </span>
-    </div>
-  );
-}
-
-// ─── Campo do animal: exibe o selo e, em auditoria, permite editar/validar ────
-function CampoAuditavel({
-  campo,
-  animal,
-  valor,
-  validacao,
-  auditando,
-  onEditar,
-  onValidar,
-  onContestar,
-  onReabrir,
-}) {
-  const [contestando, setContestando] = useState(false);
-  const [nota, setNota] = useState("");
-  const [modalAberto, setModalAberto] = useState(false);
-
-  if (campo.calculado) {
-    return (
-      <CampoCalculado
-        campo={campo}
-        valor={valor}
-        animal={animal}
-        auditando={auditando}
-        onEditar={onEditar}
-      />
-    );
-  }
-
-  const status = statusEfetivoCampo(campo, validacao);
-  const estilo = ESTILO_CAMPO[status];
-  const precisaAcao = status === "pendente" || status === "vencido";
-  const exibicao = campo.calcularExibicao
-    ? campo.calcularExibicao(valor)
-    : valor;
-
-  const opcoes = campo.opcoesPorEspecie
-    ? TIPOS_SANGUINEOS[animal.especie === "Gato" ? "gato" : "cao"]
-    : campo.opcoes;
-
-  const enviarContestacao = () => {
-    if (!nota.trim()) return;
-    onContestar(campo.key, nota.trim());
-    setNota("");
-    setContestando(false);
-  };
-
-  return (
-    <div
-      className={`relative border rounded-xl p-3 flex flex-col items-center justify-center text-center gap-1.5 transition-colors ${estilo.card}`}
-    >
-      {/* Selo de status como bolinha no vértice do card: sai do fluxo do
-          conteúdo, então o label centraliza sozinho sem disputar espaço.
-          Clicável — abre o detalhe completo do campo. */}
-      <button
-        type="button"
-        onClick={() => setModalAberto(true)}
-        title="Ver detalhes deste campo"
-        className={`absolute -top-2 -right-2 z-10 w-6 h-6 rounded-full ring-2 ring-white flex items-center justify-center text-white shadow-sm transition-transform hover:scale-110 active:scale-95 ${estilo.ponto}`}
-      >
-        <span className="material-symbols-outlined text-[14px]">
-          {estilo.icone}
-        </span>
-      </button>
-
-      <button
-        type="button"
-        onClick={() => setModalAberto(true)}
-        title="Ver detalhes deste campo"
-        className="w-full text-center text-[#8e001b] text-[11px] font-bold uppercase tracking-widest rounded-lg py-0.5 hover:bg-black/5 transition-colors"
-      >
-        {campo.label}
-      </button>
-
-      {auditando ? (
-        opcoes ? (
-          <select
-            value={valor}
-            onChange={(e) => onEditar(campo.key, e.target.value)}
-            className="w-full bg-white text-gray-900 [color-scheme:light] border border-[#e4bebc] rounded-lg px-2 py-1.5 text-[13px] font-semibold focus:outline-none focus:ring-2 focus:ring-[#8e001b]"
-          >
-            {!opcoes.includes(valor) && <option value={valor}>{valor}</option>}
-            {opcoes.map((op) => (
-              <option key={op} value={op}>
-                {op}
-              </option>
-            ))}
-          </select>
-        ) : campo.tipoData ? (
-          <input
-            type="date"
-            value={valor}
-            onChange={(e) => onEditar(campo.key, e.target.value)}
-            className="w-full bg-white text-gray-900 [color-scheme:light] border border-[#e4bebc] rounded-lg px-2 py-1.5 text-[13px] font-semibold text-center focus:outline-none focus:ring-2 focus:ring-[#8e001b]"
-          />
-        ) : (
-          <input
-            value={valor}
-            onChange={(e) => onEditar(campo.key, e.target.value)}
-            className="w-full bg-white text-gray-900 [color-scheme:light] border border-[#e4bebc] rounded-lg px-2 py-1.5 text-[13px] font-semibold text-center focus:outline-none focus:ring-2 focus:ring-[#8e001b]"
-          />
-        )
-      ) : campo.destaque ? (
-        <span className="text-[#8e001b] text-lg font-extrabold leading-tight">
-          {exibicao}
-        </span>
-      ) : (
-        <span className="text-[#1a1c1c] font-semibold text-[15px] leading-tight">
-          {exibicao}
-        </span>
-      )}
-
-      {/* Detalhe informativo do campo (ex.: qual medicamento) — sempre
-          visível quando existe, sem precisar clicar em nada. Passa por
-          "title" no card inteiro também, pra quem preferir passar o mouse. */}
-      {campo.detalhe && campo.detalhe(valor, animal) && (
-        <span className="text-[#5f5e5e] text-[10px] leading-snug line-clamp-2">
-          {campo.detalhe(valor, animal)}
-        </span>
-      )}
-
-      {!auditando && status === "contestado" && (
-        <span className="text-amber-800 text-[10px] font-semibold leading-snug line-clamp-2">
-          {validacao.nota}
-        </span>
-      )}
-
-      {!auditando && status === "vencido" && (
-        <span className="text-orange-800 text-[10px] font-semibold leading-snug">
-          Revalidação necessária
-        </span>
-      )}
-
-      {auditando &&
-        (contestando ? (
-          <div className="w-full mt-1">
-            <textarea
-              autoFocus
-              value={nota}
-              onChange={(e) => setNota(e.target.value)}
-              placeholder="O que precisa ser corrigido?"
-              rows={2}
-              className="w-full bg-white text-gray-900 [color-scheme:light] border border-amber-300 rounded-lg p-2 text-[11px] resize-none focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-            <div className="flex gap-1 mt-1">
-              <button
-                onClick={enviarContestacao}
-                className="flex-1 bg-amber-500 text-white text-[10px] font-bold py-1 rounded-full hover:bg-amber-600 transition-colors"
-              >
-                Contestar
-              </button>
-              <button
-                onClick={() => {
-                  setContestando(false);
-                  setNota("");
-                }}
-                className="px-2 text-[10px] font-bold text-[#5f5e5e] hover:text-[#1a1c1c]"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        ) : precisaAcao ? (
-          <div className="flex gap-1 w-full mt-1">
-            <button
-              onClick={() => onValidar(campo.key)}
-              title={
-                status === "vencido"
-                  ? "Revalidar este campo"
-                  : "Validar este campo"
-              }
-              className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 text-white text-[10px] font-bold py-1.5 rounded-full hover:bg-emerald-700 transition-colors active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[13px]">
-                check
-              </span>
-              {status === "vencido" ? "Revalidar" : "Validar"}
-            </button>
-            <button
-              onClick={() => setContestando(true)}
-              title="Contestar este campo"
-              className="w-8 flex items-center justify-center border border-amber-400 text-amber-600 rounded-full hover:bg-amber-500 hover:text-white transition-colors active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[13px]">
-                flag
-              </span>
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => onReabrir(campo.key)}
-            className="w-full mt-1 text-[10px] font-bold text-[#5f5e5e] border border-[#e4bebc] py-1 rounded-full hover:border-[#8e001b] hover:text-[#8e001b] transition-colors"
-          >
-            Reabrir campo
-          </button>
-        ))}
-
-      {modalAberto && (
-        <ModalDetalheCampo
-          campo={campo}
-          animal={animal}
-          valor={valor}
-          validacao={validacao}
-          status={status}
-          onClose={() => setModalAberto(false)}
-        />
-      )}
-    </div>
-  );
-}
+const OBSERVACOES_VISIVEIS = 3;
 
 // ─── Carrossel de fotos do animal ─────────────────────────────────────────────
 function CarrosselFotos({ fotos, nome }) {
@@ -1109,7 +418,6 @@ function CarrosselFotos({ fotos, nome }) {
     setAtual((prev) => (prev - 1 + fotos.length) % fotos.length);
   const proxima = () => setAtual((prev) => (prev + 1) % fotos.length);
 
-  // Placeholder quando não há fotos
   if (!temFotos) {
     return (
       <div className="w-full h-56 lg:h-full min-h-[240px] bg-[#faf0f0] border-2 border-dashed border-[#e4bebc] flex flex-col items-center justify-center gap-2 rounded-2xl">
@@ -1125,7 +433,6 @@ function CarrosselFotos({ fotos, nome }) {
 
   return (
     <div className="relative w-full h-56 lg:h-full min-h-[240px] rounded-2xl overflow-hidden border border-[#e4bebc] group">
-      {/* Fotos empilhadas com fade — a troca só acontece por ação do usuário */}
       {fotos.map((foto, i) => (
         <img
           key={i}
@@ -1139,11 +446,10 @@ function CarrosselFotos({ fotos, nome }) {
 
       {temVarias && (
         <>
-          {/* Setas de navegação — maior área de clique, aparecem no hover */}
           <button
             onClick={anterior}
             aria-label="Foto anterior"
-            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-black/60"
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-black/60"
           >
             <span className="material-symbols-outlined text-xl">
               chevron_left
@@ -1152,19 +458,17 @@ function CarrosselFotos({ fotos, nome }) {
           <button
             onClick={proxima}
             aria-label="Próxima foto"
-            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-black/60"
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-black/60"
           >
             <span className="material-symbols-outlined text-xl">
               chevron_right
             </span>
           </button>
 
-          {/* Contador — indica quantas fotos existem, sempre visível */}
-          <div className="absolute top-2 right-2 z-10 bg-black/40 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+          <div className="absolute top-2 right-2 z-10 bg-black/40 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full">
             {atual + 1}/{fotos.length}
           </div>
 
-          {/* Bolinhas indicadoras — mantidas como referência visual da posição */}
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
             {fotos.map((_, i) => (
               <button
@@ -1183,6 +487,32 @@ function CarrosselFotos({ fotos, nome }) {
   );
 }
 
+// ─── Controle segmentado (escolha entre poucas opções) ─────────────────────────
+function Segmentado({ opcoes, valor, onEscolher }) {
+  return (
+    <div className="flex p-1 bg-[#f5efef] rounded-xl gap-1">
+      {opcoes.map((op) => (
+        <button
+          key={String(op.val)}
+          type="button"
+          onClick={() => onEscolher(op.val)}
+          className={`flex-1 h-9 px-2 rounded-lg flex items-center justify-center gap-1.5 text-sm font-semibold whitespace-nowrap transition-all ${
+            valor === op.val
+              ? "bg-white text-[#8e001b] shadow-[0_1px_3px_rgba(26,28,28,0.12)]"
+              : "text-[#5f5e5e] hover:text-[#1a1c1c]"
+          }`}
+        >
+          {op.icone}
+          {op.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Cadastro de animal ───────────────────────────────────────────────────────
+// Só o que o tutor sabe e o que importa para doação. Os critérios clínicos
+// (sorologias, vacinação, transfusão) são conferidos pelo veterinário.
 function ModalCadastroAnimal({ onClose }) {
   const [form, setForm] = useState({
     nome: "",
@@ -1190,27 +520,23 @@ function ModalCadastroAnimal({ onClose }) {
     raca: "",
     racaSRD: false,
     sexo: "",
+    castrado: "",
     idadeConhecida: true,
     dataNascimento: "",
     idadeEstimada: "",
     peso: "",
     tipoSanguineo: "",
-    reprodutivo: "",
-    medicamentos: "",
-    transfusao: "",
-    vacinas: "",
-    observacoes: "",
   });
   const [fotos, setFotos] = useState([]);
+
+  const ref = REFERENCIA_DOADOR[form.especie];
 
   const handleChange = (field, value) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleFotos = (e) => {
     const arquivos = Array.from(e.target.files);
-    const total = fotos.length + arquivos.length;
-    const permitidos =
-      total > 5 ? arquivos.slice(0, 5 - fotos.length) : arquivos;
+    const permitidos = arquivos.slice(0, 5 - fotos.length);
     const novas = permitidos.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
@@ -1234,90 +560,107 @@ function ModalCadastroAnimal({ onClose }) {
 
   const inputClass =
     "w-full px-4 py-2.5 bg-white border border-[#e4bebc] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b] focus:border-[#8e001b] placeholder:text-gray-400";
-  const labelClass =
-    "block text-[11px] font-bold uppercase tracking-widest text-[#8e001b] mb-1.5";
+  const rotuloClass =
+    "text-[11px] font-bold uppercase tracking-widest text-[#8e001b]";
+  const labelClass = `block mb-1.5 ${rotuloClass}`;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+    <Modal
+      titulo="Cadastrar novo animal"
+      subtitulo="Dados básicos para o perfil de doador"
+      largura="max-w-2xl"
+      onClose={onClose}
+      rodape={
+        <div className="flex justify-end gap-2">
+          <Botao variante="secundario" onClick={onClose}>
+            Cancelar
+          </Botao>
+          <Botao type="submit" form="form-cadastro-animal" icone="add">
+            Cadastrar animal
+          </Botao>
+        </div>
+      }
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-[#e4bebc] px-8 py-5 flex items-center justify-between rounded-t-2xl z-10">
-          <div>
-            <h2 className="text-xl font-bold text-[#1a1c1c]">
-              Cadastrar Novo Animal
-            </h2>
-            <p className="text-xs text-[#5f5e5e] mt-0.5">
-              Preencha as informações do seu pet
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-9 h-9 rounded-full bg-[#f3f3f3] flex items-center justify-center hover:bg-[#e4bebc] transition-colors"
-          >
-            <span className="material-symbols-outlined text-[#5f5e5e] text-xl">
-              close
-            </span>
-          </button>
+      <form
+        id="form-cadastro-animal"
+        onSubmit={handleSubmit}
+        className="space-y-6"
+      >
+        <div className="flex gap-3 bg-[#faf0f0] border border-[#e4bebc] rounded-xl p-4">
+          <span className="material-symbols-outlined text-[#8e001b] text-[22px] shrink-0">
+            verified_user
+          </span>
+          <p className="text-xs text-[#5b403f] leading-relaxed">
+            Seu animal já pode aparecer como doador logo após o cadastro. Para
+            deixar a doação mais rápida, envie os exames depois no perfil: com
+            eles, um veterinário pode <strong>validar</strong> os critérios de
+            doação e o hospital não precisa refazer tudo no dia da coleta.
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-8 py-6 space-y-6">
-          {/* Nome */}
+        <div>
+          <label className={labelClass}>Nome do animal *</label>
+          <input
+            type="text"
+            placeholder="Ex: Thor, Luna, Bolinha..."
+            value={form.nome}
+            onChange={(e) => handleChange("nome", e.target.value)}
+            required
+            className={inputClass}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label className={labelClass}>Nome do animal *</label>
-            <input
-              type="text"
-              placeholder="Ex: Thor, Luna, Bolinha..."
-              value={form.nome}
-              onChange={(e) => handleChange("nome", e.target.value)}
-              required
-              className={inputClass}
+            <label className={labelClass}>Espécie *</label>
+            <Segmentado
+              opcoes={[
+                {
+                  val: "cao",
+                  label: "Cão",
+                  icone: <IconeEspecie especie="cao" />,
+                },
+                {
+                  val: "gato",
+                  label: "Gato",
+                  icone: <IconeEspecie especie="gato" />,
+                },
+              ]}
+              valor={form.especie}
+              onEscolher={(val) => {
+                handleChange("especie", val);
+                handleChange("tipoSanguineo", "");
+              }}
             />
           </div>
 
-          {/* Espécie */}
           <div>
-            <label className={labelClass}>Espécie *</label>
-            <div className="flex gap-3">
-              {[
-                { val: "cao", label: "Cão" },
-                { val: "gato", label: "Gato" },
-              ].map((item) => (
-                <button
-                  key={item.val}
-                  type="button"
-                  onClick={() => {
-                    handleChange("especie", item.val);
-                    handleChange("tipoSanguineo", "");
-                  }}
-                  className={`flex-1 py-2.5 px-4 border-2 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition-all ${form.especie === item.val ? "bg-[#8e001b] text-white border-[#8e001b]" : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"}`}
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    pets
-                  </span>
-                  {item.label}
-                </button>
-              ))}
-            </div>
+            <label className={labelClass}>Sexo *</label>
+            <Segmentado
+              opcoes={[
+                { val: "Macho", label: "Macho" },
+                { val: "Fêmea", label: "Fêmea" },
+              ]}
+              valor={form.sexo}
+              onEscolher={(val) => handleChange("sexo", val)}
+            />
           </div>
+        </div>
 
-          {/* Raça */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label className={labelClass}>Raça</label>
             <input
               type="text"
               placeholder={
-                form.racaSRD
-                  ? "SRD (Sem Raça Definida)"
-                  : "Ex: Golden Retriever, Labrador..."
+                form.racaSRD ? "SRD (Sem Raça Definida)" : "Ex: Labrador..."
               }
               value={form.racaSRD ? "SRD" : form.raca}
               onChange={(e) => handleChange("raca", e.target.value)}
               disabled={form.racaSRD}
               className={`${inputClass} ${form.racaSRD ? "bg-[#f3f3f3] text-[#5f5e5e]" : ""}`}
             />
-            <label className="flex items-center gap-2 mt-2 cursor-pointer">
+            <label className="flex items-center gap-2 mt-2 cursor-pointer w-fit">
               <input
                 type="checkbox"
                 checked={form.racaSRD}
@@ -1333,40 +676,44 @@ function ModalCadastroAnimal({ onClose }) {
             </label>
           </div>
 
-          {/* Sexo */}
           <div>
-            <label className={labelClass}>Sexo *</label>
-            <div className="flex gap-3">
-              {["Macho", "Fêmea"].map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => handleChange("sexo", s)}
-                  className={`flex-1 py-2.5 px-4 border-2 rounded-xl text-sm font-semibold transition-all ${form.sexo === s ? "bg-[#8e001b] text-white border-[#8e001b]" : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"}`}
-                >
-                  {s}
-                </button>
-              ))}
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <span className={rotuloClass}>Castrado(a)?</span>
+              <Ajuda titulo="Por que perguntamos?">
+                <p>
+                  A castração não é obrigatória para doar. Mas fêmeas não
+                  castradas não podem doar durante o cio, a gestação e a
+                  amamentação.
+                </p>
+                <p>
+                  Depois da cirurgia de castração, é preciso esperar 30 dias
+                  antes de doar.
+                </p>
+              </Ajuda>
             </div>
+            <Segmentado
+              opcoes={[
+                { val: "sim", label: "Sim" },
+                { val: "nao", label: "Não" },
+              ]}
+              valor={form.castrado}
+              onEscolher={(val) => handleChange("castrado", val)}
+            />
           </div>
+        </div>
 
-          {/* Idade */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label className={labelClass}>Idade</label>
-            <div className="flex gap-3 mb-3">
-              {[
-                { val: true, label: "Sei a data de nascimento" },
-                { val: false, label: "Vou estimar" },
-              ].map((item) => (
-                <button
-                  key={String(item.val)}
-                  type="button"
-                  onClick={() => handleChange("idadeConhecida", item.val)}
-                  className={`flex-1 py-2 px-3 border-2 rounded-xl text-xs font-semibold transition-all ${form.idadeConhecida === item.val ? "bg-[#8e001b] text-white border-[#8e001b]" : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"}`}
-                >
-                  {item.label}
-                </button>
-              ))}
+            <div className="mb-2">
+              <Segmentado
+                opcoes={[
+                  { val: true, label: "Data de nascimento" },
+                  { val: false, label: "Estimar" },
+                ]}
+                valor={form.idadeConhecida}
+                onEscolher={(val) => handleChange("idadeConhecida", val)}
+              />
             </div>
             {form.idadeConhecida ? (
               <input
@@ -1378,240 +725,591 @@ function ModalCadastroAnimal({ onClose }) {
             ) : (
               <input
                 type="text"
-                placeholder="Ex: aproximadamente 3 anos..."
+                placeholder="Ex: cerca de 3 anos"
                 value={form.idadeEstimada}
                 onChange={(e) => handleChange("idadeEstimada", e.target.value)}
                 className={inputClass}
               />
             )}
+            <p className="text-[11px] text-[#5f5e5e] mt-1.5">
+              Doadores têm entre {ref.idadeMin} e {ref.idadeMax} anos.
+            </p>
           </div>
 
-          {/* Peso */}
           <div>
             <label className={labelClass}>Peso (kg)</label>
+            <div className="h-11 mb-2" aria-hidden="true" />
             <input
               type="number"
-              placeholder="Ex: 25"
+              placeholder={`Ex: ${form.especie === "cao" ? "30" : "4,5"}`}
               min="0"
               step="0.1"
               value={form.peso}
               onChange={(e) => handleChange("peso", e.target.value)}
               className={inputClass}
             />
-          </div>
-
-          {/* Tipo Sanguíneo */}
-          <div>
-            <label className={labelClass}>Tipo Sanguíneo</label>
-            <div className="flex flex-wrap gap-2">
-              {TIPOS_SANGUINEOS[form.especie].map((tipo) => (
-                <button
-                  key={tipo}
-                  type="button"
-                  onClick={() => handleChange("tipoSanguineo", tipo)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${form.tipoSanguineo === tipo ? "bg-[#8e001b] text-white border-[#8e001b]" : "bg-[#f3f3f3] text-[#1a1c1c] border-transparent hover:border-[#8e001b]"}`}
-                >
-                  {tipo}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Reprodutivo */}
-          <div>
-            <label className={labelClass}>Status Reprodutivo</label>
-            <div className="flex gap-3">
-              {[
-                {
-                  val: "Castrado",
-                  label: form.especie === "cao" ? "Castrado" : "Castrada",
-                },
-                {
-                  val: "Inteiro",
-                  label: form.especie === "cao" ? "Inteiro" : "Inteira",
-                },
-              ].map((item) => (
-                <button
-                  key={item.val}
-                  type="button"
-                  onClick={() => handleChange("reprodutivo", item.val)}
-                  className={`flex-1 py-2.5 px-4 border-2 rounded-xl text-sm font-semibold transition-all ${form.reprodutivo === item.val ? "bg-[#8e001b] text-white border-[#8e001b]" : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"}`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Medicamentos / Transfusão / Vacinas */}
-          {[
-            { field: "medicamentos", label: "Está tomando algum medicamento?" },
-            { field: "transfusao", label: "Já recebeu transfusão de sangue?" },
-            { field: "vacinas", label: "Vacinas em dia?" },
-          ].map((item) => (
-            <div key={item.field}>
-              <label className={labelClass}>{item.label}</label>
-              <div className="flex gap-3">
-                {["Sim", "Não"].map((opcao) => (
-                  <button
-                    key={opcao}
-                    type="button"
-                    onClick={() => handleChange(item.field, opcao)}
-                    className={`flex-1 py-2.5 px-4 border-2 rounded-xl text-sm font-semibold transition-all ${form[item.field] === opcao ? "bg-[#8e001b] text-white border-[#8e001b]" : "border-[#e4bebc] text-[#1a1c1c] hover:border-[#8e001b]"}`}
-                  >
-                    {opcao}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          {/* Observações */}
-          <div>
-            <label className={labelClass}>Observações</label>
-            <textarea
-              placeholder="Comportamento durante exames..."
-              value={form.observacoes}
-              onChange={(e) => handleChange("observacoes", e.target.value)}
-              rows={3}
-              className={`${inputClass} resize-none`}
-            />
-          </div>
-
-          {/* ── Fotos do animal ── */}
-          <div>
-            <label className={labelClass}>
-              Fotos do animal
-              <span className="ml-2 text-[#5f5e5e] normal-case font-normal tracking-normal">
-                ({fotos.length}/5)
-              </span>
-            </label>
-            <p className="text-xs text-[#5f5e5e] mb-3">
-              Adicione até 5 fotos do seu pet. A primeira foto será a principal
-              exibida no perfil.
+            <p className="text-[11px] text-[#5f5e5e] mt-1.5">
+              Peso mínimo para doar: {ref.pesoMin} kg.
             </p>
+          </div>
+        </div>
 
-            {/* Previews das fotos */}
-            {fotos.length > 0 && (
-              <div className="flex gap-3 flex-wrap mb-4">
-                {fotos.map((foto, i) => (
-                  <div
-                    key={i}
-                    className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-[#e4bebc] group"
+        <div>
+          <label className={labelClass}>Tipo sanguíneo</label>
+          <div className="flex flex-wrap gap-2">
+            {TIPOS_SANGUINEOS[form.especie].map((tipo) => (
+              <button
+                key={tipo}
+                type="button"
+                onClick={() => handleChange("tipoSanguineo", tipo)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                  form.tipoSanguineo === tipo
+                    ? "bg-[#8e001b] text-white border-[#8e001b]"
+                    : "bg-[#f3f3f3] text-[#1a1c1c] border-transparent hover:border-[#8e001b]"
+                }`}
+              >
+                {tipo}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-[#5f5e5e] mt-2">
+            Não sabe? Escolha "Não sei" — a tipagem é confirmada pelo
+            veterinário.
+          </p>
+        </div>
+
+        <div>
+          <label className={labelClass}>
+            Fotos do animal
+            <span className="ml-2 text-[#5f5e5e] normal-case font-normal tracking-normal">
+              ({fotos.length}/5)
+            </span>
+          </label>
+
+          {fotos.length > 0 ? (
+            <div className="flex gap-3 flex-wrap">
+              {fotos.map((foto, i) => (
+                <div
+                  key={i}
+                  className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-[#e4bebc] group"
+                >
+                  <img
+                    src={foto.preview}
+                    alt={`Foto ${i + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {i === 0 && (
+                    <div className="absolute top-1 left-1 bg-[#8e001b] text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
+                      Principal
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removerFoto(i)}
+                    aria-label={`Remover foto ${i + 1}`}
+                    className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                   >
-                    <img
-                      src={foto.preview}
-                      alt={`Foto ${i + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    {i === 0 && (
-                      <div className="absolute top-1 left-1 bg-[#8e001b] text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
-                        Principal
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removerFoto(i)}
-                      className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                    >
-                      <span className="material-symbols-outlined text-white text-xl">
-                        delete
-                      </span>
-                    </button>
-                  </div>
-                ))}
-
-                {/* Slot de adicionar mais — aparece se ainda há espaço */}
-                {fotos.length < 5 && (
-                  <label className="w-20 h-20 rounded-xl border-2 border-dashed border-[#e4bebc] flex flex-col items-center justify-center cursor-pointer hover:border-[#8e001b] hover:bg-[#faf0f0] transition-all">
-                    <span className="material-symbols-outlined text-[#c9a5a5] text-2xl">
-                      add_photo_alternate
+                    <span className="material-symbols-outlined text-white text-xl">
+                      delete
                     </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={handleFotos}
-                    />
-                  </label>
-                )}
+                  </button>
+                </div>
+              ))}
+
+              {fotos.length < 5 && (
+                <label className="w-20 h-20 rounded-xl border-2 border-dashed border-[#e4bebc] flex items-center justify-center cursor-pointer hover:border-[#8e001b] hover:bg-[#faf0f0] transition-all">
+                  <span className="material-symbols-outlined text-[#c9a5a5] text-2xl">
+                    add_photo_alternate
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFotos}
+                  />
+                </label>
+              )}
+            </div>
+          ) : (
+            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#e4bebc] rounded-xl cursor-pointer hover:border-[#8e001b] hover:bg-[#faf0f0] transition-all">
+              <span className="material-symbols-outlined text-[#c9a5a5] text-4xl mb-2">
+                photo_camera
+              </span>
+              <span className="text-sm font-semibold text-[#5f5e5e]">
+                Clique para adicionar fotos
+              </span>
+              <span className="text-xs text-[#c9a5a5] mt-1">
+                JPG, PNG — até 5 fotos. A primeira é a principal.
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handleFotos}
+              />
+            </label>
+          )}
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// ─── Validação veterinária ────────────────────────────────────────────────────
+// A explicação diz o que o status muda na prática, no dia da coleta — é isso
+// que um tutor leigo precisa saber para decidir, não o termo técnico.
+const ESTILO_VALIDACAO = {
+  validado: {
+    titulo: "Validado por veterinário",
+    explicacao: (nome) =>
+      `Um veterinário já conferiu os exames e os critérios de doação de ${nome}. No hospital, basta uma checagem rápida (exame físico e um exame de sangue simples) e a coleta pode acontecer no mesmo dia.`,
+    icone: "verified_user",
+    caixa: "border-emerald-200 bg-emerald-50/40",
+    circulo: "bg-emerald-600",
+    cor: "text-emerald-900",
+  },
+  pendencias: {
+    titulo: "Validação com pendências",
+    explicacao: (nome) =>
+      `Um veterinário conferiu os critérios de ${nome} e alguns itens abaixo ainda não foram atendidos. Eles precisarão ser verificados no hospital antes de uma coleta.`,
+    icone: "rule",
+    caixa: "border-amber-200 bg-amber-50/40",
+    circulo: "bg-amber-500",
+    cor: "text-amber-900",
+  },
+  vencida: {
+    titulo: "Validação vencida",
+    explicacao: (nome) =>
+      `A validação vale por 1 ano, porque os testes para doenças transmitidas pelo sangue precisam ser refeitos anualmente. ${nome} pode doar normalmente, mas esses exames serão refeitos no hospital antes da coleta.`,
+    icone: "update",
+    caixa: "border-orange-200 bg-orange-50/40",
+    circulo: "bg-orange-500",
+    cor: "text-orange-900",
+  },
+  pendente: {
+    titulo: "Ainda não validado",
+    explicacao: (nome) =>
+      `${nome} pode doar normalmente — só ainda não teve os exames conferidos por um veterinário aqui. Antes da coleta, o hospital fará os exames de triagem: os testes de doenças costumam levar alguns dias, e o sangue só pode ser usado depois dos resultados.`,
+    icone: "schedule",
+    caixa: "border-[#f0e6e6] bg-[#fafafa]",
+    circulo: "bg-[#8f6f6e]",
+    cor: "text-[#1a1c1c]",
+  },
+};
+
+const ACAO_VALIDACAO = {
+  pendente: { texto: "Validar doador", variante: "primario" },
+  vencida: { texto: "Renovar validação", variante: "primario" },
+  pendencias: { texto: "Revisar validação", variante: "secundario" },
+  validado: { texto: "Revisar validação", variante: "secundario" },
+};
+
+function PainelValidacao({
+  nomeAnimal,
+  validacao,
+  podeValidar,
+  ehDono,
+  onValidar,
+}) {
+  const [explicacaoAberta, setExplicacaoAberta] = useState(false);
+  const status = statusValidacao(validacao);
+  const estilo = ESTILO_VALIDACAO[status];
+  const acao = ACAO_VALIDACAO[status];
+
+  return (
+    <div className={`border rounded-xl p-5 flex flex-col gap-4 ${estilo.caixa}`}>
+      {/* Botão fixo no canto superior direito: o texto ao lado encolhe e
+          quebra linha, mas nunca empurra o botão para baixo */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <span
+            className={`w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 ${estilo.circulo}`}
+          >
+            <span className="material-symbols-outlined text-[22px]">
+              {estilo.icone}
+            </span>
+          </span>
+          <div className="min-w-0">
+            <p className={`font-bold text-sm ${estilo.cor}`}>{estilo.titulo}</p>
+            {validacao && (
+              <div className="text-xs text-[#5f5e5e] mt-0.5 space-y-0.5">
+              <p className="flex items-center gap-1">
+                <span>
+                  {validacao.por} — CRMV {validacao.crmv}
+                </span>
+                <Ajuda titulo="Assinatura do veterinário">
+                  <p>
+                    O CRMV identifica o veterinário que assinou esta validação.
+                    Com ele, é possível confirmar que um profissional
+                    registrado conferiu os dados de {nomeAnimal}.
+                  </p>
+                </Ajuda>
+              </p>
+              <p>
+                Em {validacao.em} ·{" "}
+                {status === "vencida" ? "venceu em" : "válida até"}{" "}
+                {umAnoApos(validacao.em)}
+              </p>
               </div>
             )}
-
-            {/* Área de upload — aparece só se não tem nenhuma foto ainda */}
-            {fotos.length === 0 && (
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#e4bebc] rounded-xl cursor-pointer hover:border-[#8e001b] hover:bg-[#faf0f0] transition-all">
-                <span className="material-symbols-outlined text-[#c9a5a5] text-4xl mb-2">
-                  photo_camera
-                </span>
-                <span className="text-sm font-semibold text-[#5f5e5e]">
-                  Clique para adicionar fotos
-                </span>
-                <span className="text-xs text-[#c9a5a5] mt-1">
-                  JPG, PNG — até 5 fotos
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleFotos}
-                />
-              </label>
-            )}
           </div>
+        </div>
 
-          {/* Botões */}
-          <div className="flex gap-3 pt-2 pb-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-3 border-2 border-[#e4bebc] text-[#5f5e5e] font-bold rounded-full text-sm hover:border-[#8e001b] hover:text-[#8e001b] transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="flex-1 py-3 bg-[#8e001b] text-white font-bold rounded-full text-sm hover:brightness-110 transition-all active:scale-95"
-            >
-              Cadastrar Animal
-            </button>
-          </div>
-        </form>
+        {podeValidar && (
+          <Botao
+            variante={acao.variante}
+            tamanho="sm"
+            icone="fact_check"
+            onClick={onValidar}
+            className="self-start"
+          >
+            {acao.texto}
+          </Botao>
+        )}
       </div>
+
+      <p className="text-sm text-[#5b403f] leading-relaxed">
+        {estilo.explicacao(nomeAnimal)}
+      </p>
+
+      <ul
+        className={`grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 ${
+          status === "vencida" ? "opacity-60" : ""
+        }`}
+      >
+        {CRITERIOS_DOACAO.map((c) => {
+          const atendido = validacao?.criterios[c.key];
+          const icone = !validacao
+            ? "radio_button_unchecked"
+            : atendido
+              ? "check_circle"
+              : "remove_circle";
+          const cor = !validacao
+            ? "text-[#c9a5a5]"
+            : atendido
+              ? "text-emerald-600"
+              : "text-amber-600";
+          return (
+            <li key={c.key} className="flex items-center gap-2 text-sm">
+              <span className={`material-symbols-outlined text-[18px] ${cor}`}>
+                {icone}
+              </span>
+              <span
+                className={
+                  validacao && !atendido ? "text-amber-900" : "text-[#1a1c1c]"
+                }
+              >
+                {c.label}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+
+      {validacao?.nota && (
+        <p className="text-xs text-[#5b403f] bg-white/70 border border-[#f0e6e6] rounded-lg px-3 py-2 leading-relaxed">
+          <strong className="text-[#1a1c1c]">Nota do veterinário:</strong>{" "}
+          {validacao.nota}
+        </p>
+      )}
+
+      {ehDono && status !== "validado" && (
+        <p className="flex items-start gap-2 text-xs text-[#5b403f] bg-white/70 border border-[#f0e6e6] rounded-lg px-3 py-2 leading-relaxed">
+          <span className="material-symbols-outlined text-[16px] text-[#8e001b] shrink-0">
+            lightbulb
+          </span>
+          <span>
+            Enviar os exames na seção abaixo ajuda um veterinário a validar{" "}
+            {nomeAnimal} — e deixa a doação mais rápida quando alguém precisar.
+          </span>
+        </p>
+      )}
+
+      <button
+        onClick={() => setExplicacaoAberta(true)}
+        className="flex items-center gap-1 text-xs font-semibold text-[#8e001b] hover:underline underline-offset-2 w-fit"
+      >
+        <span className="material-symbols-outlined text-[16px]">help</span>
+        Como funciona a validação?
+      </button>
+
+      {explicacaoAberta && (
+        <ModalComoFuncionaValidacao
+          onClose={() => setExplicacaoAberta(false)}
+        />
+      )}
     </div>
   );
 }
 
-const HISTORICO_VISIVEL = 3;
+function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
+  const ref = REFERENCIA_DOADOR[chaveEspecie(animal.especie)];
+  // Validação vencida começa zerada: renovar exige reconferir, não só confirmar
+  const aproveitarAnterior = statusValidacao(validacao) !== "vencida";
+  const [criterios, setCriterios] = useState(() =>
+    aproveitarAnterior && validacao
+      ? { ...validacao.criterios }
+      : todosCriterios(false),
+  );
+  const [nota, setNota] = useState(
+    aproveitarAnterior && validacao ? validacao.nota : "",
+  );
 
-function BadgeVersao({ status }) {
-  const estilos = {
-    validado: "bg-emerald-100 text-emerald-800",
-    enviado: "bg-blue-100 text-blue-800",
-    recusado: "bg-red-100 text-red-700",
-  };
-  const rotulos = {
-    validado: "Validado",
-    enviado: "Aguardando conferência",
-    recusado: "Recusado",
-  };
+  const marcados = CRITERIOS_DOACAO.filter((c) => criterios[c.key]).length;
+  const completa = marcados === CRITERIOS_DOACAO.length;
+
+  const alternar = (key) =>
+    setCriterios((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const salvar = () =>
+    onSalvar({
+      criterios,
+      nota: nota.trim(),
+      por: nomeProfissional(USUARIO_LOGADO),
+      crmv: USUARIO_LOGADO.crmv,
+      em: hoje(),
+    });
+
   return (
-    <span
-      className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${estilos[status]}`}
+    <Modal
+      titulo={`Validar doador — ${animal.nome}`}
+      subtitulo={`${animal.especie} · ${animal.tipo} · ${formatarPeso(animal.peso)} · ${textoIdade(idadeEmAnos(animal.nascimento))}`}
+      onClose={onClose}
+      rodape={
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <p className="text-[11px] text-[#5f5e5e] leading-snug">
+            Assinado por{" "}
+            <strong className="text-[#1a1c1c]">
+              {nomeProfissional(USUARIO_LOGADO)}
+            </strong>{" "}
+            — CRMV {USUARIO_LOGADO.crmv}
+          </p>
+          <div className="flex gap-2">
+            <Botao variante="secundario" onClick={onClose}>
+              Cancelar
+            </Botao>
+            <Botao icone="check" onClick={salvar}>
+              Confirmar validação
+            </Botao>
+          </div>
+        </div>
+      }
     >
-      {rotulos[status]}
-    </span>
+      <div className="flex flex-col gap-5">
+        <p className="text-sm text-[#5b403f] leading-relaxed">
+          Marque os critérios que você conferiu — no prontuário do hospital ou
+          presencialmente. A validação fica visível aos tutores, assinada com
+          seu CRMV, e vale por 1 ano.
+        </p>
+
+        <div className="flex items-center justify-between">
+          <span
+            className={`text-xs font-bold ${completa ? "text-emerald-700" : "text-amber-700"}`}
+          >
+            {completa
+              ? "Todos os critérios conferidos"
+              : `${marcados} de ${CRITERIOS_DOACAO.length} critérios — ficará com pendências`}
+          </span>
+          <button
+            type="button"
+            onClick={() => setCriterios(todosCriterios(!completa))}
+            className="text-xs font-semibold text-[#8e001b] hover:underline underline-offset-2"
+          >
+            {completa ? "Desmarcar todos" : "Marcar todos"}
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          {CRITERIOS_DOACAO.map((c) => {
+            const marcado = criterios[c.key];
+            return (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => alternar(c.key)}
+                className={`flex items-start gap-3 text-left rounded-xl border p-3 transition-colors ${
+                  marcado
+                    ? "border-emerald-300 bg-emerald-50/60"
+                    : "border-[#e4bebc] hover:border-[#8e001b]/50"
+                }`}
+              >
+                <span
+                  className={`w-5 h-5 mt-0.5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                    marcado
+                      ? "bg-emerald-600 border-emerald-600 text-white"
+                      : "border-[#c9a5a5] bg-white"
+                  }`}
+                >
+                  {marcado && (
+                    <span className="material-symbols-outlined text-[14px]">
+                      check
+                    </span>
+                  )}
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold text-[#1a1c1c]">
+                    {c.label}
+                  </span>
+                  <span className="block text-xs text-[#5f5e5e] mt-0.5">
+                    {c.descricao(ref)}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-widest text-[#8e001b] mb-1.5">
+            Nota (opcional)
+          </label>
+          <textarea
+            value={nota}
+            onChange={(e) => setNota(e.target.value)}
+            rows={2}
+            placeholder="Ex.: sorologia de Leishmania ainda não apresentada."
+            className="w-full bg-white text-gray-900 [color-scheme:light] border border-[#e4bebc] rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#8e001b]"
+          />
+        </div>
+      </div>
+    </Modal>
   );
 }
 
-// ─── Visualizador de documento: imagem grande + histórico de versões ─────────
-function ModalDocumento({ nomeDocumento, versoes, onClose }) {
-  const [indiceSelecionado, setIndiceSelecionado] = useState(
-    versoes.length - 1,
+// ─── Observações para a coleta ────────────────────────────────────────────────
+function ItemObservacao({ item }) {
+  return (
+    <div className="border-l-2 border-[#e4bebc] pl-4 py-0.5">
+      <p className="text-[10px] font-bold text-[#5f5e5e] uppercase tracking-wider">
+        {item.data} às {item.hora} — {item.autor}
+      </p>
+      <p className="text-sm text-[#1a1c1c] mt-0.5 leading-relaxed">
+        {item.texto}
+      </p>
+    </div>
   );
-  const versaoAtual = versoes[indiceSelecionado];
+}
+
+function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
+  const [adicionando, setAdicionando] = useState(false);
+  const [texto, setTexto] = useState("");
+  const [modalAberto, setModalAberto] = useState(false);
+
+  const cancelar = () => {
+    setAdicionando(false);
+    setTexto("");
+  };
+
+  const salvar = () => {
+    if (!texto.trim()) return;
+    onAdicionar(texto.trim());
+    cancelar();
+  };
+
+  return (
+    <section className="border border-[#f0e6e6] bg-[#fafafa] rounded-xl p-5 flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#8e001b]">
+            Observações para a coleta
+            <Ajuda titulo="Observações para a coleta">
+              <p>
+                Anotações de veterinários sobre como o animal se comportou em
+                coletas anteriores — por exemplo, se é calmo ou se precisa de
+                mais cuidado.
+              </p>
+              <p>
+                Elas ajudam a equipe a preparar uma coleta tranquila para o
+                doador.
+              </p>
+            </Ajuda>
+          </h4>
+          <p className="text-xs text-[#5f5e5e] mt-1">
+            Temperamento e comportamento em coletas anteriores
+          </p>
+        </div>
+        {podeAdicionar && !adicionando && (
+          <Botao
+            variante="secundario"
+            tamanho="sm"
+            icone="add"
+            onClick={() => setAdicionando(true)}
+          >
+            Adicionar
+          </Botao>
+        )}
+      </div>
+
+      {adicionando && (
+        <div className="bg-white border border-[#e4bebc] rounded-xl p-3 focus-within:ring-2 focus-within:ring-[#8e001b]/30">
+          <textarea
+            autoFocus
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            rows={3}
+            placeholder="Ex.: dócil, coleta tranquila sem necessidade de contenção."
+            className="w-full bg-white text-gray-900 [color-scheme:light] text-sm resize-none focus:outline-none"
+          />
+          <div className="flex justify-end gap-2 mt-2">
+            <Botao variante="fantasma" tamanho="sm" onClick={cancelar}>
+              Cancelar
+            </Botao>
+            <Botao tamanho="sm" onClick={salvar} disabled={!texto.trim()}>
+              Salvar
+            </Botao>
+          </div>
+        </div>
+      )}
+
+      {observacoes.length > 0 ? (
+        <div className="space-y-3">
+          {observacoes.slice(0, OBSERVACOES_VISIVEIS).map((item, i) => (
+            <ItemObservacao key={i} item={item} />
+          ))}
+        </div>
+      ) : (
+        !adicionando && (
+          <p className="text-sm text-[#5f5e5e] italic">
+            Nenhuma observação registrada ainda.
+          </p>
+        )
+      )}
+
+      {observacoes.length > OBSERVACOES_VISIVEIS && (
+        <button
+          onClick={() => setModalAberto(true)}
+          className="flex items-center gap-1.5 text-[#8e001b] font-semibold text-xs hover:underline underline-offset-2 w-fit mt-auto"
+        >
+          <span className="material-symbols-outlined text-[16px]">
+            unfold_more
+          </span>
+          Ver todas ({observacoes.length - OBSERVACOES_VISIVEIS} mais)
+        </button>
+      )}
+
+      {modalAberto && (
+        <Modal
+          titulo={`Observações para a coleta — ${animal.nome}`}
+          subtitulo={`${observacoes.length} registros`}
+          onClose={() => setModalAberto(false)}
+        >
+          <div className="space-y-4">
+            {observacoes.map((item, i) => (
+              <ItemObservacao key={i} item={item} />
+            ))}
+          </div>
+        </Modal>
+      )}
+    </section>
+  );
+}
+
+// ─── Exames e documentos ──────────────────────────────────────────────────────
+function ModalDocumento({ nomeDocumento, versoes, onClose }) {
+  const [indice, setIndice] = useState(versoes.length - 1);
+  const versao = versoes[indice];
   const temVarias = versoes.length > 1;
 
   return (
@@ -1620,18 +1318,16 @@ function ModalDocumento({ nomeDocumento, versoes, onClose }) {
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[95vh] flex flex-col">
-        <div className="bg-white border-b border-[#e4bebc] px-8 py-5 flex items-center justify-between rounded-t-2xl shrink-0">
+        <div className="border-b border-[#e4bebc] px-8 py-5 flex items-center justify-between rounded-t-2xl shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-[#1a1c1c]">
-              {nomeDocumento}
-            </h2>
+            <h2 className="text-xl font-bold text-[#1a1c1c]">{nomeDocumento}</h2>
             <p className="text-xs text-[#5f5e5e] mt-0.5">
-              {versoes.length} versão{versoes.length !== 1 ? "ões" : ""} enviada
-              {versoes.length !== 1 ? "s" : ""}
+              {versoes.length} {versoes.length === 1 ? "versão enviada" : "versões enviadas"}
             </p>
           </div>
           <button
             onClick={onClose}
+            aria-label="Fechar"
             className="w-9 h-9 rounded-full bg-[#f3f3f3] flex items-center justify-center hover:bg-[#e4bebc] transition-colors"
           >
             <span className="material-symbols-outlined text-[#5f5e5e] text-xl">
@@ -1641,54 +1337,45 @@ function ModalDocumento({ nomeDocumento, versoes, onClose }) {
         </div>
 
         <div className="px-8 py-6 flex flex-col gap-5 overflow-y-auto flex-1 min-h-0">
-          {/* Imagem do documento selecionado */}
-          <div className="flex flex-col gap-2 min-h-0">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-[#1a1c1c]">
-                  {versaoAtual.data}
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-[#1a1c1c]">
+                {versao.data}
+              </span>
+              {temVarias && indice === versoes.length - 1 && (
+                <span className="text-[9px] font-bold uppercase text-[#8e001b] bg-[#faf0f0] px-2 py-0.5 rounded-full">
+                  Mais recente
                 </span>
-                <BadgeVersao status={versaoAtual.status} />
-                {indiceSelecionado === versoes.length - 1 && temVarias && (
-                  <span className="text-[9px] font-bold uppercase text-[#8e001b] bg-[#faf0f0] px-2 py-0.5 rounded-full">
-                    Mais recente
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-[#5f5e5e]">
-                  Enviado por {versaoAtual.enviadoPor}
-                </span>
-                <a
-                  href={versaoAtual.arquivo}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 text-xs font-bold text-[#8e001b] hover:underline"
-                >
-                  <span className="material-symbols-outlined text-[15px]">
-                    open_in_new
-                  </span>
-                  Abrir em nova aba
-                </a>
-              </div>
+              )}
+              <span className="text-xs text-[#5f5e5e]">
+                · enviado por {versao.enviadoPor}
+              </span>
             </div>
-            {/* Fundo escuro + zoom em nova aba resolvem o problema de laudos
-                com letra miúda — aqui priorizamos a largura da imagem em vez
-                de encolhê-la para caber numa altura fixa. */}
-            <div className="w-full rounded-xl border border-[#e4bebc] bg-[#2a2a2a] overflow-auto max-h-[65vh]">
-              <img
-                src={versaoAtual.arquivo}
-                alt={`${nomeDocumento} — ${versaoAtual.data}`}
-                className="w-full h-auto"
-              />
-            </div>
+            <Botao
+              as="a"
+              href={versao.arquivo}
+              target="_blank"
+              rel="noreferrer"
+              variante="secundario"
+              tamanho="sm"
+              icone="open_in_new"
+            >
+              Abrir em nova aba
+            </Botao>
           </div>
 
-          {/* Lista de versões — só aparece quando há mais de uma */}
+          <div className="w-full rounded-xl border border-[#e4bebc] bg-[#2a2a2a] overflow-auto max-h-[65vh]">
+            <img
+              src={versao.arquivo}
+              alt={`${nomeDocumento} — ${versao.data}`}
+              className="w-full h-auto"
+            />
+          </div>
+
           {temVarias && (
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-3">
-                Histórico de envios
+                Versões enviadas
               </p>
               <div className="space-y-2">
                 {versoes
@@ -1697,28 +1384,20 @@ function ModalDocumento({ nomeDocumento, versoes, onClose }) {
                   .map((v) => (
                     <button
                       key={v.i}
-                      onClick={() => setIndiceSelecionado(v.i)}
+                      onClick={() => setIndice(v.i)}
                       className={`w-full flex items-center justify-between gap-3 text-left px-4 py-2.5 rounded-xl border transition-colors ${
-                        v.i === indiceSelecionado
+                        v.i === indice
                           ? "border-[#8e001b] bg-[#faf0f0]"
                           : "border-[#e4bebc] hover:border-[#8e001b]/50"
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-[#8e001b] text-[18px]">
-                          description
-                        </span>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-[#1a1c1c]">
-                            {v.data}
-                            {v.i === versoes.length - 1 && " — mais recente"}
-                          </span>
-                          <span className="text-[11px] text-[#5f5e5e]">
-                            Enviado por {v.enviadoPor}
-                          </span>
-                        </div>
-                      </div>
-                      <BadgeVersao status={v.status} />
+                      <span className="text-sm font-semibold text-[#1a1c1c]">
+                        {v.data}
+                        {v.i === versoes.length - 1 && " — mais recente"}
+                      </span>
+                      <span className="text-[11px] text-[#5f5e5e]">
+                        Enviado por {v.enviadoPor}
+                      </span>
                     </button>
                   ))}
               </div>
@@ -1730,791 +1409,723 @@ function ModalDocumento({ nomeDocumento, versoes, onClose }) {
   );
 }
 
-// Uma linha de histórico/observação. "tema" dá o tom padrão da lista
-// (auditoria = neutro, clinica = verde) e uma contestação sempre ganha um
-// destaque âmbar sutil por cima, independente do tema da lista.
-function RegistroItem({ item }) {
-  const destaqueContestacao = item.tipo === "contestacao";
-  const borda = destaqueContestacao
-    ? "border-amber-400"
-    : item.tema === "clinica"
-      ? "border-emerald-300"
-      : "border-[#e4bebc]";
-  const fundo = destaqueContestacao ? "bg-amber-50/60" : "";
+function SecaoDocumentos({ documentos, podeEnviar, onEnviar }) {
+  const [aberto, setAberto] = useState(null);
+  const documentoAberto = documentos.find((d) => d.nome === aberto);
 
   return (
-    <div
-      className={`flex gap-3 text-sm border-l-2 pl-4 py-0.5 rounded-r ${borda} ${fundo}`}
-    >
+    <section className="border border-[#f0e6e6] bg-[#fafafa] rounded-xl p-5 flex flex-col gap-4">
       <div>
-        <p className="text-[10px] font-bold text-[#5f5e5e] uppercase tracking-wider">
-          {item.data} às {item.hora} — {item.autor}
+        <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#8e001b]">
+          Exames e documentos
+          <Ajuda titulo="Por que enviar documentos?">
+            <p>
+              Com exames recentes e a carteira de vacinação em mãos, um
+              veterinário consegue validar o animal sem pedir que os exames
+              sejam refeitos.
+            </p>
+            <p>
+              Sem eles, o hospital pode precisar repetir esses exames antes da
+              coleta — o que leva mais tempo e pode ter custo.
+            </p>
+          </Ajuda>
+        </h4>
+        <p className="text-xs text-[#5f5e5e] mt-1">
+          Evitam que exames sejam refeitos no hospital
         </p>
-        <p className="text-[#1a1c1c] mt-0.5">{item.texto}</p>
       </div>
-    </div>
+
+      <ul className="divide-y divide-[#f0e6e6] bg-white border border-[#f0e6e6] rounded-xl">
+        {documentos.map((doc) => {
+          const ultima = doc.versoes.at(-1);
+          const qtd = doc.versoes.length;
+          return (
+            <li key={doc.nome} className="flex items-center gap-2 px-4 py-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[#1a1c1c] truncate">
+                  {doc.nome}
+                </p>
+                <p
+                  className={`text-xs mt-0.5 ${ultima ? "text-[#5f5e5e]" : "text-[#c9a5a5] italic"}`}
+                >
+                  {ultima
+                    ? `Enviado em ${ultima.data}${qtd > 1 ? ` · ${qtd} versões` : ""}`
+                    : "Não enviado"}
+                </p>
+              </div>
+
+              {/* Colunas de ação com largura fixa: cada botão cai sempre no
+                  mesmo lugar, tenha o documento sido enviado ou não */}
+              <div className="w-[4.5rem] flex justify-end">
+                {ultima && (
+                  <Botao
+                    variante="fantasma"
+                    tamanho="sm"
+                    onClick={() => setAberto(doc.nome)}
+                  >
+                    Abrir
+                  </Botao>
+                )}
+              </div>
+
+              {podeEnviar && (
+                <div className="w-[6.75rem] flex justify-end">
+                  <Botao
+                    as="label"
+                    variante={ultima ? "secundario" : "primario"}
+                    tamanho="sm"
+                    icone="upload"
+                  >
+                    {ultima ? "Atualizar" : "Enviar"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        onEnviar(doc.nome, e.target.files[0]);
+                        e.target.value = "";
+                      }}
+                    />
+                  </Botao>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+
+      {documentoAberto && (
+        <ModalDocumento
+          nomeDocumento={documentoAberto.nome}
+          versoes={documentoAberto.versoes}
+          onClose={() => setAberto(null)}
+        />
+      )}
+    </section>
   );
 }
 
-function ModalRegistros({ titulo, itens, tema, onClose }) {
+// ─── Card do animal ───────────────────────────────────────────────────────────
+// O "?" fica no canto inferior direito, fora da linha do rótulo: assim o
+// texto centraliza sozinho e o botão nunca colide com rótulos longos.
+function DadoDoador({ label, valor, detalhe, alerta, destaque, ajuda }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      className={`relative rounded-xl border px-3 pt-3 pb-5 flex flex-col items-center justify-center text-center gap-1 ${
+        destaque
+          ? "bg-[#8e001b] border-[#8e001b]"
+          : "bg-[#fafafa] border-[#f0e6e6]"
+      }`}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[80vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-[#e4bebc] px-8 py-5 flex items-center justify-between rounded-t-2xl z-10">
-          <div>
-            <h2 className="text-xl font-bold text-[#1a1c1c]">{titulo}</h2>
-            <p className="text-xs text-[#5f5e5e] mt-0.5">
-              {itens.length} registro{itens.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-9 h-9 rounded-full bg-[#f3f3f3] flex items-center justify-center hover:bg-[#e4bebc] transition-colors"
-          >
-            <span className="material-symbols-outlined text-[#5f5e5e] text-xl">
-              close
-            </span>
-          </button>
-        </div>
-
-        <div className="px-8 py-6 space-y-3">
-          {itens.map((item, i) => (
-            <RegistroItem key={i} item={{ ...item, tema }} />
-          ))}
-        </div>
-      </div>
+      {ajuda && (
+        <Ajuda
+          titulo={ajuda.titulo}
+          claro={destaque}
+          className="absolute bottom-1.5 right-1.5"
+        >
+          {ajuda.texto}
+        </Ajuda>
+      )}
+      <span
+        className={`text-[11px] font-bold uppercase tracking-widest ${
+          destaque ? "text-white/75" : "text-[#8e001b]"
+        }`}
+      >
+        {label}
+      </span>
+      <span
+        className={`font-extrabold leading-tight ${
+          destaque ? "text-white text-2xl" : "text-[#1a1c1c] text-lg"
+        }`}
+      >
+        {valor}
+      </span>
+      {detalhe && (
+        <span
+          className={`text-[10px] font-semibold leading-snug ${
+            alerta
+              ? "text-amber-700"
+              : destaque
+                ? "text-white/80"
+                : "text-[#5f5e5e]"
+          }`}
+        >
+          {detalhe}
+        </span>
+      )}
     </div>
   );
 }
 
-function BannerValidacao({ resumo }) {
-  const pct = Math.round((resumo.validados / resumo.total) * 100);
+function AjudaDisponibilidade({ animal, ehDono, disponivel, recuperacao }) {
+  const femeaNaoCastrada = animal.sexo === "Fêmea" && !animal.castrado;
 
-  if (resumo.status === "validado") {
+  if (ehDono) {
     return (
-      <div className="bg-emerald-50 border-l-4 border-emerald-600 px-6 py-4 flex items-center justify-between gap-4 flex-wrap rounded-r-lg">
-        <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-emerald-600 text-[32px]">
-            verified_user
-          </span>
-          <div className="flex flex-col">
-            <span className="font-bold text-emerald-900 text-sm">
-              Validado clinicamente — {resumo.total} de {resumo.total} campos
-            </span>
-            <span className="text-emerald-800 text-xs">
-              {resumo.veterinario} — CRMV {resumo.crmv}
-            </span>
-          </div>
-        </div>
-        <div className="flex gap-8 text-xs text-emerald-800">
-          <div className="flex flex-col items-end">
-            <span className="opacity-70 uppercase font-bold text-[10px]">
-              Validado em:
-            </span>
-            <span className="font-semibold">{resumo.validadoEm}</span>
-          </div>
-          <div className="flex flex-col items-end">
-            <span className="opacity-70 uppercase font-bold text-[10px]">
-              Válido até:
-            </span>
-            <span className="font-semibold">{resumo.validoAte}</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (resumo.status === "contestado") {
-    return (
-      <div className="bg-red-50 border-l-4 border-red-500 px-6 py-4 flex items-center justify-between gap-4 flex-wrap rounded-r-lg">
-        <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-red-600 text-[32px]">
-            report
-          </span>
-          <div className="flex flex-col">
-            <span className="font-bold text-red-900 text-sm">
-              {resumo.contestados} campo(s) contestado(s) pelo veterinário
-            </span>
-            <span className="text-red-800 text-xs">
-              O tutor precisa corrigir as informações sinalizadas antes de o
-              animal ser liberado como doador.
-            </span>
-          </div>
-        </div>
-        <span className="text-red-800 text-xs font-semibold">
-          {resumo.validados}/{resumo.total} validados
-        </span>
-      </div>
-    );
-  }
-
-  if (resumo.status === "vencido") {
-    return (
-      <div className="bg-orange-50 border-l-4 border-orange-500 px-6 py-4 flex items-center justify-between gap-4 flex-wrap rounded-r-lg">
-        <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-orange-600 text-[32px]">
-            update
-          </span>
-          <div className="flex flex-col">
-            <span className="font-bold text-orange-900 text-sm">
-              {resumo.vencidos} campo(s) com validade vencida (mais de 1 ano)
-            </span>
-            <span className="text-orange-800 text-xs">
-              Recomenda-se revalidar antes da próxima doação.
-            </span>
-          </div>
-        </div>
-        <span className="text-orange-800 text-xs font-semibold">
-          {resumo.validados}/{resumo.total} válidos
-        </span>
-      </div>
-    );
-  }
-
-  if (resumo.status === "parcial") {
-    return (
-      <div className="bg-blue-50 border-l-4 border-blue-500 px-6 py-4 flex flex-col gap-3 rounded-r-lg">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-4">
-            <span className="material-symbols-outlined text-blue-600 text-[32px]">
-              pending_actions
-            </span>
-            <div className="flex flex-col">
-              <span className="font-bold text-blue-900 text-sm">
-                Validação parcial — {resumo.validados} de {resumo.total} campos
-              </span>
-              <span className="text-blue-800 text-xs">
-                Última conferência por {resumo.veterinario} — CRMV {resumo.crmv}{" "}
-                em {resumo.validadoEm}
-              </span>
-            </div>
-          </div>
-          <span className="text-blue-800 text-xs font-bold">{pct}%</span>
-        </div>
-        <div className="h-1.5 w-full bg-blue-200 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-blue-600 rounded-full transition-all duration-500"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
+      <Ajuda titulo="Disponibilidade para doação">
+        <p>
+          Clique na etiqueta para mudar. Vai viajar ou {animal.nome} não pode
+          doar por um tempo? Marque como indisponível: outros tutores vão saber
+          que ele não está disponível agora, e seu contato deixa de aparecer
+          para pedidos de doação até você reativar.
+        </p>
+        {femeaNaoCastrada && (
+          <p>
+            Como {animal.nome} não é castrada, deixe-a indisponível durante o
+            cio, a gestação e a amamentação.
+          </p>
+        )}
+        {!recuperacao.apto && (
+          <p>
+            Depois de uma doação, o corpo precisa de cerca de 3 meses para se
+            recuperar — por isso a etiqueta mostra até quando.
+          </p>
+        )}
+      </Ajuda>
     );
   }
 
   return (
-    <div className="bg-amber-50 border-l-4 border-amber-500 px-6 py-4 flex items-center gap-4 rounded-r-lg">
-      <span className="material-symbols-outlined text-amber-600 text-[32px]">
-        schedule
-      </span>
-      <div className="flex flex-col">
-        <span className="font-bold text-amber-900 text-sm">
-          Informações não validadas
-        </span>
-        <span className="text-amber-800 text-xs">
-          Nenhum campo conferido ainda — aguardando revisão veterinária.
-        </span>
-      </div>
-    </div>
+    <Ajuda titulo="Disponibilidade para doação">
+      {!disponivel ? (
+        <p>
+          O tutor pausou as doações por um tempo — por exemplo, durante uma
+          viagem. Enquanto isso, o contato dele não aparece para pedidos de
+          doação. Vale conferir de novo mais tarde.
+        </p>
+      ) : !recuperacao.apto ? (
+        <p>
+          {animal.nome} doou recentemente e precisa de cerca de 3 meses para se
+          recuperar antes da próxima doação.
+        </p>
+      ) : (
+        <p>
+          O tutor informou que {animal.nome} pode doar agora e está disponível
+          para ser contatado.
+        </p>
+      )}
+    </Ajuda>
   );
 }
 
 function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
   const [disponivel, setDisponivel] = useState(animal.disponivel);
-  const [docsAbertos, setDocsAbertos] = useState(false);
-  const [obsVet, setObsVet] = useState("");
-  const [historicoLocal, setHistoricoLocal] = useState(animal.historico);
-  const [observacoesLocal, setObservacoesLocal] = useState(
-    animal.observacoesClinicas,
-  );
-  const [adicionandoObs, setAdicionandoObs] = useState(false);
-  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
-  const [modalHistoricoAberto, setModalHistoricoAberto] = useState(false);
-  const [modalObservacoesAberto, setModalObservacoesAberto] = useState(false);
-  const [documentoAberto, setDocumentoAberto] = useState(null);
-
-  const [auditando, setAuditando] = useState(false);
-  // valoresSalvos = o que já foi confirmado; valores = o rascunho em edição
-  const [valoresSalvos, setValoresSalvos] = useState(() =>
-    Object.fromEntries(
-      CAMPOS_ANIMAL.map((c) => [c.key, animal[c.origem ?? c.key]]),
-    ),
-  );
-  const [valores, setValores] = useState(valoresSalvos);
-  const [validacoes, setValidacoes] = useState(animal.validacaoCampos);
+  const [validacao, setValidacao] = useState(animal.validacao);
+  const [observacoes, setObservacoes] = useState(animal.observacoes);
   const [documentos, setDocumentos] = useState(animal.documentos);
+  const [modalValidacaoAberto, setModalValidacaoAberto] = useState(false);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
 
-  const resumo = resumoValidacao(validacoes);
-  const assinatura = {
-    por: USUARIO_LOGADO.nome,
-    crmv: USUARIO_LOGADO.crmv,
-  };
+  // O veterinário atua como verificador de animais de outros tutores; nos
+  // próprios animais ele é só tutor, como qualquer outro.
+  const podeAtuarComoVet = isVet && !isProprioTutor;
 
-  // Registro de auditoria (mudanças de dados, documentos etc.) — distinto das
-  // observações clínicas, que têm seu próprio espaço de destaque.
-  const registrar = (texto, tipo = "padrao") => {
+  const ref = REFERENCIA_DOADOR[chaveEspecie(animal.especie)];
+  const anos = idadeEmAnos(animal.nascimento);
+  const pesoOk = animal.peso >= ref.pesoMin;
+  const idadeOk = anos >= ref.idadeMin && anos <= ref.idadeMax;
+  const recuperacao = situacaoRecuperacao(animal.ultimaDoacao, ref);
+
+  // A etiqueta fala só de disponibilidade; o que a validação muda na prática
+  // está explicado no painel de validação, logo abaixo.
+  const disponibilidade = !disponivel
+    ? {
+        texto: "Indisponível no momento",
+        classe: "bg-[#eeeeee] text-[#5f5e5e]",
+        ponto: "bg-gray-400",
+      }
+    : !recuperacao.apto
+      ? {
+          texto: `Em recuperação até ${recuperacao.liberadaEm}`,
+          classe: "bg-sky-50 text-sky-800",
+          ponto: "bg-sky-500",
+        }
+      : {
+          texto: "Disponível para doação",
+          classe: "bg-emerald-50 text-emerald-700",
+          ponto: "bg-emerald-500 animate-pulse",
+        };
+
+  const adicionarObservacao = (texto) => {
     const { data, hora } = agora();
-    setHistoricoLocal((prev) => [
-      { data, hora, autor: `${USUARIO_LOGADO.nome} (você)`, texto, tipo },
+    setObservacoes((prev) => [
+      { data, hora, autor: nomeProfissional(USUARIO_LOGADO), texto },
       ...prev,
     ]);
   };
 
-  const rotulo = (key) => CAMPOS_ANIMAL.find((c) => c.key === key).label;
-  const exibirValor = (key, valor) => {
-    const campo = CAMPOS_ANIMAL.find((c) => c.key === key);
-    return campo.calcularExibicao ? campo.calcularExibicao(valor) : valor;
-  };
-
-  const editarCampo = (key, valor) =>
-    setValores((prev) => ({ ...prev, [key]: valor }));
-
-  // Campos calculados (ex.: Última Doação) não têm selo — a edição já é a
-  // ação em si, sem "validar" para confirmar, então grava direto.
-  const editarCampoDireto = (key, valor) => {
-    setValores((prev) => ({ ...prev, [key]: valor }));
-    setValoresSalvos((prev) => ({ ...prev, [key]: valor }));
-  };
-
-  // Ao validar, o vet assume o valor que está em tela — se ele corrigiu, a
-  // correção entra no histórico junto com o selo.
-  const validarCampo = (key, silencioso = false) => {
-    const original = valoresSalvos[key];
-    const atual = valores[key];
-    const jaEstavaVencido =
-      statusEfetivoCampo(
-        CAMPOS_ANIMAL.find((c) => c.key === key),
-        validacoes[key],
-      ) === "vencido";
-    setValidacoes((prev) => ({
-      ...prev,
-      [key]: { status: "validado", ...assinatura, em: hoje(), nota: "" },
-    }));
-    setValoresSalvos((prev) => ({ ...prev, [key]: atual }));
-    if (silencioso) return;
-    registrar(
-      atual !== original
-        ? `${rotulo(key)} corrigido de "${exibirValor(key, original)}" para "${exibirValor(key, atual)}" e validado.`
-        : `${rotulo(key)} ${jaEstavaVencido ? "revalidado" : "validado"}.`,
-    );
-  };
-
-  const contestarCampo = (key, nota) => {
-    setValidacoes((prev) => ({
-      ...prev,
-      [key]: { status: "contestado", ...assinatura, em: hoje(), nota },
-    }));
-    registrar(`${rotulo(key)} contestado: ${nota}`, "contestacao");
-  };
-
-  const reabrirCampo = (key) => {
-    setValidacoes((prev) => {
-      const copia = { ...prev };
-      delete copia[key];
-      return copia;
-    });
-    registrar(`${rotulo(key)} reaberto para revisão.`);
-  };
-
-  const validarRestantes = () => {
-    const pendentes = CAMPOS_ANIMAL.filter(
-      (c) => !validacoes[c.key] || validacoes[c.key].status !== "validado",
-    );
-    if (pendentes.length === 0) return;
-    pendentes.forEach((c) => validarCampo(c.key, true));
-    registrar(
-      `${pendentes.length} campo(s) validado(s) em lote: ${pendentes.map((c) => c.label).join(", ")}.`,
-    );
-  };
-
-  // Avalia sempre a versão mais recente do documento (a que está aguardando conferência)
-  const avaliarDocumento = (nome, status) => {
-    setDocumentos((prev) =>
-      prev.map((d) => {
-        if (d.nome !== nome || d.versoes.length === 0) return d;
-        const versoes = [...d.versoes];
-        versoes[versoes.length - 1] = {
-          ...versoes[versoes.length - 1],
-          status,
-        };
-        return { ...d, versoes };
-      }),
-    );
-    registrar(
-      status === "validado"
-        ? `Documento "${nome}" conferido e validado.`
-        : `Documento "${nome}" recusado — reenvio necessário.`,
-    );
-  };
-
-  // Quando o veterinário envia o documento ele mesmo já conferiu o conteúdo
-  // (ex.: recebeu o PDF por fora e já confirma o laudo), então a versão entra
-  // validada direto. Quando é o tutor, entra como "enviado", aguardando o vet.
   const enviarDocumento = (nome, file) => {
     if (!file) return;
-    const arquivo = URL.createObjectURL(file);
-    const status = isVet ? "validado" : "enviado";
-    const enviadoPor = isVet ? USUARIO_LOGADO.nome : nomeTutor;
-
+    const versao = versaoDoc(URL.createObjectURL(file), hoje(), nomeTutor);
     setDocumentos((prev) =>
       prev.map((d) =>
-        d.nome === nome
-          ? {
-              ...d,
-              versoes: [
-                ...d.versoes,
-                versaoDoc(arquivo, hoje(), status, enviadoPor),
-              ],
-            }
-          : d,
+        d.nome === nome ? { ...d, versoes: [...d.versoes, versao] } : d,
       ),
     );
-    registrar(
-      isVet
-        ? `Documento "${nome}" enviado e validado por ${USUARIO_LOGADO.nome} (CRMV ${USUARIO_LOGADO.crmv}).`
-        : `Documento "${nome}" enviado por ${enviadoPor} — aguardando conferência.`,
-    );
   };
 
-  // Rascunhos não validados são descartados ao sair do modo auditoria
-  const encerrarAuditoria = () => {
-    setAuditando(false);
-    setValores(valoresSalvos);
-  };
-
-  // Observações clínicas ficam num espaço separado do histórico de auditoria
-  // — carregam mais peso (ex.: reação alérgica) e não deveriam se perder no
-  // meio de "peso corrigido de X para Y".
-  const adicionarObservacao = () => {
-    if (!obsVet.trim()) return;
-    const { data, hora } = agora();
-    setObservacoesLocal((prev) => [
-      { data, hora, autor: USUARIO_LOGADO.nome, texto: obsVet.trim() },
-      ...prev,
-    ]);
-    setObsVet("");
-    setAdicionandoObs(false);
-  };
-
-  const btnBase =
-    "flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-xs transition-all active:scale-95";
-
-  // A disponibilidade continua sendo escolha do tutor — um campo pendente ou
-  // contestado não bloqueia a doação, só indica que a triagem presencial na
-  // coleta vai precisar checar aquele dado com mais atenção.
-  const precisaTriagem = resumo.status !== "validado";
-  const textoDisponibilidade = disponivel
-    ? precisaTriagem
-      ? "Apto para doação — sujeito à triagem"
-      : "Disponível para doação"
-    : "Indisponível para doação";
-  const corPontoDisponibilidade = !disponivel
-    ? "bg-gray-400"
-    : precisaTriagem
-      ? "bg-amber-500 animate-pulse"
-      : "bg-emerald-500 animate-pulse";
+  const pilulaDisponibilidade = (
+    <>
+      <span className={`w-2 h-2 rounded-full ${disponibilidade.ponto}`} />
+      {disponibilidade.texto}
+    </>
+  );
 
   return (
-    <div className="bg-white rounded-2xl border border-[#8e001b]/20 shadow-sm overflow-hidden mb-6">
+    <div className="bg-white rounded-2xl border border-[#8e001b]/20 shadow-sm overflow-hidden">
       {/* ── Cabeçalho ── */}
-      <div className="px-8 pt-6 pb-4 flex justify-between items-center gap-4 flex-wrap border-b border-[#e4bebc]">
-        <div className="flex items-center gap-3 flex-wrap">
-          <h3 className="font-extrabold text-2xl text-[#8e001b] leading-none">
-            {animal.nome}
-          </h3>
-          <span className="text-xs font-bold text-[#5b403f] uppercase bg-[#eeeeee] px-2.5 py-1 rounded">
-            {animal.especie}
-          </span>
-          {isProprioTutor ? (
-            <button
-              onClick={() => setDisponivel(!disponivel)}
-              title="Clique para alterar a disponibilidade"
-              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full transition-all active:scale-95 ${
-                disponivel
-                  ? precisaTriagem
-                    ? "bg-amber-50 text-amber-800 hover:bg-amber-100"
-                    : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                  : "bg-[#eeeeee] text-[#5f5e5e] hover:bg-[#e0e0e0]"
-              }`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${corPontoDisponibilidade}`}
+      <div className="px-8 py-5 flex justify-between items-center gap-4 flex-wrap border-b border-[#e4bebc]">
+        <div className="flex flex-col gap-1.5 min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h3 className="font-extrabold text-2xl text-[#8e001b] leading-none">
+              {animal.nome}
+            </h3>
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#5b403f] uppercase bg-[#eeeeee] px-2.5 py-1 rounded-md">
+              <IconeEspecie
+                especie={chaveEspecie(animal.especie)}
+                className="w-3.5 h-3.5"
               />
-              {textoDisponibilidade}
-              <span className="material-symbols-outlined text-[14px] opacity-60">
-                swap_horiz
-              </span>
-            </button>
-          ) : (
-            <span
-              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${
-                disponivel
-                  ? precisaTriagem
-                    ? "bg-amber-50 text-amber-800"
-                    : "bg-emerald-50 text-emerald-700"
-                  : "bg-[#eeeeee] text-[#5f5e5e]"
-              }`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${corPontoDisponibilidade}`}
-              />
-              {textoDisponibilidade}
+              {animal.especie}
             </span>
-          )}
+            <div className="flex items-center gap-1.5">
+              {isProprioTutor ? (
+                <button
+                  onClick={() => setDisponivel(!disponivel)}
+                  className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full transition-all hover:brightness-95 active:scale-95 ${disponibilidade.classe}`}
+                >
+                  {pilulaDisponibilidade}
+                  <span className="material-symbols-outlined text-[14px] opacity-60">
+                    swap_horiz
+                  </span>
+                </button>
+              ) : (
+                <span
+                  className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${disponibilidade.classe}`}
+                >
+                  {pilulaDisponibilidade}
+                </span>
+              )}
+              <AjudaDisponibilidade
+                animal={animal}
+                ehDono={isProprioTutor}
+                disponivel={disponivel}
+                recuperacao={recuperacao}
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <p className="text-sm text-[#5f5e5e]">
+              {animal.raca} · {animal.sexo} · {textoCastracao(animal)}
+            </p>
+            <CodigoCopiavel codigo={animal.codigo} />
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {isVet && (
-            <>
-              <button
-                onClick={() => setAdicionandoObs(true)}
-                className={`${btnBase} bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white`}
-              >
-                <span className="material-symbols-outlined text-[16px]">
-                  stylus_note
+        {isProprioTutor && (
+          <div className="flex items-center gap-2">
+            {confirmandoExclusao ? (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-100 pl-3 pr-1.5 py-1.5 rounded-xl">
+                <span className="text-xs font-semibold text-red-700">
+                  Excluir {animal.nome}?
                 </span>
-                Observação
-              </button>
-              <button
-                onClick={() =>
-                  auditando ? encerrarAuditoria() : setAuditando(true)
-                }
-                className={`${btnBase} ${
-                  auditando
-                    ? "bg-[#8e001b] text-white hover:brightness-110"
-                    : "bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white"
-                }`}
-              >
-                <span className="material-symbols-outlined text-[16px]">
-                  {auditando ? "close" : "fact_check"}
-                </span>
-                {auditando ? "Encerrar auditoria" : "Auditar dados"}
-              </button>
-            </>
-          )}
-          {isProprioTutor && (
-            <>
-              <button
-                className={`${btnBase} bg-violet-50 text-violet-700 hover:bg-violet-600 hover:text-white`}
-              >
-                <span className="material-symbols-outlined text-[16px]">
-                  edit
-                </span>
-                Editar
-              </button>
-              {confirmandoExclusao ? (
-                <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">
-                  <span className="text-xs font-bold text-red-600">
-                    Tem certeza?
-                  </span>
-                  <button
-                    onClick={() => {
-                      setConfirmandoExclusao(false);
-                      alert(
-                        "Animal excluído! (integração com back-end em breve)",
-                      );
-                    }}
-                    className="text-[10px] font-bold bg-red-500 text-white px-2 py-0.5 rounded-full hover:bg-red-600"
-                  >
-                    Sim
-                  </button>
-                  <button
-                    onClick={() => setConfirmandoExclusao(false)}
-                    className="text-[10px] font-bold text-red-500"
-                  >
-                    Não
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setConfirmandoExclusao(true)}
-                  className={`${btnBase} bg-[#f5f5f5] text-[#5f5e5e] hover:bg-red-500 hover:text-white`}
+                <Botao
+                  variante="secundario"
+                  tamanho="sm"
+                  onClick={() => setConfirmandoExclusao(false)}
                 >
-                  <span className="material-symbols-outlined text-[16px]">
-                    delete
-                  </span>
+                  Cancelar
+                </Botao>
+                <Botao
+                  variante="perigoSolido"
+                  tamanho="sm"
+                  onClick={() => {
+                    setConfirmandoExclusao(false);
+                    alert("Animal excluído! (integração com back-end em breve)");
+                  }}
+                >
                   Excluir
-                </button>
-              )}
-            </>
-          )}
-        </div>
+                </Botao>
+              </div>
+            ) : (
+              <>
+                <Botao variante="editar" tamanho="sm" icone="edit">
+                  Editar
+                </Botao>
+                <Botao
+                  variante="perigo"
+                  tamanho="sm"
+                  icone="delete"
+                  onClick={() => setConfirmandoExclusao(true)}
+                >
+                  Excluir
+                </Botao>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* ── Corpo: foto ao lado dos dados, com altura própria — o restante
-          (documentos, observações, histórico) fica abaixo, em largura total,
-          sem esticar a foto conforme esse conteúdo cresce ── */}
-      <div className="p-8">
-        <div className="flex gap-6 flex-col lg:flex-row">
-          {/* Foto — altura alinhada com a coluna de dados ao lado, não com
-              tudo que vem abaixo */}
+      {/* ── Corpo ── */}
+      <div className="p-8 flex flex-col gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           <div className="w-full lg:w-64 shrink-0">
             <CarrosselFotos fotos={animal.fotos} nome={animal.nome} />
           </div>
 
-          {/* Coluna direita: dados + validação + atalho para documentos */}
-          <div className="flex-1 min-w-0 flex flex-col gap-6">
-            {/* Barra de auditoria */}
-            {auditando && (
-              <div className="bg-[#8e001b] text-white rounded-xl px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[26px]">
-                    fact_check
-                  </span>
-                  <div className="flex flex-col">
-                    <span className="font-bold text-sm">Modo auditoria</span>
-                    <span className="text-white/80 text-xs">
-                      Confira cada campo, corrija o que estiver errado e aplique
-                      o selo. Tudo fica registrado no histórico em seu nome.
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={validarRestantes}
-                  disabled={resumo.validados === resumo.total}
-                  className="flex items-center gap-1.5 bg-white text-[#8e001b] px-4 py-2 rounded-full text-xs font-bold hover:bg-white/90 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <span className="material-symbols-outlined text-[16px]">
-                    done_all
-                  </span>
-                  Validar restantes ({resumo.total - resumo.validados})
-                </button>
-              </div>
-            )}
-
-            {/* Grid de dados */}
-            <div
-              className={`grid gap-3 ${
-                auditando
-                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
-                  : "grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
-              }`}
-            >
-              {CAMPOS_ANIMAL.map((campo) => (
-                <CampoAuditavel
-                  key={campo.key}
-                  campo={campo}
-                  animal={animal}
-                  valor={valores[campo.key]}
-                  validacao={validacoes[campo.key]}
-                  auditando={auditando}
-                  onEditar={campo.calculado ? editarCampoDireto : editarCampo}
-                  onValidar={validarCampo}
-                  onContestar={contestarCampo}
-                  onReabrir={reabrirCampo}
-                />
-              ))}
+          <div className="flex-1 min-w-0 flex flex-col gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <DadoDoador
+                destaque
+                label="Tipo sanguíneo"
+                valor={animal.tipo}
+                detalhe={
+                  TIPOS_UNIVERSAIS.includes(animal.tipo)
+                    ? "Doador universal"
+                    : null
+                }
+                ajuda={{
+                  titulo: "Tipo sanguíneo",
+                  texto:
+                    chaveEspecie(animal.especie) === "cao" ? (
+                      <>
+                        <p>
+                          Assim como as pessoas, cães têm tipos de sangue. O
+                          mais importante é o DEA 1.1.
+                        </p>
+                        <p>
+                          Cães DEA 1.1 negativo são chamados de doadores
+                          universais, porque podem doar para a maioria dos
+                          cães. O hospital sempre confirma a compatibilidade
+                          antes da transfusão.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p>Gatos podem ter sangue do tipo A, B ou AB.</p>
+                        <p>
+                          Diferente dos cães, eles já nascem com defesas contra
+                          o tipo que não têm — por isso o doador precisa ser
+                          compatível com o gato que vai receber. O hospital
+                          sempre faz esse teste antes da transfusão.
+                        </p>
+                      </>
+                    ),
+                }}
+              />
+              <DadoDoador
+                label="Peso"
+                valor={formatarPeso(animal.peso)}
+                detalhe={
+                  pesoOk
+                    ? `mínimo: ${ref.pesoMin} kg`
+                    : `abaixo do mínimo (${ref.pesoMin} kg)`
+                }
+                alerta={!pesoOk}
+                ajuda={{
+                  titulo: "Por que o peso importa?",
+                  texto: (
+                    <p>
+                      A quantidade de sangue coletada acompanha o tamanho do
+                      animal. Por isso existe um peso mínimo — {ref.pesoMin} kg
+                      para {animal.especie === "Gato" ? "gatos" : "cães"} — para
+                      que a doação seja segura para o próprio doador.
+                    </p>
+                  ),
+                }}
+              />
+              <DadoDoador
+                label="Idade"
+                valor={textoIdade(anos)}
+                detalhe={
+                  idadeOk
+                    ? `faixa ideal: ${ref.idadeMin} a ${ref.idadeMax} anos`
+                    : `fora da faixa (${ref.idadeMin} a ${ref.idadeMax} anos)`
+                }
+                alerta={!idadeOk}
+                ajuda={{
+                  titulo: "Por que a idade importa?",
+                  texto: (
+                    <p>
+                      Animais adultos, entre {ref.idadeMin} e {ref.idadeMax}{" "}
+                      anos, costumam estar na melhor fase para doar e se
+                      recuperam bem da coleta.
+                    </p>
+                  ),
+                }}
+              />
+              <DadoDoador
+                label="Doações"
+                valor={animal.totalDoacoes}
+                detalhe={
+                  animal.ultimaDoacao
+                    ? `última em ${animal.ultimaDoacao}`
+                    : "ainda não doou"
+                }
+                ajuda={{
+                  titulo: "Doações realizadas",
+                  texto: (
+                    <p>
+                      Quantas vezes o animal já doou. Depois de cada doação, é
+                      preciso esperar cerca de 3 meses para que o corpo se
+                      recupere antes da próxima.
+                    </p>
+                  ),
+                }}
+              />
             </div>
 
-            {/* Banner de validação — reflete os selos de cada campo */}
-            <BannerValidacao resumo={resumo} />
-
-            {/* Atalho para documentos — o painel em si fica abaixo, em largura
-              total, para não esticar a foto quando ele expandir */}
-            <button
-              onClick={() => setDocsAbertos(!docsAbertos)}
-              className="flex items-center gap-2 text-[#8e001b] font-bold text-sm"
-            >
-              {docsAbertos ? "Ocultar documentos ↑" : "Ver documentos ↓"}
-              <span className="text-[10px] font-bold text-[#5f5e5e] bg-[#eeeeee] px-2 py-0.5 rounded-full uppercase">
-                {
-                  documentos.filter((d) => statusDocumento(d) === "validado")
-                    .length
-                }
-                /{documentos.length} validados
-              </span>
-            </button>
+            <PainelValidacao
+              nomeAnimal={animal.nome}
+              validacao={validacao}
+              podeValidar={podeAtuarComoVet}
+              ehDono={isProprioTutor}
+              onValidar={() => setModalValidacaoAberto(true)}
+            />
           </div>
         </div>
 
-        {/* ── Abaixo da foto e dos dados: documentos, observações e
-            histórico, sempre em largura total ── */}
-        <div className="flex flex-col gap-6 mt-6">
-          {docsAbertos && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {documentos.map((doc) => (
-                <DocumentoCard
-                  key={doc.nome}
-                  doc={doc}
-                  isVet={isVet}
-                  isProprioTutor={isProprioTutor}
-                  onAvaliar={avaliarDocumento}
-                  onEnviar={enviarDocumento}
-                  onAbrir={() => setDocumentoAberto(doc.nome)}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Formulário de observação */}
-          {isVet && adicionandoObs && (
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-              <p className="text-sm font-bold text-emerald-900 mb-3">
-                Nova observação clínica
-              </p>
-              <textarea
-                value={obsVet}
-                onChange={(e) => setObsVet(e.target.value)}
-                placeholder="Descreva sua observação clínica..."
-                className="w-full bg-white text-gray-900 [color-scheme:light] border border-emerald-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                rows={3}
-              />
-              <div className="flex gap-3 mt-3">
-                <button
-                  onClick={adicionarObservacao}
-                  className="bg-emerald-600 text-white px-6 py-2 rounded-full text-sm font-bold hover:bg-emerald-700 transition-colors"
-                >
-                  Salvar observação
-                </button>
-                <button
-                  onClick={() => {
-                    setAdicionandoObs(false);
-                    setObsVet("");
-                  }}
-                  className="text-sm font-bold text-[#5f5e5e] hover:text-[#1a1c1c]"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Observações clínicas e histórico técnico usam a mesma caixa —
-              só muda a cor — para não parecerem duas seções desalinhadas */}
-          <div className="bg-emerald-50/40 border border-emerald-100 rounded-xl p-4">
-            <p className="text-xs font-bold uppercase tracking-widest text-emerald-800 mb-3">
-              Observações clínicas
-            </p>
-            {observacoesLocal.length > 0 ? (
-              <>
-                <div className="space-y-3">
-                  {observacoesLocal
-                    .slice(0, HISTORICO_VISIVEL)
-                    .map((item, i) => (
-                      <RegistroItem
-                        key={i}
-                        item={{ ...item, tema: "clinica" }}
-                      />
-                    ))}
-                </div>
-                {observacoesLocal.length > HISTORICO_VISIVEL && (
-                  <button
-                    onClick={() => setModalObservacoesAberto(true)}
-                    className="flex items-center gap-1.5 text-emerald-800 font-bold text-xs mt-4 hover:underline"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">
-                      unfold_more
-                    </span>
-                    Ver observações completas (
-                    {observacoesLocal.length - HISTORICO_VISIVEL} mais)
-                  </button>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-[#5f5e5e] italic">
-                Nenhuma observação clínica registrada ainda.
-              </p>
-            )}
-          </div>
-
-          <div className="bg-[#fafafa] border border-[#f0e6e6] rounded-xl p-4">
-            <p className="text-xs font-bold uppercase tracking-widest text-[#5f5e5e] mb-3">
-              Histórico
-            </p>
-            {historicoLocal.length > 0 ? (
-              <>
-                <div className="space-y-3">
-                  {historicoLocal.slice(0, HISTORICO_VISIVEL).map((item, i) => (
-                    <RegistroItem key={i} item={item} />
-                  ))}
-                </div>
-                {historicoLocal.length > HISTORICO_VISIVEL && (
-                  <button
-                    onClick={() => setModalHistoricoAberto(true)}
-                    className="flex items-center gap-1.5 text-[#8e001b] font-bold text-xs mt-4 hover:underline"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">
-                      unfold_more
-                    </span>
-                    Ver histórico completo (
-                    {historicoLocal.length - HISTORICO_VISIVEL} mais)
-                  </button>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-[#5f5e5e] italic">
-                Nenhuma alteração registrada ainda.
-              </p>
-            )}
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SecaoObservacoes
+            animal={animal}
+            observacoes={observacoes}
+            podeAdicionar={podeAtuarComoVet}
+            onAdicionar={adicionarObservacao}
+          />
+          <SecaoDocumentos
+            documentos={documentos}
+            podeEnviar={isProprioTutor}
+            onEnviar={enviarDocumento}
+          />
         </div>
       </div>
 
-      {modalHistoricoAberto && (
-        <ModalRegistros
-          titulo={`Histórico completo — ${animal.nome}`}
-          itens={historicoLocal}
-          tema="padrao"
-          onClose={() => setModalHistoricoAberto(false)}
+      {modalValidacaoAberto && (
+        <ModalValidacao
+          animal={animal}
+          validacao={validacao}
+          onSalvar={(nova) => {
+            setValidacao(nova);
+            setModalValidacaoAberto(false);
+          }}
+          onClose={() => setModalValidacaoAberto(false)}
         />
       )}
-
-      {modalObservacoesAberto && (
-        <ModalRegistros
-          titulo={`Observações clínicas — ${animal.nome}`}
-          itens={observacoesLocal}
-          tema="clinica"
-          onClose={() => setModalObservacoesAberto(false)}
-        />
-      )}
-
-      {documentoAberto &&
-        (() => {
-          const doc = documentos.find((d) => d.nome === documentoAberto);
-          return (
-            <ModalDocumento
-              nomeDocumento={doc.nome}
-              versoes={doc.versoes}
-              onClose={() => setDocumentoAberto(null)}
-            />
-          );
-        })()}
     </div>
   );
 }
+
+// ─── Card de perfil (tutor ou veterinário) ────────────────────────────────────
+function Estatistica({ label, valor, detalhe, destaque }) {
+  return (
+    <div
+      className={`rounded-xl border px-3 py-3 flex flex-col items-center justify-center text-center gap-0.5 ${
+        destaque
+          ? "bg-[#8e001b] border-[#8e001b]"
+          : "bg-[#fafafa] border-[#f0e6e6]"
+      }`}
+    >
+      <span
+        className={`font-extrabold leading-tight ${
+          destaque ? "text-white text-2xl" : "text-[#1a1c1c] text-xl"
+        }`}
+      >
+        {valor}
+      </span>
+      <span
+        className={`text-[10px] font-bold uppercase tracking-widest ${
+          destaque ? "text-white/80" : "text-[#8e001b]"
+        }`}
+      >
+        {label}
+      </span>
+      {detalhe && (
+        <span
+          className={`text-[10px] leading-snug ${destaque ? "text-white/70" : "text-[#5f5e5e]"}`}
+        >
+          {detalhe}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function GrupoInfo({ titulo, children }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[11px] font-bold uppercase tracking-widest text-[#8e001b] mb-2">
+        {titulo}
+      </p>
+      <ul className="flex flex-col gap-2">{children}</ul>
+    </div>
+  );
+}
+
+function LinhaInfo({ icone, children }) {
+  return (
+    <li className="flex items-center gap-2.5 text-sm text-[#1a1c1c] min-w-0">
+      <span className="material-symbols-outlined text-[18px] text-[#8f6f6e] shrink-0">
+        {icone}
+      </span>
+      <span className="min-w-0 flex items-center gap-1.5 flex-wrap">
+        {children}
+      </span>
+    </li>
+  );
+}
+
+function CardPerfil({ perfil, animais, ehProprio }) {
+  const [telefoneVisivel, setTelefoneVisivel] = useState(false);
+  const ehVet = perfil.role === "vet";
+  const doacoes = animais.reduce((soma, a) => soma + a.totalDoacoes, 0);
+  const f = perfil.genero === "F";
+
+  const descricao = ehVet
+    ? `${f ? "Veterinária" : "Veterinário"} no ${perfil.hospital}`
+    : `${f ? "Tutora" : "Tutor"} em ${perfil.cidade}`;
+
+  const estatisticas = ehVet
+    ? [
+        {
+          label: "Validações",
+          valor: perfil.validacoesRealizadas,
+          detalhe: "de doadores na plataforma",
+          destaque: true,
+        },
+        {
+          label: "Doações",
+          valor: doacoes,
+          detalhe: ehProprio ? "feitas pelos seus animais" : "feitas pelos animais",
+        },
+        { label: "Membro desde", valor: mesAno(perfil.membroDesde) },
+      ]
+    : [
+        {
+          label: "Doações",
+          valor: doacoes,
+          detalhe: ehProprio
+            ? "feitas pelos seus animais"
+            : `feitas pelos animais de ${primeiroNome(perfil.nome)}`,
+          destaque: true,
+        },
+        {
+          label: animais.length === 1 ? "Animal" : "Animais",
+          valor: animais.length,
+          detalhe: "cadastrados como doadores",
+        },
+        { label: "Membro desde", valor: mesAno(perfil.membroDesde) },
+      ];
+
+  return (
+    <div className="bg-white rounded-2xl border shadow-sm overflow-hidden border-[#8e001b]/20">
+      <div className="h-1.5 bg-gradient-to-r from-[#8e001b] to-[#b7102a]" />
+
+      <div className="flex flex-col-reverse lg:flex-row lg:items-stretch">
+        <div className="flex-1 min-w-0 p-6 lg:p-7 flex flex-col gap-5">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-[#1a1c1c] leading-tight">
+                {perfil.nomeCompleto}
+              </h1>
+              <div className="flex items-center gap-2.5 flex-wrap mt-1.5">
+                <p className="text-sm text-[#5f5e5e]">{descricao}</p>
+                <CodigoCopiavel codigo={perfil.codigo} />
+              </div>
+            </div>
+            {ehProprio && (
+              <Botao variante="editar" tamanho="sm" icone="edit">
+                Editar perfil
+              </Botao>
+            )}
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            {estatisticas.map((e) => (
+              <Estatistica key={e.label} {...e} />
+            ))}
+          </div>
+
+          <div
+            className={`grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5 pt-5 border-t border-[#f0e6e6] ${
+              ehVet ? "xl:grid-cols-3" : ""
+            }`}
+          >
+            <GrupoInfo titulo="Contato">
+              <LinhaInfo icone="mail">
+                <span className="truncate">{perfil.email}</span>
+              </LinhaInfo>
+              <LinhaInfo icone="call">
+                <span className={telefoneVisivel ? "" : "tracking-wider"}>
+                  {telefoneVisivel ? perfil.telefone : "(••) •••••-••••"}
+                </span>
+                <button
+                  onClick={() => setTelefoneVisivel(!telefoneVisivel)}
+                  aria-label={
+                    telefoneVisivel ? "Ocultar telefone" : "Mostrar telefone"
+                  }
+                  className="material-symbols-outlined text-[18px] text-[#8e001b] hover:opacity-70 transition-opacity"
+                >
+                  {telefoneVisivel ? "visibility_off" : "visibility"}
+                </button>
+              </LinhaInfo>
+            </GrupoInfo>
+
+            <GrupoInfo titulo="Localização">
+              <LinhaInfo icone="location_on">
+                {perfil.bairro}, {perfil.cidade}
+              </LinhaInfo>
+              <LinhaInfo icone="markunread_mailbox">CEP {perfil.cep}</LinhaInfo>
+            </GrupoInfo>
+
+            {ehVet && (
+              <GrupoInfo titulo="Registro profissional">
+                <LinhaInfo icone="badge">CRMV {perfil.crmv}</LinhaInfo>
+                <LinhaInfo icone="local_hospital">{perfil.hospital}</LinhaInfo>
+              </GrupoInfo>
+            )}
+          </div>
+        </div>
+
+        {/* Foto sangrando na borda direita. A imagem é absoluta para
+            não impor a própria altura ao card. */}
+        <div className="relative w-full h-56 lg:h-auto lg:w-64 shrink-0 bg-[#faf0f0] overflow-hidden">
+          {perfil.foto ? (
+            <img
+              src={perfil.foto}
+              alt={perfil.nome}
+              style={{
+                objectPosition: perfil.fotoPosicao || "center top",
+                transform: `scale(${perfil.fotoZoom || 1})`,
+                transformOrigin: perfil.fotoPosicao || "center top",
+              }}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 border-l border-[#e4bebc] flex flex-col items-center justify-center gap-2">
+              <span className="material-symbols-outlined text-[#c9a5a5] text-5xl">
+                person
+              </span>
+              <span className="text-[#c9a5a5] text-xs font-semibold">
+                Sem foto ainda
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Página ───────────────────────────────────────────────────────────────────
 function DashboardPage() {
   // Sem :id na rota → /meu-perfil, o próprio veterinário logado.
-  // Com :id → /tutor/:id, sempre a tutora mockada (Marina), independente
-  // de qual animal levou até aqui.
+  // Com :id → /tutor/:id, sempre a tutora mockada (Marina).
   const { id } = useParams();
-  const [telefoneVisivel, setTelefoneVisivel] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
 
   const isProprioTutor = !id;
   const isVet = USUARIO_E_VETERINARIO;
   const perfil = isProprioTutor ? USUARIO_LOGADO : TUTOR_MOCK;
   const animaisPerfil = isProprioTutor ? ANIMAIS_MOCK_VET : ANIMAIS_MOCK;
-
-  const infoGrid = [
-    { label: "Nome Completo", valor: perfil.nomeCompleto },
-    { label: "E-mail", valor: perfil.email },
-    {
-      label: "Telefone",
-      valor: telefoneVisivel ? perfil.telefone : "•••••••••••••",
-      toggle: true,
-    },
-    ...(perfil.role === "vet"
-      ? [
-          { label: "CRMV", valor: perfil.crmv },
-          { label: "Hospital", valor: perfil.hospital },
-        ]
-      : []),
-    { label: "CEP", valor: perfil.cep },
-    { label: "Cidade", valor: perfil.cidade },
-    { label: "Bairro", valor: perfil.bairro },
-  ];
 
   return (
     <>
@@ -2525,143 +2136,41 @@ function DashboardPage() {
 
       <main className="pb-20 px-5 md:px-16 max-w-[1200px] mx-auto pt-28">
         <section className="mb-10">
-          <div className="bg-white rounded-2xl border shadow-sm overflow-hidden border-[#8e001b]/20">
-            {/* Faixa fina no topo — mantém a cor da marca sem repetir o
-                banner cheio dos cards de animal */}
-            <div className="h-1.5 bg-gradient-to-r from-[#8e001b] to-[#b7102a]" />
-
-            {/* Identidade + dados na esquerda; a foto sangra até a borda
-                direita do card, ancorando a composição em vez de flutuar
-                solta dentro do padding */}
-            <div className="flex flex-col-reverse lg:flex-row lg:items-stretch">
-              <div className="flex-1 min-w-0 flex flex-col gap-4 p-6">
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                  <div>
-                    <h1 className="text-2xl font-bold text-[#1a1c1c]">
-                      {perfil.nome}
-                    </h1>
-
-                    <p className="flex items-center gap-1.5 text-[#5f5e5e] text-xs mt-1.5">
-                      <span className="material-symbols-outlined text-[15px]">
-                        calendar_month
-                      </span>
-                      Membro desde {perfil.membroDesde}
-                    </p>
-                  </div>
-
-                  {isProprioTutor && (
-                    <button className="border-2 border-[#8e001b] text-[#8e001b] font-bold hover:bg-[#8e001b] hover:text-white transition-colors px-5 py-1.5 rounded-full flex items-center gap-2 text-xs">
-                      <span className="material-symbols-outlined text-[16px]">
-                        edit
-                      </span>
-                      Editar perfil
-                    </button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
-                  {infoGrid.map((item) => (
-                    <div
-                      key={item.label}
-                      className="bg-[#fafafa] border border-[#f0e6e6] rounded-xl px-3 py-2 flex flex-col items-center justify-center text-center gap-0.5"
-                    >
-                      <span className="text-[#8e001b] text-[10px] font-bold uppercase tracking-widest">
-                        {item.label}
-                      </span>
-                      {item.toggle ? (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[#1a1c1c] font-semibold text-[13px]">
-                            {item.valor}
-                          </span>
-                          <button
-                            onClick={() => setTelefoneVisivel(!telefoneVisivel)}
-                            className="material-symbols-outlined text-[#8e001b] text-base hover:opacity-70 transition-opacity"
-                          >
-                            {telefoneVisivel ? "visibility_off" : "visibility"}
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-[#1a1c1c] font-semibold text-[13px] leading-tight break-words">
-                          {item.valor}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Foto sangrando na borda direita. A imagem é absoluta para
-                  não impor a própria altura ao card — quem manda na altura é
-                  a coluna de dados à esquerda. */}
-              <div className="relative w-full h-56 lg:h-auto lg:w-60 shrink-0 bg-[#faf0f0] overflow-hidden">
-                {perfil.foto ? (
-                  <img
-                    src={perfil.foto}
-                    alt={perfil.nome}
-                    style={{
-                      objectPosition: perfil.fotoPosicao || "center top",
-                      transform: `scale(${perfil.fotoZoom || 1})`,
-                      transformOrigin: perfil.fotoPosicao || "center top",
-                    }}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="absolute inset-0 border-l border-[#e4bebc] flex flex-col items-center justify-center gap-2">
-                    <span className="material-symbols-outlined text-[#c9a5a5] text-5xl">
-                      person
-                    </span>
-                    <span className="text-[#c9a5a5] text-xs font-semibold">
-                      Sem foto ainda
-                    </span>
-                  </div>
-                )}
-
-                {/* Papel sobreposto na foto — ganha um lugar deliberado em vez
-                    de ficar boiando ao lado do nome */}
-                <span
-                  className={`absolute bottom-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-md ${
-                    perfil.role === "vet"
-                      ? "bg-[#8e001b] text-white"
-                      : "bg-white/95 text-[#5b403f] backdrop-blur-sm"
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[15px]">
-                    {perfil.role === "vet" ? "medical_services" : "pets"}
-                  </span>
-                  {rotuloPapel(perfil)}
-                </span>
-              </div>
-            </div>
-          </div>
+          <CardPerfil
+            perfil={perfil}
+            animais={animaisPerfil}
+            ehProprio={isProprioTutor}
+          />
         </section>
 
-        <section className="mb-12">
-          {isVet && !isProprioTutor && (
-            <div className="mb-6 bg-[#faf0f0] border border-[#e4bebc] rounded-2xl px-6 py-4 flex items-center gap-4">
-              <span className="material-symbols-outlined text-[#8e001b] text-[28px]">
-                medical_services
-              </span>
-              <div className="flex flex-col">
-                <span className="font-bold text-[#8e001b] text-sm">
-                  Você está acessando como veterinário
-                </span>
-                <span className="text-[#5b403f] text-xs">
-                  {USUARIO_LOGADO.nomeCompleto} — CRMV {USUARIO_LOGADO.crmv}. As
-                  validações e observações que você registrar ficam assinadas em
-                  seu nome e visíveis ao tutor.
-                </span>
-              </div>
-            </div>
-          )}
-          <div className="flex justify-between items-end mb-6">
-            <h2 className="text-2xl font-bold text-[#1a1c1c]">
-              {isProprioTutor ? "Meus Animais" : "Pets de " + perfil.nome}
-            </h2>
-            <span className="text-xs font-semibold text-[#5f5e5e] uppercase">
-              {animaisPerfil.length} Animais Cadastrados
+        {isVet && !isProprioTutor && (
+          <div className="mb-8 bg-[#faf0f0] border border-[#e4bebc] rounded-2xl px-6 py-4 flex items-center gap-4">
+            <span className="material-symbols-outlined text-[#8e001b] text-[28px]">
+              medical_services
             </span>
+            <div className="flex flex-col">
+              <span className="font-bold text-[#8e001b] text-sm">
+                Você está acessando como veterinário
+              </span>
+              <span className="text-[#5b403f] text-xs leading-relaxed">
+                Você pode validar os critérios de doação e registrar
+                observações para a coleta. Sua assinatura (
+                {nomeProfissional(USUARIO_LOGADO)} — CRMV{" "}
+                {USUARIO_LOGADO.crmv}) fica visível aos tutores.
+              </span>
+            </div>
           </div>
-        </section>
+        )}
+
+        <div className="flex justify-between items-end mb-6">
+          <h2 className="text-2xl font-bold text-[#1a1c1c]">
+            {isProprioTutor ? "Meus animais" : `Animais de ${perfil.nome}`}
+          </h2>
+          <span className="text-xs font-semibold text-[#5f5e5e] uppercase">
+            {animaisPerfil.length}{" "}
+            {animaisPerfil.length === 1 ? "animal cadastrado" : "animais cadastrados"}
+          </span>
+        </div>
 
         <section className="space-y-6">
           {animaisPerfil.map((animal) => (
@@ -2676,19 +2185,16 @@ function DashboardPage() {
           {isProprioTutor && (
             <button
               onClick={() => setModalAberto(true)}
-              className="w-full py-20 flex flex-col items-center justify-center gap-4 hover:bg-[#f3f3f3] transition-colors group rounded-2xl"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%238F6F6EFF' stroke-width='2' stroke-dasharray='8%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e")`,
-                borderRadius: "1rem",
-              }}
+              className="w-full py-14 flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[#e4bebc] bg-white/40 hover:border-[#8e001b]/40 hover:bg-[#faf6f6] transition-colors group"
             >
-              <div className="w-12 h-12 rounded-full bg-[#ffdad8] flex items-center justify-center text-[#8e001b] group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-[32px]">
-                  add
-                </span>
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-b from-[#b7102a] to-[#8e001b] shadow-[0_6px_16px_-4px_rgba(142,0,27,0.45)] flex items-center justify-center text-white group-hover:scale-105 transition-transform">
+                <span className="material-symbols-outlined text-[28px]">add</span>
               </div>
-              <span className="text-sm font-bold text-[#8e001b] uppercase tracking-wider">
-                + Cadastrar Novo Animal
+              <span className="text-sm font-semibold text-[#1a1c1c]">
+                Cadastrar novo animal
+              </span>
+              <span className="text-xs text-[#5f5e5e]">
+                Cada doador cadastrado pode ajudar a salvar uma vida
               </span>
             </button>
           )}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
+import Botao from "../components/Botao";
 import heroPet from "../assets/cadastro-image.png";
 
 const TOTAL_STEPS = 5;
@@ -44,7 +45,7 @@ function GoogleButton() {
       </div>
       <button
         type="button"
-        className="w-full flex items-center justify-center gap-3 bg-black text-white font-semibold hover:bg-neutral-800 transition-all text-sm rounded-full py-3"
+        className="w-full h-12 flex items-center justify-center gap-3 bg-[#1a1c1c] text-white font-semibold hover:bg-black transition-all active:scale-[0.97] text-sm rounded-xl shadow-[0_1px_2px_rgba(26,28,28,0.2)]"
       >
         <GoogleIcon />
         Cadastrar com Google
@@ -493,32 +494,31 @@ function CadastroPage() {
 
               <div className="shrink-0 flex flex-col pb-6 mt-4 gap-y-4">
                 {step > 1 && step < 5 && (
-                  <button
-                    type="button"
+                  <Botao
+                    tamanho="lg"
                     onClick={handleContinue}
-                    className="w-full px-8 text-white font-bold uppercase tracking-widest hover:brightness-110 transition-all active:scale-[0.98] shadow-md text-base bg-[#8e001b] rounded-full py-3"
+                    className="w-full"
                   >
                     Continuar
-                  </button>
+                  </Botao>
                 )}
                 {step === 5 && (
-                  <button
-                    type="submit"
-                    className="w-full px-8 text-white font-bold uppercase tracking-widest hover:brightness-110 transition-all active:scale-[0.98] shadow-md text-base bg-[#8e001b] rounded-full py-3"
-                  >
-                    Finalizar Cadastro
-                  </button>
+                  <Botao type="submit" tamanho="lg" className="w-full">
+                    Finalizar cadastro
+                  </Botao>
                 )}
                 {step > 1 && <GoogleButton />}
                 {step > 1 && (
-                  <div className="text-center">
-                    <button
-                      type="button"
+                  <div className="flex justify-center">
+                    <Botao
+                      variante="fantasma"
+                      tamanho="sm"
+                      icone="arrow_back"
                       onClick={handleBack}
-                      className="text-xs font-bold text-[#636262] hover:text-[#8e001b] uppercase tracking-wider"
+                      className="text-[#5f5e5e] hover:text-[#8e001b]"
                     >
                       Voltar
-                    </button>
+                    </Botao>
                   </div>
                 )}
                 <div className="text-center pt-2">
