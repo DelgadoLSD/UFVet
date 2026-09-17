@@ -5,8 +5,8 @@ import Campo from "../components/Campo";
 import LayoutAutenticacao, {
   BotaoGoogle,
 } from "../components/LayoutAutenticacao";
-// "Camera Shy", foto de Karsten Winegeart (Unsplash, uso livre)
-import fotoCaoTimido from "../assets/auth/cao-timido.jpg";
+// Foto de santosh verma (Unsplash, uso livre)
+import fotoGatoParede from "../assets/auth/gato-parede-vermelha.jpg";
 
 function LoginPage() {
   const [formData, setFormData] = useState({ cpf: "", password: "" });
@@ -23,11 +23,9 @@ function LoginPage() {
 
   return (
     <LayoutAutenticacao
-      foto={fotoCaoTimido}
-      fotoPosicao="center 60%"
-      corFundo="#d4839c"
-      legendaNoTopo
-      legenda="Cada doador cadastrado encurta a busca de quem precisa."
+      foto={fotoGatoParede}
+      fotoPosicao="right center"
+      corFundo="#9d2d15"
     >
       <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#1a1c1c]">
         Entrar

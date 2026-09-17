@@ -46,15 +46,11 @@ export function BotaoGoogle({ children }) {
 }
 
 // Tela dividida das páginas de entrar e criar conta: formulário de um lado,
-// foto do outro. As fotos são retratos de estúdio com fundo liso nas cores da
-// marca, e a frase fica no espaço livre do fundo (em cima ou embaixo).
+// foto do outro, sem texto sobre a imagem.
 function LayoutAutenticacao({
   foto,
   fotoPosicao = "center",
   corFundo,
-  legenda,
-  legendaNoTopo = false,
-  legendaClara = false,
   fotoAEsquerda = false,
   children,
 }) {
@@ -69,13 +65,6 @@ function LayoutAutenticacao({
         style={{ objectPosition: fotoPosicao }}
         className="absolute inset-0 w-full h-full object-cover"
       />
-      <p
-        className={`absolute left-10 w-[50%] text-3xl xl:text-4xl font-extrabold tracking-tight leading-[1.12] ${
-          legendaNoTopo ? "top-12" : "bottom-12"
-        } ${legendaClara ? "text-white" : "text-[#1a1c1c]"}`}
-      >
-        {legenda}
-      </p>
     </section>
   );
 
