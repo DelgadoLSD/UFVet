@@ -8,16 +8,21 @@ import CodigoCopiavel from "../components/CodigoCopiavel";
 import ModalComoFuncionaValidacao from "../components/ComoFuncionaValidacao";
 import ModalComoFuncionaContato from "../components/ComoFuncionaContato";
 import BlocoContato from "../components/BlocoContato";
+import BotaoAjuda from "../components/BotaoAjuda";
 import PainelAcessoContatos from "../components/PainelAcessoContatos";
 import ModalLiberarAcesso from "../components/ModalLiberarAcesso";
 import ModalRegistroConsultas from "../components/ModalRegistroConsultas";
 import ModalPedirLiberacao from "../components/ModalPedirLiberacao";
 import {
   TUTORES_CADASTRADOS,
-  CONSULTAS_RECEBIDAS,
+  VETERINARIOS,
+  HOSPITAIS,
+  pedidosPara,
   useAcessoContatos,
   liberacoesAtivas,
   acessoDe,
+  consultasFeitasPor,
+  consultasAoContatoDe,
   liberarAcesso,
   renovarAcesso,
   encerrarAcesso,
@@ -509,15 +514,16 @@ function CarrosselFotos({ fotos, nome }) {
 // ─── Controle segmentado (escolha entre poucas opções) ─────────────────────────
 function Segmentado({ opcoes, valor, onEscolher }) {
   return (
-    <div className="flex p-1 bg-[#f5efef] rounded-xl gap-1">
+    <div className="flex p-1 bg-white border border-[#e2d6d6] rounded-xl gap-1">
       {opcoes.map((op) => (
         <button
           key={String(op.val)}
           type="button"
           onClick={() => onEscolher(op.val)}
-          className={`flex-1 h-9 px-2 rounded-lg flex items-center justify-center gap-1.5 text-sm font-semibold whitespace-nowrap transition-all ${
+          aria-pressed={valor === op.val}
+          className={`flex-1 h-9 px-2 rounded-lg flex items-center justify-center gap-1.5 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a] ${
             valor === op.val
-              ? "bg-white text-[#8e001b] shadow-[0_1px_3px_rgba(26,28,28,0.12)]"
+              ? "bg-[#b7102a] text-white"
               : "text-[#5f5e5e] hover:text-[#1a1c1c]"
           }`}
         >
@@ -942,20 +948,17 @@ function PainelValidacao({
             </span>
           </span>
           <div className="min-w-0">
-            <p className={`font-bold text-sm ${estilo.cor}`}>{estilo.titulo}</p>
+            <p className={`flex items-center gap-2 font-bold text-sm ${estilo.cor}`}>
+              {estilo.titulo}
+              <BotaoAjuda
+                rotulo="Como funciona a validação?"
+                onClick={() => setExplicacaoAberta(true)}
+              />
+            </p>
             {validacao && (
               <div className="text-xs text-[#5f5e5e] mt-0.5 space-y-0.5">
-              <p className="flex items-center gap-1">
-                <span>
-                  {validacao.por}, CRMV {validacao.crmv}
-                </span>
-                <Ajuda titulo="Assinatura do veterinário">
-                  <p>
-                    O CRMV identifica o veterinário que assinou esta validação.
-                    Com ele, é possível confirmar que um profissional
-                    registrado conferiu os dados de {nomeAnimal}.
-                  </p>
-                </Ajuda>
+              <p>
+                {validacao.por}, CRMV {validacao.crmv}
               </p>
               <p>
                 Em {validacao.em},{" "}
@@ -1025,7 +1028,7 @@ function PainelValidacao({
         </p>
       )}
 
-      {ehDono && status !== "validado" && (
+      {ehDono && !podeValidar && status !== "validado" && (
         <p className="flex items-start gap-2 text-xs text-[#5b403f] bg-white/70 border border-[#f0e6e6] rounded-lg px-3 py-2 leading-relaxed">
           <span className="material-symbols-outlined text-[16px] text-[#8e001b] shrink-0">
             lightbulb
@@ -1036,14 +1039,6 @@ function PainelValidacao({
           </span>
         </p>
       )}
-
-      <button
-        onClick={() => setExplicacaoAberta(true)}
-        className="flex items-center gap-1 text-xs font-semibold text-[#8e001b] hover:underline underline-offset-2 w-fit"
-      >
-        <span className="material-symbols-outlined text-[16px]">help</span>
-        Como funciona a validação?
-      </button>
 
       {explicacaoAberta && (
         <ModalComoFuncionaValidacao
@@ -1631,9 +1626,9 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
   const [modalValidacaoAberto, setModalValidacaoAberto] = useState(false);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
 
-  // O veterinário atua como verificador de animais de outros tutores; nos
-  // próprios animais ele é só tutor, como qualquer outro.
-  const podeAtuarComoVet = isVet && !isProprioTutor;
+  // Quem é veterinário continua veterinário nos próprios animais: pode ser
+  // ele mesmo quem valida e quem acompanha a coleta.
+  const podeAtuarComoVet = isVet;
 
   const ref = REFERENCIA_DOADOR[chaveEspecie(animal.especie)];
   const anos = idadeEmAnos(animal.nascimento);
@@ -2143,7 +2138,10 @@ function DashboardPage() {
   const { id } = useParams();
   const usuario = useSessao();
   const acessoContatos = useAcessoContatos();
-  const { liberacoes, pedidos, consultas } = acessoContatos;
+  const { liberacoes } = acessoContatos;
+  const meusPedidos = pedidosPara(usuario.codigo, acessoContatos);
+  const consultasFeitas = consultasFeitasPor(usuario.codigo, acessoContatos);
+  const consultasRecebidas = consultasAoContatoDe(usuario.codigo, acessoContatos);
   const [modalAberto, setModalAberto] = useState(false);
   const [modalLiberar, setModalLiberar] = useState(false);
   const [codigoParaLiberar, setCodigoParaLiberar] = useState("");
@@ -2167,10 +2165,19 @@ function DashboardPage() {
 
   const consultarContato = () =>
     registrarConsulta({
-      nome: perfil.nomeCompleto || perfil.nome,
-      codigo: perfil.codigo,
-      permissao: isVet ? "veterinario" : "liberação de um veterinário",
-      codigoQuemViu: usuario.codigo,
+      dono: {
+        codigo: perfil.codigo,
+        nome: perfil.nomeCompleto || perfil.nome,
+        papel: perfil.papel,
+      },
+      quemViu: {
+        codigo: usuario.codigo,
+        nome: usuario.nomeCompleto,
+        papel: usuario.papel,
+      },
+      permissao: isVet
+        ? "veterinario"
+        : acesso.liberacao?.liberadoPor || "um veterinário",
     });
 
   return (
@@ -2185,7 +2192,7 @@ function DashboardPage() {
           liberacoes={ativas}
           codigoInicial={codigoParaLiberar}
           onConfirmar={(dados) => {
-            liberarAcesso(dados);
+            liberarAcesso({ ...dados, liberadoPor: nomeProfissional(usuario) });
             setModalLiberar(false);
           }}
           onClose={() => setModalLiberar(false)}
@@ -2194,8 +2201,10 @@ function DashboardPage() {
       {modalPedido && (
         <ModalPedirLiberacao
           usuario={usuario}
-          onConfirmar={(caso) => {
-            pedirLiberacao({ usuario, caso });
+          hospitais={HOSPITAIS}
+          veterinarios={VETERINARIOS}
+          onConfirmar={({ caso, veterinario }) => {
+            pedirLiberacao({ usuario, caso, veterinario });
             setModalPedido(false);
           }}
           onClose={() => setModalPedido(false)}
@@ -2203,8 +2212,8 @@ function DashboardPage() {
       )}
       {registroAberto && (
         <ModalRegistroConsultas
-          feitas={consultas}
-          recebidas={CONSULTAS_RECEBIDAS}
+          feitas={consultasFeitas}
+          recebidas={consultasRecebidas}
           abaInicial={registroAberto}
           onClose={() => setRegistroAberto(null)}
         />
@@ -2222,7 +2231,7 @@ function DashboardPage() {
             animais={animaisPerfil}
             ehProprio={isProprioTutor}
             acesso={acesso}
-            consultasRecebidas={CONSULTAS_RECEBIDAS.length}
+            consultasRecebidas={consultasRecebidas.length}
             meuCodigo={usuario.codigo}
             onConsultarContato={consultarContato}
             onPedirLiberacao={() => setModalPedido(true)}
@@ -2235,8 +2244,7 @@ function DashboardPage() {
           <section className="mb-10">
             <PainelAcessoContatos
               liberacoes={ativas}
-              pedidos={pedidos}
-              consultasFeitas={consultas.length}
+              pedidos={meusPedidos}
               onLiberar={() => {
                 setCodigoParaLiberar("");
                 setModalLiberar(true);
@@ -2246,12 +2254,12 @@ function DashboardPage() {
                   tutor: { codigo: pedido.codigo, nome: pedido.nome },
                   horas: 72,
                   caso: pedido.caso,
+                  liberadoPor: nomeProfissional(usuario),
                 })
               }
               onRecusarPedido={recusarPedido}
               onRenovar={renovarAcesso}
               onEncerrar={encerrarAcesso}
-              onVerRegistro={() => setRegistroAberto("feitas")}
               onComoFunciona={() => setComoFuncionaContato(true)}
             />
           </section>

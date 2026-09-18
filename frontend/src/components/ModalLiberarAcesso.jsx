@@ -160,7 +160,7 @@ function ModalLiberarAcesso({
           <p className="text-sm font-semibold text-[#1a1c1c] mb-2">
             Por quanto tempo
           </p>
-          <div className="flex p-1 bg-[#f5efef] rounded-xl gap-1">
+          <div className="flex p-1 bg-white border border-[#e2d6d6] rounded-xl gap-1">
             {DURACOES.map((d) => (
               <button
                 key={d.horas}
@@ -169,7 +169,7 @@ function ModalLiberarAcesso({
                 aria-pressed={duracao === d.horas}
                 className={`flex-1 h-10 rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a] ${
                   duracao === d.horas
-                    ? "bg-[#b7102a] text-white shadow-[0_1px_3px_rgba(142,0,27,0.3)]"
+                    ? "bg-[#b7102a] text-white"
                     : "text-[#5f5e5e] hover:text-[#1a1c1c]"
                 }`}
               >
@@ -178,8 +178,7 @@ function ModalLiberarAcesso({
             ))}
           </div>
           <p className="text-xs text-[#5f5e5e] mt-2">
-            O acesso expira sozinho e vale para até 10 contatos. Você pode
-            renovar ou encerrar antes.
+            O acesso expira sozinho. Você pode renovar ou encerrar antes.
           </p>
         </div>
 

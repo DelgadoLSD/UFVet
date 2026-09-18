@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Ajuda from "../components/Ajuda";
 import Botao from "../components/Botao";
+import BotaoAjuda from "../components/BotaoAjuda";
 import Selecao from "../components/Selecao";
 import ModalComoFuncionaValidacao from "../components/ComoFuncionaValidacao";
 import ModalComoFuncionaContato from "../components/ComoFuncionaContato";
@@ -13,6 +14,8 @@ import {
   useAcessoContatos,
   acessoDe,
   pedirLiberacao,
+  VETERINARIOS,
+  HOSPITAIS,
 } from "../util/acessoContatos";
 import dog2 from "../assets/dogs/dog2_0-image.jpg";
 import dog3 from "../assets/dogs/dog3_0-image.jpg";
@@ -31,7 +34,7 @@ const DOADORES_MOCK = [
     id: 1,
     codigo: "A1B2C3",
     nome: "Thor",
-    tutor: "Lucas Delgado",
+    tutor: "Lucas Silva Delgado",
     tutorCodigo: "T7X9K2",
     foto: dog2,
     especie: "cao",
@@ -403,15 +406,11 @@ function LegendaValidacao({ onEntender }) {
           </p>
         </div>
       </div>
-      <Botao
-        variante="secundario"
-        tamanho="sm"
-        icone="help"
+      <BotaoAjuda
+        rotulo="Como funciona a validação?"
         onClick={onEntender}
         className="shrink-0 self-start lg:self-auto"
-      >
-        Entenda a diferença
-      </Botao>
+      />
     </div>
   );
 }
@@ -508,8 +507,10 @@ function BuscaPage() {
       {pedidoAberto && (
         <ModalPedirLiberacao
           usuario={usuario}
-          onConfirmar={(caso) => {
-            pedirLiberacao({ usuario, caso });
+          hospitais={HOSPITAIS}
+          veterinarios={VETERINARIOS}
+          onConfirmar={({ caso, veterinario }) => {
+            pedirLiberacao({ usuario, caso, veterinario });
             setPedidoAberto(false);
           }}
           onClose={() => setPedidoAberto(false)}
@@ -573,7 +574,7 @@ function BuscaPage() {
 
             <div className="mb-7">
               <h3 className="text-sm font-semibold mb-3">Espécie</h3>
-              <div className="flex p-1 bg-[#f5efef] rounded-xl gap-1">
+              <div className="flex p-1 bg-white border border-[#e2d6d6] rounded-xl gap-1">
                 {[
                   { val: "cao", label: "Cão" },
                   { val: "gato", label: "Gato" },
@@ -584,7 +585,7 @@ function BuscaPage() {
                     aria-pressed={especie === item.val}
                     className={`flex-1 h-9 rounded-lg flex items-center justify-center text-sm font-semibold transition-colors ${
                       especie === item.val
-                        ? "bg-[#b7102a] text-white shadow-[0_1px_3px_rgba(142,0,27,0.3)]"
+                        ? "bg-[#b7102a] text-white"
                         : "text-[#5f5e5e] hover:text-[#1a1c1c]"
                     }`}
                   >
@@ -676,8 +677,8 @@ function BuscaPage() {
                     },
                     {
                       valor: "atual",
-                      rotulo: "Minha localização atual",
-                      descricao: "Usa a localização do seu aparelho",
+                      rotulo: "Minha localização",
+                      descricao: "Usa o endereço do seu cadastro",
                       icone: "near_me",
                     },
                   ]}

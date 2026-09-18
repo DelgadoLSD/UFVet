@@ -4,12 +4,12 @@ import Modal from "./Modal";
 // e no perfil. O tom é deliberadamente de "cenário", não de alerta: quem
 // cadastra um animal quer ajudar, validado ou não.
 
-function Etapa({ ok, children }) {
+function Etapa({ ok, escuro, children }) {
   return (
     <li className="flex items-start gap-2">
       <span
         className={`material-symbols-outlined text-[18px] shrink-0 ${
-          ok ? "text-emerald-600" : "text-[#8f6f6e]"
+          ok ? (escuro ? "text-white" : "text-emerald-600") : "text-[#8f6f6e]"
         }`}
       >
         {ok ? "check_circle" : "science"}
@@ -18,6 +18,11 @@ function Etapa({ ok, children }) {
     </li>
   );
 }
+
+// Os dois cenários usam as mesmas linhas de grade (subgrid), então título,
+// lista e rodapé ficam na mesma altura nos dois cartões.
+const CARTAO =
+  "rounded-xl p-5 md:grid md:grid-rows-subgrid md:row-span-4 gap-3 flex flex-col";
 
 function ModalComoFuncionaValidacao({ onClose }) {
   return (
@@ -38,39 +43,39 @@ function ModalComoFuncionaValidacao({ onClose }) {
           .
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="border border-emerald-200 bg-emerald-50/50 rounded-xl p-5 flex flex-col gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-[auto_auto_1fr_auto] gap-4">
+          <div className={`${CARTAO} bg-[#8e001b] text-white/85`}>
             <div className="flex items-center gap-2.5">
-              <span className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+              <span className="w-9 h-9 rounded-full bg-white text-[#8e001b] flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-[20px]">
                   verified_user
                 </span>
               </span>
-              <h3 className="font-bold text-emerald-900">Doador validado</h3>
+              <h3 className="font-bold text-white">Doador validado</h3>
             </div>
             <p>
               Um veterinário já conferiu os exames e os critérios de doação nos
               últimos 12 meses.
             </p>
             <div>
-              <p className="text-sm font-semibold text-emerald-900 mb-2">
+              <p className="text-sm font-semibold text-white mb-2">
                 No hospital
               </p>
               <ul className="flex flex-col gap-1.5">
-                <Etapa ok>
+                <Etapa ok escuro>
                   Exame físico e um exame de sangue rápido, feito na hora.
                 </Etapa>
-                <Etapa ok>
+                <Etapa ok escuro>
                   Estando tudo bem, a coleta pode acontecer no mesmo dia.
                 </Etapa>
               </ul>
             </div>
-            <p className="mt-auto text-xs font-semibold text-emerald-800 bg-white/70 rounded-lg px-3 py-2">
+            <p className="text-xs font-semibold text-white bg-white/10 rounded-lg px-3 py-2">
               Costuma ser o caminho mais rápido em uma emergência.
             </p>
           </div>
 
-          <div className="border border-[#eadede] bg-[#fafafa] rounded-xl p-5 flex flex-col gap-3">
+          <div className={`${CARTAO} bg-white border border-[#eadede]`}>
             <div className="flex items-center gap-2.5">
               <span className="w-9 h-9 rounded-full bg-[#8f6f6e] text-white flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-[20px]">
@@ -82,7 +87,7 @@ function ModalComoFuncionaValidacao({ onClose }) {
               </h3>
             </div>
             <p>
-              O animal pode doar normalmente — só ainda não teve os exames
+              O animal pode doar normalmente, só ainda não teve os exames
               conferidos por um veterinário aqui.
             </p>
             <div>
@@ -102,7 +107,7 @@ function ModalComoFuncionaValidacao({ onClose }) {
                 </Etapa>
               </ul>
             </div>
-            <p className="mt-auto text-xs font-semibold text-[#5b403f] bg-white rounded-lg px-3 py-2">
+            <p className="text-xs font-semibold text-[#5b403f] bg-[#faf0f0] rounded-lg px-3 py-2">
               Uma ótima opção quando há algum tempo até a transfusão.
             </p>
           </div>
@@ -113,11 +118,11 @@ function ModalComoFuncionaValidacao({ onClose }) {
             Na prática, por que isso importa?
           </h3>
           <p>
-            Em uma emergência, cada hora conta: um doador validado pode
-            encurtar o caminho até a transfusão e evitar gastos com exames.
-            Quando há mais tempo — ou quando não há um doador validado
-            compatível por perto — um doador ainda não validado continua sendo
-            uma grande ajuda. Os exames só precisam ser feitos antes.
+            Em uma emergência, cada hora conta: um doador validado pode encurtar
+            o caminho até a transfusão e evitar gastos com exames. Quando há
+            mais tempo, ou quando não há um doador validado compatível por
+            perto, um doador ainda não validado continua sendo uma grande ajuda.
+            Os exames só precisam ser feitos antes.
           </p>
         </div>
 

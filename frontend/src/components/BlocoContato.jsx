@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Botao from "./Botao";
+import BotaoAjuda from "./BotaoAjuda";
 
 const TELEFONE_OCULTO = "(••) •••••-••••";
 
@@ -87,9 +88,6 @@ function BlocoContato({
   };
 
   const visivel = ehProprio || revelado;
-  const restantes = acesso.liberacao
-    ? acesso.liberacao.limite - acesso.liberacao.consultas
-    : null;
 
   return (
     <div className="min-w-0">
@@ -132,8 +130,8 @@ function BlocoContato({
             className="font-semibold text-[#8e001b] hover:underline underline-offset-2"
           >
             {consultasRecebidas === 0
-              ? "Ver o registro"
-              : `Ver quem já viu (${consultasRecebidas})`}
+              ? "Ver registro de consultas"
+              : `Ver registro de consultas (${consultasRecebidas})`}
           </button>
         </p>
       ) : acesso.pode ? (
@@ -142,29 +140,12 @@ function BlocoContato({
             ? `Consulta registrada. ${primeiroNome} pode ver quem viu o contato.`
             : acesso.motivo === "veterinario"
               ? "Você vê contatos por ser veterinário. A consulta fica registrada com seu nome e CRMV."
-              : `Acesso liberado por um veterinário. Você ainda pode ver ${restantes} ${
-                  restantes === 1 ? "contato" : "contatos"
-                }.`}
+              : "Seu acesso está liberado por um veterinário. A consulta fica registrada."}
         </p>
       ) : acesso.motivo === "pedido-enviado" ? (
         <AvisoAcesso>
-          Seu pedido foi enviado. Assim que um veterinário liberar, o contato
-          aparece aqui.
-        </AvisoAcesso>
-      ) : acesso.motivo === "limite" ? (
-        <AvisoAcesso
-          acao={
-            <button
-              type="button"
-              onClick={onComoFunciona}
-              className="mt-2 text-xs font-semibold text-[#8e001b] hover:underline underline-offset-2"
-            >
-              Como funciona
-            </button>
-          }
-        >
-          Você já viu {acesso.liberacao.limite} contatos com esta liberação.
-          Peça ao veterinário do atendimento para renovar o seu acesso.
+          Pedido enviado para {acesso.pedido?.para?.nome || "um veterinário"}.
+          Assim que ele liberar, o contato aparece aqui.
         </AvisoAcesso>
       ) : (
         <AvisoAcesso
@@ -173,13 +154,10 @@ function BlocoContato({
               <Botao tamanho="sm" onClick={onPedirLiberacao}>
                 Pedir liberação
               </Botao>
-              <button
-                type="button"
+              <BotaoAjuda
+                rotulo="Como funciona o acesso aos contatos?"
                 onClick={onComoFunciona}
-                className="text-xs font-semibold text-[#8e001b] hover:underline underline-offset-2"
-              >
-                Como funciona
-              </button>
+              />
             </div>
           }
         >

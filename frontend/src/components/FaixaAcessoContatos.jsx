@@ -1,12 +1,9 @@
 import Botao from "./Botao";
+import BotaoAjuda from "./BotaoAjuda";
 
 // Diz, antes de o tutor abrir um perfil, se ele vai conseguir ver o contato.
 // Evita a descoberta frustrante só na hora de precisar.
 function FaixaAcessoContatos({ acesso, onPedirLiberacao, onComoFunciona }) {
-  const restantes = acesso.liberacao
-    ? acesso.liberacao.limite - acesso.liberacao.consultas
-    : null;
-
   const conteudo = {
     veterinario: {
       icone: "verified_user",
@@ -16,21 +13,15 @@ function FaixaAcessoContatos({ acesso, onPedirLiberacao, onComoFunciona }) {
     },
     liberacao: {
       icone: "lock_open",
-      texto: `Seu acesso aos contatos está liberado. Você ainda pode ver ${restantes} ${
-        restantes === 1 ? "contato" : "contatos"
-      }.`,
+      texto:
+        "Seu acesso aos contatos está liberado. Cada contato que você abrir fica registrado.",
       destaque: false,
     },
     "pedido-enviado": {
       icone: "hourglass_top",
-      texto:
-        "Seu pedido de liberação foi enviado. Assim que um veterinário responder, os contatos aparecem nos perfis.",
-      destaque: true,
-    },
-    limite: {
-      icone: "lock",
-      texto:
-        "Você chegou ao limite de contatos desta liberação. Fale com o veterinário do atendimento para renovar.",
+      texto: `Pedido de liberação enviado para ${
+        acesso.pedido?.para?.nome || "um veterinário"
+      }. Assim que ele responder, os contatos aparecem nos perfis.`,
       destaque: true,
     },
     "sem-liberacao": {
@@ -63,13 +54,10 @@ function FaixaAcessoContatos({ acesso, onPedirLiberacao, onComoFunciona }) {
             Pedir liberação
           </Botao>
         )}
-        <button
-          type="button"
+        <BotaoAjuda
+          rotulo="Como funciona o acesso aos contatos?"
           onClick={onComoFunciona}
-          className="text-sm font-semibold text-[#8e001b] hover:underline underline-offset-2"
-        >
-          Como funciona
-        </button>
+        />
       </div>
     </div>
   );

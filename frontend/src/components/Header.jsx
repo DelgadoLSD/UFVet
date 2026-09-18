@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Avatar from "./Avatar";
 import { CONTAS, useSessao, trocarConta } from "../util/sessao";
 
@@ -16,6 +16,7 @@ const LINKS = [
 function MenuConta({ conta, noPerfil }) {
   const [aberto, setAberto] = useState(false);
   const raiz = useRef(null);
+  const navegar = useNavigate();
 
   useEffect(() => {
     if (!aberto) return;
@@ -64,19 +65,7 @@ function MenuConta({ conta, noPerfil }) {
           role="menu"
           className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl border border-[#eadede] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.45)] overflow-hidden animate-aparecer"
         >
-          <Link
-            to="/meu-perfil"
-            role="menuitem"
-            onClick={() => setAberto(false)}
-            className="flex items-center gap-2.5 px-4 py-3 text-sm font-semibold text-[#1a1c1c] hover:bg-[#faf6f6] transition-colors"
-          >
-            <span className="material-symbols-outlined text-[20px] text-[#8e001b]">
-              account_circle
-            </span>
-            Ver meu perfil
-          </Link>
-
-          <p className="border-t border-[#f0e6e6] px-4 pt-3 pb-1 text-xs text-[#8f6f6e]">
+          <p className="px-4 pt-3 pb-1 text-xs text-[#8f6f6e]">
             Simulação de perfil, enquanto não há login
           </p>
           <ul className="pb-2">
@@ -91,6 +80,7 @@ function MenuConta({ conta, noPerfil }) {
                     onClick={() => {
                       trocarConta(c.codigo);
                       setAberto(false);
+                      navegar("/meu-perfil");
                     }}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-[#faf6f6] transition-colors"
                   >

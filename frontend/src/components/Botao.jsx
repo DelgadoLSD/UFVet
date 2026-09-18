@@ -3,7 +3,7 @@
 // "o que eu clico" de "o que só informa".
 const VARIANTES = {
   primario:
-    "text-white bg-gradient-to-b from-[#b7102a] to-[#8e001b] shadow-[0_1px_2px_rgba(142,0,27,0.3),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_6px_16px_-4px_rgba(142,0,27,0.45),inset_0_1px_0_rgba(255,255,255,0.15)] hover:brightness-110",
+    "text-white bg-[#b7102a] shadow-[0_1px_2px_rgba(142,0,27,0.25)] hover:bg-[#8e001b]",
   secundario:
     "text-[#1a1c1c] bg-white border border-[#e6dcdc] shadow-[0_1px_2px_rgba(26,28,28,0.06)] hover:bg-[#faf6f6] hover:border-[#d6c3c3]",
   // Editar é uma ação comum, não um destaque: botão neutro, no tom da página.
@@ -11,9 +11,11 @@ const VARIANTES = {
     "text-[#1a1c1c] bg-[#f4efef] hover:bg-[#ebe3e3]",
   // Excluir tem o mesmo formato de editar e só assume o vermelho no hover.
   perigo: "text-[#5f5e5e] bg-[#f4efef] hover:text-red-600 hover:bg-red-50",
-  perigoSolido:
-    "text-white bg-red-600 shadow-[0_1px_2px_rgba(220,38,38,0.3)] hover:bg-red-700",
+  perigoSolido: "text-white bg-red-600 hover:bg-red-700",
   fantasma: "text-[#8e001b] hover:bg-[#8e001b]/[0.06]",
+  // Para blocos escuros ou vermelhos, onde o vermelho sólido sumiria.
+  claro: "text-[#8e001b] bg-white hover:bg-white/90",
+  contornoClaro: "text-white border border-white/40 hover:bg-white/10",
 };
 
 const TAMANHOS = {

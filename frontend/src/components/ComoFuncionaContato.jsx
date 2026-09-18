@@ -1,15 +1,24 @@
 import Modal from "./Modal";
 
-function Item({ children }) {
+function Item({ escuro, children }) {
   return (
     <li className="flex items-start gap-2 text-sm leading-relaxed">
-      <span className="material-symbols-outlined text-[18px] text-[#8e001b] shrink-0">
+      <span
+        className={`material-symbols-outlined text-[18px] shrink-0 ${
+          escuro ? "text-white" : "text-[#8e001b]"
+        }`}
+      >
         check_small
       </span>
       {children}
     </li>
   );
 }
+
+// Os dois lados dividem as mesmas linhas de grade, então título e listas
+// começam na mesma altura nos dois cartões.
+const CARTAO =
+  "rounded-xl p-5 md:grid md:grid-rows-subgrid md:row-span-2 gap-3 flex flex-col";
 
 // Explica por que os telefones não ficam abertos a qualquer pessoa cadastrada.
 function ModalComoFuncionaContato({ onClose }) {
@@ -27,26 +36,26 @@ function ModalComoFuncionaContato({ onClose }) {
           isso o contato só aparece para quem está mesmo em um atendimento.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="border border-[#eadede] bg-[#fafafa] rounded-xl p-5 flex flex-col gap-3">
-            <h3 className="font-bold text-[#1a1c1c]">Se você é tutor</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-[auto_1fr] gap-4">
+          <div className={`${CARTAO} bg-[#8e001b] text-white/85`}>
+            <h3 className="font-bold text-white">Se você é tutor</h3>
             <ul className="flex flex-col gap-2">
-              <Item>
+              <Item escuro>
                 O veterinário que está cuidando do seu animal libera o seu
                 acesso pelo seu código.
               </Item>
-              <Item>
+              <Item escuro>
                 Enquanto a liberação estiver ativa, você vê o contato de
                 qualquer doador e fala direto com o tutor.
               </Item>
-              <Item>
+              <Item escuro>
                 A liberação tem prazo e expira sozinha, sem ninguém precisar
                 lembrar de encerrar.
               </Item>
             </ul>
           </div>
 
-          <div className="border border-[#eadede] bg-[#fafafa] rounded-xl p-5 flex flex-col gap-3">
+          <div className={`${CARTAO} bg-white border border-[#eadede]`}>
             <h3 className="font-bold text-[#1a1c1c]">Se você é veterinário</h3>
             <ul className="flex flex-col gap-2">
               <Item>

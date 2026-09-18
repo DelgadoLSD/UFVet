@@ -5,8 +5,8 @@ import Campo from "../components/Campo";
 import LayoutAutenticacao, {
   BotaoGoogle,
 } from "../components/LayoutAutenticacao";
-// "Shelter dog ready for adoption", foto de Michael G (Unsplash, uso livre)
-import fotoCaoVermelho from "../assets/auth/cao-vermelho.jpg";
+// Foto de santosh verma (Unsplash, uso livre)
+import fotoGatoParede from "../assets/auth/gato-parede-vermelha.jpg";
 
 // Título e explicação de cada etapa. A etapa 4 (registro profissional) só
 // existe para veterinários.
@@ -310,9 +310,9 @@ function CadastroPage() {
 
   return (
     <LayoutAutenticacao
-      foto={fotoCaoVermelho}
-      fotoPosicao="center 20%"
-      corFundo="#a1050e"
+      foto={fotoGatoParede}
+      fotoPosicao="right center"
+      corFundo="#9d2d15"
       fotoAEsquerda
     >
       <div className="flex items-center justify-between gap-4 text-sm">

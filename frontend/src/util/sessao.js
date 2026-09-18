@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import homemFoto from "../assets/people/man1_0-image.jpg";
 import mulherFoto from "../assets/people/women1_0-image.jpg";
+import outroHomemFoto from "../assets/people/man2_0-image.jpg";
 
 // Enquanto não há login, o site simula duas contas. A troca serve para
 // mostrar o mesmo site pelos dois lados: o veterinário, que vê os contatos
@@ -51,7 +52,7 @@ export const CONTAS = [
 export const OUTRO_TUTOR = {
   codigo: "T7X9K2",
   nome: "Lucas Delgado",
-  nomeCompleto: "Lucas Delgado Ferreira",
+  nomeCompleto: "Lucas Silva Delgado",
   email: "lucas.delgado@gmail.com",
   telefone: "(31) 99715-2280",
   cep: "36570-250",
@@ -61,6 +62,8 @@ export const OUTRO_TUTOR = {
   role: "tutor",
   papel: "Tutor",
   genero: "M",
+  foto: outroHomemFoto,
+  fotoPosicao: "center 25%",
 };
 
 let conta = CONTAS[0];

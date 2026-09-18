@@ -5,8 +5,8 @@ import Campo from "../components/Campo";
 import LayoutAutenticacao, {
   BotaoGoogle,
 } from "../components/LayoutAutenticacao";
-// Foto de santosh verma (Unsplash, uso livre)
-import fotoGatoParede from "../assets/auth/gato-parede-vermelha.jpg";
+// "Shelter dog ready for adoption", foto de Michael G (Unsplash, uso livre)
+import fotoCaoVermelho from "../assets/auth/cao-vermelho.jpg";
 
 function LoginPage() {
   const [formData, setFormData] = useState({ cpf: "", password: "" });
@@ -23,9 +23,9 @@ function LoginPage() {
 
   return (
     <LayoutAutenticacao
-      foto={fotoGatoParede}
-      fotoPosicao="right center"
-      corFundo="#9d2d15"
+      foto={fotoCaoVermelho}
+      fotoPosicao="center 20%"
+      corFundo="#a1050e"
     >
       <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#1a1c1c]">
         Entrar
