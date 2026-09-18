@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
 import Modal from "../components/Modal";
 import Ajuda from "../components/Ajuda";
@@ -13,6 +13,7 @@ import PainelAcessoContatos from "../components/PainelAcessoContatos";
 import ModalLiberarAcesso from "../components/ModalLiberarAcesso";
 import ModalRegistroConsultas from "../components/ModalRegistroConsultas";
 import ModalPedirLiberacao from "../components/ModalPedirLiberacao";
+import ModalExcluirAnimal from "../components/ModalExcluirAnimal";
 import {
   TUTORES_CADASTRADOS,
   VETERINARIOS,
@@ -535,26 +536,77 @@ function Segmentado({ opcoes, valor, onEscolher }) {
   );
 }
 
-// ─── Cadastro de animal ───────────────────────────────────────────────────────
+// ─── Cadastro e edição de animal ──────────────────────────────────────────────
 // Só o que o tutor sabe e o que importa para doação. Os critérios clínicos
 // (sorologias, vacinação, transfusão) são conferidos pelo veterinário.
-function ModalCadastroAnimal({ onClose }) {
-  const [form, setForm] = useState({
-    nome: "",
-    especie: "cao",
-    raca: "",
-    racaSRD: false,
-    sexo: "",
-    castrado: "",
-    idadeConhecida: true,
-    dataNascimento: "",
-    idadeEstimada: "",
-    peso: "",
-    tipoSanguineo: "",
-  });
-  const [fotos, setFotos] = useState([]);
+// O mesmo formulário cadastra e edita: são os mesmos campos, e manter um só
+// evita que as duas telas se afastem com o tempo.
+
+const FORM_VAZIO = {
+  nome: "",
+  especie: "cao",
+  raca: "",
+  racaSRD: false,
+  sexo: "",
+  castrado: "",
+  idadeConhecida: true,
+  dataNascimento: "",
+  idadeEstimada: "",
+  peso: "",
+  tipoSanguineo: "",
+};
+
+const formularioDoAnimal = (animal) => ({
+  ...FORM_VAZIO,
+  nome: animal.nome,
+  especie: chaveEspecie(animal.especie),
+  raca: animal.raca === "SRD" ? "" : animal.raca,
+  racaSRD: animal.raca === "SRD",
+  sexo: animal.sexo,
+  castrado: animal.castrado ? "sim" : "nao",
+  dataNascimento: animal.nascimento,
+  peso: String(animal.peso),
+  tipoSanguineo: animal.tipo,
+});
+
+// Dados que o veterinário assinou: mudar um deles derruba o critério que ele
+// confirmou, porque a conferência foi feita sobre o valor antigo. Peso muda de
+// verdade ao longo da vida, e a data de nascimento pode ter sido digitada
+// errada — nos dois casos o tutor corrige e a validação volta para a fila.
+const CRITERIO_POR_CAMPO = {
+  peso: "pesoIdade",
+  dataNascimento: "pesoIdade",
+};
+
+function criteriosAfetados(form, animal) {
+  if (!animal?.validacao) return [];
+  const original = formularioDoAnimal(animal);
+  const chaves = new Set(
+    Object.entries(CRITERIO_POR_CAMPO)
+      .filter(([campo]) => form[campo] !== original[campo])
+      .map(([, criterio]) => criterio),
+  );
+  return CRITERIOS_DOACAO.filter(
+    (c) => chaves.has(c.key) && animal.validacao.criterios[c.key],
+  );
+}
+
+function ModalAnimal({ animal, onClose }) {
+  const editando = !!animal;
+  const [form, setForm] = useState(() =>
+    editando ? formularioDoAnimal(animal) : FORM_VAZIO,
+  );
+  const [fotos, setFotos] = useState(() =>
+    (animal?.fotos || []).map((preview) => ({ preview, existente: true })),
+  );
 
   const ref = REFERENCIA_DOADOR[form.especie];
+  const afetados = criteriosAfetados(form, animal);
+  // Tipo sanguíneo não muda ao longo da vida: depois que o exame de tipagem
+  // confirma, o valor é resultado de laboratório assinado por um veterinário,
+  // e o tutor deixa de poder sobrescrever. É o dado mais perigoso do sistema
+  // para ficar aberto — quem discorda pede revisão ao veterinário.
+  const tipagemConfirmada = !!animal?.validacao?.criterios.tipagem;
 
   const handleChange = (field, value) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -569,17 +621,22 @@ function ModalCadastroAnimal({ onClose }) {
     setFotos((prev) => [...prev, ...novas]);
   };
 
+  // Foto que já estava no perfil não tem URL temporária para liberar.
   const removerFoto = (index) => {
     setFotos((prev) => {
-      URL.revokeObjectURL(prev[index].preview);
+      if (!prev[index].existente) URL.revokeObjectURL(prev[index].preview);
       return prev.filter((_, i) => i !== index);
     });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert("Animal cadastrado! (integração com back-end em breve)");
-    fotos.forEach((f) => URL.revokeObjectURL(f.preview));
+    alert(
+      editando
+        ? "Alterações salvas! (integração com back-end em breve)"
+        : "Animal cadastrado! (integração com back-end em breve)",
+    );
+    fotos.forEach((f) => !f.existente && URL.revokeObjectURL(f.preview));
     onClose();
   };
 
@@ -590,18 +647,45 @@ function ModalCadastroAnimal({ onClose }) {
 
   return (
     <Modal
-      titulo="Cadastrar novo animal"
-      subtitulo="Dados básicos para o perfil de doador"
+      titulo={editando ? `Editar ${animal.nome}` : "Cadastrar novo animal"}
+      subtitulo={
+        editando
+          ? "O que mudar aqui aparece na busca na hora"
+          : "Dados básicos para o perfil de doador"
+      }
       largura="max-w-2xl"
       onClose={onClose}
       rodape={
-        <div className="flex justify-end gap-2">
-          <Botao variante="secundario" onClick={onClose}>
-            Cancelar
-          </Botao>
-          <Botao type="submit" form="form-cadastro-animal" icone="add">
-            Cadastrar animal
-          </Botao>
+        <div className="flex flex-col gap-3">
+          {/* O aviso fica colado no botão porque é sobre o que salvar provoca:
+              no meio do formulário ele passa despercebido. */}
+          {afetados.length > 0 && (
+            <div className="flex items-start gap-2 bg-[#fdecee] border border-[#b7102a]/25 rounded-lg px-3 py-2.5">
+              <span className="material-symbols-outlined text-[#8e001b] text-[18px] shrink-0">
+                release_alert
+              </span>
+              <p className="text-xs text-[#5b403f] leading-relaxed">
+                Salvar desfaz a validação de{" "}
+                <strong className="font-semibold text-[#8e001b]">
+                  {afetados.map((c) => c.label.toLowerCase()).join(" e ")}
+                </strong>
+                , assinada por {animal.validacao.por} em {animal.validacao.em}.
+                Um veterinário precisa conferir de novo.
+              </p>
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Botao variante="secundario" onClick={onClose}>
+              Cancelar
+            </Botao>
+            <Botao
+              type="submit"
+              form="form-cadastro-animal"
+              icone={editando ? undefined : "add"}
+            >
+              {editando ? "Salvar alterações" : "Cadastrar animal"}
+            </Botao>
+          </div>
         </div>
       }
     >
@@ -610,17 +694,19 @@ function ModalCadastroAnimal({ onClose }) {
         onSubmit={handleSubmit}
         className="space-y-6"
       >
-        <div className="flex gap-3 bg-[#faf0f0] border border-[#e4bebc] rounded-xl p-4">
-          <span className="material-symbols-outlined text-[#8e001b] text-[22px] shrink-0">
-            verified_user
-          </span>
-          <p className="text-xs text-[#5b403f] leading-relaxed">
-            Seu animal já pode aparecer como doador logo após o cadastro. Para
-            deixar a doação mais rápida, envie os exames depois no perfil: com
-            eles, um veterinário pode <strong>validar</strong> os critérios de
-            doação e o hospital não precisa refazer tudo no dia da coleta.
-          </p>
-        </div>
+        {!editando && (
+          <div className="flex gap-3 bg-[#faf0f0] border border-[#e4bebc] rounded-xl p-4">
+            <span className="material-symbols-outlined text-[#8e001b] text-[22px] shrink-0">
+              verified_user
+            </span>
+            <p className="text-xs text-[#5b403f] leading-relaxed">
+              Seu animal já pode aparecer como doador logo após o cadastro. Para
+              deixar a doação mais rápida, envie os exames depois no perfil: com
+              eles, um veterinário pode <strong>validar</strong> os critérios de
+              doação e o hospital não precisa refazer tudo no dia da coleta.
+            </p>
+          </div>
+        )}
 
         <div>
           <label className={labelClass}>Nome do animal *</label>
@@ -770,6 +856,25 @@ function ModalCadastroAnimal({ onClose }) {
           </div>
         </div>
 
+        {tipagemConfirmada ? (
+          <div>
+            <span className={labelClass}>Tipo sanguíneo</span>
+            <div className="flex items-start gap-3 bg-[#faf6f6] border border-[#eadede] rounded-xl p-4">
+              <span className="material-symbols-outlined text-[20px] text-[#8f6f6e] shrink-0">
+                lock
+              </span>
+              <div>
+                <p className="text-sm font-bold text-[#1a1c1c]">{animal.tipo}</p>
+                <p className="text-xs text-[#5f5e5e] leading-relaxed mt-1">
+                  Confirmado no exame de tipagem por {animal.validacao.por} em{" "}
+                  {animal.validacao.em}. O tipo sanguíneo não muda ao longo da
+                  vida — se algo não confere, peça ao veterinário para revisar a
+                  validação.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
         <div>
           <label className={labelClass}>Tipo sanguíneo</label>
           <div className="flex flex-wrap gap-2">
@@ -793,6 +898,7 @@ function ModalCadastroAnimal({ onClose }) {
             veterinário.
           </p>
         </div>
+        )}
 
         <div>
           <label className={labelClass}>
@@ -1062,6 +1168,13 @@ function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
   const [nota, setNota] = useState(
     aproveitarAnterior && validacao ? validacao.nota : "",
   );
+  // O tutor declara o tipo no cadastro, e às vezes chuta. Quem assina a
+  // tipagem precisa poder registrar o que o exame mostrou — senão o critério
+  // fica marcado sobre um valor que ninguém conferiu.
+  const [tipo, setTipo] = useState(animal.tipo);
+  const tiposDaEspecie = TIPOS_SANGUINEOS[chaveEspecie(animal.especie)].filter(
+    (t) => t !== "Não sei",
+  );
 
   const marcados = CRITERIOS_DOACAO.filter((c) => criterios[c.key]).length;
   const completa = marcados === CRITERIOS_DOACAO.length;
@@ -1072,6 +1185,8 @@ function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
   const salvar = () =>
     onSalvar({
       criterios,
+      // Sem tipagem conferida, o tipo continua sendo o que o tutor declarou.
+      tipo: criterios.tipagem ? tipo : animal.tipo,
       nota: nota.trim(),
       por: nomeProfissional(usuario),
       crmv: usuario.crmv,
@@ -1166,6 +1281,39 @@ function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
             );
           })}
         </div>
+
+        {criterios.tipagem && (
+          <div className="rounded-xl border border-emerald-300 bg-emerald-50/60 p-4">
+            <p className="text-sm font-semibold text-[#1a1c1c]">
+              Qual tipo o exame mostrou?
+            </p>
+            <p className="text-xs text-[#5f5e5e] mt-0.5">
+              O tutor informou {animal.tipo}. O que você confirmar aqui passa a
+              valer no perfil e na busca.
+            </p>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {tiposDaEspecie.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTipo(t)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                    tipo === t
+                      ? "bg-[#8e001b] text-white border-[#8e001b]"
+                      : "bg-white text-[#1a1c1c] border-[#d8cfcf] hover:border-[#8e001b]"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            {tipo !== animal.tipo && (
+              <p className="text-xs text-[#8e001b] font-semibold mt-3">
+                O perfil passa a mostrar {tipo}, com sua assinatura.
+              </p>
+            )}
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-semibold text-[#1a1c1c] mb-1.5">
@@ -1621,15 +1769,20 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
   const usuario = useSessao();
   const [disponivel, setDisponivel] = useState(animal.disponivel);
   const [validacao, setValidacao] = useState(animal.validacao);
+  // O tipo sai do cadastro do tutor, mas quem confirma a tipagem é o
+  // veterinário — e o valor do exame é o que vale daí em diante.
+  const [tipo, setTipo] = useState(animal.tipo);
   const [observacoes, setObservacoes] = useState(animal.observacoes);
   const [documentos, setDocumentos] = useState(animal.documentos);
   const [modalValidacaoAberto, setModalValidacaoAberto] = useState(false);
-  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
 
   // Quem é veterinário continua veterinário nos próprios animais: pode ser
   // ele mesmo quem valida e quem acompanha a coleta.
   const podeAtuarComoVet = isVet;
 
+  const animalAtual = { ...animal, tipo, validacao };
   const ref = REFERENCIA_DOADOR[chaveEspecie(animal.especie)];
   const anos = idadeEmAnos(animal.nascimento);
   const pesoOk = animal.peso >= ref.pesoMin;
@@ -1730,48 +1883,22 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
 
         {isProprioTutor && (
           <div className="flex items-center gap-2">
-            {confirmandoExclusao ? (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-100 pl-3 pr-1.5 py-1.5 rounded-xl">
-                <span className="text-xs font-semibold text-red-700">
-                  Excluir {animal.nome}?
-                </span>
-                <Botao
-                  variante="secundario"
-                  tamanho="sm"
-                  onClick={() => setConfirmandoExclusao(false)}
-                >
-                  Cancelar
-                </Botao>
-                <Botao
-                  variante="perigoSolido"
-                  tamanho="sm"
-                  onClick={() => {
-                    setConfirmandoExclusao(false);
-                    alert("Animal excluído! (integração com back-end em breve)");
-                  }}
-                >
-                  Excluir
-                </Botao>
-              </div>
-            ) : (
-              <>
-                <Botao
-                  variante="editar"
-                  tamanho="md"
-                  icone="edit"
-                  aria-label={`Editar ${animal.nome}`}
-                  title="Editar"
-                />
-                <Botao
-                  variante="perigo"
-                  tamanho="md"
-                  icone="delete"
-                  aria-label={`Excluir ${animal.nome}`}
-                  title="Excluir"
-                  onClick={() => setConfirmandoExclusao(true)}
-                />
-              </>
-            )}
+            <Botao
+              variante="editar"
+              tamanho="md"
+              icone="edit"
+              aria-label={`Editar ${animal.nome}`}
+              title="Editar"
+              onClick={() => setEditando(true)}
+            />
+            <Botao
+              variante="perigo"
+              tamanho="md"
+              icone="delete"
+              aria-label={`Excluir ${animal.nome}`}
+              title="Excluir"
+              onClick={() => setExcluindo(true)}
+            />
           </div>
         )}
       </div>
@@ -1788,11 +1915,9 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
               <DadoDoador
                 destaque
                 label="Tipo sanguíneo"
-                valor={animal.tipo}
+                valor={tipo}
                 detalhe={
-                  TIPOS_UNIVERSAIS.includes(animal.tipo)
-                    ? "Doador universal"
-                    : null
+                  TIPOS_UNIVERSAIS.includes(tipo) ? "Doador universal" : null
                 }
                 ajuda={{
                   titulo: "Tipo sanguíneo",
@@ -1912,13 +2037,34 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
 
       {modalValidacaoAberto && (
         <ModalValidacao
-          animal={animal}
+          animal={animalAtual}
           validacao={validacao}
-          onSalvar={(nova) => {
+          onSalvar={({ tipo: tipoConfirmado, ...nova }) => {
             setValidacao(nova);
+            setTipo(tipoConfirmado);
             setModalValidacaoAberto(false);
           }}
           onClose={() => setModalValidacaoAberto(false)}
+        />
+      )}
+
+      {editando && (
+        <ModalAnimal animal={animalAtual} onClose={() => setEditando(false)} />
+      )}
+
+      {excluindo && (
+        <ModalExcluirAnimal
+          animal={animal}
+          disponivel={disponivel}
+          onMarcarIndisponivel={() => {
+            setDisponivel(false);
+            setExcluindo(false);
+          }}
+          onExcluir={() => {
+            setExcluindo(false);
+            alert("Animal excluído! (integração com back-end em breve)");
+          }}
+          onClose={() => setExcluindo(false)}
         />
       )}
     </div>
@@ -2052,11 +2198,13 @@ function CardPerfil({
             </div>
             {ehProprio && (
               <Botao
+                as={Link}
+                to="/conta"
                 variante="editar"
                 tamanho="md"
                 icone="edit"
-                aria-label="Editar perfil"
-                title="Editar perfil"
+                aria-label="Editar seus dados"
+                title="Editar seus dados"
               />
             )}
           </div>
@@ -2183,9 +2331,7 @@ function DashboardPage() {
   return (
     <>
       <Header dark={true} />
-      {modalAberto && (
-        <ModalCadastroAnimal onClose={() => setModalAberto(false)} />
-      )}
+      {modalAberto && <ModalAnimal onClose={() => setModalAberto(false)} />}
       {modalLiberar && (
         <ModalLiberarAcesso
           tutores={TUTORES_CADASTRADOS}

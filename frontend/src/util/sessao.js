@@ -11,6 +11,7 @@ export const CONTAS = [
     codigo: "V7H4M2",
     nome: "Victor Hugo",
     nomeCompleto: "Victor Hugo Martins",
+    cpf: "084.512.336-70",
     email: "victor.hugo@ufv.br",
     telefone: "(31) 99204-7715",
     crmv: "78120-MG",
@@ -33,6 +34,7 @@ export const CONTAS = [
     codigo: "T3M8P1",
     nome: "Marina Souza",
     nomeCompleto: "Marina Souza Andrade",
+    cpf: "129.447.806-55",
     email: "marina.souza@gmail.com",
     telefone: "(31) 98871-4402",
     cep: "36570-120",
@@ -78,11 +80,22 @@ export function useSessao() {
   return useSyncExternalStore(assinar, () => conta);
 }
 
+const avisarTodos = () => ouvintes.forEach((aviso) => aviso());
+
 export function trocarConta(codigo) {
   const escolhida = CONTAS.find((c) => c.codigo === codigo);
   if (!escolhida || escolhida === conta) return;
   conta = escolhida;
-  ouvintes.forEach((aviso) => aviso());
+  avisarTodos();
+}
+
+// Edição do próprio cadastro. Sem back-end, o dado novo vale só nesta sessão —
+// mas vale em todo o site: o card do perfil e o menu do topo leem daqui.
+export function atualizarConta(dados) {
+  const atualizada = { ...conta, ...dados };
+  CONTAS[CONTAS.indexOf(conta)] = atualizada;
+  conta = atualizada;
+  avisarTodos();
 }
 
 export const contaAtual = () => conta;

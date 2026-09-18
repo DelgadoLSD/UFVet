@@ -103,6 +103,31 @@ function MenuConta({ conta, noPerfil }) {
               );
             })}
           </ul>
+
+          <div className="border-t border-[#f0e6e6] py-1.5">
+            <Link
+              to="/conta"
+              role="menuitem"
+              onClick={() => setAberto(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-[#1a1c1c] hover:bg-[#faf6f6] transition-colors"
+            >
+              <span className="material-symbols-outlined text-[20px] text-[#8e001b]">
+                manage_accounts
+              </span>
+              Sua conta
+            </Link>
+            <Link
+              to="/login"
+              role="menuitem"
+              onClick={() => setAberto(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-[#1a1c1c] hover:bg-[#faf6f6] transition-colors"
+            >
+              <span className="material-symbols-outlined text-[20px] text-[#8e001b]">
+                logout
+              </span>
+              Sair
+            </Link>
+          </div>
         </div>
       )}
     </div>

@@ -4,6 +4,7 @@ import CadastroPage from "./pages/CadastroPage";
 import LoginPage from "./pages/LoginPage";
 import BuscaPage from "./pages/BuscaPage";
 import DashboardPage from "./pages/DashboardPage";
+import ContaPage from "./pages/ContaPage";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/buscar" element={<BuscaPage />} />
         <Route path="/tutor/:id" element={<DashboardPage />} />
         <Route path="/meu-perfil" element={<DashboardPage />} />
+        <Route path="/conta" element={<ContaPage />} />
       </Routes>
     </BrowserRouter>
   );
