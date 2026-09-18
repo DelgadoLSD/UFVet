@@ -54,6 +54,17 @@ function ValorCopiavel({ valor, rotulo }) {
   );
 }
 
+// Caixa de aviso dos estados sem acesso: fica logo abaixo dos dados ocultos,
+// dizendo o que fazer em vez de só barrar.
+function AvisoAcesso({ children, acao }) {
+  return (
+    <div className="mt-3 rounded-xl bg-[#fdecee] px-3.5 py-3">
+      <p className="text-xs text-[#5b403f] leading-relaxed">{children}</p>
+      {acao}
+    </div>
+  );
+}
+
 // Contato de um perfil. Só aparece inteiro para quem tem acesso: veterinários,
 // ou tutores com liberação de um veterinário. Ver o contato fica registrado.
 function BlocoContato({
@@ -64,6 +75,7 @@ function BlocoContato({
   consultasRecebidas = 0,
   meuCodigo,
   onConsultar,
+  onPedirLiberacao,
   onComoFunciona,
   onVerRegistro,
 }) {
@@ -75,6 +87,9 @@ function BlocoContato({
   };
 
   const visivel = ehProprio || revelado;
+  const restantes = acesso.liberacao
+    ? acesso.liberacao.limite - acesso.liberacao.consultas
+    : null;
 
   return (
     <div className="min-w-0">
@@ -124,26 +139,54 @@ function BlocoContato({
       ) : acesso.pode ? (
         <p className="mt-2.5 text-xs text-[#5f5e5e] leading-relaxed">
           {revelado
-            ? `Consulta registrada. ${primeiroNome} pode ver quem viu o contato dela.`
+            ? `Consulta registrada. ${primeiroNome} pode ver quem viu o contato.`
             : acesso.motivo === "veterinario"
               ? "Você vê contatos por ser veterinário. A consulta fica registrada com seu nome e CRMV."
-              : `Seu acesso está liberado até ${acesso.ateTexto}. A consulta fica registrada.`}
+              : `Acesso liberado por um veterinário. Você ainda pode ver ${restantes} ${
+                  restantes === 1 ? "contato" : "contatos"
+                }.`}
         </p>
+      ) : acesso.motivo === "pedido-enviado" ? (
+        <AvisoAcesso>
+          Seu pedido foi enviado. Assim que um veterinário liberar, o contato
+          aparece aqui.
+        </AvisoAcesso>
+      ) : acesso.motivo === "limite" ? (
+        <AvisoAcesso
+          acao={
+            <button
+              type="button"
+              onClick={onComoFunciona}
+              className="mt-2 text-xs font-semibold text-[#8e001b] hover:underline underline-offset-2"
+            >
+              Como funciona
+            </button>
+          }
+        >
+          Você já viu {acesso.liberacao.limite} contatos com esta liberação.
+          Peça ao veterinário do atendimento para renovar o seu acesso.
+        </AvisoAcesso>
       ) : (
-        <div className="mt-2.5 text-xs text-[#5f5e5e] leading-relaxed">
-          <p>
-            O contato aparece enquanto um veterinário estiver acompanhando seu
-            caso. Peça a liberação usando o seu código
-            {meuCodigo ? ` #${meuCodigo}` : ""}.
-          </p>
-          <button
-            type="button"
-            onClick={onComoFunciona}
-            className="mt-1 font-semibold text-[#8e001b] hover:underline underline-offset-2"
-          >
-            Como funciona
-          </button>
-        </div>
+        <AvisoAcesso
+          acao={
+            <div className="mt-2.5 flex items-center gap-3 flex-wrap">
+              <Botao tamanho="sm" onClick={onPedirLiberacao}>
+                Pedir liberação
+              </Botao>
+              <button
+                type="button"
+                onClick={onComoFunciona}
+                className="text-xs font-semibold text-[#8e001b] hover:underline underline-offset-2"
+              >
+                Como funciona
+              </button>
+            </div>
+          }
+        >
+          O contato aparece enquanto um veterinário estiver acompanhando seu
+          caso. Ele libera pelo seu código
+          {meuCodigo ? ` #${meuCodigo}` : ""}.
+        </AvisoAcesso>
       )}
     </div>
   );

@@ -1,9 +1,8 @@
 import Botao from "./Botao";
-import { horasRestantes, tempoRestante } from "../util/tempo";
+import { horasRestantes, tempoRestante, quando } from "../util/tempo";
 
 function Prazo({ expiraEm }) {
-  const horas = horasRestantes(expiraEm);
-  const urgente = horas < 24;
+  const urgente = horasRestantes(expiraEm) < 24;
   return (
     <span
       className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${
@@ -16,26 +15,54 @@ function Prazo({ expiraEm }) {
   );
 }
 
+function Codigo({ valor }) {
+  return (
+    <span className="text-xs font-semibold text-[#8e001b] bg-[#fdecee] px-2 py-0.5 rounded-md">
+      #{valor}
+    </span>
+  );
+}
+
+function Pedido({ pedido, onLiberar, onRecusar }) {
+  return (
+    <li className="px-6 py-5 flex flex-col sm:flex-row sm:items-center gap-4">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="font-bold text-[#1a1c1c]">{pedido.nome}</p>
+          <Codigo valor={pedido.codigo} />
+          <span className="text-xs text-[#5f5e5e]">{quando(pedido.quando)}</span>
+        </div>
+        <p className="text-sm text-[#5b403f] mt-1 leading-snug">
+          {pedido.caso}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <Botao variante="perigo" tamanho="sm" onClick={() => onRecusar(pedido.id)}>
+          Recusar
+        </Botao>
+        <Botao tamanho="sm" onClick={() => onLiberar(pedido)}>
+          Liberar 3 dias
+        </Botao>
+      </div>
+    </li>
+  );
+}
+
 function Liberacao({ liberacao, onRenovar, onEncerrar }) {
+  const noLimite = liberacao.consultas >= liberacao.limite;
   return (
     <li className="px-6 py-5 flex flex-col sm:flex-row sm:items-center gap-4">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-bold text-[#1a1c1c]">{liberacao.nome}</p>
-          <span className="text-xs font-semibold text-[#8e001b] bg-[#fdecee] px-2 py-0.5 rounded-md">
-            #{liberacao.codigo}
-          </span>
+          <Codigo valor={liberacao.codigo} />
         </div>
         <p className="text-sm text-[#5f5e5e] mt-0.5 leading-snug">
-          {liberacao.caso || "Sem caso informado"}
-          {". "}
-          {liberacao.consultas === 0
-            ? "Nenhum contato consultado."
-            : `${liberacao.consultas} ${
-                liberacao.consultas === 1
-                  ? "contato consultado"
-                  : "contatos consultados"
-              }.`}
+          {liberacao.caso || "Sem caso informado"}.{" "}
+          <span className={noLimite ? "font-semibold text-[#8e001b]" : ""}>
+            {liberacao.consultas} de {liberacao.limite} contatos
+            {noLimite ? " (limite atingido)" : ""}
+          </span>
         </p>
       </div>
 
@@ -44,6 +71,7 @@ function Liberacao({ liberacao, onRenovar, onEncerrar }) {
         <Botao
           variante="secundario"
           tamanho="sm"
+          title="Devolve o prazo e zera o limite de contatos"
           onClick={() => onRenovar(liberacao.id)}
         >
           Renovar
@@ -60,12 +88,15 @@ function Liberacao({ liberacao, onRenovar, onEncerrar }) {
   );
 }
 
-// Painel do veterinário: quem está com acesso liberado aos contatos dos
-// doadores, por quanto tempo ainda, e quantas consultas cada um já fez.
+// Painel do veterinário: pedidos esperando resposta, quem está com acesso
+// liberado, por quanto tempo ainda e quantas consultas cada um já fez.
 function PainelAcessoContatos({
   liberacoes,
+  pedidos,
   consultasFeitas,
   onLiberar,
+  onLiberarPedido,
+  onRecusarPedido,
   onRenovar,
   onEncerrar,
   onVerRegistro,
@@ -94,6 +125,26 @@ function PainelAcessoContatos({
           Liberar acesso
         </Botao>
       </div>
+
+      {pedidos.length > 0 && (
+        <div className="bg-[#fff7f7] border-b border-[#f0e6e6]">
+          <p className="px-6 pt-4 text-sm font-semibold text-[#8e001b]">
+            {pedidos.length === 1
+              ? "1 tutor esperando liberação"
+              : `${pedidos.length} tutores esperando liberação`}
+          </p>
+          <ul className="divide-y divide-[#f0e6e6]">
+            {pedidos.map((p) => (
+              <Pedido
+                key={p.id}
+                pedido={p}
+                onLiberar={onLiberarPedido}
+                onRecusar={onRecusarPedido}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
 
       {liberacoes.length === 0 ? (
         <div className="px-6 py-10 text-center">

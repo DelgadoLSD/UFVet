@@ -1,46 +1,121 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import homemFoto from "../assets/people/man1_0-image.jpg";
+import Avatar from "./Avatar";
+import { CONTAS, useSessao, trocarConta } from "../util/sessao";
 
 // Simula estado de autenticação — vira true quando back-end estiver pronto
 const LOGADO = true;
-const USUARIO_MOCK = {
-  nome: "Victor Hugo",
-  papel: "Veterinário",
-  foto: homemFoto,
-  // Rosto fica mais abaixo no quadro dessa foto — sem isso o corte central
-  // padrão pega o peito, não o rosto.
-  fotoPosicao: "center 28%",
-  fotoZoom: 1.7,
-};
 
 const LINKS = [
   { to: "/", label: "Início" },
   { to: "/buscar", label: "Buscar doadores" },
 ];
 
-function Avatar({ tamanho = "w-9 h-9" }) {
+// Menu da conta: leva ao perfil e troca a conta simulada, que é como dá para
+// ver o mesmo site pelos olhos de um tutor e de um veterinário.
+function MenuConta({ conta, noPerfil }) {
+  const [aberto, setAberto] = useState(false);
+  const raiz = useRef(null);
+
+  useEffect(() => {
+    if (!aberto) return;
+    const fecharFora = (e) => {
+      if (!raiz.current?.contains(e.target)) setAberto(false);
+    };
+    const aoTeclar = (e) => e.key === "Escape" && setAberto(false);
+    document.addEventListener("mousedown", fecharFora);
+    document.addEventListener("keydown", aoTeclar);
+    return () => {
+      document.removeEventListener("mousedown", fecharFora);
+      document.removeEventListener("keydown", aoTeclar);
+    };
+  }, [aberto]);
+
   return (
-    <span
-      className={`${tamanho} rounded-full overflow-hidden bg-white/15 flex items-center justify-center shrink-0`}
-    >
-      {USUARIO_MOCK.foto ? (
-        <img
-          src={USUARIO_MOCK.foto}
-          alt=""
-          style={{
-            objectPosition: USUARIO_MOCK.fotoPosicao,
-            transform: `scale(${USUARIO_MOCK.fotoZoom || 1})`,
-            transformOrigin: USUARIO_MOCK.fotoPosicao,
-          }}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <span className="material-symbols-outlined text-xl text-white">
-          person
+    <div ref={raiz} className="relative">
+      <button
+        type="button"
+        onClick={() => setAberto((v) => !v)}
+        aria-expanded={aberto}
+        aria-haspopup="menu"
+        className={`flex items-center gap-3 rounded-full p-1 sm:pr-3 border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a] ${
+          noPerfil
+            ? "border-[#b7102a] bg-white/[0.08]"
+            : "border-white/10 bg-white/[0.04] hover:bg-white/[0.09]"
+        }`}
+      >
+        <Avatar pessoa={conta} />
+        <span className="hidden sm:flex flex-col leading-tight text-left">
+          <span className="text-sm font-bold text-white">{conta.nome}</span>
+          <span className="text-[11px] text-white/55">{conta.papel}</span>
         </span>
+        <span
+          aria-hidden="true"
+          className={`material-symbols-outlined text-[20px] text-white/50 transition-transform ${
+            aberto ? "rotate-180" : ""
+          }`}
+        >
+          expand_more
+        </span>
+      </button>
+
+      {aberto && (
+        <div
+          role="menu"
+          className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl border border-[#eadede] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.45)] overflow-hidden animate-aparecer"
+        >
+          <Link
+            to="/meu-perfil"
+            role="menuitem"
+            onClick={() => setAberto(false)}
+            className="flex items-center gap-2.5 px-4 py-3 text-sm font-semibold text-[#1a1c1c] hover:bg-[#faf6f6] transition-colors"
+          >
+            <span className="material-symbols-outlined text-[20px] text-[#8e001b]">
+              account_circle
+            </span>
+            Ver meu perfil
+          </Link>
+
+          <p className="border-t border-[#f0e6e6] px-4 pt-3 pb-1 text-xs text-[#8f6f6e]">
+            Simulação de perfil, enquanto não há login
+          </p>
+          <ul className="pb-2">
+            {CONTAS.map((c) => {
+              const ativa = c.codigo === conta.codigo;
+              return (
+                <li key={c.codigo}>
+                  <button
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={ativa}
+                    onClick={() => {
+                      trocarConta(c.codigo);
+                      setAberto(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-[#faf6f6] transition-colors"
+                  >
+                    <Avatar pessoa={c} tamanho="w-8 h-8" fundo="bg-[#b7102a]" />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-semibold text-[#1a1c1c] truncate">
+                        {c.nome}
+                      </span>
+                      <span className="block text-xs text-[#5f5e5e]">
+                        {c.papel}
+                      </span>
+                    </span>
+                    {ativa && (
+                      <span className="material-symbols-outlined text-[20px] text-[#8e001b]">
+                        check
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
-    </span>
+    </div>
   );
 }
 
@@ -48,6 +123,7 @@ function Header() {
   const [escondido, setEscondido] = useState(false);
   const [menuAberto, setMenuAberto] = useState(false);
   const location = useLocation();
+  const conta = useSessao();
 
   // Zera o estado ao trocar de rota (ajuste durante a renderização, não em
   // efeito) — evita chegar numa página nova com o header escondido ou o menu
@@ -91,7 +167,10 @@ function Header() {
           <span className="text-[#b7102a]">Vet</span>
         </Link>
 
-        <span className="hidden md:block h-6 w-px bg-white/15" aria-hidden="true" />
+        <span
+          className="hidden md:block h-6 w-px bg-white/15"
+          aria-hidden="true"
+        />
 
         {/* A página atual é marcada por uma barra vermelha colada na borda de
             baixo do header, como uma aba. */}
@@ -124,25 +203,7 @@ function Header() {
 
         <div className="ml-auto flex items-center gap-2">
           {LOGADO ? (
-            <Link
-              to="/meu-perfil"
-              aria-current={noPerfil ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-full p-1 sm:pr-4 border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a] ${
-                noPerfil
-                  ? "border-[#b7102a] bg-white/[0.08]"
-                  : "border-white/10 bg-white/[0.04] hover:bg-white/[0.09]"
-              }`}
-            >
-              <Avatar />
-              <span className="hidden sm:flex flex-col leading-tight">
-                <span className="text-sm font-bold text-white">
-                  {USUARIO_MOCK.nome}
-                </span>
-                <span className="text-[11px] text-white/55">
-                  {USUARIO_MOCK.papel}
-                </span>
-              </span>
-            </Link>
+            <MenuConta conta={conta} noPerfil={noPerfil} />
           ) : (
             <>
               <Link

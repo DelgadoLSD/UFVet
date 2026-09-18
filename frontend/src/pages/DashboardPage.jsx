@@ -11,16 +11,21 @@ import BlocoContato from "../components/BlocoContato";
 import PainelAcessoContatos from "../components/PainelAcessoContatos";
 import ModalLiberarAcesso from "../components/ModalLiberarAcesso";
 import ModalRegistroConsultas from "../components/ModalRegistroConsultas";
+import ModalPedirLiberacao from "../components/ModalPedirLiberacao";
 import {
   TUTORES_CADASTRADOS,
   CONSULTAS_RECEBIDAS,
   useAcessoContatos,
   liberacoesAtivas,
+  acessoDe,
   liberarAcesso,
   renovarAcesso,
   encerrarAcesso,
   registrarConsulta,
+  pedirLiberacao,
+  recusarPedido,
 } from "../util/acessoContatos";
+import { useSessao, perfilVisitado } from "../util/sessao";
 import dog1 from "../assets/dogs/dog1_0-image.jpg";
 import dog1_1 from "../assets/dogs/dog1_1-image.jpg";
 import dog1_2 from "../assets/dogs/dog1_2-image.jpg";
@@ -28,54 +33,13 @@ import cat1 from "../assets/cats/cat1_0-image.jpg";
 import hemogramaImg from "../assets/documents/hemograma.png";
 import sorologiaImg from "../assets/documents/sorologia.png";
 import carteiraVacinacaoImg from "../assets/documents/carteira_vacinacao.jpg";
-import mulherFoto from "../assets/people/women1_0-image.jpg";
-import homemFoto from "../assets/people/man1_0-image.jpg";
 import dog7 from "../assets/dogs/dogs7_0-image.jpg";
+import dog4 from "../assets/dogs/dog4_0-image.jpg";
 import cat7 from "../assets/cats/cat7_0-image.jpg";
 
 // O usuário logado é sempre este veterinário neste mock. "Ver perfil" a
 // partir da busca sempre leva a um tutor de exemplo (Marina) — ver
 // DashboardPage, onde a rota decide qual dos dois exibir.
-const USUARIO_LOGADO = {
-  codigo: "V7H4M2",
-  nome: "Victor Hugo",
-  nomeCompleto: "Victor Hugo Martins",
-  email: "victor.hugo@ufv.br",
-  telefone: "(31) 99204-7715",
-  crmv: "78120-MG",
-  hospital: "Hospital Veterinário UFV",
-  cep: "36570-000",
-  cidade: "Viçosa - MG",
-  bairro: "Centro",
-  membroDesde: "12 Fev 2025",
-  role: "vet",
-  genero: "M",
-  validacoesRealizadas: 27,
-  foto: homemFoto,
-  // Rosto fica mais abaixo no quadro e a foto foi tirada de longe — sem
-  // posição e zoom próprios o recorte mostra só a sala.
-  fotoPosicao: "center 28%",
-  fotoZoom: 1.7,
-};
-
-const USUARIO_E_VETERINARIO = USUARIO_LOGADO.role === "vet";
-
-const TUTOR_MOCK = {
-  codigo: "T3M8P1",
-  nome: "Marina Souza",
-  nomeCompleto: "Marina Souza Andrade",
-  email: "marina.souza@gmail.com",
-  telefone: "(31) 98871-4402",
-  cep: "36570-120",
-  cidade: "Viçosa - MG",
-  bairro: "Ramos",
-  membroDesde: "08 Mar 2026",
-  role: "tutor",
-  genero: "F",
-  foto: mulherFoto,
-  fotoPosicao: "center top",
-};
-
 const nomeProfissional = ({ nome, genero }) =>
   `${genero === "F" ? "Dra." : "Dr."} ${nome}`;
 
@@ -317,6 +281,47 @@ const ANIMAIS_MOCK = [
         nome: "Sorologias",
         versoes: [versaoDoc(sorologiaImg, "01/03/2026", "Marina Souza")],
       },
+      { nome: "Carteira de vacinação", versoes: [] },
+    ],
+  },
+];
+
+// Doador de outro tutor, aberto quando quem está logado é a tutora.
+const ANIMAIS_OUTRO_TUTOR = [
+  {
+    id: 5,
+    codigo: "T4H9R2",
+    nome: "Thor",
+    fotos: [dog4],
+    especie: "Cão",
+    raca: "Border Collie",
+    sexo: "Macho",
+    castrado: true,
+    nascimento: "2022-04-12",
+    peso: 29,
+    tipo: "DEA 1.1-",
+    totalDoacoes: 2,
+    ultimaDoacao: "12/06/2026",
+    disponivel: true,
+    validacao: {
+      criterios: todosCriterios(true),
+      por: "Dra. Camila Duarte",
+      crmv: "45210-MG",
+      em: "18/06/2026",
+      nota: "",
+    },
+    observacoes: [
+      {
+        data: "12/06/2026",
+        hora: "09:30",
+        autor: "Dra. Camila Duarte",
+        texto:
+          "Chegou agitado, mas se acalmou com o tutor por perto durante toda a coleta.",
+      },
+    ],
+    documentos: [
+      { nome: "Hemograma", versoes: [] },
+      { nome: "Sorologia", versoes: [] },
       { nome: "Carteira de vacinação", versoes: [] },
     ],
   },
@@ -1050,6 +1055,7 @@ function PainelValidacao({
 }
 
 function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
+  const usuario = useSessao();
   const ref = REFERENCIA_DOADOR[chaveEspecie(animal.especie)];
   // Validação vencida começa zerada: renovar exige reconferir, não só confirmar
   const aproveitarAnterior = statusValidacao(validacao) !== "vencida";
@@ -1072,8 +1078,8 @@ function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
     onSalvar({
       criterios,
       nota: nota.trim(),
-      por: nomeProfissional(USUARIO_LOGADO),
-      crmv: USUARIO_LOGADO.crmv,
+      por: nomeProfissional(usuario),
+      crmv: usuario.crmv,
       em: hoje(),
     });
 
@@ -1087,9 +1093,9 @@ function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
           <p className="text-[11px] text-[#5f5e5e] leading-snug">
             Assinado por{" "}
             <strong className="text-[#1a1c1c]">
-              {nomeProfissional(USUARIO_LOGADO)}
+              {nomeProfissional(usuario)}
             </strong>
-            , CRMV {USUARIO_LOGADO.crmv}
+            , CRMV {usuario.crmv}
           </p>
           <div className="flex gap-2">
             <Botao variante="secundario" onClick={onClose}>
@@ -1617,6 +1623,7 @@ function AjudaDisponibilidade({ animal, ehDono, disponivel, recuperacao }) {
 }
 
 function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
+  const usuario = useSessao();
   const [disponivel, setDisponivel] = useState(animal.disponivel);
   const [validacao, setValidacao] = useState(animal.validacao);
   const [observacoes, setObservacoes] = useState(animal.observacoes);
@@ -1657,7 +1664,7 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
   const adicionarObservacao = (texto) => {
     const { data, hora } = agora();
     setObservacoes((prev) => [
-      { data, hora, autor: nomeProfissional(USUARIO_LOGADO), texto },
+      { data, hora, autor: nomeProfissional(usuario), texto },
       ...prev,
     ]);
   };
@@ -1988,6 +1995,7 @@ function CardPerfil({
   consultasRecebidas,
   meuCodigo,
   onConsultarContato,
+  onPedirLiberacao,
   onComoFuncionaContato,
   onVerRegistro,
 }) {
@@ -2077,6 +2085,7 @@ function CardPerfil({
               consultasRecebidas={consultasRecebidas}
               meuCodigo={meuCodigo}
               onConsultar={onConsultarContato}
+              onPedirLiberacao={onPedirLiberacao}
               onComoFunciona={onComoFuncionaContato}
               onVerRegistro={onVerRegistro}
             />
@@ -2129,42 +2138,39 @@ function CardPerfil({
 
 // ─── Página ───────────────────────────────────────────────────────────────────
 function DashboardPage() {
-  // Sem :id na rota → /meu-perfil, o próprio veterinário logado.
-  // Com :id → /tutor/:id, sempre a tutora mockada (Marina).
+  // Sem :id na rota → /meu-perfil, o próprio perfil de quem está logado.
+  // Com :id → /tutor/:id, o perfil de outra pessoa.
   const { id } = useParams();
+  const usuario = useSessao();
+  const acessoContatos = useAcessoContatos();
+  const { liberacoes, pedidos, consultas } = acessoContatos;
   const [modalAberto, setModalAberto] = useState(false);
-  const { liberacoes, consultas } = useAcessoContatos();
   const [modalLiberar, setModalLiberar] = useState(false);
+  const [codigoParaLiberar, setCodigoParaLiberar] = useState("");
+  const [modalPedido, setModalPedido] = useState(false);
   const [registroAberto, setRegistroAberto] = useState(null);
   const [comoFuncionaContato, setComoFuncionaContato] = useState(false);
 
   const isProprioTutor = !id;
-  const isVet = USUARIO_E_VETERINARIO;
-  const perfil = isProprioTutor ? USUARIO_LOGADO : TUTOR_MOCK;
-  const animaisPerfil = isProprioTutor ? ANIMAIS_MOCK_VET : ANIMAIS_MOCK;
+  const isVet = usuario.role === "vet";
+  const perfil = isProprioTutor ? usuario : perfilVisitado(usuario);
+  const animaisPerfil = isProprioTutor
+    ? isVet
+      ? ANIMAIS_MOCK_VET
+      : ANIMAIS_MOCK
+    : isVet
+      ? ANIMAIS_MOCK
+      : ANIMAIS_OUTRO_TUTOR;
 
   const ativas = liberacoesAtivas(liberacoes);
-
-  // Veterinário vê contatos sempre; tutor, só com liberação ativa.
-  const minhaLiberacao = ativas.find(
-    (l) => l.codigo === USUARIO_LOGADO.codigo,
-  );
-  const acesso = isVet
-    ? { pode: true, motivo: "veterinario" }
-    : {
-        pode: !!minhaLiberacao,
-        motivo: "liberacao",
-        ateTexto: minhaLiberacao
-          ? new Date(minhaLiberacao.expiraEm).toLocaleDateString("pt-BR")
-          : null,
-      };
+  const acesso = acessoDe(usuario, acessoContatos);
 
   const consultarContato = () =>
     registrarConsulta({
-      nome: perfil.nome,
+      nome: perfil.nomeCompleto || perfil.nome,
       codigo: perfil.codigo,
-      permissao: isVet ? "veterinario" : minhaLiberacao?.liberadoPor,
-      codigoQuemViu: USUARIO_LOGADO.codigo,
+      permissao: isVet ? "veterinario" : "liberação de um veterinário",
+      codigoQuemViu: usuario.codigo,
     });
 
   return (
@@ -2177,11 +2183,22 @@ function DashboardPage() {
         <ModalLiberarAcesso
           tutores={TUTORES_CADASTRADOS}
           liberacoes={ativas}
+          codigoInicial={codigoParaLiberar}
           onConfirmar={(dados) => {
             liberarAcesso(dados);
             setModalLiberar(false);
           }}
           onClose={() => setModalLiberar(false)}
+        />
+      )}
+      {modalPedido && (
+        <ModalPedirLiberacao
+          usuario={usuario}
+          onConfirmar={(caso) => {
+            pedirLiberacao({ usuario, caso });
+            setModalPedido(false);
+          }}
+          onClose={() => setModalPedido(false)}
         />
       )}
       {registroAberto && (
@@ -2206,8 +2223,9 @@ function DashboardPage() {
             ehProprio={isProprioTutor}
             acesso={acesso}
             consultasRecebidas={CONSULTAS_RECEBIDAS.length}
-            meuCodigo={USUARIO_LOGADO.codigo}
+            meuCodigo={usuario.codigo}
             onConsultarContato={consultarContato}
+            onPedirLiberacao={() => setModalPedido(true)}
             onComoFuncionaContato={() => setComoFuncionaContato(true)}
             onVerRegistro={() => setRegistroAberto("recebidas")}
           />
@@ -2217,8 +2235,20 @@ function DashboardPage() {
           <section className="mb-10">
             <PainelAcessoContatos
               liberacoes={ativas}
+              pedidos={pedidos}
               consultasFeitas={consultas.length}
-              onLiberar={() => setModalLiberar(true)}
+              onLiberar={() => {
+                setCodigoParaLiberar("");
+                setModalLiberar(true);
+              }}
+              onLiberarPedido={(pedido) =>
+                liberarAcesso({
+                  tutor: { codigo: pedido.codigo, nome: pedido.nome },
+                  horas: 72,
+                  caso: pedido.caso,
+                })
+              }
+              onRecusarPedido={recusarPedido}
               onRenovar={renovarAcesso}
               onEncerrar={encerrarAcesso}
               onVerRegistro={() => setRegistroAberto("feitas")}
@@ -2239,8 +2269,8 @@ function DashboardPage() {
               <span className="text-[#5b403f] text-xs leading-relaxed">
                 Você pode validar os critérios de doação e registrar
                 observações para a coleta. Sua assinatura (
-                {nomeProfissional(USUARIO_LOGADO)}, CRMV{" "}
-                {USUARIO_LOGADO.crmv}) fica visível aos tutores.
+                {nomeProfissional(usuario)}, CRMV {usuario.crmv}) fica
+                visível aos tutores.
               </span>
             </div>
           </div>

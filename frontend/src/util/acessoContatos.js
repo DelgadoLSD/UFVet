@@ -1,9 +1,15 @@
 import { useSyncExternalStore } from "react";
 import { daquiAHoras, horasAtras, expirou } from "./tempo";
+import mulherFoto from "../assets/people/women1_0-image.jpg";
 
 // Estado do acesso aos contatos enquanto não há back-end. Fica fora dos
-// componentes para que liberações e consultas sobrevivam à navegação entre as
-// páginas — é o que permite ver o registro logo depois de abrir um contato.
+// componentes para que liberações, pedidos e consultas sobrevivam à navegação
+// entre páginas — é o que permite ver o registro logo depois de abrir um
+// contato.
+
+// Teto de contatos por liberação: o prazo evita o acesso eterno, o limite
+// evita que uma liberação legítima vire coleta de telefones.
+export const LIMITE_CONSULTAS = 10;
 
 export const TUTORES_CADASTRADOS = [
   {
@@ -11,10 +17,13 @@ export const TUTORES_CADASTRADOS = [
     nome: "Marina Souza Andrade",
     cidade: "Viçosa - MG",
     animais: "Zeus (cão) e Luna (gato)",
+    membroDesde: "mar/2026",
+    foto: mulherFoto,
+    fotoPosicao: "center top",
   },
   {
     codigo: "T7X9K2",
-    nome: "Lucas Delgado",
+    nome: "Lucas Delgado Ferreira",
     cidade: "Viçosa - MG",
     animais: "Thor (cão)",
     membroDesde: "jan/2026",
@@ -34,6 +43,9 @@ export const TUTORES_CADASTRADOS = [
     membroDesde: "jun/2026",
   },
 ];
+
+export const acharTutor = (codigo) =>
+  TUTORES_CADASTRADOS.find((t) => t.codigo === codigo);
 
 // Quem já viu o contato do usuário logado.
 export const CONSULTAS_RECEBIDAS = [
@@ -59,21 +71,32 @@ let estado = {
   liberacoes: [
     {
       id: 1,
-      codigo: "T3M8P1",
-      nome: "Marina Souza Andrade",
-      caso: "Luna, transfusão hoje",
-      horas: 72,
-      expiraEm: daquiAHoras(50),
-      consultas: 2,
-    },
-    {
-      id: 2,
       codigo: "T5K2W7",
       nome: "Pedro Alves",
       caso: "Max, cirurgia amanhã",
       horas: 24,
       expiraEm: daquiAHoras(6),
+      consultas: 3,
+      limite: LIMITE_CONSULTAS,
+    },
+    {
+      id: 2,
+      codigo: "T5W2K6",
+      nome: "Camila Nunes",
+      caso: "Amora, transfusão",
+      horas: 72,
+      expiraEm: daquiAHoras(50),
       consultas: 0,
+      limite: LIMITE_CONSULTAS,
+    },
+  ],
+  pedidos: [
+    {
+      id: 1,
+      codigo: "T3M8P1",
+      nome: "Marina Souza Andrade",
+      caso: "Luna precisa de transfusão hoje",
+      quando: horasAtras(0.4),
     },
   ],
   consultas: [
@@ -86,7 +109,7 @@ let estado = {
     },
     {
       id: 2,
-      nome: "Lucas Delgado",
+      nome: "Lucas Delgado Ferreira",
       codigo: "T7X9K2",
       quando: horasAtras(30),
       permissao: "veterinario",
@@ -102,7 +125,6 @@ let estado = {
 };
 
 const ouvintes = new Set();
-const ler = () => estado;
 const assinar = (aviso) => {
   ouvintes.add(aviso);
   return () => ouvintes.delete(aviso);
@@ -113,12 +135,31 @@ const definir = (novo) => {
 };
 
 export function useAcessoContatos() {
-  return useSyncExternalStore(assinar, ler);
+  return useSyncExternalStore(assinar, () => estado);
 }
 
 // Liberações vencidas somem sozinhas: ninguém precisa lembrar de encerrar.
 export const liberacoesAtivas = (liberacoes) =>
   liberacoes.filter((l) => !expirou(l.expiraEm));
+
+// Regra única de quem vê contato: veterinário vê sempre; tutor só com
+// liberação ativa e dentro do limite de consultas.
+export function acessoDe(usuario, { liberacoes, pedidos }) {
+  if (usuario.role === "vet") return { pode: true, motivo: "veterinario" };
+
+  const liberacao = liberacoesAtivas(liberacoes).find(
+    (l) => l.codigo === usuario.codigo,
+  );
+  const pedido = pedidos.find((p) => p.codigo === usuario.codigo);
+
+  if (!liberacao) {
+    return { pode: false, motivo: pedido ? "pedido-enviado" : "sem-liberacao" };
+  }
+  if (liberacao.consultas >= liberacao.limite) {
+    return { pode: false, motivo: "limite", liberacao };
+  }
+  return { pode: true, motivo: "liberacao", liberacao };
+}
 
 export function liberarAcesso({ tutor, horas, caso }) {
   definir({
@@ -132,17 +173,23 @@ export function liberarAcesso({ tutor, horas, caso }) {
         horas,
         expiraEm: daquiAHoras(horas),
         consultas: 0,
+        limite: LIMITE_CONSULTAS,
       },
       ...estado.liberacoes,
     ],
+    // Um pedido pendente do mesmo tutor deixa de fazer sentido.
+    pedidos: estado.pedidos.filter((p) => p.codigo !== tutor.codigo),
   });
 }
 
+// Renovar devolve prazo e limite: o veterinário reavaliou o caso.
 export function renovarAcesso(id) {
   definir({
     ...estado,
     liberacoes: estado.liberacoes.map((l) =>
-      l.id === id ? { ...l, expiraEm: daquiAHoras(l.horas) } : l,
+      l.id === id
+        ? { ...l, expiraEm: daquiAHoras(l.horas), consultas: 0 }
+        : l,
     ),
   });
 }
@@ -154,13 +201,40 @@ export function encerrarAcesso(id) {
   });
 }
 
-// Registra a consulta e, quando quem consultou é um tutor liberado, soma no
-// contador da liberação — assim o veterinário acompanha o uso que autorizou.
+export function pedirLiberacao({ usuario, caso }) {
+  if (estado.pedidos.some((p) => p.codigo === usuario.codigo)) return;
+  definir({
+    ...estado,
+    pedidos: [
+      {
+        id: Date.now(),
+        codigo: usuario.codigo,
+        nome: usuario.nomeCompleto || usuario.nome,
+        caso,
+        quando: new Date().toISOString(),
+      },
+      ...estado.pedidos,
+    ],
+  });
+}
+
+export function recusarPedido(id) {
+  definir({ ...estado, pedidos: estado.pedidos.filter((p) => p.id !== id) });
+}
+
+// Registra a consulta e soma no contador da liberação de quem viu, para o
+// veterinário acompanhar o uso do acesso que autorizou.
 export function registrarConsulta({ nome, codigo, permissao, codigoQuemViu }) {
   definir({
     ...estado,
     consultas: [
-      { id: Date.now(), nome, codigo, quando: new Date().toISOString(), permissao },
+      {
+        id: Date.now(),
+        nome,
+        codigo,
+        quando: new Date().toISOString(),
+        permissao,
+      },
       ...estado.consultas,
     ],
     liberacoes: estado.liberacoes.map((l) =>

@@ -5,6 +5,15 @@ import Ajuda from "../components/Ajuda";
 import Botao from "../components/Botao";
 import Selecao from "../components/Selecao";
 import ModalComoFuncionaValidacao from "../components/ComoFuncionaValidacao";
+import ModalComoFuncionaContato from "../components/ComoFuncionaContato";
+import ModalPedirLiberacao from "../components/ModalPedirLiberacao";
+import FaixaAcessoContatos from "../components/FaixaAcessoContatos";
+import { useSessao } from "../util/sessao";
+import {
+  useAcessoContatos,
+  acessoDe,
+  pedirLiberacao,
+} from "../util/acessoContatos";
 import dog2 from "../assets/dogs/dog2_0-image.jpg";
 import dog3 from "../assets/dogs/dog3_0-image.jpg";
 import dog4 from "../assets/dogs/dog4_0-image.jpg";
@@ -422,6 +431,11 @@ function BuscaPage() {
   const [visiveis, setVisiveis] = useState(POR_PAGINA);
   const [localReferencia, setLocalReferencia] = useState("");
   const [explicacaoAberta, setExplicacaoAberta] = useState(false);
+  const [contatoAberto, setContatoAberto] = useState(false);
+  const [pedidoAberto, setPedidoAberto] = useState(false);
+  const usuario = useSessao();
+  const acessoContatos = useAcessoContatos();
+  const acesso = acessoDe(usuario, acessoContatos);
 
   const handleVerPerfil = (id) => navigate(`/tutor/${id}`);
 
@@ -487,6 +501,19 @@ function BuscaPage() {
       <Header dark={true} />
       {explicacaoAberta && (
         <ModalComoFuncionaValidacao onClose={() => setExplicacaoAberta(false)} />
+      )}
+      {contatoAberto && (
+        <ModalComoFuncionaContato onClose={() => setContatoAberto(false)} />
+      )}
+      {pedidoAberto && (
+        <ModalPedirLiberacao
+          usuario={usuario}
+          onConfirmar={(caso) => {
+            pedirLiberacao({ usuario, caso });
+            setPedidoAberto(false);
+          }}
+          onClose={() => setPedidoAberto(false)}
+        />
       )}
 
       <main className="max-w-[1536px] mx-auto flex flex-col md:flex-row gap-6 px-5 md:px-16 py-12 pt-28">
@@ -752,6 +779,12 @@ function BuscaPage() {
               ))}
             </div>
           </div>
+
+          <FaixaAcessoContatos
+            acesso={acesso}
+            onPedirLiberacao={() => setPedidoAberto(true)}
+            onComoFunciona={() => setContatoAberto(true)}
+          />
 
           <LegendaValidacao onEntender={() => setExplicacaoAberta(true)} />
 
