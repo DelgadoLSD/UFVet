@@ -1,0 +1,454 @@
+// UFVet — esquema do banco de dados
+//
+// Os nomes dos modelos seguem a convenção do Prisma (PascalCase, singular) e
+// são mapeados para tabelas em snake_case, que é a convenção do PostgreSQL.
+// Assim o código lê bem e o banco também.
+//
+// A URL de conexão não fica aqui: no Prisma 7 ela vive em prisma.config.ts,
+// fora do controle de versão.
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated"
+}
+
+// ─────────────────────────── Enumerações ───────────────────────────
+
+enum PapelUsuario {
+  TUTOR
+  VETERINARIO
+
+  @@map("papel_usuario")
+}
+
+/// Existe só porque a interface assina "Dr." ou "Dra.". Guardar gênero para
+/// qualquer outra finalidade seria coletar dado que o serviço não usa.
+enum Tratamento {
+  DR
+  DRA
+
+  @@map("tratamento_profissional")
+}
+
+enum Especie {
+  CAO
+  GATO
+
+  @@map("especie_animal")
+}
+
+enum Sexo {
+  MACHO
+  FEMEA
+
+  @@map("sexo_animal")
+}
+
+enum TipoDocumento {
+  HEMOGRAMA
+  SOROLOGIA
+  VACINACAO
+
+  @@map("tipo_documento")
+}
+
+/// Os cinco critérios da validação veterinária, baseados na Nota Técnica nº 3
+/// (2024) da ABVHMT.
+enum CriterioDoacao {
+  TIPAGEM
+  PESO_IDADE
+  VACINACAO
+  SOROLOGIAS
+  SEM_TRANSFUSAO
+
+  @@map("criterio_doacao")
+}
+
+enum MotivoInvalidacao {
+  EDICAO_PESO
+  EDICAO_NASCIMENTO
+  NOVA_VALIDACAO
+
+  @@map("motivo_invalidacao")
+}
+
+enum StatusPedido {
+  PENDENTE
+  ATENDIDO
+  RECUSADO
+
+  @@map("status_pedido")
+}
+
+enum BaseAcesso {
+  VETERINARIO
+  LIBERACAO
+
+  @@map("base_acesso_contato")
+}
+
+enum TipoAceite {
+  TERMOS_DE_USO
+  CIENCIA_RESPONSABILIDADE
+
+  @@map("tipo_aceite")
+}
+
+// ─────────────────────────── Pessoas e locais ───────────────────────────
+
+/// Hospital veterinário ou clínica. A clínica particular de um veterinário
+/// entra aqui como mais um registro: não existe caso especial para ela.
+model Estabelecimento {
+  id       String   @id @default(uuid()) @db.Uuid
+  nome     String   @db.VarChar(120)
+  cidade   String   @db.VarChar(80)
+  uf       String   @db.Char(2)
+  endereco String?  @db.VarChar(160)
+  telefone String?  @db.VarChar(20)
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  veterinarios Veterinario[]
+  doacoes      Doacao[]
+
+  @@map("estabelecimento")
+}
+
+/// Uma conta, de tutor ou de veterinário. O veterinário também é tutor dos
+/// próprios animais, por isso os dois papéis dividem a mesma tabela em vez de
+/// virarem entidades separadas.
+///
+/// Não há latitude nem longitude: a busca localiza por cidade e bairro, e o
+/// endereço exato da casa de alguém não é necessário para o serviço.
+model Usuario {
+  id           String       @id @default(uuid()) @db.Uuid
+  /// Código público (#T3M8P1). É por ele que o veterinário libera o acesso e
+  /// o tutor endereça o pedido — nomes se repetem, códigos não.
+  codigo       String       @unique @db.Char(6)
+  papel        PapelUsuario
+  nomeCompleto String       @map("nome_completo") @db.VarChar(120)
+  cpf          String       @unique @db.Char(11)
+  email        String       @unique @db.VarChar(160)
+  senhaHash    String       @map("senha_hash") @db.VarChar(72)
+  telefone     String       @db.VarChar(20)
+  cep          String       @db.Char(8)
+  cidade       String       @db.VarChar(80)
+  bairro       String       @db.VarChar(80)
+  fotoUrl      String?      @map("foto_url") @db.VarChar(255)
+  criadoEm     DateTime     @default(now()) @map("criado_em") @db.Timestamptz(3)
+  atualizadoEm DateTime     @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+
+  veterinario          Veterinario?
+  aceites              Aceite[]
+  animais              Animal[]
+  documentosEnviados   DocumentoVersao[]
+  validacoesAssinadas  Validacao[]
+  observacoes          Observacao[]
+  doacoesRegistradas   Doacao[]
+  pedidosFeitos        PedidoLiberacao[]  @relation("PedidosDoTutor")
+  pedidosRecebidos     PedidoLiberacao[]  @relation("PedidosParaVeterinario")
+  liberacoesRecebidas  LiberacaoContato[] @relation("LiberacoesDoTutor")
+  liberacoesConcedidas LiberacaoContato[] @relation("LiberacoesDoVeterinario")
+  contatosVistos       ConsultaContato[]  @relation("ConsultasFeitas")
+  consultasAoContato   ConsultaContato[]  @relation("ConsultasRecebidas")
+
+  @@index([cidade, bairro])
+  @@map("usuario")
+}
+
+/// Extensão 1:1 de Usuario quando o papel é VETERINARIO. Cada veterinário
+/// atua em um estabelecimento — quem tem clínica própria aponta para ela.
+model Veterinario {
+  usuarioId         String     @id @map("usuario_id") @db.Uuid
+  crmv              String     @db.VarChar(12)
+  ufCrmv            String     @map("uf_crmv") @db.Char(2)
+  tratamento        Tratamento
+  estabelecimentoId String     @map("estabelecimento_id") @db.Uuid
+
+  usuario         Usuario         @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  estabelecimento Estabelecimento @relation(fields: [estabelecimentoId], references: [id], onDelete: Restrict)
+
+  @@unique([crmv, ufCrmv])
+  @@map("veterinario")
+}
+
+/// Prova de que o usuário aceitou os termos e a ciência sobre os custos de
+/// insumos, com a versão vigente na data do aceite.
+model Aceite {
+  id        String     @id @default(uuid()) @db.Uuid
+  usuarioId String     @map("usuario_id") @db.Uuid
+  tipo      TipoAceite
+  versao    String     @db.VarChar(20)
+  aceitoEm  DateTime   @default(now()) @map("aceito_em") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("aceite")
+}
+
+// ─────────────────────────── Animal ───────────────────────────
+
+model Animal {
+  id       String  @id @default(uuid()) @db.Uuid
+  codigo   String  @unique @db.Char(6)
+  tutorId  String  @map("tutor_id") @db.Uuid
+  nome     String  @db.VarChar(60)
+  especie  Especie
+  /// Nulo quando é SRD ou o tutor não sabe a raça.
+  raca     String? @db.VarChar(60)
+  sexo     Sexo
+  castrado Boolean
+
+  /// Uma das duas colunas de idade é preenchida, nunca as duas.
+  dataNascimento    DateTime? @map("data_nascimento") @db.Date
+  idadeEstimadaAnos Int?      @map("idade_estimada_anos") @db.SmallInt
+
+  pesoKg Decimal @map("peso_kg") @db.Decimal(5, 2)
+
+  /// Nulo até um veterinário assinar a tipagem. O tutor nunca preenche este
+  /// campo: é resultado de exame, e um palpite exibido com a mesma aparência
+  /// de um dado conferido engana quem procura doador.
+  tipoSanguineo      String? @map("tipo_sanguineo") @db.VarChar(20)
+  /// Procedência do valor acima: a validação que o confirmou.
+  tipagemValidacaoId String? @unique @map("tipagem_validacao_id") @db.Uuid
+
+  disponivel   Boolean  @default(true)
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+  atualizadoEm DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+
+  tutor            Usuario    @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  tipagemValidacao Validacao? @relation("TipagemConfirmada", fields: [tipagemValidacaoId], references: [id], onDelete: SetNull)
+
+  fotos       AnimalFoto[]
+  documentos  Documento[]
+  validacoes  Validacao[]  @relation("ValidacoesDoAnimal")
+  observacoes Observacao[]
+  doacoes     Doacao[]
+
+  @@index([tutorId])
+  @@index([especie, disponivel])
+  @@index([tipoSanguineo])
+  @@map("animal")
+}
+
+model AnimalFoto {
+  id       String   @id @default(uuid()) @db.Uuid
+  animalId String   @map("animal_id") @db.Uuid
+  url      String   @db.VarChar(255)
+  /// Zero é a foto principal. Até cinco por animal.
+  ordem    Int      @db.SmallInt
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  animal Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@unique([animalId, ordem])
+  @@map("animal_foto")
+}
+
+// ─────────────────────────── Exames ───────────────────────────
+
+/// Guarda a identidade do documento (um por tipo e por animal). Os arquivos
+/// ficam nas versões.
+model Documento {
+  id       String        @id @default(uuid()) @db.Uuid
+  animalId String        @map("animal_id") @db.Uuid
+  tipo     TipoDocumento
+  criadoEm DateTime      @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  animal  Animal            @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  versoes DocumentoVersao[]
+
+  @@unique([animalId, tipo])
+  @@map("documento")
+}
+
+/// Exame refeito não substitui o anterior: entra como versão nova e o
+/// histórico permanece, para o veterinário comparar.
+model DocumentoVersao {
+  id             String   @id @default(uuid()) @db.Uuid
+  documentoId    String   @map("documento_id") @db.Uuid
+  arquivoUrl     String   @map("arquivo_url") @db.VarChar(255)
+  enviadoPorId   String?  @map("enviado_por_id") @db.Uuid
+  enviadoPorNome String   @map("enviado_por_nome") @db.VarChar(120)
+  enviadoEm      DateTime @default(now()) @map("enviado_em") @db.Timestamptz(3)
+
+  documento  Documento @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  enviadoPor Usuario?  @relation(fields: [enviadoPorId], references: [id], onDelete: SetNull)
+
+  @@map("documento_versao")
+}
+
+// ─────────────────────────── Validação clínica ───────────────────────────
+
+/// Registro assinado por um veterinário. Nunca é editado: perde efeito por
+/// vencimento, por invalidação (o tutor mudou um dado conferido) ou por ser
+/// substituído por uma validação mais recente.
+///
+/// O nome e o CRMV são copiados no momento da assinatura em vez de lidos do
+/// cadastro: a assinatura precisa continuar legível mesmo que o veterinário
+/// mude de registro ou encerre a conta.
+model Validacao {
+  id                      String   @id @default(uuid()) @db.Uuid
+  animalId                String   @map("animal_id") @db.Uuid
+  veterinarioId           String?  @map("veterinario_id") @db.Uuid
+  veterinarioNome         String   @map("veterinario_nome") @db.VarChar(120)
+  crmv                    String   @db.VarChar(12)
+  ufCrmv                  String   @map("uf_crmv") @db.Char(2)
+  realizadaEm             DateTime @map("realizada_em") @db.Date
+  /// realizadaEm + 1 ano.
+  validaAte               DateTime @map("valida_ate") @db.Date
+  /// Preenchido quando o critério TIPAGEM foi atendido.
+  tipoSanguineoConfirmado String?  @map("tipo_sanguineo_confirmado") @db.VarChar(20)
+  nota                    String?
+
+  invalidadaEm     DateTime?          @map("invalidada_em") @db.Timestamptz(3)
+  invalidadaMotivo MotivoInvalidacao? @map("invalidada_motivo")
+
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  animal       Animal              @relation("ValidacoesDoAnimal", fields: [animalId], references: [id], onDelete: Cascade)
+  veterinario  Usuario?            @relation(fields: [veterinarioId], references: [id], onDelete: SetNull)
+  criterios    ValidacaoCriterio[]
+  animalTipado Animal?             @relation("TipagemConfirmada")
+
+  @@index([animalId, realizadaEm])
+  @@map("validacao")
+}
+
+model ValidacaoCriterio {
+  validacaoId String         @map("validacao_id") @db.Uuid
+  criterio    CriterioDoacao
+  atendido    Boolean
+
+  validacao Validacao @relation(fields: [validacaoId], references: [id], onDelete: Cascade)
+
+  @@id([validacaoId, criterio])
+  @@map("validacao_criterio")
+}
+
+/// Anotações de veterinários sobre o comportamento do animal na coleta, para
+/// a próxima equipe se preparar.
+model Observacao {
+  id        String   @id @default(uuid()) @db.Uuid
+  animalId  String   @map("animal_id") @db.Uuid
+  autorId   String?  @map("autor_id") @db.Uuid
+  autorNome String   @map("autor_nome") @db.VarChar(120)
+  texto     String
+  criadoEm  DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  animal Animal   @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  autor  Usuario? @relation(fields: [autorId], references: [id], onDelete: SetNull)
+
+  @@index([animalId, criadoEm])
+  @@map("observacao")
+}
+
+// ─────────────────────────── Doação ───────────────────────────
+
+/// Uma coleta que aconteceu, registrada pelo veterinário que a acompanhou.
+///
+/// O total de doações do animal e a data da última não são colunas guardadas:
+/// saem de COUNT e MAX sobre estas linhas. Assim não existe contador que possa
+/// discordar do histórico. O intervalo de recuperação de 90 dias conta a
+/// partir da dataColeta mais recente.
+model Doacao {
+  id                String   @id @default(uuid()) @db.Uuid
+  animalId          String   @map("animal_id") @db.Uuid
+  estabelecimentoId String   @map("estabelecimento_id") @db.Uuid
+  veterinarioId     String?  @map("veterinario_id") @db.Uuid
+  veterinarioNome   String   @map("veterinario_nome") @db.VarChar(120)
+  crmv              String   @db.VarChar(12)
+  ufCrmv            String   @map("uf_crmv") @db.Char(2)
+  dataColeta        DateTime @map("data_coleta") @db.Date
+  volumeMl          Int      @map("volume_ml") @db.SmallInt
+  nota              String?
+  criadoEm          DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  animal          Animal          @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  estabelecimento Estabelecimento @relation(fields: [estabelecimentoId], references: [id], onDelete: Restrict)
+  veterinario     Usuario?        @relation(fields: [veterinarioId], references: [id], onDelete: SetNull)
+
+  @@index([animalId, dataColeta])
+  @@map("doacao")
+}
+
+// ─────────────────────────── Acesso aos contatos ───────────────────────────
+
+/// Pedido de um tutor a um veterinário específico. Não existe pedido "para
+/// todos": quem libera assume a responsabilidade, então precisa saber de quem
+/// é o caso.
+model PedidoLiberacao {
+  id            String       @id @default(uuid()) @db.Uuid
+  tutorId       String       @map("tutor_id") @db.Uuid
+  veterinarioId String       @map("veterinario_id") @db.Uuid
+  caso          String
+  status        StatusPedido @default(PENDENTE)
+  criadoEm      DateTime     @default(now()) @map("criado_em") @db.Timestamptz(3)
+  respondidoEm  DateTime?    @map("respondido_em") @db.Timestamptz(3)
+
+  tutor       Usuario           @relation("PedidosDoTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+  veterinario Usuario           @relation("PedidosParaVeterinario", fields: [veterinarioId], references: [id], onDelete: Cascade)
+  liberacao   LiberacaoContato?
+
+  @@index([veterinarioId, status])
+  @@index([tutorId])
+  @@map("pedido_liberacao")
+}
+
+/// Autorização temporária para um tutor ver o contato dos doadores. Vence
+/// sozinha: ninguém precisa lembrar de encerrar.
+model LiberacaoContato {
+  id            String    @id @default(uuid()) @db.Uuid
+  tutorId       String    @map("tutor_id") @db.Uuid
+  veterinarioId String    @map("veterinario_id") @db.Uuid
+  pedidoId      String?   @unique @map("pedido_id") @db.Uuid
+  caso          String?   @db.VarChar(160)
+  concedidaEm   DateTime  @default(now()) @map("concedida_em") @db.Timestamptz(3)
+  duracaoHoras  Int       @map("duracao_horas") @db.SmallInt
+  expiraEm      DateTime  @map("expira_em") @db.Timestamptz(3)
+  /// Preenchido quando o veterinário encerra antes do prazo.
+  encerradaEm   DateTime? @map("encerrada_em") @db.Timestamptz(3)
+  criadoEm      DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  tutor       Usuario           @relation("LiberacoesDoTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+  veterinario Usuario           @relation("LiberacoesDoVeterinario", fields: [veterinarioId], references: [id], onDelete: Cascade)
+  pedido      PedidoLiberacao?  @relation(fields: [pedidoId], references: [id], onDelete: SetNull)
+  consultas   ConsultaContato[]
+
+  @@index([tutorId, expiraEm])
+  @@index([veterinarioId])
+  @@map("liberacao_contato")
+}
+
+/// A única tabela que sobrevive ao encerramento de conta.
+///
+/// O registro não pertence a quem consultou, e sim a quem teve o contato
+/// aberto: é como essa pessoa sabe quem viu os dados dela. Apagá-lo para
+/// atender quem sai cegaria quem ficou. Por isso as chaves são anuladas mas
+/// os nomes permanecem — e o site avisa isso antes da consulta, não depois.
+model ConsultaContato {
+  id                 String     @id @default(uuid()) @db.Uuid
+  donoId             String?    @map("dono_id") @db.Uuid
+  donoNome           String     @map("dono_nome") @db.VarChar(120)
+  donoCodigo         String     @map("dono_codigo") @db.Char(6)
+  visualizadorId     String?    @map("visualizador_id") @db.Uuid
+  visualizadorNome   String     @map("visualizador_nome") @db.VarChar(120)
+  visualizadorCodigo String     @map("visualizador_codigo") @db.Char(6)
+  baseAcesso         BaseAcesso @map("base_acesso")
+  liberacaoId        String?    @map("liberacao_id") @db.Uuid
+  /// Veterinário que liberou, quando a base de acesso foi LIBERACAO.
+  autorizadoPorNome  String?    @map("autorizado_por_nome") @db.VarChar(120)
+  consultadoEm       DateTime   @default(now()) @map("consultado_em") @db.Timestamptz(3)
+
+  dono         Usuario?          @relation("ConsultasRecebidas", fields: [donoId], references: [id], onDelete: SetNull)
+  visualizador Usuario?          @relation("ConsultasFeitas", fields: [visualizadorId], references: [id], onDelete: SetNull)
+  liberacao    LiberacaoContato? @relation(fields: [liberacaoId], references: [id], onDelete: SetNull)
+
+  @@index([donoId])
+  @@index([visualizadorId])
+  @@index([consultadoEm])
+  @@map("consulta_contato")
+}
