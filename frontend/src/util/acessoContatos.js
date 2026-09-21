@@ -57,6 +57,12 @@ export const HOSPITAIS = [
 // O pedido de liberação vai para um veterinário, não para todo mundo. O tutor
 // escolhe pelo código, do mesmo jeito que o veterinário libera pelo código do
 // tutor.
+//
+// Cada veterinário pertence a um local só. Quem tem clínica própria não é um
+// caso à parte: a clínica entra como mais um local na lista acima, e ele
+// aponta para ela. O que fica de fora é o mesmo profissional atuando em dois
+// lugares ao mesmo tempo, que exigiria tabela de associação sem resolver
+// nenhum problema real do escopo.
 export const VETERINARIOS = [
   {
     codigo: "V7H4M2",

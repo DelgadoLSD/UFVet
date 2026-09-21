@@ -357,8 +357,8 @@ function ContaPage() {
           <section className="bg-[#1a1a1a] rounded-2xl px-6 md:px-8 py-7">
             <h2 className="text-lg font-bold text-white">Encerrar conta</h2>
             <p className="text-sm text-white/60 mt-1 leading-relaxed max-w-prose">
-              Seus dados saem do UFVet e seus animais deixam de aparecer para
-              quem procura doador. Não dá para desfazer.
+              Seus dados e o cadastro dos seus animais são apagados do UFVet.
+              Não dá para desfazer.
             </p>
             <Botao
               variante="contornoClaro"

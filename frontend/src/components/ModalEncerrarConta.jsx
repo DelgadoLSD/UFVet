@@ -15,19 +15,14 @@ const CONSEQUENCIAS_TUTOR = [
       "Seus animais saem da busca na hora e deixam de aparecer como doadores.",
   },
   {
+    icone: "delete",
+    texto:
+      "O cadastro deles é apagado junto: fotos, exames, validações e o histórico de doações.",
+  },
+  {
     icone: "lock",
     texto:
       "Quem tinha liberação para ver seu telefone perde o acesso imediatamente.",
-  },
-  {
-    icone: "delete",
-    texto:
-      "Os exames enviados e as validações dos seus animais são apagados junto.",
-  },
-  {
-    icone: "history",
-    texto:
-      "As doações já feitas continuam no histórico do hospital, sem identificar você.",
   },
 ];
 
@@ -43,8 +38,9 @@ const CONSEQUENCIAS_VET = [
       "As validações que você assinou continuam nos perfis dos animais, com seu CRMV: elas são documento clínico, e o tutor precisa saber quem assinou.",
   },
   {
-    icone: "search_off",
-    texto: "Seus animais, se você tiver algum cadastrado, saem da busca.",
+    icone: "delete",
+    texto:
+      "Seus animais, se você tiver algum cadastrado, são apagados com o seu cadastro.",
   },
 ];
 
@@ -117,13 +113,16 @@ function ModalEncerrarConta({ usuario, onClose, onEncerrar }) {
                 </span>
               </li>
             ))}
+            {/* A exceção à regra, e a que mais surpreende: o log de acesso
+                não é da pessoa que sai, é de quem teve o contato aberto. */}
             <li className="flex items-start gap-3">
               <span className="material-symbols-outlined text-[20px] text-[#8e001b] shrink-0">
                 visibility
               </span>
               <span className="text-sm text-[#5b403f] leading-relaxed">
-                O registro de quem consultou contatos continua guardado sem os
-                seus dados — ele também protege as outras pessoas da lista.
+                Os contatos que você consultou continuam registrados, com o seu
+                nome. Esse registro pertence a quem foi consultado — é como essa
+                pessoa sabe quem viu os dados dela.
               </span>
             </li>
           </ul>

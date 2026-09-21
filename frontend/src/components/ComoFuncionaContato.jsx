@@ -83,6 +83,11 @@ function ModalComoFuncionaContato({ onClose }) {
             vê essa lista no próprio perfil, e o veterinário que liberou
             acompanha quantos contatos foram consultados durante o atendimento.
           </p>
+          <p>
+            Esse registro é permanente e continua mesmo se quem consultou
+            encerrar a conta. Ele pertence a quem teve o contato aberto: é como
+            essa pessoa sabe quem viu os dados dela.
+          </p>
         </div>
 
         <p className="text-xs text-[#5f5e5e] border-t border-[#f0e6e6] pt-4">
