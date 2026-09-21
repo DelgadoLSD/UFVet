@@ -42,7 +42,7 @@ const DOADORES_MOCK = [
     idade: 4,
     tipo: "DEA 1.1+",
     peso: 32,
-    distancia: 2.4,
+    cidade: "Viçosa - MG",
     bairro: "Centro",
     status: "disponivel",
     validado: true,
@@ -59,7 +59,7 @@ const DOADORES_MOCK = [
     idade: 3,
     tipo: "DEA 4",
     peso: 28,
-    distancia: 5.8,
+    cidade: "Viçosa - MG",
     bairro: "Santa Clara",
     status: "disponivel",
     validado: true,
@@ -76,7 +76,7 @@ const DOADORES_MOCK = [
     idade: 5,
     tipo: null,
     peso: 16,
-    distancia: 8.1,
+    cidade: "Viçosa - MG",
     bairro: "Ramos",
     status: "indisponivel",
     validado: false,
@@ -93,7 +93,7 @@ const DOADORES_MOCK = [
     idade: 6,
     tipo: "DEA 1.1 Universal",
     peso: 45,
-    distancia: 1.2,
+    cidade: "Viçosa - MG",
     bairro: "Nova Viçosa",
     status: "disponivel",
     validado: true,
@@ -110,7 +110,7 @@ const DOADORES_MOCK = [
     idade: 2,
     tipo: "DEA 1.1-",
     peso: 38,
-    distancia: 12.4,
+    cidade: "Viçosa - MG",
     bairro: "Belvedere",
     status: "disponivel",
     validado: true,
@@ -127,7 +127,7 @@ const DOADORES_MOCK = [
     idade: 4,
     tipo: null,
     peso: 30,
-    distancia: 3.5,
+    cidade: "Viçosa - MG",
     bairro: "Inconfidência",
     status: "disponivel",
     validado: false,
@@ -144,7 +144,7 @@ const DOADORES_MOCK = [
     idade: 3,
     tipo: "Tipo A",
     peso: 4.2,
-    distancia: 1.5,
+    cidade: "Viçosa - MG",
     bairro: "Centro",
     status: "disponivel",
     validado: true,
@@ -161,7 +161,7 @@ const DOADORES_MOCK = [
     idade: 4,
     tipo: "Tipo B",
     peso: 6.1,
-    distancia: 3.2,
+    cidade: "Viçosa - MG",
     bairro: "Nova Viçosa",
     status: "disponivel",
     validado: true,
@@ -178,7 +178,7 @@ const DOADORES_MOCK = [
     idade: 2,
     tipo: null,
     peso: 4.8,
-    distancia: 7.4,
+    cidade: "Viçosa - MG",
     bairro: "Ramos",
     status: "indisponivel",
     validado: false,
@@ -195,7 +195,7 @@ const DOADORES_MOCK = [
     idade: 5,
     tipo: "Tipo A",
     peso: 5.3,
-    distancia: 2.1,
+    cidade: "Viçosa - MG",
     bairro: "Santa Clara",
     status: "disponivel",
     validado: true,
@@ -212,7 +212,7 @@ const DOADORES_MOCK = [
     idade: 3,
     tipo: "Tipo A",
     peso: 4.5,
-    distancia: 4.7,
+    cidade: "Viçosa - MG",
     bairro: "Centro",
     status: "disponivel",
     validado: true,
@@ -229,8 +229,8 @@ const DOADORES_MOCK = [
     idade: 4,
     tipo: null,
     peso: 3.9,
-    distancia: 9.2,
-    bairro: "Belvedere",
+    cidade: "Teixeiras - MG",
+    bairro: "Centro",
     status: "disponivel",
     validado: false,
   },
@@ -244,6 +244,19 @@ const TIPOS_SANGUINEOS = {
 const PESO_MIN = { cao: 10, gato: 2 };
 const PESO_MAX = { cao: 60, gato: 10 };
 
+// Cidades e bairros saem dos próprios doadores: a lista acompanha os lugares
+// onde o UFVet já tem gente cadastrada.
+const ordenadoBR = (lista) => [...lista].sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+const CIDADES = ordenadoBR([...new Set(DOADORES_MOCK.map((d) => d.cidade))]);
+
+const bairrosDe = (cidade) =>
+  ordenadoBR([
+    ...new Set(
+      DOADORES_MOCK.filter((d) => d.cidade === cidade).map((d) => d.bairro),
+    ),
+  ]);
+
 const POR_PAGINA = 6;
 
 const numeroBR = (n) => n.toLocaleString("pt-BR");
@@ -251,9 +264,9 @@ const numeroBR = (n) => n.toLocaleString("pt-BR");
 // ─── Card do doador ───────────────────────────────────────────────────────────
 // Vertical, com a foto em cima: é o formato que escaneia melhor em grade e dá
 // largura total ao texto, sem truncar raça, peso ou tipo sanguíneo. Mostra só
-// o que decide a escolha (tipo, porte, distância, validação); dados do tutor
+// o que decide a escolha (tipo, porte, bairro, validação); dados do tutor
 // ficam no perfil.
-function DonorCard({ doador, onClick, mostrarDistancia }) {
+function DonorCard({ doador, onClick }) {
   const disponivel = doador.status === "disponivel";
 
   return (
@@ -310,8 +323,7 @@ function DonorCard({ doador, onClick, mostrarDistancia }) {
           <span className="material-symbols-outlined text-[16px] shrink-0">
             location_on
           </span>
-          {doador.bairro}
-          {mostrarDistancia && `, a ${numeroBR(doador.distancia)} km`}
+          {doador.bairro}, {doador.cidade}
         </p>
 
         {/* Status de validação acompanhado do que ele muda na prática */}
@@ -433,10 +445,10 @@ function BuscaPage() {
   const [especie, setEspecie] = useState("cao");
   const [tiposSelecionados, setTiposSelecionados] = useState([]);
   const [pesoMax, setPesoMax] = useState(60);
-  const [distanciaMax, setDistanciaMax] = useState("");
   const [ordenar, setOrdenar] = useState("validados");
   const [visiveis, setVisiveis] = useState(POR_PAGINA);
-  const [localReferencia, setLocalReferencia] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [bairro, setBairro] = useState("");
   const [explicacaoAberta, setExplicacaoAberta] = useState(false);
   const [contatoAberto, setContatoAberto] = useState(false);
   const [pedidoAberto, setPedidoAberto] = useState(false);
@@ -458,8 +470,8 @@ function BuscaPage() {
     setEspecie("cao");
     setTiposSelecionados([]);
     setPesoMax(60);
-    setDistanciaMax("");
-    setLocalReferencia("");
+    setCidade("");
+    setBairro("");
     setVisiveis(POR_PAGINA);
   };
 
@@ -470,6 +482,7 @@ function BuscaPage() {
     setVisiveis(POR_PAGINA);
   };
 
+  const bairrosDaCidade = cidade ? bairrosDe(cidade) : [];
   const termoBusca = busca.trim().toLowerCase().replace("#", "");
 
   const doadoresFiltrados = DOADORES_MOCK.filter((d) => d.especie === especie)
@@ -488,17 +501,12 @@ function BuscaPage() {
         d.bairro.toLowerCase().includes(termoBusca)
       );
     })
-    .filter(
-      (d) =>
-        !localReferencia ||
-        !distanciaMax ||
-        d.distancia <= Number(distanciaMax),
-    )
+    .filter((d) => !cidade || d.cidade === cidade)
+    .filter((d) => !bairro || d.bairro === bairro)
     .sort((a, b) => {
       if (ordenar === "validados") return b.validado - a.validado;
-      if (ordenar === "proximos") return a.distancia - b.distancia;
       if (ordenar === "peso") return b.peso - a.peso;
-      return 0;
+      return a.nome.localeCompare(b.nome, "pt-BR");
     });
 
   const restantes = doadoresFiltrados.length - visiveis;
@@ -667,64 +675,47 @@ function BuscaPage() {
               </div>
             </div>
 
+            {/* Onde o doador mora. Quem conhece a cidade sabe o que é perto
+                do hospital melhor do que um raio em quilômetros — e ninguém
+                precisa entregar o endereço exato de casa. */}
             <div>
-              <h3 className="text-sm font-semibold mb-3">
-                Local de referência
-              </h3>
-              <div className="mb-4">
+              <h3 className="text-sm font-semibold mb-3">Localização</h3>
+              <div className="mb-3">
                 <Selecao
-                  valor={localReferencia}
+                  valor={cidade}
                   onChange={(valor) => {
-                    setLocalReferencia(valor);
-                    if (!valor) setDistanciaMax("");
+                    setCidade(valor);
+                    setBairro("");
+                    setVisiveis(POR_PAGINA);
                   }}
-                  placeholder="Selecione um local"
-                  icone="my_location"
-                  opcoes={[
-                    {
-                      valor: "hv-ufv",
-                      rotulo: "Hospital Veterinário UFV",
-                      rotuloCurto: "Hospital Vet. UFV",
-                      descricao: "Onde as coletas são feitas",
-                      icone: "local_hospital",
-                    },
-                    {
-                      valor: "atual",
-                      rotulo: "Minha localização",
-                      descricao: "Usa o endereço do seu cadastro",
-                      icone: "near_me",
-                    },
-                  ]}
+                  placeholder="Todas as cidades"
+                  icone="location_city"
+                  opcoes={CIDADES.map((c) => ({
+                    valor: c,
+                    rotulo: c,
+                    icone: "location_city",
+                  }))}
                 />
               </div>
 
-              <h3 className="text-sm font-semibold mb-3">
-                Distância máxima (km)
-              </h3>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <span
-                    className={`material-symbols-outlined text-[18px] ${localReferencia ? "text-[#8f6f6e]" : "text-[#d0d0d0]"}`}
-                  >
-                    distance
-                  </span>
-                </span>
-                <input
-                  type="number"
-                  placeholder={
-                    localReferencia ? "Ex: 10" : "Selecione um local primeiro"
-                  }
-                  min="0"
-                  value={distanciaMax}
-                  disabled={!localReferencia}
-                  onChange={(e) => setDistanciaMax(e.target.value)}
-                  className={`w-full h-11 pl-9 pr-4 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b]/30 focus:border-[#8e001b] ${localReferencia ? "bg-white border-[#dccfcf] shadow-[0_1px_2px_rgba(26,28,28,0.04)]" : "bg-[#f7f4f4] border-[#ece6e6] text-[#b0b0b0] cursor-not-allowed"}`}
+              {cidade ? (
+                <Selecao
+                  valor={bairro}
+                  onChange={(valor) => {
+                    setBairro(valor);
+                    setVisiveis(POR_PAGINA);
+                  }}
+                  placeholder="Todos os bairros"
+                  icone="home_pin"
+                  opcoes={bairrosDaCidade.map((b) => ({
+                    valor: b,
+                    rotulo: b,
+                    icone: "home_pin",
+                  }))}
                 />
-              </div>
-              {!localReferencia && (
-                <p className="text-[11px] text-[#8f6f6e] mt-2 leading-relaxed">
-                  Escolha um local de referência para ver a distância até cada
-                  doador.
+              ) : (
+                <p className="text-[11px] text-[#8f6f6e] leading-relaxed">
+                  Escolha a cidade para filtrar por bairro.
                 </p>
               )}
             </div>
@@ -779,8 +770,8 @@ function BuscaPage() {
               </span>
               {[
                 { val: "validados", label: "Validados primeiro" },
-                { val: "proximos", label: "Mais próximos" },
                 { val: "peso", label: "Maior peso" },
+                { val: "nome", label: "Nome" },
               ].map((op) => (
                 <button
                   key={op.val}
@@ -830,7 +821,6 @@ function BuscaPage() {
                     key={doador.id}
                     doador={doador}
                     onClick={handleVerPerfil}
-                    mostrarDistancia={!!localReferencia}
                   />
                 ))}
               </div>

@@ -284,7 +284,7 @@ function CanalSection() {
                   <p className="text-sm text-[#5f5e5e]">
                     Labrador, 5 anos, 30 kg
                   </p>
-                  <p className="text-sm text-[#5f5e5e]">A 2,4 km de você</p>
+                  <p className="text-sm text-[#5f5e5e]">Centro, Viçosa - MG</p>
                   <p className="mt-1.5 flex items-center gap-1 text-sm font-semibold text-emerald-700">
                     <span className="material-symbols-outlined text-[18px]">
                       verified
@@ -818,7 +818,7 @@ function ChamadaSection() {
                 Seu animal precisa de sangue?
               </h2>
               <p className="text-lg text-white/75 leading-relaxed mb-10 max-w-md flex-1">
-                Filtre por espécie, tipo sanguíneo e distância, veja quem já foi
+                Filtre por espécie, tipo sanguíneo e bairro, veja quem já foi
                 validado e fale direto com o tutor do doador.{" "}
                 <button
                   type="button"
