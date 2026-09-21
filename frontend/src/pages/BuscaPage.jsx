@@ -74,7 +74,7 @@ const DOADORES_MOCK = [
     especie: "cao",
     raca: "Beagle",
     idade: 5,
-    tipo: "DEA 7",
+    tipo: null,
     peso: 16,
     distancia: 8.1,
     bairro: "Ramos",
@@ -125,7 +125,7 @@ const DOADORES_MOCK = [
     especie: "cao",
     raca: "Dálmata",
     idade: 4,
-    tipo: "DEA 1.1 Universal",
+    tipo: null,
     peso: 30,
     distancia: 3.5,
     bairro: "Inconfidência",
@@ -176,7 +176,7 @@ const DOADORES_MOCK = [
     especie: "gato",
     raca: "Persa",
     idade: 2,
-    tipo: "Tipo AB",
+    tipo: null,
     peso: 4.8,
     distancia: 7.4,
     bairro: "Ramos",
@@ -227,7 +227,7 @@ const DOADORES_MOCK = [
     especie: "gato",
     raca: "Siamês",
     idade: 4,
-    tipo: "Tipo B",
+    tipo: null,
     peso: 3.9,
     distancia: 9.2,
     bairro: "Belvedere",
@@ -289,9 +289,17 @@ function DonorCard({ doador, onClick, mostrarDistancia }) {
           <h3 className="text-lg font-bold text-[#1a1c1c] leading-tight truncate">
             {doador.nome}
           </h3>
-          <span className="bg-[#8e001b] text-white text-xs font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">
-            {doador.tipo}
-          </span>
+          {/* Tipo em vermelho só quando saiu de um exame assinado. Sem
+              tipagem, a etiqueta fica cinza e diz o que falta. */}
+          {doador.tipo ? (
+            <span className="bg-[#8e001b] text-white text-xs font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">
+              {doador.tipo}
+            </span>
+          ) : (
+            <span className="bg-[#f3eeee] text-[#5f5e5e] text-xs font-semibold px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">
+              Sem tipagem
+            </span>
+          )}
         </div>
 
         <p className="text-sm text-[#5f5e5e] truncate">
@@ -401,8 +409,8 @@ function LegendaValidacao({ onEntender }) {
             <strong className="block text-sm font-semibold text-[#1a1c1c]">
               Ainda não validado
             </strong>
-            Pode doar normalmente. Os exames de triagem são feitos no hospital,
-            antes da coleta.
+            Pode doar normalmente. Os exames de triagem, inclusive a tipagem
+            sanguínea, são feitos no hospital antes da coleta.
           </p>
         </div>
       </div>
@@ -612,6 +620,11 @@ function BuscaPage() {
                       hospital sempre confirma a compatibilidade.
                     </p>
                   )}
+                  <p>
+                    Filtrar por tipo esconde os doadores sem tipagem
+                    confirmada: o tipo deles só é conhecido depois do exame,
+                    feito no hospital.
+                  </p>
                 </Ajuda>
               </div>
               <p className="text-[11px] text-[#5f5e5e] mb-3">

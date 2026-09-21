@@ -12,8 +12,8 @@ function ModalExcluirAnimal({
 }) {
   const perdas = [
     "Ele sai da busca e ninguém mais consegue encontrá-lo como doador.",
-    animal.totalDoacoes > 0 &&
-      `As ${animal.totalDoacoes} doações registradas saem do seu histórico.`,
+    animal.doacoes.length > 0 &&
+      `As ${animal.doacoes.length} doações registradas saem do seu histórico.`,
     animal.validacao &&
       `Os exames enviados e a validação de ${animal.validacao.por} são apagados.`,
     "As observações dos veterinários sobre a coleta são apagadas.",

@@ -14,6 +14,7 @@ import ModalLiberarAcesso from "../components/ModalLiberarAcesso";
 import ModalRegistroConsultas from "../components/ModalRegistroConsultas";
 import ModalPedirLiberacao from "../components/ModalPedirLiberacao";
 import ModalExcluirAnimal from "../components/ModalExcluirAnimal";
+import ModalDoacoes from "../components/ModalDoacoes";
 import {
   TUTORES_CADASTRADOS,
   VETERINARIOS,
@@ -84,7 +85,7 @@ const CRITERIOS_DOACAO = [
   {
     key: "tipagem",
     label: "Tipagem sanguínea confirmada",
-    descricao: () => "O tipo informado confere com o exame de tipagem.",
+    descricao: () => "O exame de tipagem foi feito e o tipo está registrado.",
   },
   {
     key: "pesoIdade",
@@ -109,16 +110,11 @@ const CRITERIOS_DOACAO = [
   },
 ];
 
+// Só o veterinário escolhe entre estes, ao assinar a tipagem. Não existe
+// "não sei": o campo fica vazio até o exame dizer.
 const TIPOS_SANGUINEOS = {
-  cao: [
-    "DEA 1.1 Universal",
-    "DEA 1.1+",
-    "DEA 1.1-",
-    "DEA 4",
-    "DEA 7",
-    "Não sei",
-  ],
-  gato: ["Tipo A", "Tipo B", "Tipo AB", "Não sei"],
+  cao: ["DEA 1.1 Universal", "DEA 1.1+", "DEA 1.1-", "DEA 4", "DEA 7"],
+  gato: ["Tipo A", "Tipo B", "Tipo AB"],
 };
 
 const TIPOS_UNIVERSAIS = ["DEA 1.1-", "DEA 1.1 Universal"];
@@ -195,6 +191,24 @@ const todosCriterios = (valor) =>
 
 const versaoDoc = (arquivo, data, enviadoPor) => ({ arquivo, data, enviadoPor });
 
+// Uma coleta registrada por um veterinário. O total de doações e a data da
+// última saem daqui — não existe contador guardado à parte que possa
+// discordar da lista.
+let sequenciaDoacao = 0;
+const doacao = (data, volumeMl, hospital, veterinario, crmv, nota = "") => ({
+  id: ++sequenciaDoacao,
+  data,
+  volumeMl,
+  hospital,
+  veterinario,
+  crmv,
+  nota,
+});
+
+const HV_UFV = "Hospital Veterinário UFV";
+
+const dataUltimaDoacao = (doacoes) => doacoes[0]?.data || null;
+
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 // Os quatro animais cobrem os quatro estados de validação: vencida (Zeus),
 // nunca validado (Luna), validado (Bela) e com pendências (Nina).
@@ -211,8 +225,16 @@ const ANIMAIS_MOCK = [
     nascimento: "2021-08-20",
     peso: 32,
     tipo: "DEA 1.1+",
-    totalDoacoes: 6,
-    ultimaDoacao: "05/09/2026",
+    doacoes: [
+      doacao("05/09/2026", 450, HV_UFV, "Dr. Paulo Rezende", "88214-MG",
+        "Coleta tranquila, sem necessidade de sedação."),
+      doacao("10/03/2026", 450, HV_UFV, "Dra. Camila Duarte", "45210-MG"),
+      doacao("22/10/2025", 420, HV_UFV, "Dr. Paulo Rezende", "88214-MG"),
+      doacao("18/06/2025", 450, HV_UFV, "Dr. Paulo Rezende", "88214-MG"),
+      doacao("02/02/2025", 430, HV_UFV, "Dra. Camila Duarte", "45210-MG"),
+      doacao("15/10/2023", 400, HV_UFV, "Dr. Paulo Rezende", "88214-MG",
+        "Primeira doação. Agitado no início, depois se acalmou."),
+    ],
     disponivel: true,
     validacao: {
       criterios: todosCriterios(true),
@@ -275,9 +297,8 @@ const ANIMAIS_MOCK = [
     castrado: true,
     nascimento: "2024-06-10",
     peso: 4.5,
-    tipo: "Tipo A",
-    totalDoacoes: 0,
-    ultimaDoacao: null,
+    tipo: null,
+    doacoes: [],
     disponivel: false,
     validacao: null,
     observacoes: [],
@@ -306,8 +327,11 @@ const ANIMAIS_OUTRO_TUTOR = [
     nascimento: "2022-04-12",
     peso: 29,
     tipo: "DEA 1.1-",
-    totalDoacoes: 2,
-    ultimaDoacao: "12/06/2026",
+    doacoes: [
+      doacao("12/06/2026", 420, HV_UFV, "Dra. Camila Duarte", "45210-MG",
+        "Chegou agitado, mas se acalmou com o tutor por perto."),
+      doacao("05/01/2026", 400, HV_UFV, "Dra. Camila Duarte", "45210-MG"),
+    ],
     disponivel: true,
     validacao: {
       criterios: todosCriterios(true),
@@ -346,8 +370,12 @@ const ANIMAIS_MOCK_VET = [
     nascimento: "2023-05-10",
     peso: 28,
     tipo: "DEA 1.1-",
-    totalDoacoes: 3,
-    ultimaDoacao: "10/06/2026",
+    doacoes: [
+      doacao("10/06/2026", 440, HV_UFV, "Dra. Camila Duarte", "45210-MG",
+        "Bastante tranquila; já doou três vezes sem intercorrências."),
+      doacao("28/12/2025", 440, HV_UFV, "Dr. Victor Hugo", "78120-MG"),
+      doacao("14/08/2025", 430, HV_UFV, "Dr. Victor Hugo", "78120-MG"),
+    ],
     disponivel: true,
     validacao: {
       criterios: todosCriterios(true),
@@ -392,8 +420,7 @@ const ANIMAIS_MOCK_VET = [
     nascimento: "2022-02-14",
     peso: 3.8,
     tipo: "Tipo B",
-    totalDoacoes: 0,
-    ultimaDoacao: null,
+    doacoes: [],
     disponivel: false,
     validacao: {
       criterios: {
@@ -541,6 +568,10 @@ function Segmentado({ opcoes, valor, onEscolher }) {
 // (sorologias, vacinação, transfusão) são conferidos pelo veterinário.
 // O mesmo formulário cadastra e edita: são os mesmos campos, e manter um só
 // evita que as duas telas se afastem com o tempo.
+//
+// O tipo sanguíneo não está aqui de propósito. É resultado de exame, e um
+// palpite de tutor exibido com a mesma cara de um dado conferido engana tanto
+// quem procura doador quanto o veterinário que dá a validação por feita.
 
 const FORM_VAZIO = {
   nome: "",
@@ -553,7 +584,6 @@ const FORM_VAZIO = {
   dataNascimento: "",
   idadeEstimada: "",
   peso: "",
-  tipoSanguineo: "",
 };
 
 const formularioDoAnimal = (animal) => ({
@@ -566,7 +596,6 @@ const formularioDoAnimal = (animal) => ({
   castrado: animal.castrado ? "sim" : "nao",
   dataNascimento: animal.nascimento,
   peso: String(animal.peso),
-  tipoSanguineo: animal.tipo,
 });
 
 // Dados que o veterinário assinou: mudar um deles derruba o critério que ele
@@ -700,9 +729,10 @@ function ModalAnimal({ animal, onClose }) {
               verified_user
             </span>
             <p className="text-xs text-[#5b403f] leading-relaxed">
-              Seu animal já pode aparecer como doador logo após o cadastro. Para
-              deixar a doação mais rápida, envie os exames depois no perfil: com
-              eles, um veterinário pode <strong>validar</strong> os critérios de
+              Seu animal já pode aparecer como doador logo após o cadastro. O
+              tipo sanguíneo não é pedido aqui: ele sai do exame de tipagem, e
+              quem registra é o veterinário. Envie os exames depois no perfil —
+              com eles, um veterinário <strong>valida</strong> os critérios de
               doação e o hospital não precisa refazer tudo no dia da coleta.
             </p>
           </div>
@@ -856,48 +886,27 @@ function ModalAnimal({ animal, onClose }) {
           </div>
         </div>
 
-        {tipagemConfirmada ? (
+        {/* Só leitura, nos dois estados: quem preenche esse campo é o
+            veterinário, no momento em que assina a tipagem. */}
+        {editando && (
           <div>
             <span className={labelClass}>Tipo sanguíneo</span>
             <div className="flex items-start gap-3 bg-[#faf6f6] border border-[#eadede] rounded-xl p-4">
               <span className="material-symbols-outlined text-[20px] text-[#8f6f6e] shrink-0">
-                lock
+                {tipagemConfirmada ? "lock" : "labs"}
               </span>
               <div>
-                <p className="text-sm font-bold text-[#1a1c1c]">{animal.tipo}</p>
+                <p className="text-sm font-bold text-[#1a1c1c]">
+                  {tipagemConfirmada ? animal.tipo : "Ainda não tipado"}
+                </p>
                 <p className="text-xs text-[#5f5e5e] leading-relaxed mt-1">
-                  Confirmado no exame de tipagem por {animal.validacao.por} em{" "}
-                  {animal.validacao.em}. O tipo sanguíneo não muda ao longo da
-                  vida — se algo não confere, peça ao veterinário para revisar a
-                  validação.
+                  {tipagemConfirmada
+                    ? `Confirmado no exame de tipagem por ${animal.validacao.por} em ${animal.validacao.em}. Se algo não confere, peça ao veterinário para revisar a validação.`
+                    : `O tipo sanguíneo vem do exame de tipagem e quem registra é o veterinário. Enviar os exames de ${animal.nome} no perfil é o que faz esse campo ser preenchido.`}
                 </p>
               </div>
             </div>
           </div>
-        ) : (
-        <div>
-          <label className={labelClass}>Tipo sanguíneo</label>
-          <div className="flex flex-wrap gap-2">
-            {TIPOS_SANGUINEOS[form.especie].map((tipo) => (
-              <button
-                key={tipo}
-                type="button"
-                onClick={() => handleChange("tipoSanguineo", tipo)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
-                  form.tipoSanguineo === tipo
-                    ? "bg-[#8e001b] text-white border-[#8e001b]"
-                    : "bg-[#f3f3f3] text-[#1a1c1c] border-transparent hover:border-[#8e001b]"
-                }`}
-              >
-                {tipo}
-              </button>
-            ))}
-          </div>
-          <p className="text-[11px] text-[#5f5e5e] mt-2">
-            Não sabe? Escolha "Não sei" — a tipagem é confirmada pelo
-            veterinário.
-          </p>
-        </div>
         )}
 
         <div>
@@ -1168,16 +1177,16 @@ function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
   const [nota, setNota] = useState(
     aproveitarAnterior && validacao ? validacao.nota : "",
   );
-  // O tutor declara o tipo no cadastro, e às vezes chuta. Quem assina a
-  // tipagem precisa poder registrar o que o exame mostrou — senão o critério
-  // fica marcado sobre um valor que ninguém conferiu.
+  // O perfil só ganha tipo sanguíneo aqui: marcar a tipagem obriga a dizer
+  // qual foi o resultado, e é esse valor que passa a aparecer na busca.
   const [tipo, setTipo] = useState(animal.tipo);
-  const tiposDaEspecie = TIPOS_SANGUINEOS[chaveEspecie(animal.especie)].filter(
-    (t) => t !== "Não sei",
-  );
+  const tiposDaEspecie = TIPOS_SANGUINEOS[chaveEspecie(animal.especie)];
 
   const marcados = CRITERIOS_DOACAO.filter((c) => criterios[c.key]).length;
   const completa = marcados === CRITERIOS_DOACAO.length;
+  // Tipagem conferida sem dizer o resultado deixaria o perfil com um selo e
+  // nenhum tipo — é o contrário do que a validação serve para resolver.
+  const faltaTipo = criterios.tipagem && !tipo;
 
   const alternar = (key) =>
     setCriterios((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -1196,7 +1205,12 @@ function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
   return (
     <Modal
       titulo={`Validar doador — ${animal.nome}`}
-      subtitulo={`${animal.especie}, ${animal.tipo}, ${formatarPeso(animal.peso)}, ${textoIdade(idadeEmAnos(animal.nascimento))}`}
+      subtitulo={[
+        animal.especie,
+        animal.tipo || "sem tipagem",
+        formatarPeso(animal.peso),
+        textoIdade(idadeEmAnos(animal.nascimento)),
+      ].join(", ")}
       onClose={onClose}
       rodape={
         <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -1211,7 +1225,7 @@ function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
             <Botao variante="secundario" onClick={onClose}>
               Cancelar
             </Botao>
-            <Botao icone="check" onClick={salvar}>
+            <Botao icone="check" disabled={faltaTipo} onClick={salvar}>
               Confirmar validação
             </Botao>
           </div>
@@ -1288,8 +1302,9 @@ function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
               Qual tipo o exame mostrou?
             </p>
             <p className="text-xs text-[#5f5e5e] mt-0.5">
-              O tutor informou {animal.tipo}. O que você confirmar aqui passa a
-              valer no perfil e na busca.
+              {animal.tipo
+                ? `Hoje o perfil mostra ${animal.tipo}. O que você marcar aqui passa a valer.`
+                : `${animal.nome} ainda não tem tipo registrado. É você quem assina esse dado.`}
             </p>
             <div className="flex flex-wrap gap-2 mt-3">
               {tiposDaEspecie.map((t) => (
@@ -1307,10 +1322,16 @@ function ModalValidacao({ animal, validacao, onSalvar, onClose }) {
                 </button>
               ))}
             </div>
-            {tipo !== animal.tipo && (
-              <p className="text-xs text-[#8e001b] font-semibold mt-3">
-                O perfil passa a mostrar {tipo}, com sua assinatura.
+            {faltaTipo ? (
+              <p className="text-xs text-amber-700 font-semibold mt-3">
+                Escolha o tipo para poder confirmar a validação.
               </p>
+            ) : (
+              tipo !== animal.tipo && (
+                <p className="text-xs text-[#8e001b] font-semibold mt-3">
+                  O perfil passa a mostrar {tipo}, com sua assinatura.
+                </p>
+              )
             )}
           </div>
         )}
@@ -1665,7 +1686,9 @@ function SecaoDocumentos({ documentos, podeEnviar, onEnviar }) {
 // ─── Card do animal ───────────────────────────────────────────────────────────
 // O "?" fica no canto inferior direito, fora da linha do rótulo: assim o
 // texto centraliza sozinho e o botão nunca colide com rótulos longos.
-function DadoDoador({ label, valor, detalhe, alerta, destaque, ajuda }) {
+// `acao` ocupa o mesmo canto do "?" e substitui a ajuda: onde há um histórico
+// para abrir, a explicação vai junto com os dados, dentro dele.
+function DadoDoador({ label, valor, detalhe, alerta, destaque, ajuda, acao }) {
   return (
     <div
       className={`relative rounded-xl border px-3 pt-3 pb-5 flex flex-col items-center justify-center text-center gap-1 ${
@@ -1674,14 +1697,30 @@ function DadoDoador({ label, valor, detalhe, alerta, destaque, ajuda }) {
           : "bg-[#fafafa] border-[#f0e6e6]"
       }`}
     >
-      {ajuda && (
-        <Ajuda
-          titulo={ajuda.titulo}
-          claro={destaque}
-          className="absolute bottom-1.5 right-1.5"
+      {acao ? (
+        <button
+          type="button"
+          onClick={acao.onClick}
+          aria-label={acao.rotulo}
+          title={acao.rotulo}
+          className="group absolute bottom-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a] focus-visible:ring-offset-1"
         >
-          {ajuda.texto}
-        </Ajuda>
+          <span className="w-[17px] h-[17px] rounded-full bg-[#8e001b]/10 text-[#8e001b] flex items-center justify-center transition-colors group-hover:bg-[#8e001b] group-hover:text-white">
+            <span className="material-symbols-outlined text-[12px]">
+              {acao.icone}
+            </span>
+          </span>
+        </button>
+      ) : (
+        ajuda && (
+          <Ajuda
+            titulo={ajuda.titulo}
+            claro={destaque}
+            className="absolute bottom-1.5 right-1.5"
+          >
+            {ajuda.texto}
+          </Ajuda>
+        )
       )}
       <span
         className={`text-xs font-semibold ${
@@ -1772,6 +1811,8 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
   // O tipo sai do cadastro do tutor, mas quem confirma a tipagem é o
   // veterinário — e o valor do exame é o que vale daí em diante.
   const [tipo, setTipo] = useState(animal.tipo);
+  const [doacoes, setDoacoes] = useState(animal.doacoes);
+  const [modalDoacoes, setModalDoacoes] = useState(false);
   const [observacoes, setObservacoes] = useState(animal.observacoes);
   const [documentos, setDocumentos] = useState(animal.documentos);
   const [modalValidacaoAberto, setModalValidacaoAberto] = useState(false);
@@ -1782,12 +1823,15 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
   // ele mesmo quem valida e quem acompanha a coleta.
   const podeAtuarComoVet = isVet;
 
-  const animalAtual = { ...animal, tipo, validacao };
+  const animalAtual = { ...animal, tipo, validacao, doacoes };
   const ref = REFERENCIA_DOADOR[chaveEspecie(animal.especie)];
   const anos = idadeEmAnos(animal.nascimento);
   const pesoOk = animal.peso >= ref.pesoMin;
   const idadeOk = anos >= ref.idadeMin && anos <= ref.idadeMax;
-  const recuperacao = situacaoRecuperacao(animal.ultimaDoacao, ref);
+  // A recuperação conta a partir da coleta mais recente registrada: registrar
+  // uma doação nova já muda a etiqueta do animal.
+  const ultimaDoacao = dataUltimaDoacao(doacoes);
+  const recuperacao = situacaoRecuperacao(ultimaDoacao, ref);
 
   // A etiqueta fala só de disponibilidade; o que a validação muda na prática
   // está explicado no painel de validação, logo abaixo.
@@ -1912,17 +1956,35 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
 
           <div className="flex-1 min-w-0 flex flex-col gap-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* O destaque vermelho é do tipo confirmado em exame. Sem
+                  confirmação o azulejo fica igual aos outros: assim ninguém
+                  lê um palpite como se fosse resultado. */}
               <DadoDoador
-                destaque
+                destaque={!!tipo}
                 label="Tipo sanguíneo"
-                valor={tipo}
+                valor={tipo || "A confirmar"}
                 detalhe={
-                  TIPOS_UNIVERSAIS.includes(tipo) ? "Doador universal" : null
+                  !tipo
+                    ? "depende do exame de tipagem"
+                    : TIPOS_UNIVERSAIS.includes(tipo)
+                      ? "Doador universal"
+                      : null
                 }
                 ajuda={{
                   titulo: "Tipo sanguíneo",
-                  texto:
-                    chaveEspecie(animal.especie) === "cao" ? (
+                  texto: !tipo ? (
+                    <>
+                      <p>
+                        O tipo sanguíneo de {animal.nome} ainda não foi
+                        registrado. Ele vem do exame de tipagem, e quem anota no
+                        perfil é o veterinário que assina a validação.
+                      </p>
+                      <p>
+                        Até lá, o hospital faz a tipagem antes da coleta — o
+                        animal pode doar do mesmo jeito.
+                      </p>
+                    </>
+                  ) : chaveEspecie(animal.especie) === "cao" ? (
                       <>
                         <p>
                           Assim como as pessoas, cães têm tipos de sangue. O
@@ -1991,21 +2053,14 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
               />
               <DadoDoador
                 label="Doações"
-                valor={animal.totalDoacoes}
+                valor={doacoes.length}
                 detalhe={
-                  animal.ultimaDoacao
-                    ? `última em ${animal.ultimaDoacao}`
-                    : "ainda não doou"
+                  ultimaDoacao ? `última em ${ultimaDoacao}` : "ainda não doou"
                 }
-                ajuda={{
-                  titulo: "Doações realizadas",
-                  texto: (
-                    <p>
-                      Quantas vezes o animal já doou. Depois de cada doação, é
-                      preciso esperar cerca de 3 meses para que o corpo se
-                      recupere antes da próxima.
-                    </p>
-                  ),
+                acao={{
+                  icone: "history",
+                  rotulo: `Ver as doações de ${animal.nome}`,
+                  onClick: () => setModalDoacoes(true),
                 }}
               />
             </div>
@@ -2045,6 +2100,34 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
             setModalValidacaoAberto(false);
           }}
           onClose={() => setModalValidacaoAberto(false)}
+        />
+      )}
+
+      {modalDoacoes && (
+        <ModalDoacoes
+          animal={animal}
+          doacoes={doacoes}
+          podeRegistrar={podeAtuarComoVet}
+          hospitais={HOSPITAIS}
+          hospitalPadrao={HOSPITAIS[0].id}
+          assinatura={{
+            nome: nomeProfissional(usuario),
+            crmv: usuario.crmv,
+          }}
+          onRegistrar={(nova) =>
+            setDoacoes((prev) =>
+              [
+                {
+                  ...nova,
+                  id: Date.now(),
+                  veterinario: nomeProfissional(usuario),
+                  crmv: usuario.crmv,
+                },
+                ...prev,
+              ].sort((a, b) => paraData(b.data) - paraData(a.data)),
+            )
+          }
+          onClose={() => setModalDoacoes(false)}
         />
       )}
 
@@ -2141,7 +2224,7 @@ function CardPerfil({
   onVerRegistro,
 }) {
   const ehVet = perfil.role === "vet";
-  const doacoes = animais.reduce((soma, a) => soma + a.totalDoacoes, 0);
+  const doacoes = animais.reduce((soma, a) => soma + a.doacoes.length, 0);
   const f = perfil.genero === "F";
 
   const descricao = ehVet
