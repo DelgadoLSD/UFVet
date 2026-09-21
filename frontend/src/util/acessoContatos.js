@@ -5,9 +5,8 @@ import homemFoto from "../assets/people/man2_0-image.jpg";
 import vetFoto from "../assets/people/man1_0-image.jpg";
 
 // Estado do acesso aos contatos enquanto não há back-end. Fica fora dos
-// componentes para que liberações, pedidos e consultas sobrevivam à navegação
-// entre páginas — é o que permite ver o registro logo depois de abrir um
-// contato.
+// componentes para que liberações e pedidos sobrevivam à navegação entre
+// páginas — é o que permite pedir de uma tela e ver o resultado em outra.
 
 export const TUTORES_CADASTRADOS = [
   {
@@ -119,9 +118,11 @@ export const acharVeterinario = (codigo) =>
 export const pedidosPara = (codigo, { pedidos }) =>
   pedidos.filter((p) => p.para.codigo === codigo);
 
-// Cada consulta guarda os dois lados: de quem é o contato (dono) e quem
-// abriu (quemViu). Assim o mesmo registro serve para as duas leituras, sem
-// listas paralelas que podem discordar.
+// ...e apenas as liberações que ele mesmo concedeu: quem renova ou encerra é
+// quem assumiu a responsabilidade por aquele acesso.
+export const liberacoesDe = (codigo, liberacoes) =>
+  liberacoes.filter((l) => l.veterinarioCodigo === codigo);
+
 let estado = {
   liberacoes: [
     {
@@ -130,19 +131,21 @@ let estado = {
       nome: "Pedro Alves",
       caso: "Max, cirurgia amanhã",
       liberadoPor: "Dr. Victor Hugo",
+      veterinarioCodigo: "V7H4M2",
       horas: 24,
       expiraEm: daquiAHoras(6),
-      consultas: 3,
     },
     {
       id: 2,
       codigo: "T5W2K6",
       nome: "Camila Nunes",
+      // De outra veterinária de propósito: é o caso que prova que o painel
+      // mostra só o que cada um liberou.
       caso: "Amora, transfusão",
-      liberadoPor: "Dr. Victor Hugo",
+      liberadoPor: "Dra. Camila Duarte",
+      veterinarioCodigo: "V2C8D5",
       horas: 72,
       expiraEm: daquiAHoras(50),
-      consultas: 0,
     },
   ],
   pedidos: [
@@ -153,43 +156,6 @@ let estado = {
       caso: "Thor precisa de transfusão e o hospital pediu para achar um doador",
       para: { codigo: "V7H4M2", nome: "Dr. Victor Hugo" },
       quando: horasAtras(0.6),
-    },
-  ],
-  consultas: [
-    {
-      id: 1,
-      quando: horasAtras(5),
-      dono: { codigo: "T5W2K6", nome: "Camila Nunes", papel: "Tutora" },
-      quemViu: { codigo: "V7H4M2", nome: "Victor Hugo Martins", papel: "Veterinário" },
-      permissao: "veterinario",
-    },
-    {
-      id: 2,
-      quando: horasAtras(30),
-      dono: { codigo: "T7X9K2", nome: "Lucas Silva Delgado", papel: "Tutor" },
-      quemViu: { codigo: "V7H4M2", nome: "Victor Hugo Martins", papel: "Veterinário" },
-      permissao: "veterinario",
-    },
-    {
-      id: 3,
-      quando: horasAtras(20),
-      dono: { codigo: "V7H4M2", nome: "Victor Hugo Martins", papel: "Veterinário" },
-      quemViu: { codigo: "T5K2W7", nome: "Pedro Alves", papel: "Tutor" },
-      permissao: "Dr. Paulo Rezende",
-    },
-    {
-      id: 4,
-      quando: horasAtras(52),
-      dono: { codigo: "T3M8P1", nome: "Marina Souza Andrade", papel: "Tutora" },
-      quemViu: { codigo: "V2C8D5", nome: "Dra. Camila Duarte", papel: "Veterinária" },
-      permissao: "veterinario",
-    },
-    {
-      id: 5,
-      quando: horasAtras(96),
-      dono: { codigo: "T3M8P1", nome: "Marina Souza Andrade", papel: "Tutora" },
-      quemViu: { codigo: "T5K2W7", nome: "Pedro Alves", papel: "Tutor" },
-      permissao: "Dra. Camila Duarte",
     },
   ],
 };
@@ -228,14 +194,13 @@ export function acessoDe(usuario, { liberacoes, pedidos }) {
     : { pode: false, motivo: "sem-liberacao" };
 }
 
-// As duas leituras do registro, sempre derivadas da mesma lista.
-export const consultasFeitasPor = (codigo, { consultas }) =>
-  consultas.filter((c) => c.quemViu.codigo === codigo);
-
-export const consultasAoContatoDe = (codigo, { consultas }) =>
-  consultas.filter((c) => c.dono.codigo === codigo);
-
-export function liberarAcesso({ tutor, horas, caso, liberadoPor }) {
+export function liberarAcesso({
+  tutor,
+  horas,
+  caso,
+  liberadoPor,
+  veterinarioCodigo,
+}) {
   definir({
     ...estado,
     liberacoes: [
@@ -245,9 +210,9 @@ export function liberarAcesso({ tutor, horas, caso, liberadoPor }) {
         nome: tutor.nome,
         caso,
         liberadoPor,
+        veterinarioCodigo,
         horas,
         expiraEm: daquiAHoras(horas),
-        consultas: 0,
       },
       ...estado.liberacoes,
     ],
@@ -295,19 +260,4 @@ export function pedirLiberacao({ usuario, caso, veterinario }) {
 
 export function recusarPedido(id) {
   definir({ ...estado, pedidos: estado.pedidos.filter((p) => p.id !== id) });
-}
-
-// Registra a consulta e soma no contador da liberação de quem viu, para o
-// veterinário acompanhar o uso do acesso que autorizou.
-export function registrarConsulta({ dono, quemViu, permissao }) {
-  definir({
-    ...estado,
-    consultas: [
-      { id: Date.now(), quando: new Date().toISOString(), dono, quemViu, permissao },
-      ...estado.consultas,
-    ],
-    liberacoes: estado.liberacoes.map((l) =>
-      l.codigo === quemViu.codigo ? { ...l, consultas: l.consultas + 1 } : l,
-    ),
-  });
 }

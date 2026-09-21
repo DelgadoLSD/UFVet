@@ -95,8 +95,8 @@ function ModalLiberarAcesso({
       rodape={
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <p className="text-xs text-[#5f5e5e] leading-snug max-w-xs">
-            Cada contato que o tutor consultar fica registrado, com a sua
-            liberação no histórico.
+            A liberação fica no seu perfil, com o seu nome, até o prazo
+            terminar.
           </p>
           <div className="flex gap-2">
             <Botao variante="secundario" onClick={onClose}>

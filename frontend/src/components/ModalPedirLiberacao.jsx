@@ -196,9 +196,9 @@ function ModalPedirLiberacao({
           </li>
           <li className="flex items-start gap-2">
             <span className="material-symbols-outlined text-[18px] text-[#8e001b] shrink-0">
-              visibility
+              volunteer_activism
             </span>
-            Cada contato que você abrir fica registrado para o dono do contato.
+            A doação continua voluntária: o tutor do doador pode dizer não.
           </li>
         </ul>
       </div>

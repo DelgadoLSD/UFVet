@@ -8,13 +8,13 @@ function FaixaAcessoContatos({ acesso, onPedirLiberacao, onComoFunciona }) {
     veterinario: {
       icone: "verified_user",
       texto:
-        "Você vê os contatos dos tutores por ser veterinário. Cada consulta fica registrada com seu nome e CRMV.",
+        "Você vê os contatos dos tutores por ser veterinário, sem precisar de liberação.",
       destaque: false,
     },
     liberacao: {
       icone: "lock_open",
       texto:
-        "Seu acesso aos contatos está liberado. Cada contato que você abrir fica registrado.",
+        "Seu acesso aos contatos está liberado e vale até o prazo da liberação terminar.",
       destaque: false,
     },
     "pedido-enviado": {

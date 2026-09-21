@@ -67,25 +67,17 @@ function AvisoAcesso({ children, acao }) {
 }
 
 // Contato de um perfil. Só aparece inteiro para quem tem acesso: veterinários,
-// ou tutores com liberação de um veterinário. Ver o contato fica registrado.
+// ou tutores com liberação de um veterinário.
 function BlocoContato({
   perfil,
   primeiroNome,
   ehProprio,
   acesso,
-  consultasRecebidas = 0,
   meuCodigo,
-  onConsultar,
   onPedirLiberacao,
   onComoFunciona,
-  onVerRegistro,
 }) {
   const [revelado, setRevelado] = useState(false);
-
-  const ver = () => {
-    setRevelado(true);
-    onConsultar?.();
-  };
 
   const visivel = ehProprio || revelado;
 
@@ -94,7 +86,11 @@ function BlocoContato({
       <div className="flex items-baseline justify-between gap-3 mb-2">
         <p className="text-xs font-semibold text-[#8f6f6e]">Contato</p>
         {!ehProprio && acesso.pode && !revelado && (
-          <Botao variante="editar" tamanho="sm" onClick={ver}>
+          <Botao
+            variante="editar"
+            tamanho="sm"
+            onClick={() => setRevelado(true)}
+          >
             Ver contato
           </Botao>
         )}
@@ -123,24 +119,15 @@ function BlocoContato({
 
       {ehProprio ? (
         <p className="mt-2.5 text-xs text-[#5f5e5e] leading-relaxed">
-          Só quem tem acesso liberado vê seu contato.{" "}
-          <button
-            type="button"
-            onClick={onVerRegistro}
-            className="font-semibold text-[#8e001b] hover:underline underline-offset-2"
-          >
-            {consultasRecebidas === 0
-              ? "Ver registro de consultas"
-              : `Ver registro de consultas (${consultasRecebidas})`}
-          </button>
+          Só quem tem acesso liberado por um veterinário vê seu contato.
         </p>
       ) : acesso.pode ? (
         <p className="mt-2.5 text-xs text-[#5f5e5e] leading-relaxed">
           {revelado
-            ? `Consulta registrada. ${primeiroNome} pode ver quem viu o contato.`
+            ? `A doação é voluntária: combine com ${primeiroNome} antes de contar com ela.`
             : acesso.motivo === "veterinario"
-              ? "Você vê contatos por ser veterinário. A consulta fica registrada com seu nome e CRMV."
-              : "Seu acesso está liberado por um veterinário. A consulta fica registrada."}
+              ? "Você vê os contatos por ser veterinário."
+              : "Seu acesso foi liberado por um veterinário e vale até o prazo terminar."}
         </p>
       ) : acesso.motivo === "pedido-enviado" ? (
         <AvisoAcesso>

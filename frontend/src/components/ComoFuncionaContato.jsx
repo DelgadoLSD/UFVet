@@ -63,8 +63,8 @@ function ModalComoFuncionaContato({ onClose }) {
                 ninguém.
               </Item>
               <Item>
-                Cada consulta fica registrada com seu nome e CRMV, do mesmo
-                jeito que as validações que você assina.
+                O contato aparece direto no perfil do doador, com telefone e
+                e-mail prontos para copiar.
               </Item>
               <Item>
                 Você libera e encerra o acesso dos tutores em atendimento pelo
@@ -76,17 +76,12 @@ function ModalComoFuncionaContato({ onClose }) {
 
         <div className="flex flex-col gap-2">
           <h3 className="text-base font-bold text-[#1a1c1c]">
-            O que fica registrado
+            Por quanto tempo dura
           </h3>
           <p>
-            Quem viu, quando viu e com qual permissão. O tutor dono do contato
-            vê essa lista no próprio perfil, e o veterinário que liberou
-            acompanha quantos contatos foram consultados durante o atendimento.
-          </p>
-          <p>
-            Esse registro é permanente e continua mesmo se quem consultou
-            encerrar a conta. Ele pertence a quem teve o contato aberto: é como
-            essa pessoa sabe quem viu os dados dela.
+            A liberação é dada por 24 horas, 3 dias ou 7 dias, conforme o
+            atendimento. Ela vence sozinha no fim do prazo, e o veterinário
+            pode renovar ou encerrar antes disso pelo perfil dele.
           </p>
         </div>
 

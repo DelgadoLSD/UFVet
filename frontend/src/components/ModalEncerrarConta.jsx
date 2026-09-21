@@ -113,16 +113,13 @@ function ModalEncerrarConta({ usuario, onClose, onEncerrar }) {
                 </span>
               </li>
             ))}
-            {/* A exceção à regra, e a que mais surpreende: o log de acesso
-                não é da pessoa que sai, é de quem teve o contato aberto. */}
             <li className="flex items-start gap-3">
               <span className="material-symbols-outlined text-[20px] text-[#8e001b] shrink-0">
-                visibility
+                delete_forever
               </span>
               <span className="text-sm text-[#5b403f] leading-relaxed">
-                Os contatos que você consultou continuam registrados, com o seu
-                nome. Esse registro pertence a quem foi consultado — é como essa
-                pessoa sabe quem viu os dados dela.
+                Seus dados pessoais saem do UFVet e não há como recuperar
+                depois.
               </span>
             </li>
           </ul>

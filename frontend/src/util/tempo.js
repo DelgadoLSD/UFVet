@@ -1,5 +1,5 @@
-// Formatações de tempo usadas pelo acesso aos contatos: liberações têm prazo
-// e consultas ficam registradas com data e hora.
+// Formatações de tempo usadas pelo acesso aos contatos: liberações têm prazo,
+// e os pedidos mostram há quanto tempo chegaram.
 const HORA = 3600 * 1000;
 const DIA = 24 * HORA;
 

@@ -11,7 +11,6 @@ import BlocoContato from "../components/BlocoContato";
 import BotaoAjuda from "../components/BotaoAjuda";
 import PainelAcessoContatos from "../components/PainelAcessoContatos";
 import ModalLiberarAcesso from "../components/ModalLiberarAcesso";
-import ModalRegistroConsultas from "../components/ModalRegistroConsultas";
 import ModalPedirLiberacao from "../components/ModalPedirLiberacao";
 import ModalExcluirAnimal from "../components/ModalExcluirAnimal";
 import ModalDoacoes from "../components/ModalDoacoes";
@@ -22,13 +21,11 @@ import {
   pedidosPara,
   useAcessoContatos,
   liberacoesAtivas,
+  liberacoesDe,
   acessoDe,
-  consultasFeitasPor,
-  consultasAoContatoDe,
   liberarAcesso,
   renovarAcesso,
   encerrarAcesso,
-  registrarConsulta,
   pedirLiberacao,
   recusarPedido,
 } from "../util/acessoContatos";
@@ -2216,12 +2213,9 @@ function CardPerfil({
   animais,
   ehProprio,
   acesso,
-  consultasRecebidas,
   meuCodigo,
-  onConsultarContato,
   onPedirLiberacao,
   onComoFuncionaContato,
-  onVerRegistro,
 }) {
   const ehVet = perfil.role === "vet";
   const doacoes = animais.reduce((soma, a) => soma + a.doacoes.length, 0);
@@ -2308,12 +2302,9 @@ function CardPerfil({
               primeiroNome={primeiroNome(perfil.nome)}
               ehProprio={ehProprio}
               acesso={acesso}
-              consultasRecebidas={consultasRecebidas}
               meuCodigo={meuCodigo}
-              onConsultar={onConsultarContato}
               onPedirLiberacao={onPedirLiberacao}
               onComoFunciona={onComoFuncionaContato}
-              onVerRegistro={onVerRegistro}
             />
 
             <GrupoInfo titulo="Localização">
@@ -2371,13 +2362,10 @@ function DashboardPage() {
   const acessoContatos = useAcessoContatos();
   const { liberacoes } = acessoContatos;
   const meusPedidos = pedidosPara(usuario.codigo, acessoContatos);
-  const consultasFeitas = consultasFeitasPor(usuario.codigo, acessoContatos);
-  const consultasRecebidas = consultasAoContatoDe(usuario.codigo, acessoContatos);
   const [modalAberto, setModalAberto] = useState(false);
   const [modalLiberar, setModalLiberar] = useState(false);
   const [codigoParaLiberar, setCodigoParaLiberar] = useState("");
   const [modalPedido, setModalPedido] = useState(false);
-  const [registroAberto, setRegistroAberto] = useState(null);
   const [comoFuncionaContato, setComoFuncionaContato] = useState(false);
 
   const isProprioTutor = !id;
@@ -2392,24 +2380,11 @@ function DashboardPage() {
       : ANIMAIS_OUTRO_TUTOR;
 
   const ativas = liberacoesAtivas(liberacoes);
+  // O painel lista só o que este veterinário liberou; a checagem de duplicata
+  // no modal continua olhando todas, porque o tutor já com acesso de um colega
+  // não precisa de uma segunda liberação.
+  const minhasLiberacoes = liberacoesDe(usuario.codigo, ativas);
   const acesso = acessoDe(usuario, acessoContatos);
-
-  const consultarContato = () =>
-    registrarConsulta({
-      dono: {
-        codigo: perfil.codigo,
-        nome: perfil.nomeCompleto || perfil.nome,
-        papel: perfil.papel,
-      },
-      quemViu: {
-        codigo: usuario.codigo,
-        nome: usuario.nomeCompleto,
-        papel: usuario.papel,
-      },
-      permissao: isVet
-        ? "veterinario"
-        : acesso.liberacao?.liberadoPor || "um veterinário",
-    });
 
   return (
     <>
@@ -2421,7 +2396,11 @@ function DashboardPage() {
           liberacoes={ativas}
           codigoInicial={codigoParaLiberar}
           onConfirmar={(dados) => {
-            liberarAcesso({ ...dados, liberadoPor: nomeProfissional(usuario) });
+            liberarAcesso({
+              ...dados,
+              liberadoPor: nomeProfissional(usuario),
+              veterinarioCodigo: usuario.codigo,
+            });
             setModalLiberar(false);
           }}
           onClose={() => setModalLiberar(false)}
@@ -2439,14 +2418,6 @@ function DashboardPage() {
           onClose={() => setModalPedido(false)}
         />
       )}
-      {registroAberto && (
-        <ModalRegistroConsultas
-          feitas={consultasFeitas}
-          recebidas={consultasRecebidas}
-          abaInicial={registroAberto}
-          onClose={() => setRegistroAberto(null)}
-        />
-      )}
       {comoFuncionaContato && (
         <ModalComoFuncionaContato
           onClose={() => setComoFuncionaContato(false)}
@@ -2460,19 +2431,16 @@ function DashboardPage() {
             animais={animaisPerfil}
             ehProprio={isProprioTutor}
             acesso={acesso}
-            consultasRecebidas={consultasRecebidas.length}
             meuCodigo={usuario.codigo}
-            onConsultarContato={consultarContato}
             onPedirLiberacao={() => setModalPedido(true)}
             onComoFuncionaContato={() => setComoFuncionaContato(true)}
-            onVerRegistro={() => setRegistroAberto("recebidas")}
           />
         </section>
 
         {isProprioTutor && isVet && (
           <section className="mb-10">
             <PainelAcessoContatos
-              liberacoes={ativas}
+              liberacoes={minhasLiberacoes}
               pedidos={meusPedidos}
               onLiberar={() => {
                 setCodigoParaLiberar("");
@@ -2484,6 +2452,7 @@ function DashboardPage() {
                   horas: 72,
                   caso: pedido.caso,
                   liberadoPor: nomeProfissional(usuario),
+                  veterinarioCodigo: usuario.codigo,
                 })
               }
               onRecusarPedido={recusarPedido}

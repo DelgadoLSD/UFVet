@@ -84,13 +84,6 @@ enum StatusPedido {
   @@map("status_pedido")
 }
 
-enum BaseAcesso {
-  VETERINARIO
-  LIBERACAO
-
-  @@map("base_acesso_contato")
-}
-
 enum TipoAceite {
   TERMOS_DE_USO
   CIENCIA_RESPONSABILIDADE
@@ -152,8 +145,6 @@ model Usuario {
   pedidosRecebidos     PedidoLiberacao[]  @relation("PedidosParaVeterinario")
   liberacoesRecebidas  LiberacaoContato[] @relation("LiberacoesDoTutor")
   liberacoesConcedidas LiberacaoContato[] @relation("LiberacoesDoVeterinario")
-  contatosVistos       ConsultaContato[]  @relation("ConsultasFeitas")
-  consultasAoContato   ConsultaContato[]  @relation("ConsultasRecebidas")
 
   @@index([cidade, bairro])
   @@map("usuario")
@@ -413,42 +404,11 @@ model LiberacaoContato {
   encerradaEm   DateTime? @map("encerrada_em") @db.Timestamptz(3)
   criadoEm      DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
 
-  tutor       Usuario           @relation("LiberacoesDoTutor", fields: [tutorId], references: [id], onDelete: Cascade)
-  veterinario Usuario           @relation("LiberacoesDoVeterinario", fields: [veterinarioId], references: [id], onDelete: Cascade)
-  pedido      PedidoLiberacao?  @relation(fields: [pedidoId], references: [id], onDelete: SetNull)
-  consultas   ConsultaContato[]
+  tutor       Usuario          @relation("LiberacoesDoTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+  veterinario Usuario          @relation("LiberacoesDoVeterinario", fields: [veterinarioId], references: [id], onDelete: Cascade)
+  pedido      PedidoLiberacao? @relation(fields: [pedidoId], references: [id], onDelete: SetNull)
 
   @@index([tutorId, expiraEm])
   @@index([veterinarioId])
   @@map("liberacao_contato")
-}
-
-/// A única tabela que sobrevive ao encerramento de conta.
-///
-/// O registro não pertence a quem consultou, e sim a quem teve o contato
-/// aberto: é como essa pessoa sabe quem viu os dados dela. Apagá-lo para
-/// atender quem sai cegaria quem ficou. Por isso as chaves são anuladas mas
-/// os nomes permanecem — e o site avisa isso antes da consulta, não depois.
-model ConsultaContato {
-  id                 String     @id @default(uuid()) @db.Uuid
-  donoId             String?    @map("dono_id") @db.Uuid
-  donoNome           String     @map("dono_nome") @db.VarChar(120)
-  donoCodigo         String     @map("dono_codigo") @db.Char(6)
-  visualizadorId     String?    @map("visualizador_id") @db.Uuid
-  visualizadorNome   String     @map("visualizador_nome") @db.VarChar(120)
-  visualizadorCodigo String     @map("visualizador_codigo") @db.Char(6)
-  baseAcesso         BaseAcesso @map("base_acesso")
-  liberacaoId        String?    @map("liberacao_id") @db.Uuid
-  /// Veterinário que liberou, quando a base de acesso foi LIBERACAO.
-  autorizadoPorNome  String?    @map("autorizado_por_nome") @db.VarChar(120)
-  consultadoEm       DateTime   @default(now()) @map("consultado_em") @db.Timestamptz(3)
-
-  dono         Usuario?          @relation("ConsultasRecebidas", fields: [donoId], references: [id], onDelete: SetNull)
-  visualizador Usuario?          @relation("ConsultasFeitas", fields: [visualizadorId], references: [id], onDelete: SetNull)
-  liberacao    LiberacaoContato? @relation(fields: [liberacaoId], references: [id], onDelete: SetNull)
-
-  @@index([donoId])
-  @@index([visualizadorId])
-  @@index([consultadoEm])
-  @@map("consulta_contato")
 }

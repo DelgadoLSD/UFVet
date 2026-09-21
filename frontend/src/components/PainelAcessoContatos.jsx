@@ -66,14 +66,7 @@ function Liberacao({ liberacao, onRenovar, onEncerrar }) {
           <Codigo valor={liberacao.codigo} />
         </div>
         <p className="text-sm text-[#5f5e5e] mt-0.5 leading-snug">
-          {liberacao.caso || "Sem caso informado"}.{" "}
-          {liberacao.consultas === 0
-            ? "Nenhum contato consultado."
-            : `${liberacao.consultas} ${
-                liberacao.consultas === 1
-                  ? "contato consultado"
-                  : "contatos consultados"
-              }.`}
+          {liberacao.caso || "Sem caso informado"}.
         </p>
       </div>
 
@@ -127,7 +120,8 @@ function PainelAcessoContatos({
           </div>
           <p className="text-sm text-white/60 mt-1 leading-relaxed max-w-xl">
             Tutores em atendimento com você podem ver o contato dos doadores
-            enquanto a liberação estiver ativa.
+            enquanto a liberação estiver ativa. Aqui aparecem só as que você
+            liberou.
           </p>
         </div>
         <Botao icone="add" onClick={onLiberar} className="shrink-0 self-start">
@@ -158,7 +152,7 @@ function PainelAcessoContatos({
       {liberacoes.length === 0 ? (
         <div className="rounded-xl border border-dashed border-white/20 px-6 py-10 text-center">
           <p className="font-semibold text-white">
-            Ninguém com acesso liberado agora.
+            Você não liberou ninguém agora.
           </p>
           <p className="text-sm text-white/60 mt-1 max-w-md mx-auto leading-relaxed">
             Libere quando um tutor precisar falar com doadores durante um
