@@ -14,6 +14,7 @@ import ModalLiberarAcesso from "../components/ModalLiberarAcesso";
 import ModalPedirLiberacao from "../components/ModalPedirLiberacao";
 import ModalExcluirAnimal from "../components/ModalExcluirAnimal";
 import ModalDoacoes from "../components/ModalDoacoes";
+import ModalHistoricoValidacao from "../components/ModalHistoricoValidacao";
 import {
   TUTORES_CADASTRADOS,
   VETERINARIOS,
@@ -81,27 +82,32 @@ const REFERENCIA_DOADOR = {
 const CRITERIOS_DOACAO = [
   {
     key: "tipagem",
+    curto: "Tipagem",
     label: "Tipagem sanguínea confirmada",
     descricao: () => "O exame de tipagem foi feito e o tipo está registrado.",
   },
   {
     key: "pesoIdade",
+    curto: "Peso e idade",
     label: "Peso e idade dentro dos critérios",
     descricao: (ref) =>
       `Mínimo de ${ref.pesoMin} kg e idade entre ${ref.idadeMin} e ${ref.idadeMax} anos.`,
   },
   {
     key: "vacinacao",
+    curto: "Vacinação",
     label: "Vacinação e vermifugação em dia",
     descricao: () => "Vacinas e vermífugo dentro da validade.",
   },
   {
     key: "sorologias",
+    curto: "Sorologias",
     label: "Sorologias negativas",
     descricao: (ref) => `Negativo para ${ref.sorologias}.`,
   },
   {
     key: "semTransfusao",
+    curto: "Sem transfusão",
     label: "Nunca recebeu transfusão",
     descricao: () => "Animais já transfundidos não são aceitos como doadores.",
   },
@@ -233,13 +239,24 @@ const ANIMAIS_MOCK = [
         "Primeira doação. Agitado no início, depois se acalmou."),
     ],
     disponivel: true,
-    validacao: {
-      criterios: todosCriterios(true),
-      por: "Dr. Paulo Rezende",
-      crmv: "88214-MG",
-      em: "10/08/2025",
-      nota: "",
-    },
+    // Duas validações: a mais recente já venceu (mais de um ano), e antes
+    // dela existe uma mais antiga — foi substituída quando esta foi feita.
+    validacoes: [
+      {
+        criterios: todosCriterios(true),
+        por: "Dr. Paulo Rezende",
+        crmv: "88214-MG",
+        em: "10/08/2025",
+        nota: "",
+      },
+      {
+        criterios: { ...todosCriterios(true), vacinacao: false },
+        por: "Dra. Camila Duarte",
+        crmv: "45210-MG",
+        em: "15/07/2024",
+        nota: "Vacina antirrábica vencida. Renovar antes da próxima coleta.",
+      },
+    ],
     observacoes: [
       {
         data: "05/09/2026",
@@ -297,7 +314,7 @@ const ANIMAIS_MOCK = [
     tipo: null,
     doacoes: [],
     disponivel: false,
-    validacao: null,
+    validacoes: [],
     observacoes: [],
     documentos: [
       { nome: "Hemograma completo", versoes: [] },
@@ -330,13 +347,15 @@ const ANIMAIS_OUTRO_TUTOR = [
       doacao("05/01/2026", 400, HV_UFV, "Dra. Camila Duarte", "45210-MG"),
     ],
     disponivel: true,
-    validacao: {
-      criterios: todosCriterios(true),
-      por: "Dra. Camila Duarte",
-      crmv: "45210-MG",
-      em: "18/06/2026",
-      nota: "",
-    },
+    validacoes: [
+      {
+        criterios: todosCriterios(true),
+        por: "Dra. Camila Duarte",
+        crmv: "45210-MG",
+        em: "18/06/2026",
+        nota: "",
+      },
+    ],
     observacoes: [
       {
         data: "12/06/2026",
@@ -374,13 +393,15 @@ const ANIMAIS_MOCK_VET = [
       doacao("14/08/2025", 430, HV_UFV, "Dr. Victor Hugo", "78120-MG"),
     ],
     disponivel: true,
-    validacao: {
-      criterios: todosCriterios(true),
-      por: "Dra. Camila Duarte",
-      crmv: "45210-MG",
-      em: "20/08/2026",
-      nota: "",
-    },
+    validacoes: [
+      {
+        criterios: todosCriterios(true),
+        por: "Dra. Camila Duarte",
+        crmv: "45210-MG",
+        em: "20/08/2026",
+        nota: "",
+      },
+    ],
     observacoes: [
       {
         data: "10/06/2026",
@@ -419,19 +440,21 @@ const ANIMAIS_MOCK_VET = [
     tipo: "Tipo B",
     doacoes: [],
     disponivel: false,
-    validacao: {
-      criterios: {
-        tipagem: true,
-        pesoIdade: false,
-        vacinacao: true,
-        sorologias: false,
-        semTransfusao: true,
+    validacoes: [
+      {
+        criterios: {
+          tipagem: true,
+          pesoIdade: false,
+          vacinacao: true,
+          sorologias: false,
+          semTransfusao: true,
+        },
+        por: "Dra. Camila Duarte",
+        crmv: "45210-MG",
+        em: "05/09/2026",
+        nota: "Peso abaixo do mínimo para gatas doadoras e sorologia de FeLV/FIV ainda não apresentada.",
       },
-      por: "Dra. Camila Duarte",
-      crmv: "45210-MG",
-      em: "05/09/2026",
-      nota: "Peso abaixo do mínimo para gatas doadoras e sorologia de FeLV/FIV ainda não apresentada.",
-    },
+    ],
     observacoes: [
       {
         data: "05/09/2026",
@@ -1037,9 +1060,11 @@ const ACAO_VALIDACAO = {
 function PainelValidacao({
   nomeAnimal,
   validacao,
+  totalValidacoes,
   podeValidar,
   ehDono,
   onValidar,
+  onVerHistorico,
 }) {
   const [explicacaoAberta, setExplicacaoAberta] = useState(false);
   const status = statusValidacao(validacao);
@@ -1150,6 +1175,18 @@ function PainelValidacao({
             {nomeAnimal} — e deixa a doação mais rápida quando alguém precisar.
           </span>
         </p>
+      )}
+
+      {validacao && (
+        <button
+          type="button"
+          onClick={onVerHistorico}
+          className="self-start text-xs font-semibold text-[#8e001b] hover:underline underline-offset-2"
+        >
+          {totalValidacoes > 1
+            ? `Ver histórico de validações (${totalValidacoes})`
+            : "Ver histórico de validações"}
+        </button>
       )}
 
       {explicacaoAberta && (
@@ -1804,7 +1841,14 @@ function AjudaDisponibilidade({ animal, ehDono, disponivel, recuperacao }) {
 function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
   const usuario = useSessao();
   const [disponivel, setDisponivel] = useState(animal.disponivel);
-  const [validacao, setValidacao] = useState(animal.validacao);
+  // O histórico é a fonte de verdade; "validacao" é sempre a mais recente
+  // dele. Uma validação assinada nunca é editada — revisar cria uma entrada
+  // nova, prependada aqui, e a anterior continua no histórico, substituída.
+  const [historicoValidacoes, setHistoricoValidacoes] = useState(
+    () => animal.validacoes ?? [],
+  );
+  const validacao = historicoValidacoes[0] ?? null;
+  const [modalHistoricoValidacao, setModalHistoricoValidacao] = useState(false);
   // O tipo sai do cadastro do tutor, mas quem confirma a tipagem é o
   // veterinário — e o valor do exame é o que vale daí em diante.
   const [tipo, setTipo] = useState(animal.tipo);
@@ -2065,9 +2109,11 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
             <PainelValidacao
               nomeAnimal={animal.nome}
               validacao={validacao}
+              totalValidacoes={historicoValidacoes.length}
               podeValidar={podeAtuarComoVet}
               ehDono={isProprioTutor}
               onValidar={() => setModalValidacaoAberto(true)}
+              onVerHistorico={() => setModalHistoricoValidacao(true)}
             />
           </div>
         </div>
@@ -2092,11 +2138,23 @@ function AnimalCard({ animal, isProprioTutor, isVet, nomeTutor }) {
           animal={animalAtual}
           validacao={validacao}
           onSalvar={({ tipo: tipoConfirmado, ...nova }) => {
-            setValidacao(nova);
+            setHistoricoValidacoes((prev) => [nova, ...prev]);
             setTipo(tipoConfirmado);
             setModalValidacaoAberto(false);
           }}
           onClose={() => setModalValidacaoAberto(false)}
+        />
+      )}
+
+      {modalHistoricoValidacao && (
+        <ModalHistoricoValidacao
+          animal={animal}
+          criterios={CRITERIOS_DOACAO}
+          itens={historicoValidacoes.map((v, i) => ({
+            validacao: v,
+            status: i === 0 ? statusValidacao(v) : "substituida",
+          }))}
+          onClose={() => setModalHistoricoValidacao(false)}
         />
       )}
 
