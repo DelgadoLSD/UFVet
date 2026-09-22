@@ -193,9 +193,14 @@ model Animal {
   sexo     Sexo
   castrado Boolean
 
-  /// Uma das duas colunas de idade é preenchida, nunca as duas.
-  dataNascimento    DateTime? @map("data_nascimento") @db.Date
-  idadeEstimadaAnos Int?      @map("idade_estimada_anos") @db.SmallInt
+  /// A idade nunca é armazenada como número: é derivada desta data a cada
+  /// exibição. Quando o tutor não sabe a data, informa uma idade aproximada e o
+  /// sistema grava a data equivalente — assim a estimativa envelhece junto com
+  /// o animal, em vez de congelar no ano do cadastro.
+  dataNascimento       DateTime @map("data_nascimento") @db.Date
+  /// Verdadeiro quando a data acima veio de estimativa do tutor. Afeta apenas a
+  /// exibição da idade ("~5 anos"); a data em si nunca é apresentada.
+  nascimentoAproximado Boolean  @default(false) @map("nascimento_aproximado")
 
   pesoKg Decimal @map("peso_kg") @db.Decimal(5, 2)
 
