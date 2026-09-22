@@ -1,0 +1,21 @@
+' Caso de uso "Cadastrar animal doador", para os slides da apresentação.
+' Mostra o ator, o processo e os requisitos rastreados.
+
+@startuml 03-uc-cadastrar-animal
+left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+actor "Tutor" as T
+rectangle "UFVet" {
+  usecase "Cadastrar animal doador" as UC1
+}
+T --> UC1
+note right of UC1
+  **F8** cadastrar · **F6** gerar código
+  **F12** derivar idade
+  **NF8.1** sem campo de tipo sanguíneo
+end note
+@enduml

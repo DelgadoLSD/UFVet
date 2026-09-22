@@ -1,0 +1,100 @@
+' Modelo conceitual preliminar
+' Sem métodos, sem multiplicidade, sem todos os atributos — conforme
+' a versão da Concepção.
+
+@startuml 09-modelo-conceitual-preliminar
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #8E001B
+  ArrowColor #1A1C1C
+}
+hide methods
+
+class Usuario {
+  codigo
+  nome
+  cpf
+  email
+  telefone
+  cidade
+  bairro
+}
+
+class Veterinario {
+  crmv
+}
+
+class Estabelecimento {
+  nome
+  cidade
+}
+
+class Animal {
+  codigo
+  nome
+  especie
+  peso
+  tipoSanguineo
+  disponivel
+}
+
+class Exame {
+  tipo
+}
+
+class VersaoExame {
+  arquivo
+  enviadoEm
+}
+
+class Validacao {
+  realizadaEm
+  validaAte
+  assinatura
+}
+
+class Criterio {
+  nome
+  atendido
+}
+
+class Observacao {
+  texto
+}
+
+class Doacao {
+  data
+  volume
+}
+
+class Pedido {
+  caso
+  status
+}
+
+class Liberacao {
+  duracao
+  expiraEm
+}
+
+Veterinario --|> Usuario
+
+Usuario -- Animal : é tutor de
+Veterinario -- Estabelecimento : atua em
+Animal -- Exame : possui
+Exame -- VersaoExame : teve
+Animal -- Validacao : recebeu
+Validacao -- Criterio : avaliou
+Veterinario -- Validacao : assinou
+Animal -- Observacao : recebeu
+Animal -- Doacao : realizou
+Doacao -- Estabelecimento : ocorreu em
+Veterinario -- Doacao : registrou
+Usuario -- Pedido : solicitou
+Veterinario -- Pedido : recebeu
+Veterinario -- Liberacao : concedeu
+Usuario -- Liberacao : recebeu
+Pedido -- Liberacao : originou
+@enduml

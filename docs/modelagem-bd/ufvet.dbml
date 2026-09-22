@@ -1,0 +1,323 @@
+// UFVet — modelo de dados
+// Cole este arquivo em https://dbdiagram.io para gerar o diagrama.
+// Atualizado em 20/09/2026.
+
+Project ufvet {
+  database_type: 'PostgreSQL'
+  Note: '''
+    Portal de conexão entre tutores de animais doadores de sangue e quem
+    precisa de um doador durante a emergência. TCC — Ciência da Computação,
+    UFV.
+  '''
+}
+
+// ─────────────────────────── Enumerações ───────────────────────────
+
+Enum papel_usuario {
+  TUTOR
+  VETERINARIO
+}
+
+Enum tratamento_profissional {
+  DR
+  DRA
+}
+
+Enum especie_animal {
+  CAO
+  GATO
+}
+
+Enum sexo_animal {
+  MACHO
+  FEMEA
+}
+
+Enum tipo_documento {
+  HEMOGRAMA
+  SOROLOGIA
+  VACINACAO
+}
+
+Enum criterio_doacao {
+  TIPAGEM
+  PESO_IDADE
+  VACINACAO
+  SOROLOGIAS
+  SEM_TRANSFUSAO
+}
+
+Enum motivo_invalidacao {
+  EDICAO_PESO
+  EDICAO_NASCIMENTO
+  NOVA_VALIDACAO
+}
+
+Enum status_pedido {
+  PENDENTE
+  ATENDIDO
+  RECUSADO
+}
+
+Enum tipo_aceite {
+  TERMOS_DE_USO
+  CIENCIA_RESPONSABILIDADE
+}
+
+// ─────────────────────────── Pessoas e locais ───────────────────────────
+
+Table estabelecimento {
+  id uuid [pk]
+  nome varchar(120) [not null]
+  cidade varchar(80) [not null]
+  uf char(2) [not null]
+  endereco varchar(160)
+  telefone varchar(20)
+  criado_em timestamptz [not null]
+
+  Note: 'Hospital veterinário ou clínica. Uma clínica particular de um veterinário entra aqui como mais um registro, sem caso especial.'
+}
+
+Table usuario {
+  id uuid [pk]
+  codigo char(6) [unique, not null, note: 'Código público (#T3M8P1). É por ele que o veterinário libera o acesso e o tutor direciona o pedido.']
+  papel papel_usuario [not null]
+  nome_completo varchar(120) [not null]
+  cpf char(11) [unique, not null]
+  email varchar(160) [unique, not null]
+  senha_hash varchar(72) [not null, note: 'bcrypt']
+  telefone varchar(20) [not null]
+  cep char(8) [not null]
+  cidade varchar(80) [not null]
+  bairro varchar(80) [not null]
+  foto_url varchar(255)
+  criado_em timestamptz [not null]
+  atualizado_em timestamptz [not null]
+
+  Note: 'Não guarda latitude e longitude: a busca localiza por cidade e bairro, e o endereço exato de casa não é necessário para o serviço.'
+
+  Indexes {
+    (cidade, bairro)
+  }
+}
+
+Table veterinario {
+  usuario_id uuid [pk, note: 'Extensão 1:1 de usuario quando papel = VETERINARIO']
+  crmv varchar(12) [not null]
+  uf_crmv char(2) [not null]
+  tratamento tratamento_profissional [not null, note: 'Só existe porque a interface escreve "Dr." ou "Dra." nas assinaturas. Não se guarda gênero para nada além disso.']
+  estabelecimento_id uuid [not null]
+
+  Indexes {
+    (crmv, uf_crmv) [unique]
+  }
+}
+
+Table aceite {
+  id uuid [pk]
+  usuario_id uuid [not null]
+  tipo tipo_aceite [not null]
+  versao varchar(20) [not null]
+  aceito_em timestamptz [not null]
+
+  Note: 'Prova de que o usuário aceitou os termos e a ciência sobre custos de insumos, com a versão vigente na data.'
+}
+
+// ─────────────────────────── Animal ───────────────────────────
+
+Table animal {
+  id uuid [pk]
+  codigo char(6) [unique, not null]
+  tutor_id uuid [not null]
+  nome varchar(60) [not null]
+  especie especie_animal [not null]
+  raca varchar(60) [note: 'Nulo quando é SRD ou o tutor não sabe.']
+  sexo sexo_animal [not null]
+  castrado boolean [not null]
+  data_nascimento date [not null, note: 'A idade é sempre derivada desta data, nunca armazenada como número. Quando o tutor só sabe estimar, o sistema grava a data equivalente à estimativa.']
+  nascimento_aproximado boolean [not null, default: false, note: 'Verdadeiro quando a data veio de estimativa do tutor. Afeta apenas a exibição da idade.']
+  peso_kg decimal(5,2) [not null]
+  tipo_sanguineo varchar(20) [note: 'Nulo até um veterinário assinar a tipagem. O tutor nunca preenche este campo.']
+  tipagem_validacao_id uuid [note: 'Validação que confirmou o tipo — procedência do dado acima.']
+  disponivel boolean [not null, default: true]
+  criado_em timestamptz [not null]
+  atualizado_em timestamptz [not null]
+
+  Indexes {
+    tutor_id
+    (especie, disponivel)
+    tipo_sanguineo
+  }
+}
+
+Table animal_foto {
+  id uuid [pk]
+  animal_id uuid [not null]
+  url varchar(255) [not null]
+  ordem smallint [not null, note: 'Zero é a foto principal. Até cinco por animal.']
+  criado_em timestamptz [not null]
+
+  Indexes {
+    (animal_id, ordem) [unique]
+  }
+}
+
+// ─────────────────────────── Exames ───────────────────────────
+
+Table documento {
+  id uuid [pk]
+  animal_id uuid [not null]
+  tipo tipo_documento [not null]
+  criado_em timestamptz [not null]
+
+  Note: 'Um por tipo e por animal. Guarda apenas a identidade do documento; os arquivos ficam nas versões.'
+
+  Indexes {
+    (animal_id, tipo) [unique]
+  }
+}
+
+Table documento_versao {
+  id uuid [pk]
+  documento_id uuid [not null]
+  arquivo_url varchar(255) [not null]
+  enviado_por_id uuid
+  enviado_por_nome varchar(120) [not null]
+  enviado_em timestamptz [not null]
+
+  Note: 'Exame refeito não substitui o anterior: entra como versão nova e o histórico permanece.'
+}
+
+// ─────────────────────────── Validação clínica ───────────────────────────
+
+Table validacao {
+  id uuid [pk]
+  animal_id uuid [not null]
+  veterinario_id uuid
+  veterinario_nome varchar(120) [not null, note: 'Cópia feita na assinatura. A assinatura precisa continuar legível mesmo que o cadastro do veterinário mude ou deixe de existir.']
+  crmv varchar(12) [not null]
+  uf_crmv char(2) [not null]
+  realizada_em date [not null]
+  valida_ate date [not null, note: 'realizada_em + 1 ano']
+  tipo_sanguineo_confirmado varchar(20) [note: 'Preenchido quando o critério TIPAGEM foi atendido.']
+  nota text
+  invalidada_em timestamptz [note: 'Nulo enquanto vale.']
+  invalidada_motivo motivo_invalidacao
+  criado_em timestamptz [not null]
+
+  Note: 'Registro assinado: nunca é editado. Perde efeito por vencimento, por invalidação ou por ser substituído por uma validação mais recente.'
+
+  Indexes {
+    (animal_id, realizada_em)
+  }
+}
+
+Table validacao_criterio {
+  validacao_id uuid [not null]
+  criterio criterio_doacao [not null]
+  atendido boolean [not null]
+
+  Indexes {
+    (validacao_id, criterio) [pk]
+  }
+}
+
+Table observacao {
+  id uuid [pk]
+  animal_id uuid [not null]
+  autor_id uuid
+  autor_nome varchar(120) [not null]
+  texto text [not null]
+  criado_em timestamptz [not null]
+
+  Note: 'Anotações de veterinários sobre o comportamento do animal na coleta, para a próxima equipe.'
+}
+
+// ─────────────────────────── Doação ───────────────────────────
+
+Table doacao {
+  id uuid [pk]
+  animal_id uuid [not null]
+  estabelecimento_id uuid [not null]
+  veterinario_id uuid
+  veterinario_nome varchar(120) [not null]
+  crmv varchar(12) [not null]
+  uf_crmv char(2) [not null]
+  data_coleta date [not null]
+  volume_ml smallint [not null]
+  nota text
+  criado_em timestamptz [not null]
+
+  Note: 'Uma coleta que aconteceu. O total de doações do animal e a data da última saem da contagem destas linhas, não de contadores guardados. O intervalo de recuperação conta a partir da data_coleta mais recente.'
+
+  Indexes {
+    (animal_id, data_coleta)
+  }
+}
+
+// ─────────────────────────── Acesso aos contatos ───────────────────────────
+
+Table pedido_liberacao {
+  id uuid [pk]
+  tutor_id uuid [not null]
+  veterinario_id uuid [not null, note: 'O pedido é endereçado a um veterinário, não a todos.']
+  caso text [not null]
+  status status_pedido [not null, default: 'PENDENTE']
+  criado_em timestamptz [not null]
+  respondido_em timestamptz
+
+  Indexes {
+    (veterinario_id, status)
+    tutor_id
+  }
+}
+
+Table liberacao_contato {
+  id uuid [pk]
+  tutor_id uuid [not null]
+  veterinario_id uuid [not null]
+  pedido_id uuid
+  caso varchar(160)
+  concedida_em timestamptz [not null]
+  duracao_horas smallint [not null]
+  expira_em timestamptz [not null, note: 'Vence sozinha. Ninguém precisa lembrar de encerrar.']
+  encerrada_em timestamptz [note: 'Preenchido quando o veterinário encerra antes do prazo.']
+  criado_em timestamptz [not null]
+
+  Indexes {
+    (tutor_id, expira_em)
+    veterinario_id
+  }
+}
+
+// ─────────────────────────── Relacionamentos ───────────────────────────
+
+Ref: veterinario.usuario_id - usuario.id [delete: cascade]
+Ref: veterinario.estabelecimento_id > estabelecimento.id [delete: restrict]
+Ref: aceite.usuario_id > usuario.id [delete: cascade]
+
+Ref: animal.tutor_id > usuario.id [delete: cascade]
+Ref: animal.tipagem_validacao_id - validacao.id [delete: set null]
+Ref: animal_foto.animal_id > animal.id [delete: cascade]
+
+Ref: documento.animal_id > animal.id [delete: cascade]
+Ref: documento_versao.documento_id > documento.id [delete: cascade]
+Ref: documento_versao.enviado_por_id > usuario.id [delete: set null]
+
+Ref: validacao.animal_id > animal.id [delete: cascade]
+Ref: validacao.veterinario_id > usuario.id [delete: set null]
+Ref: validacao_criterio.validacao_id > validacao.id [delete: cascade]
+
+Ref: observacao.animal_id > animal.id [delete: cascade]
+Ref: observacao.autor_id > usuario.id [delete: set null]
+
+Ref: doacao.animal_id > animal.id [delete: cascade]
+Ref: doacao.estabelecimento_id > estabelecimento.id [delete: restrict]
+Ref: doacao.veterinario_id > usuario.id [delete: set null]
+
+Ref: pedido_liberacao.tutor_id > usuario.id [delete: cascade]
+Ref: pedido_liberacao.veterinario_id > usuario.id [delete: cascade]
+
+Ref: liberacao_contato.tutor_id > usuario.id [delete: cascade]
+Ref: liberacao_contato.veterinario_id > usuario.id [delete: cascade]
+Ref: liberacao_contato.pedido_id - pedido_liberacao.id [delete: set null]

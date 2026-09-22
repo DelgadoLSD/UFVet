@@ -1,0 +1,58 @@
+' Diagrama completo, com estereótipos de complexidade
+' Processos de negócio, CRUDs e consultas.
+
+@startuml 02-casos-de-uso-completo
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor<<CRUD>> #F4EFEF
+  BackgroundColor<<rep>> #EFF5F1
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+
+actor "Visitante" as V
+actor "Tutor" as T
+actor "Veterinário" as Vet
+
+Vet --|> T
+
+rectangle "UFVet" {
+  usecase "Cadastrar animal doador" as UC1
+  usecase "Encontrar doador compatível" as UC2
+  usecase "Solicitar liberação de acesso" as UC3
+  usecase "Liberar acesso aos contatos" as UC4
+  usecase "Validar doador" as UC5
+  usecase "Registrar doação realizada" as UC6
+
+  usecase "Manter conta" as CR1 <<CRUD>>
+  usecase "Manter animal" as CR2 <<CRUD>>
+  usecase "Manter exames" as CR3 <<CRUD>>
+  usecase "Manter observações" as CR4 <<CRUD>>
+  usecase "Manter liberações" as CR5 <<CRUD>>
+
+  usecase "Doadores disponíveis" as RP1 <<rep>>
+  usecase "Histórico de doações" as RP2 <<rep>>
+  usecase "Liberações ativas" as RP3 <<rep>>
+  usecase "Exames do animal" as RP4 <<rep>>
+}
+
+T --> UC1
+T --> UC2
+T --> UC3
+T --> CR1
+T --> CR2
+T --> CR3
+T --> RP2
+
+Vet --> UC4
+Vet --> UC5
+Vet --> UC6
+Vet --> CR4
+Vet --> CR5
+Vet --> RP3
+Vet --> RP4
+
+V --> RP1
+@enduml

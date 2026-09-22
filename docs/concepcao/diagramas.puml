@@ -1,0 +1,340 @@
+' UFVet — diagramas da fase de Concepção
+' Cada bloco @startuml gera uma imagem própria, nomeada pelo identificador.
+'
+' Como renderizar:
+'   - Cole um bloco em https://www.plantuml.com/plantuml/uml/
+'   - Ou, no VS Code, use a extensão PlantUML (Alt+D para pré-visualizar)
+'   - Ou, com Java e o plantuml.jar: java -jar plantuml.jar diagramas.puml
+
+' ══════════════════════════════════════════════════════════════════════
+' 1. Diagrama de casos de uso — versão da Concepção
+'    Só processos de negócio. É a versão que se mostra ao cliente.
+' ══════════════════════════════════════════════════════════════════════
+@startuml 01-casos-de-uso-concepcao
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+
+actor "Visitante" as V
+actor "Tutor" as T
+actor "Veterinário" as Vet
+
+Vet --|> T
+
+rectangle "UFVet" {
+  usecase "Cadastrar animal\ndoador" as UC1
+  usecase "Encontrar doador\ncompatível" as UC2
+  usecase "Solicitar liberação\nde acesso aos contatos" as UC3
+  usecase "Liberar acesso\naos contatos" as UC4
+  usecase "Validar doador" as UC5
+  usecase "Registrar doação\nrealizada" as UC6
+}
+
+T --> UC1
+T --> UC2
+T --> UC3
+Vet --> UC4
+Vet --> UC5
+Vet --> UC6
+V ..> UC2 : consulta sem\nver contatos
+
+note bottom of UC4
+  O veterinário é também tutor:
+  herda todos os casos de uso dele.
+end note
+@enduml
+
+' ══════════════════════════════════════════════════════════════════════
+' 2. Diagrama completo, com estereótipos de complexidade
+'    Processos de negócio, CRUDs e consultas.
+' ══════════════════════════════════════════════════════════════════════
+@startuml 02-casos-de-uso-completo
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor<<CRUD>> #F4EFEF
+  BackgroundColor<<rep>> #EFF5F1
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+
+actor "Visitante" as V
+actor "Tutor" as T
+actor "Veterinário" as Vet
+
+Vet --|> T
+
+rectangle "UFVet" {
+  usecase "Cadastrar animal doador" as UC1
+  usecase "Encontrar doador compatível" as UC2
+  usecase "Solicitar liberação de acesso" as UC3
+  usecase "Liberar acesso aos contatos" as UC4
+  usecase "Validar doador" as UC5
+  usecase "Registrar doação realizada" as UC6
+
+  usecase "Manter conta" as CR1 <<CRUD>>
+  usecase "Manter animal" as CR2 <<CRUD>>
+  usecase "Manter exames" as CR3 <<CRUD>>
+  usecase "Manter observações" as CR4 <<CRUD>>
+  usecase "Manter liberações" as CR5 <<CRUD>>
+
+  usecase "Doadores disponíveis" as RP1 <<rep>>
+  usecase "Histórico de doações" as RP2 <<rep>>
+  usecase "Liberações ativas" as RP3 <<rep>>
+  usecase "Exames do animal" as RP4 <<rep>>
+}
+
+T --> UC1
+T --> UC2
+T --> UC3
+T --> CR1
+T --> CR2
+T --> CR3
+T --> RP2
+
+Vet --> UC4
+Vet --> UC5
+Vet --> UC6
+Vet --> CR4
+Vet --> CR5
+Vet --> RP3
+Vet --> RP4
+
+V --> RP1
+@enduml
+
+' ══════════════════════════════════════════════════════════════════════
+' 3 a 8. Um diagrama por caso de uso, para os slides da apresentação.
+'        Cada um mostra o ator, o processo e os requisitos rastreados.
+' ══════════════════════════════════════════════════════════════════════
+
+@startuml 03-uc-cadastrar-animal
+left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+actor "Tutor" as T
+rectangle "UFVet" {
+  usecase "Cadastrar animal doador" as UC1
+}
+T --> UC1
+note right of UC1
+  **F8** cadastrar · **F6** gerar código
+  **F12** derivar idade
+  **NF8.1** sem campo de tipo sanguíneo
+end note
+@enduml
+
+@startuml 04-uc-encontrar-doador
+left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+actor "Tutor" as T
+actor "Veterinário" as Vet
+rectangle "UFVet" {
+  usecase "Encontrar doador compatível" as UC2
+  usecase "Doadores disponíveis" as RP1 <<rep>>
+}
+T --> UC2
+Vet --> UC2
+UC2 ..> RP1 : <<include>>
+note bottom of UC2
+  **F16** buscar · **F17** ordenar
+  **F18** omitir sem tipagem · **F33** exibir contato
+  **NF16.1** localização por bairro, sem coordenadas
+end note
+@enduml
+
+@startuml 05-uc-solicitar-liberacao
+left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+actor "Tutor" as T
+rectangle "UFVet" {
+  usecase "Solicitar liberação de acesso" as UC3
+}
+T --> UC3
+note right of UC3
+  **F27** solicitar
+  **NF27.1** destinatário definido
+  **NF27.3** um pedido pendente por vez
+end note
+@enduml
+
+@startuml 06-uc-liberar-acesso
+left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+actor "Veterinário" as Vet
+rectangle "UFVet" {
+  usecase "Liberar acesso aos contatos" as UC4
+}
+Vet --> UC4
+note right of UC4
+  **F28** liberar · **F29** recusar
+  **F30** renovar · **F31** encerrar
+  **F32** expirar sozinha (oculto)
+  **F34** encerrar pedido pendente (oculto)
+end note
+@enduml
+
+@startuml 07-uc-validar-doador
+left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+actor "Veterinário" as Vet
+rectangle "UFVet" {
+  usecase "Validar doador" as UC5
+  usecase "Exames do animal" as RP4 <<rep>>
+}
+Vet --> UC5
+UC5 ..> RP4 : <<include>>
+note bottom of UC5
+  **F19** validar critérios · **F20** registrar tipagem
+  **F21** invalidar por alteração (oculto)
+  **F22** expirar em um ano (oculto)
+  **NF19.4** registro assinado não se edita
+end note
+@enduml
+
+@startuml 08-uc-registrar-doacao
+left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+actor "Veterinário" as Vet
+rectangle "UFVet" {
+  usecase "Registrar doação realizada" as UC6
+}
+Vet --> UC6
+note right of UC6
+  **F24** registrar coleta
+  **F13** controlar recuperação (oculto)
+  **F26** derivar total e última data (oculto)
+  **NF24.2** data não pode ser futura
+end note
+@enduml
+
+' ══════════════════════════════════════════════════════════════════════
+' 9. Modelo conceitual preliminar
+'    Sem métodos, sem multiplicidade, sem todos os atributos — conforme
+'    a versão da Concepção.
+' ══════════════════════════════════════════════════════════════════════
+@startuml 09-modelo-conceitual-preliminar
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #8E001B
+  ArrowColor #1A1C1C
+}
+hide methods
+
+class Usuario {
+  codigo
+  nome
+  cpf
+  email
+  telefone
+  cidade
+  bairro
+}
+
+class Veterinario {
+  crmv
+}
+
+class Estabelecimento {
+  nome
+  cidade
+}
+
+class Animal {
+  codigo
+  nome
+  especie
+  peso
+  tipoSanguineo
+  disponivel
+}
+
+class Exame {
+  tipo
+}
+
+class VersaoExame {
+  arquivo
+  enviadoEm
+}
+
+class Validacao {
+  realizadaEm
+  validaAte
+  assinatura
+}
+
+class Criterio {
+  nome
+  atendido
+}
+
+class Observacao {
+  texto
+}
+
+class Doacao {
+  data
+  volume
+}
+
+class Pedido {
+  caso
+  status
+}
+
+class Liberacao {
+  duracao
+  expiraEm
+}
+
+Veterinario --|> Usuario
+
+Usuario -- Animal : é tutor de
+Veterinario -- Estabelecimento : atua em
+Animal -- Exame : possui
+Exame -- VersaoExame : teve
+Animal -- Validacao : recebeu
+Validacao -- Criterio : avaliou
+Veterinario -- Validacao : assinou
+Animal -- Observacao : recebeu
+Animal -- Doacao : realizou
+Doacao -- Estabelecimento : ocorreu em
+Veterinario -- Doacao : registrou
+Usuario -- Pedido : solicitou
+Veterinario -- Pedido : recebeu
+Veterinario -- Liberacao : concedeu
+Usuario -- Liberacao : recebeu
+Pedido -- Liberacao : originou
+@enduml

@@ -1,0 +1,22 @@
+' Caso de uso "Registrar doação realizada", para os slides da apresentação.
+' Mostra o ator, o processo e os requisitos rastreados.
+
+@startuml 08-uc-registrar-doacao
+left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+actor "Veterinário" as Vet
+rectangle "UFVet" {
+  usecase "Registrar doação realizada" as UC6
+}
+Vet --> UC6
+note right of UC6
+  **F24** registrar coleta
+  **F13** controlar recuperação (oculto)
+  **F26** derivar total e última data (oculto)
+  **NF24.2** data não pode ser futura
+end note
+@enduml

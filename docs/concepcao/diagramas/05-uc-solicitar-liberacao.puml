@@ -1,0 +1,21 @@
+' Caso de uso "Solicitar liberação de acesso", para os slides da apresentação.
+' Mostra o ator, o processo e os requisitos rastreados.
+
+@startuml 05-uc-solicitar-liberacao
+left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+actor "Tutor" as T
+rectangle "UFVet" {
+  usecase "Solicitar liberação de acesso" as UC3
+}
+T --> UC3
+note right of UC3
+  **F27** solicitar
+  **NF27.1** destinatário definido
+  **NF27.3** um pedido pendente por vez
+end note
+@enduml

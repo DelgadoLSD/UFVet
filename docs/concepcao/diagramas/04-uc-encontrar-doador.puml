@@ -1,0 +1,25 @@
+' Caso de uso "Encontrar doador compatível", para os slides da apresentação.
+' Mostra o ator, o processo e os requisitos rastreados.
+
+@startuml 04-uc-encontrar-doador
+left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+actor "Tutor" as T
+actor "Veterinário" as Vet
+rectangle "UFVet" {
+  usecase "Encontrar doador compatível" as UC2
+  usecase "Doadores disponíveis" as RP1 <<rep>>
+}
+T --> UC2
+Vet --> UC2
+UC2 ..> RP1 : <<include>>
+note bottom of UC2
+  **F16** buscar · **F17** ordenar
+  **F18** omitir sem tipagem · **F33** exibir contato
+  **NF16.1** localização por bairro, sem coordenadas
+end note
+@enduml

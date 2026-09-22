@@ -1,0 +1,41 @@
+' Diagrama de casos de uso — versão da Concepção
+' Só processos de negócio. É a versão que se mostra ao cliente.
+
+@startuml 01-casos-de-uso-concepcao
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+
+actor "Visitante" as V
+actor "Tutor" as T
+actor "Veterinário" as Vet
+
+Vet --|> T
+
+rectangle "UFVet" {
+  usecase "Cadastrar animal\ndoador" as UC1
+  usecase "Encontrar doador\ncompatível" as UC2
+  usecase "Solicitar liberação\nde acesso aos contatos" as UC3
+  usecase "Liberar acesso\naos contatos" as UC4
+  usecase "Validar doador" as UC5
+  usecase "Registrar doação\nrealizada" as UC6
+}
+
+T --> UC1
+T --> UC2
+T --> UC3
+Vet --> UC4
+Vet --> UC5
+Vet --> UC6
+V ..> UC2 : consulta sem\nver contatos
+
+note bottom of UC4
+  O veterinário é também tutor:
+  herda todos os casos de uso dele.
+end note
+@enduml

@@ -1,0 +1,22 @@
+' Caso de uso "Liberar acesso aos contatos", para os slides da apresentação.
+' Mostra o ator, o processo e os requisitos rastreados.
+
+@startuml 06-uc-liberar-acesso
+left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FDECEE
+  BorderColor #8E001B
+}
+actor "Veterinário" as Vet
+rectangle "UFVet" {
+  usecase "Liberar acesso aos contatos" as UC4
+}
+Vet --> UC4
+note right of UC4
+  **F28** liberar · **F29** recusar
+  **F30** renovar · **F31** encerrar
+  **F32** expirar sozinha (oculto)
+  **F34** encerrar pedido pendente (oculto)
+end note
+@enduml

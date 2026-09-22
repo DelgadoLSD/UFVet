@@ -12,6 +12,11 @@ Portal web para conexão de doadores de sangue animal sob demanda, desenvolvido 
 - Tailwind CSS
 - React Router
 
+## Documentação
+
+- [Concepção](docs/concepcao/) — requisitos funcionais e não-funcionais, casos de uso e diagramas
+- [Modelagem do banco](docs/modelagem-bd/) — dicionário de dados, DER e o esquema Prisma
+
 ## Status
 
 Front-end em desenvolvimento. Back-end previsto para Sprint 2.
