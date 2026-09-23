@@ -32,10 +32,10 @@ export const CONTAS = [
   },
   {
     codigo: "T3M8P1",
-    nome: "Marina Souza",
-    nomeCompleto: "Marina Souza Andrade",
+    nome: "Beatriz dos Reis",
+    nomeCompleto: "Beatriz dos Reis",
     cpf: "129.447.806-55",
-    email: "marina.souza@gmail.com",
+    email: "beatriz.reis@gmail.com",
     telefone: "(31) 98871-4402",
     cep: "36570-120",
     cidade: "Viçosa - MG",
@@ -45,7 +45,7 @@ export const CONTAS = [
     papel: "Tutora",
     genero: "F",
     foto: mulherFoto,
-    fotoPosicao: "center top",
+    fotoPosicao: "center 55%",
   },
 ];
 

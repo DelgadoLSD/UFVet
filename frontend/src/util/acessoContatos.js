@@ -11,12 +11,12 @@ import vetFoto from "../assets/people/man1_0-image.jpg";
 export const TUTORES_CADASTRADOS = [
   {
     codigo: "T3M8P1",
-    nome: "Marina Souza Andrade",
+    nome: "Beatriz dos Reis",
     cidade: "Viçosa - MG",
     animais: "Zeus (cão) e Luna (gato)",
     membroDesde: "mar/2026",
     foto: mulherFoto,
-    fotoPosicao: "center top",
+    fotoPosicao: "center 55%",
   },
   {
     codigo: "T7X9K2",

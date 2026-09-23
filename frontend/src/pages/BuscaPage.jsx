@@ -51,7 +51,7 @@ const DOADORES_MOCK = [
     id: 2,
     codigo: "D4E5F6",
     nome: "Luna",
-    tutor: "Marina Souza",
+    tutor: "Beatriz dos Reis",
     tutorCodigo: "T3M8P1",
     foto: dog3,
     especie: "cao",

@@ -43,7 +43,7 @@ import dog4 from "../assets/dogs/dog4_0-image.jpg";
 import cat7 from "../assets/cats/cat7_0-image.jpg";
 
 // O usuário logado é sempre este veterinário neste mock. "Ver perfil" a
-// partir da busca sempre leva a um tutor de exemplo (Marina) — ver
+// partir da busca sempre leva a um tutor de exemplo (Beatriz) — ver
 // DashboardPage, onde a rota decide qual dos dois exibir.
 const nomeProfissional = ({ nome, genero }) =>
   `${genero === "F" ? "Dra." : "Dr."} ${nome}`;
@@ -289,14 +289,14 @@ const ANIMAIS_MOCK = [
       {
         nome: "Hemograma completo",
         versoes: [
-          versaoDoc(hemogramaImg, "10/10/2025", "Marina Souza"),
-          versaoDoc(hemogramaImg, "02/03/2026", "Marina Souza"),
+          versaoDoc(hemogramaImg, "10/10/2025", "Beatriz dos Reis"),
+          versaoDoc(hemogramaImg, "02/03/2026", "Beatriz dos Reis"),
         ],
       },
       { nome: "Sorologias", versoes: [] },
       {
         nome: "Carteira de vacinação",
-        versoes: [versaoDoc(carteiraVacinacaoImg, "10/10/2025", "Marina Souza")],
+        versoes: [versaoDoc(carteiraVacinacaoImg, "10/10/2025", "Beatriz dos Reis")],
       },
     ],
   },
@@ -320,7 +320,7 @@ const ANIMAIS_MOCK = [
       { nome: "Hemograma completo", versoes: [] },
       {
         nome: "Sorologias",
-        versoes: [versaoDoc(sorologiaImg, "01/03/2026", "Marina Souza")],
+        versoes: [versaoDoc(sorologiaImg, "01/03/2026", "Beatriz dos Reis")],
       },
       { nome: "Carteira de vacinação", versoes: [] },
     ],
