@@ -83,18 +83,19 @@ Table usuario {
   codigo char(6) [unique, not null, note: 'Código público (#T3M8P1). É por ele que o veterinário libera o acesso e o tutor direciona o pedido.']
   papel papel_usuario [not null]
   nome_completo varchar(120) [not null]
-  cpf char(11) [unique, not null]
-  email varchar(160) [unique, not null]
+  cpf_cifrado text [not null, note: 'AES-256-GCM, chave fora do banco']
+  cpf_indice char(64) [unique, not null, note: 'HMAC-SHA256: impede CPF repetido sem revelar o CPF']
+  email_cifrado text [not null, note: 'AES-256-GCM, chave fora do banco']
+  email_indice char(64) [unique, not null, note: 'HMAC-SHA256: é por ele que o login encontra a conta']
   senha_hash varchar(72) [not null, note: 'bcrypt']
-  telefone varchar(20) [not null]
-  cep char(8) [not null]
+  telefone_cifrado text [not null, note: 'AES-256-GCM, chave fora do banco']
   cidade varchar(80) [not null]
   bairro varchar(80) [not null]
   foto_url varchar(255)
   criado_em timestamptz [not null]
   atualizado_em timestamptz [not null]
 
-  Note: 'Não guarda latitude e longitude: a busca localiza por cidade e bairro, e o endereço exato de casa não é necessário para o serviço.'
+  Note: 'Não guarda latitude, longitude nem CEP: a busca localiza por cidade e bairro, e o endereço da casa não é necessário para o serviço. CPF, e-mail e telefone ficam cifrados; quem tiver só o banco vê texto embaralhado.'
 
   Indexes {
     (cidade, bairro)
@@ -138,7 +139,7 @@ Table animal {
   nascimento_aproximado boolean [not null, default: false, note: 'Verdadeiro quando a data veio de estimativa do tutor. Afeta apenas a exibição da idade.']
   peso_kg decimal(5,2) [not null]
   tipo_sanguineo varchar(20) [note: 'Nulo até um veterinário assinar a tipagem. O tutor nunca preenche este campo.']
-  tipagem_validacao_id uuid [note: 'Validação que confirmou o tipo — procedência do dado acima.']
+  tipagem_validacao_id uuid [unique, note: 'Validação que confirmou o tipo — procedência do dado acima.']
   disponivel boolean [not null, default: true]
   criado_em timestamptz [not null]
   atualizado_em timestamptz [not null]
@@ -231,6 +232,10 @@ Table observacao {
   criado_em timestamptz [not null]
 
   Note: 'Anotações de veterinários sobre o comportamento do animal na coleta, para a próxima equipe.'
+
+  Indexes {
+    (animal_id, criado_em)
+  }
 }
 
 // ─────────────────────────── Doação ───────────────────────────
@@ -276,7 +281,7 @@ Table liberacao_contato {
   id uuid [pk]
   tutor_id uuid [not null]
   veterinario_id uuid [not null]
-  pedido_id uuid
+  pedido_id uuid [unique]
   caso varchar(160)
   concedida_em timestamptz [not null]
   duracao_horas smallint [not null]

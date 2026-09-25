@@ -146,3 +146,7 @@ vite.config.ts.timestamp-*
 # skills-lock.json, não precisam ficar versionadas.
 .agents/skills/
 .claude/skills/
+
+# Cliente do Prisma, gerado a partir do schema.prisma por `npm run db:generate`.
+# Não se versiona código que se regenera com um comando.
+backend/generated/

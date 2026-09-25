@@ -3,7 +3,7 @@
 Fase de Concepção (RUP). Elaborado conforme o modelo de Wazlawick (2004),
 apresentado em INF323 — Engenharia de Software II.
 
-TCC — Ciência da Computação, UFV. Versão de 21/09/2026.
+TCC — Ciência da Computação, UFV. Versão de 25/09/2026.
 
 ---
 
@@ -111,7 +111,7 @@ seção 4.
 
 **Descrição:** O sistema deve permitir que uma pessoa crie uma conta,
 escolhendo entre os perfis de tutor e de veterinário. São coletados nome
-completo, CPF, e-mail, telefone, CEP, cidade, bairro e senha. Quando o perfil
+completo, CPF, e-mail, telefone, cidade, bairro e senha. Quando o perfil
 escolhido é o de veterinário, também são coletados o CRMV, a UF do conselho e
 o estabelecimento onde atua.
 
@@ -121,6 +121,8 @@ o estabelecimento onde atua.
 | NF1.2 | Unicidade de identificação | CPF e e-mail não podem se repetir entre contas. | Especificação | ( ) | (x) |
 | NF1.3 | Cadastro em etapas | O formulário deve ser dividido em etapas, com indicação de progresso, para não apresentar todos os campos de uma vez. | Interface | (x) | ( ) |
 | NF1.4 | Aceite obrigatório | A conta só é criada após o aceite dos termos de uso e da ciência sobre os custos de insumos. | Legal | ( ) | (x) |
+| NF1.5 | Cifragem de dados pessoais | CPF, e-mail e telefone devem ser armazenados cifrados, com chave mantida fora do banco de dados. A unicidade exigida por NF1.2 e a localização da conta no login devem ser feitas por índice derivado com chave secreta, sem decifrar os registros. | Segurança | ( ) | (x) |
+| NF1.6 | Coleta mínima | Não devem ser coletados dados sem uso no serviço. A localização do usuário se limita a cidade e bairro, sem CEP nem endereço. | Legal | ( ) | (x) |
 
 ---
 
@@ -140,7 +142,7 @@ ver e fazer.
 ### F3 — Manter dados da conta · Evidente · Obrigatório
 
 **Descrição:** O sistema deve permitir que o usuário altere seus dados de
-contato, endereço e foto de perfil.
+contato, cidade, bairro e foto de perfil.
 
 | Código | Nome | Restrição | Categoria | Desejável | Permanente |
 |---|---|---|---|---|---|

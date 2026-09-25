@@ -1,0 +1,27 @@
+{
+  "name": "ufvet-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Back-end do UFVet: banco de dados PostgreSQL com Prisma e, em seguida, a API em Express.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "db:validate": "prisma validate",
+    "db:generate": "prisma generate"
+  },
+  "devDependencies": {
+    "prisma": "7.10.0"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "dotenv": "^18.0.4",
+    "pg": "^8.23.0"
+  },
+  "allowScripts": {
+    "@prisma/engines@7.10.0": true,
+    "prisma": false
+  }
+}

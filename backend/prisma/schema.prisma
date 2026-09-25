@@ -4,8 +4,9 @@
 // são mapeados para tabelas em snake_case, que é a convenção do PostgreSQL.
 // Assim o código lê bem e o banco também.
 //
-// A URL de conexão não fica aqui: no Prisma 7 ela vive em prisma.config.ts,
-// fora do controle de versão.
+// A URL de conexão não fica aqui: no Prisma 7 ela é configurada em
+// prisma.config.ts, que a lê do arquivo .env. É o .env, que o git ignora, que
+// guarda a senha do banco.
 
 datasource db {
   provider = "postgresql"
@@ -114,25 +115,33 @@ model Estabelecimento {
 /// próprios animais, por isso os dois papéis dividem a mesma tabela em vez de
 /// virarem entidades separadas.
 ///
-/// Não há latitude nem longitude: a busca localiza por cidade e bairro, e o
-/// endereço exato da casa de alguém não é necessário para o serviço.
+/// Não há latitude, longitude nem CEP: a busca localiza por cidade e bairro, e
+/// o endereço da casa de alguém não é necessário para o serviço.
+///
+/// CPF, e-mail e telefone são guardados cifrados pela API (AES-256-GCM), com a
+/// chave fora do banco, no .env do servidor. Quem tiver só o banco, ou um
+/// backup dele, vê texto embaralhado. O texto cifrado muda a cada gravação e
+/// por isso não serve para comparar: CPF e e-mail têm ao lado um índice
+/// (HMAC-SHA256, com outra chave secreta) que é a impressão digital do valor.
+/// É pelo índice que o login encontra a conta e que o banco impede repetição.
 model Usuario {
-  id           String       @id @default(uuid()) @db.Uuid
+  id              String       @id @default(uuid()) @db.Uuid
   /// Código público (#T3M8P1). É por ele que o veterinário libera o acesso e
   /// o tutor endereça o pedido — nomes se repetem, códigos não.
-  codigo       String       @unique @db.Char(6)
-  papel        PapelUsuario
-  nomeCompleto String       @map("nome_completo") @db.VarChar(120)
-  cpf          String       @unique @db.Char(11)
-  email        String       @unique @db.VarChar(160)
-  senhaHash    String       @map("senha_hash") @db.VarChar(72)
-  telefone     String       @db.VarChar(20)
-  cep          String       @db.Char(8)
-  cidade       String       @db.VarChar(80)
-  bairro       String       @db.VarChar(80)
-  fotoUrl      String?      @map("foto_url") @db.VarChar(255)
-  criadoEm     DateTime     @default(now()) @map("criado_em") @db.Timestamptz(3)
-  atualizadoEm DateTime     @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+  codigo          String       @unique @db.Char(6)
+  papel           PapelUsuario
+  nomeCompleto    String       @map("nome_completo") @db.VarChar(120)
+  cpfCifrado      String       @map("cpf_cifrado")
+  cpfIndice       String       @unique @map("cpf_indice") @db.Char(64)
+  emailCifrado    String       @map("email_cifrado")
+  emailIndice     String       @unique @map("email_indice") @db.Char(64)
+  senhaHash       String       @map("senha_hash") @db.VarChar(72)
+  telefoneCifrado String       @map("telefone_cifrado")
+  cidade          String       @db.VarChar(80)
+  bairro          String       @db.VarChar(80)
+  fotoUrl         String?      @map("foto_url") @db.VarChar(255)
+  criadoEm        DateTime     @default(now()) @map("criado_em") @db.Timestamptz(3)
+  atualizadoEm    DateTime     @updatedAt @map("atualizado_em") @db.Timestamptz(3)
 
   veterinario          Veterinario?
   aceites              Aceite[]

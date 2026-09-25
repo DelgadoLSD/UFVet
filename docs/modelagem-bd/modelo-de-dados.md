@@ -3,7 +3,7 @@
 Documento de apoio ao TCC "Doação de Sangue Animal". Descreve o modelo de
 dados do portal UFVet, as decisões que o sustentam e o dicionário de dados.
 
-Atualizado em 20/09/2026. Banco: PostgreSQL. ORM: Prisma.
+Atualizado em 25/09/2026. Banco: PostgreSQL. ORM: Prisma.
 
 Arquivos que acompanham este documento:
 
@@ -200,6 +200,11 @@ coordenada da casa de cada tutor. Foi substituída por filtro de cidade e
 bairro: quem conhece a cidade já sabe quais bairros ficam perto do hospital,
 e o ganho não justificava coletar dado de localização precisa.
 
+**Sem CEP.** O CEP chegou a ser coletado no cadastro, mas nenhuma função o
+usava: a busca filtra por cidade e bairro, e nada era preenchido a partir dele.
+Foi removido pelo princípio da necessidade (LGPD, art. 6º, III): o dado mais
+protegido é o que não se guarda.
+
 **Sem registro de consultas aos contatos.** Uma versão anterior do modelo
 guardava cada abertura de contato: quem viu, de quem era e sob qual
 autorização. A ideia era dar rastreabilidade ao tutor. Foi removida por não
@@ -250,6 +255,39 @@ cópia, mantendo a assinatura legível.
 Cabe confirmar com o hospital se a guarda desse registro está sujeita às
 regras de prontuário do CFMV. Se estiver, a base legal deixa de ser
 consentimento e passa a ser obrigação regulatória, prevista no art. 16, I.
+
+### 6.1 Dados pessoais cifrados
+
+CPF, e-mail e telefone são gravados cifrados, como medida técnica de segurança
+no sentido do art. 46 da LGPD. A cifragem acontece na API, antes de o dado
+chegar ao banco, com AES-256-GCM. A chave fica no ambiente do servidor, nunca
+no banco. Um vazamento do banco ou de um backup entrega apenas texto
+embaralhado.
+
+A senha segue outro caminho, porque tem outra necessidade. Ela vira hash
+(bcrypt), que é uma via de mão única: serve para conferir, não para ler. Os
+três dados acima precisam ser lidos de volta, para exibir o contato a quem
+tem permissão, e por isso são cifrados, não transformados em hash.
+
+A cifragem cria um problema: o mesmo e-mail cifrado duas vezes gera textos
+diferentes, então o banco não consegue compará-los. O login precisa encontrar
+a conta pelo e-mail, e a regra NF1.2 proíbe CPF e e-mail repetidos. Por isso CPF
+e e-mail têm, ao lado, um **índice cego**: o HMAC-SHA256 do valor normalizado
+(CPF só com dígitos; e-mail em minúsculas e sem espaços), calculado com uma
+segunda chave secreta. O índice funciona como impressão digital: o mesmo valor
+gera sempre o mesmo índice, e é sobre ele que o banco aplica a unicidade.
+
+O índice usa chave secreta, e não um hash simples, por causa do tamanho do
+universo dos CPFs. Existem cerca de um bilhão de combinações possíveis, e
+calcular o hash de todas leva minutos. Um SHA-256 puro do CPF seria revertido
+por força bruta a partir do próprio banco vazado. Sem a chave, que não está no
+banco, isso não é possível.
+
+O que a medida **não** cobre: quem invadir o próprio servidor da API tem acesso
+à chave. E ela tem um custo, pois a perda da chave torna esses dados
+irrecuperáveis. Por isso a chave tem cópia guardada fora do servidor. O texto
+cifrado leva um prefixo de versão (`v1:`), que permite trocar a chave no
+futuro sem ambiguidade sobre qual chave abriu cada registro.
 
 ## 7. Consultas que o modelo precisa responder bem
 
@@ -304,11 +342,12 @@ UQ = restrição de unicidade.
 | codigo | char(6) | UQ, NOT NULL | Código público (#T3M8P1) usado para liberar acesso e endereçar pedidos |
 | papel | enum | NOT NULL | TUTOR ou VETERINARIO |
 | nome_completo | varchar(120) | NOT NULL | Nome civil |
-| cpf | char(11) | UQ, NOT NULL | Identifica a pessoa nos registros de doação |
-| email | varchar(160) | UQ, NOT NULL | Login e contato |
+| cpf_cifrado | text | NOT NULL | CPF cifrado (AES-256-GCM); ver seção 6.1 |
+| cpf_indice | char(64) | UQ, NOT NULL | HMAC-SHA256 do CPF só com dígitos; impede CPF repetido |
+| email_cifrado | text | NOT NULL | E-mail cifrado (AES-256-GCM); login e contato |
+| email_indice | char(64) | UQ, NOT NULL | HMAC-SHA256 do e-mail em minúsculas e sem espaços; é por ele que o login encontra a conta |
 | senha_hash | varchar(72) | NOT NULL | Hash bcrypt; a senha nunca é armazenada em texto |
-| telefone | varchar(20) | NOT NULL | Contato protegido pelas regras de liberação |
-| cep | char(8) | NOT NULL | CEP |
+| telefone_cifrado | text | NOT NULL | Telefone cifrado (AES-256-GCM); contato protegido pelas regras de liberação |
 | cidade | varchar(80) | NOT NULL | Cidade, usada no filtro da busca |
 | bairro | varchar(80) | NOT NULL | Bairro, usado no filtro da busca |
 | foto_url | varchar(255) | NULL | Foto de perfil |
