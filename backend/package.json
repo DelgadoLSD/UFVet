@@ -11,10 +11,13 @@
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
-    "prisma": "7.10.0"
+    "prisma": "7.10.0",
+    "vitest": "^5.0.2"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",

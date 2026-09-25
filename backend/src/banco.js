@@ -9,10 +9,14 @@ import { PrismaClient } from "../generated/client.ts";
 dotenv.config({ quiet: true });
 
 // A sessão do banco é forçada para UTC. O adaptador do Prisma para o
-// PostgreSQL (@prisma/adapter-pg 7.10) supõe que o banco responde em UTC: ele
-// descarta o fuso que vem junto de cada data ("09:00-03" vira "09:00" em UTC).
-// Com o servidor no horário de Brasília, toda data lida voltaria 3 horas
-// errada, e os prazos de liberação, validação e recuperação quebrariam.
+// PostgreSQL (@prisma/adapter-pg 7.10) supõe que o banco trabalha em UTC: ao
+// ler, descarta o fuso que vem com cada data ("09:00-03" vira "09:00" em UTC),
+// e ao gravar envia a data sem fuso. Com o servidor no horário de Brasília, as
+// datas enviadas pela API seriam guardadas 3 horas erradas e as lidas voltariam
+// 3 horas erradas; os dois erros se anulam na volta, e o defeito passa
+// despercebido até uma data da API ser comparada com uma gerada pelo banco.
+// Os prazos de liberação, validação e recuperação quebrariam.
+// testes/datas.test.js falha se esta opção for removida.
 export function criarCliente(url = process.env.DATABASE_URL) {
   if (!url) {
     throw new Error("DATABASE_URL não está definida no .env.");
