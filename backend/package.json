@@ -5,11 +5,13 @@
   "description": "Back-end do UFVet: banco de dados PostgreSQL com Prisma e, em seguida, a API em Express.",
   "type": "module",
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.18.0"
   },
   "scripts": {
     "db:validate": "prisma validate",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed"
   },
   "devDependencies": {
     "prisma": "7.10.0"
