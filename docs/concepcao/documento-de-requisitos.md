@@ -123,6 +123,7 @@ o estabelecimento onde atua.
 | NF1.4 | Aceite obrigatório | A conta só é criada após o aceite dos termos de uso e da ciência sobre os custos de insumos. | Legal | ( ) | (x) |
 | NF1.5 | Cifragem de dados pessoais | CPF, e-mail e telefone devem ser armazenados cifrados, com chave mantida fora do banco de dados. A unicidade exigida por NF1.2 e a localização da conta no login devem ser feitas por índice derivado com chave secreta, sem decifrar os registros. | Segurança | ( ) | (x) |
 | NF1.6 | Coleta mínima | Não devem ser coletados dados sem uso no serviço. A localização do usuário se limita a cidade e bairro, sem CEP nem endereço. | Legal | ( ) | (x) |
+| NF1.7 | Localidade escolhida em lista | A cidade deve ser escolhida na lista oficial de municípios do IBGE. Ao abrir, o campo já oferece as cidades da região imediata de Viçosa; digitar permite buscar qualquer outra, com tolerância a acentos e grafias próximas ("Vicosa", "Vissosa"). O bairro deve ser escolhido na lista da cidade, quando houver uma, com a opção de informar outro nome. Assim o filtro da busca por cidade e bairro não se perde em grafias diferentes do mesmo lugar. | Interface | ( ) | ( ) |
 
 ---
 

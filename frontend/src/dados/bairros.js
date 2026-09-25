@@ -1,0 +1,72 @@
+// Bairros conhecidos por cidade, com a cidade no formato "Nome - UF".
+//
+// Não existe lista oficial de bairros de Viçosa. A malha de bairros do Censo
+// 2022 do IBGE só cobre os municípios que definiram bairros por lei (55 dos 853
+// de Minas), e Viçosa não está entre eles. Esta lista vem do OpenStreetMap
+// (© colaboradores do OpenStreetMap, licença ODbL), extraída em 25/09/2026, e
+// ainda precisa ser conferida por quem conhece a cidade.
+//
+// Cidades fora daqui continuam aceitas: a pessoa digita o bairro. Quando a API
+// existir, a lista passa a vir dela, somando os bairros já cadastrados.
+export const BAIRROS = {
+  "Viçosa - MG": [
+    "Arduíno Bolívar",
+    "Barrinha",
+    "Bela Vista",
+    "Belvedere",
+    "Betânia",
+    "Boa Vista",
+    "Bom Jesus",
+    "Bom Sucesso",
+    "Buieié",
+    "Campus Universitário",
+    "Centro",
+    "Cidade Jardim",
+    "Cidade Nova",
+    "Clélia Bernardes",
+    "Conceição",
+    "Condomínio Recanto da Serra",
+    "Cristais",
+    "Estrelas",
+    "Fátima",
+    "Fuad Chequer",
+    "Inácio Martins",
+    "Inconfidência",
+    "JK",
+    "João Braz da Costa Val",
+    "Júlia Mollá",
+    "Liberdade",
+    "Liberdade II",
+    "Lourdes",
+    "Maria Eugênia",
+    "Morada do Sol II",
+    "Nova Era",
+    "Nova Viçosa",
+    "Novo Silvestre",
+    "Paraíso",
+    "Paula",
+    "Posses",
+    "Prefeito Moacir Andrade",
+    "Quintas Guimarães Ferreira",
+    "Ramos",
+    "Residencial Silvestre",
+    "Romão dos Reis",
+    "Rua Nova",
+    "Sagrada Família",
+    "Sagrados Corações",
+    "Santa Clara",
+    "Santo Antônio",
+    "São Francisco de Assis",
+    "São João",
+    "São José",
+    "São Sebastião",
+    "Silvestre",
+    "Sol Nascente",
+    "União",
+    "Vale do Sol",
+    "Vau-Açu",
+    "Vereda do Bosque",
+    "Vila Alves",
+    "Violeira",
+  ],
+};

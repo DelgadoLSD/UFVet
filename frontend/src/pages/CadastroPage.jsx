@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Botao from "../components/Botao";
 import Campo from "../components/Campo";
+import CampoBairro from "../components/CampoBairro";
+import CampoCidade from "../components/CampoCidade";
 import LayoutAutenticacao, {
   BotaoGoogle,
 } from "../components/LayoutAutenticacao";
@@ -14,8 +16,9 @@ const ETAPAS = {
   1: { titulo: "Como você vai usar o UFVet?" },
   2: { titulo: "Seus dados" },
   3: {
-    titulo: "Contato e endereço",
-    texto: "Para que quem precisa de um doador consiga falar com você.",
+    titulo: "Contato e localização",
+    texto:
+      "Para que quem precisa de um doador consiga falar com você. Na busca, aparecem só a cidade e o bairro.",
   },
   4: {
     titulo: "Registro profissional",
@@ -104,45 +107,35 @@ function Step2({ data, onChange }) {
   );
 }
 
+// Cidade e bairro vêm de listas, um embaixo do outro: o bairro depende da
+// cidade, e a lista aberta precisa da largura toda para nomes longos.
 function Step3({ data, onChange }) {
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-[1.4fr_1fr] gap-4">
-        <Campo
-          id="phone"
-          rotulo="Telefone"
-          type="tel"
-          placeholder="(00) 00000-0000"
-          autoComplete="tel"
-          value={data.phone || ""}
-          onChange={(e) => onChange("phone", e.target.value)}
-        />
-        <Campo
-          id="cep"
-          rotulo="CEP"
-          placeholder="00000-000"
-          inputMode="numeric"
-          autoComplete="postal-code"
-          value={data.cep || ""}
-          onChange={(e) => onChange("cep", e.target.value)}
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <Campo
-          id="city"
-          rotulo="Cidade"
-          placeholder="Ex.: Viçosa"
-          value={data.city || ""}
-          onChange={(e) => onChange("city", e.target.value)}
-        />
-        <Campo
-          id="neighborhood"
-          rotulo="Bairro"
-          placeholder="Ex.: Centro"
-          value={data.neighborhood || ""}
-          onChange={(e) => onChange("neighborhood", e.target.value)}
-        />
-      </div>
+      <Campo
+        id="phone"
+        rotulo="Telefone"
+        type="tel"
+        placeholder="(00) 00000-0000"
+        autoComplete="tel"
+        value={data.phone || ""}
+        onChange={(e) => onChange("phone", e.target.value)}
+      />
+      <CampoCidade
+        id="city"
+        valor={data.city || ""}
+        onChange={(cidade) => {
+          if (cidade === data.city) return;
+          onChange("city", cidade);
+          onChange("neighborhood", "");
+        }}
+      />
+      <CampoBairro
+        id="neighborhood"
+        cidade={data.city}
+        valor={data.neighborhood || ""}
+        onChange={(bairro) => onChange("neighborhood", bairro)}
+      />
     </div>
   );
 }

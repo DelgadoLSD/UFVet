@@ -46,7 +46,8 @@ function Campo({
   );
 }
 
-const CLASSE_ENTRADA =
+// Exportada para os campos com busca (cidade, bairro) terem a mesma aparência.
+export const CLASSE_ENTRADA =
   "bg-white border border-[#dccfcf] rounded-xl text-base text-[#1a1c1c] placeholder:text-[#a79d9d] shadow-[0_1px_2px_rgba(26,28,28,0.04)] transition-colors hover:border-[#c9b6b6] focus:outline-none focus:border-[#b7102a] focus:ring-4 focus:ring-[#b7102a]/10";
 
 export default Campo;

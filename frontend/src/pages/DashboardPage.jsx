@@ -2369,7 +2369,6 @@ function CardPerfil({
               <LinhaInfo icone="location_on">
                 {perfil.bairro}, {perfil.cidade}
               </LinhaInfo>
-              <LinhaInfo icone="markunread_mailbox">CEP {perfil.cep}</LinhaInfo>
             </GrupoInfo>
 
             {ehVet && (

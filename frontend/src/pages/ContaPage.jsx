@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Botao from "../components/Botao";
 import Campo from "../components/Campo";
+import CampoBairro from "../components/CampoBairro";
+import CampoCidade from "../components/CampoCidade";
 import Avatar from "../components/Avatar";
 import ModalEncerrarConta from "../components/ModalEncerrarConta";
 import { useSessao, atualizarConta } from "../util/sessao";
@@ -15,7 +17,6 @@ const CAMPOS_EDITAVEIS = [
   "nomeCompleto",
   "email",
   "telefone",
-  "cep",
   "cidade",
   "bairro",
   "hospital",
@@ -144,6 +145,8 @@ function ContaPage() {
   const ehVet = usuario.role === "vet";
   const alterado =
     !!foto || CAMPOS_EDITAVEIS.some((c) => form[c] !== (usuario[c] || ""));
+  // Trocar de cidade apaga o bairro: só dá para salvar depois de escolher o novo.
+  const localizacaoCompleta = !!form.cidade && !!form.bairro;
 
   const mudar = (campo, valor) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
@@ -199,9 +202,17 @@ function ContaPage() {
               texto="É por aqui que um veterinário ou um tutor com liberação entra em contato quando precisa de um doador."
               rodape={
                 <div className="flex items-center gap-4 flex-wrap">
-                  <Botao type="submit" disabled={!alterado}>
+                  <Botao
+                    type="submit"
+                    disabled={!alterado || !localizacaoCompleta}
+                  >
                     Salvar alterações
                   </Botao>
+                  {alterado && !localizacaoCompleta && (
+                    <p className="text-sm text-[#5f5e5e]">
+                      Escolha a cidade e o bairro para salvar.
+                    </p>
+                  )}
                   {salvo && (
                     <p className="text-sm text-[#1a7f4b] flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[18px]">
@@ -250,15 +261,15 @@ function ContaPage() {
                   value={form.nomeCompleto}
                   onChange={(e) => mudar("nomeCompleto", e.target.value)}
                 />
-                <Campo
-                  id="email"
-                  rotulo="E-mail"
-                  type="email"
-                  autoComplete="email"
-                  value={form.email}
-                  onChange={(e) => mudar("email", e.target.value)}
-                />
-                <div className="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr] gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <Campo
+                    id="email"
+                    rotulo="E-mail"
+                    type="email"
+                    autoComplete="email"
+                    value={form.email}
+                    onChange={(e) => mudar("email", e.target.value)}
+                  />
                   <Campo
                     id="telefone"
                     rotulo="Telefone"
@@ -267,27 +278,20 @@ function ContaPage() {
                     value={form.telefone}
                     onChange={(e) => mudar("telefone", e.target.value)}
                   />
-                  <Campo
-                    id="cep"
-                    rotulo="CEP"
-                    inputMode="numeric"
-                    autoComplete="postal-code"
-                    value={form.cep}
-                    onChange={(e) => mudar("cep", e.target.value)}
-                  />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <Campo
-                    id="cidade"
-                    rotulo="Cidade"
-                    value={form.cidade}
-                    onChange={(e) => mudar("cidade", e.target.value)}
+                  <CampoCidade
+                    valor={form.cidade}
+                    onChange={(cidade) => {
+                      if (cidade === form.cidade) return;
+                      mudar("cidade", cidade);
+                      mudar("bairro", "");
+                    }}
                   />
-                  <Campo
-                    id="bairro"
-                    rotulo="Bairro"
-                    value={form.bairro}
-                    onChange={(e) => mudar("bairro", e.target.value)}
+                  <CampoBairro
+                    cidade={form.cidade}
+                    valor={form.bairro}
+                    onChange={(bairro) => mudar("bairro", bairro)}
                   />
                 </div>
                 {ehVet && (
