@@ -34,7 +34,8 @@ describe("cofre dos dados pessoais", () => {
   test("um dado adulterado no banco é recusado, e não aberto com outro conteúdo", () => {
     const cifrado = cifrar("084.512.336-70");
     const ultimo = cifrado.at(-5);
-    const adulterado = cifrado.slice(0, -5) + (ultimo === "A" ? "B" : "A") + cifrado.slice(-4);
+    const adulterado =
+      cifrado.slice(0, -5) + (ultimo === "A" ? "B" : "A") + cifrado.slice(-4);
 
     expect(() => decifrar(adulterado)).toThrow();
   });
@@ -49,13 +50,17 @@ describe("cofre dos dados pessoais", () => {
   test("sem a chave no .env, o erro diz qual chave falta", () => {
     vi.stubEnv("CHAVE_CIFRAGEM", "");
 
-    expect(() => cifrar("qualquer coisa")).toThrow("CHAVE_CIFRAGEM não está definida");
+    expect(() => cifrar("qualquer coisa")).toThrow(
+      "CHAVE_CIFRAGEM não está definida",
+    );
   });
 });
 
 describe("impressão digital (índice) de e-mail e CPF", () => {
   test("o mesmo e-mail, escrito de jeitos diferentes, tem a mesma impressão digital", () => {
-    expect(indiceEmail(" Victor.Hugo@UFV.br ")).toBe(indiceEmail("victor.hugo@ufv.br"));
+    expect(indiceEmail(" Victor.Hugo@UFV.br ")).toBe(
+      indiceEmail("victor.hugo@ufv.br"),
+    );
   });
 
   test("e-mails diferentes têm impressões digitais diferentes", () => {

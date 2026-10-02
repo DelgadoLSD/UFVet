@@ -1,0 +1,10 @@
+# Arquivos que o Prettier não formata.
+
+# Cliente do Prisma, gerado por `npm run db:generate`.
+generated
+
+# Migrações já aplicadas: o SQL fica exatamente como o Prisma gerou.
+prisma/migrations
+
+# Gerado pelo npm.
+package-lock.json

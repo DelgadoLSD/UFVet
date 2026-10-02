@@ -1,15 +1,20 @@
 import { useCallback, useId } from "react";
 import Campo from "./Campo";
 import CampoBusca from "./CampoBusca";
+import { LIMITES } from "../regras/limites";
 import { bairroExato, bairrosDe, buscarBairros } from "../util/localidades";
 
 // Bairro da cidade escolhida. Onde há lista de bairros, a pessoa escolhe nela
-// ou usa o nome que digitou; onde não há, digita.
+// ou usa o nome que digitou; onde não há, digita. Nos dois casos,
+// `onEscolher` recebe o nome do bairro.
 
-// Mesmo limite da coluna usuario.bairro no banco.
-const TAMANHO_MAXIMO = 80;
-
-function CampoBairro({ id = "bairro", rotulo = "Bairro", cidade, valor, onChange }) {
+function CampoBairro({
+  id = "bairro",
+  rotulo = "Bairro",
+  cidade,
+  valor,
+  onEscolher,
+}) {
   const lista = cidade ? bairrosDe(cidade) : null;
   const ajudaId = useId();
 
@@ -48,10 +53,10 @@ function CampoBairro({ id = "bairro", rotulo = "Bairro", cidade, valor, onChange
           rotulo={rotulo}
           placeholder="Nome do seu bairro"
           autoComplete="off"
-          maxLength={TAMANHO_MAXIMO}
+          maxLength={LIMITES.bairro}
           aria-describedby={ajudaId}
           value={valor}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => onEscolher(e.target.value)}
         />
         <p id={ajudaId} className="text-xs text-[#5f5e5e] mt-2">
           Ainda não temos a lista de bairros de {nomeCidade}. Digite o nome do
@@ -66,11 +71,11 @@ function CampoBairro({ id = "bairro", rotulo = "Bairro", cidade, valor, onChange
       id={id}
       rotulo={rotulo}
       valor={valor}
-      onEscolher={onChange}
+      onEscolher={onEscolher}
       sugerir={sugerir}
       aoSair={aoSair}
       placeholder="Escolha ou digite o bairro"
-      maxLength={TAMANHO_MAXIMO}
+      maxLength={LIMITES.bairro}
       rodape={() => "Lista de bairros: colaboradores do OpenStreetMap."}
     />
   );

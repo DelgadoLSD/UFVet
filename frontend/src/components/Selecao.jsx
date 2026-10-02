@@ -3,7 +3,21 @@ import { useEffect, useId, useRef, useState } from "react";
 // Campo de seleção próprio, no lugar do <select> nativo (cuja lista aberta
 // usa o visual do sistema operacional e não segue a identidade do site).
 // Funciona por teclado: setas navegam, Enter escolhe, Esc fecha.
-function Selecao({ opcoes, valor, onChange, placeholder, icone, limpavel = true }) {
+//
+// `opcoes` é uma lista de { valor, rotulo, rotuloCurto?, descricao?, icone }.
+// `rotulo` nomeia o campo para leitores de tela, já que o texto acima dele
+// costuma ser um título, e não um <label>. `onEscolher` recebe o valor da
+// opção escolhida. Com `limpavel`, um "x" ao lado desfaz a escolha (o valor
+// volta a ser "").
+function Selecao({
+  opcoes,
+  valor,
+  onEscolher,
+  placeholder,
+  icone,
+  rotulo,
+  limpavel = true,
+}) {
   const [aberto, setAberto] = useState(false);
   const [destacado, setDestacado] = useState(0);
   const raizRef = useRef(null);
@@ -27,7 +41,7 @@ function Selecao({ opcoes, valor, onChange, placeholder, icone, limpavel = true 
   };
 
   const escolher = (opcao) => {
-    onChange(opcao.valor);
+    onEscolher(opcao.valor);
     setAberto(false);
   };
 
@@ -37,7 +51,11 @@ function Selecao({ opcoes, valor, onChange, placeholder, icone, limpavel = true 
       return abrir();
     }
     if (!aberto) return;
-    if (e.key === "Escape") setAberto(false);
+    if (e.key === "Escape") {
+      // Marca o Esc como usado: dentro de um modal, fecha só a lista.
+      e.preventDefault();
+      setAberto(false);
+    }
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setDestacado((i) => (i + 1) % opcoes.length);
@@ -57,6 +75,7 @@ function Selecao({ opcoes, valor, onChange, placeholder, icone, limpavel = true 
       <button
         type="button"
         role="combobox"
+        aria-label={rotulo}
         aria-expanded={aberto}
         aria-controls={listaId}
         aria-haspopup="listbox"
@@ -69,6 +88,7 @@ function Selecao({ opcoes, valor, onChange, placeholder, icone, limpavel = true 
         }`}
       >
         <span
+          aria-hidden="true"
           className={`material-symbols-outlined text-[18px] shrink-0 ${
             selecionada ? "text-[#8e001b]" : "text-[#8f6f6e]"
           }`}
@@ -80,9 +100,12 @@ function Selecao({ opcoes, valor, onChange, placeholder, icone, limpavel = true 
             selecionada ? "text-[#1a1c1c] font-semibold" : "text-[#8f6f6e]"
           } ${limpavel && selecionada ? "pr-7" : ""}`}
         >
-          {selecionada ? selecionada.rotuloCurto ?? selecionada.rotulo : placeholder}
+          {selecionada
+            ? (selecionada.rotuloCurto ?? selecionada.rotulo)
+            : placeholder}
         </span>
         <span
+          aria-hidden="true"
           className={`material-symbols-outlined text-[20px] text-[#8f6f6e] transition-transform ${
             aberto ? "rotate-180" : ""
           }`}
@@ -96,12 +119,17 @@ function Selecao({ opcoes, valor, onChange, placeholder, icone, limpavel = true 
           type="button"
           aria-label="Limpar seleção"
           onClick={() => {
-            onChange("");
+            onEscolher("");
             setAberto(false);
           }}
           className="absolute top-1/2 -translate-y-1/2 right-9 w-6 h-6 flex items-center justify-center rounded-md text-[#8f6f6e] hover:text-[#8e001b] hover:bg-[#faf0f0] transition-colors"
         >
-          <span className="material-symbols-outlined text-[16px]">close</span>
+          <span
+            aria-hidden="true"
+            className="material-symbols-outlined text-[16px]"
+          >
+            close
+          </span>
         </button>
       )}
 
@@ -126,6 +154,7 @@ function Selecao({ opcoes, valor, onChange, placeholder, icone, limpavel = true 
                 }`}
               >
                 <span
+                  aria-hidden="true"
                   className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                     ativa
                       ? "bg-[#8e001b] text-white"
@@ -147,7 +176,10 @@ function Selecao({ opcoes, valor, onChange, placeholder, icone, limpavel = true 
                   )}
                 </span>
                 {ativa && (
-                  <span className="material-symbols-outlined text-[18px] text-[#8e001b]">
+                  <span
+                    aria-hidden="true"
+                    className="material-symbols-outlined text-[18px] text-[#8e001b]"
+                  >
                     check
                   </span>
                 )}

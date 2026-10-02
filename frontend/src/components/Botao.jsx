@@ -7,8 +7,7 @@ const VARIANTES = {
   secundario:
     "text-[#1a1c1c] bg-white border border-[#e6dcdc] shadow-[0_1px_2px_rgba(26,28,28,0.06)] hover:bg-[#faf6f6] hover:border-[#d6c3c3]",
   // Editar é uma ação comum, não um destaque: botão neutro, no tom da página.
-  editar:
-    "text-[#1a1c1c] bg-[#f4efef] hover:bg-[#ebe3e3]",
+  editar: "text-[#1a1c1c] bg-[#f4efef] hover:bg-[#ebe3e3]",
   // Excluir tem o mesmo formato de editar e só assume o vermelho no hover.
   perigo: "text-[#5f5e5e] bg-[#f4efef] hover:text-red-600 hover:bg-red-50",
   perigoSolido: "text-white bg-red-600 hover:bg-red-700",
@@ -24,6 +23,13 @@ const TAMANHOS = {
   lg: { classe: "h-12 px-6 text-sm gap-2 rounded-xl", icone: "text-[20px]" },
 };
 
+// - `variante`: uma das chaves de VARIANTES (padrão: primario);
+// - `tamanho`: sm, md ou lg;
+// - `icone`: nome de um ícone do Material Symbols, antes do texto;
+// - `as`: desenha o botão como outro elemento, com a mesma cara (um Link do
+//   React Router, um <a> ou o <label> de um campo de arquivo).
+// As outras props (onClick, disabled, aria-label...) vão direto para o
+// elemento.
 function Botao({
   as: Componente = "button",
   variante = "primario",
@@ -45,7 +51,10 @@ function Botao({
       className={`inline-flex items-center justify-center font-semibold whitespace-nowrap select-none cursor-pointer transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8e001b]/40 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ${t.classe} ${soIcone} ${VARIANTES[variante]} ${className}`}
     >
       {icone && (
-        <span className={`material-symbols-outlined ${t.icone}`} aria-hidden="true">
+        <span
+          className={`material-symbols-outlined ${t.icone}`}
+          aria-hidden="true"
+        >
           {icone}
         </span>
       )}

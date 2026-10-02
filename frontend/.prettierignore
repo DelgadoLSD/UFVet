@@ -1,0 +1,11 @@
+# Arquivos que o Prettier não formata.
+
+# Saída do build.
+dist
+
+# Lista do IBGE com as 5.571 cidades, compacta de propósito: formatada,
+# teria uma linha por valor.
+src/dados/municipios.json
+
+# Gerado pelo npm.
+package-lock.json

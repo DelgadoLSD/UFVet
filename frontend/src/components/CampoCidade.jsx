@@ -6,11 +6,12 @@ import {
   cidadeExata,
 } from "../util/localidades";
 
-// Cidade escolhida na lista oficial do IBGE. O valor é "Nome - UF".
+// Cidade escolhida na lista oficial do IBGE. O valor é "Nome - UF", e
+// `onEscolher` recebe a cidade escolhida.
 //
 // Ao abrir, o campo já mostra as cidades da região de Viçosa para escolher com
 // um clique; digitar serve para achar qualquer outra do Brasil.
-function CampoCidade({ id = "cidade", rotulo = "Cidade", valor, onChange }) {
+function CampoCidade({ id = "cidade", rotulo = "Cidade", valor, onEscolher }) {
   const [lista, setLista] = useState(null);
   const [falhou, setFalhou] = useState(false);
 
@@ -38,7 +39,7 @@ function CampoCidade({ id = "cidade", rotulo = "Cidade", valor, onChange }) {
       id={id}
       rotulo={rotulo}
       valor={valor}
-      onEscolher={onChange}
+      onEscolher={onEscolher}
       sugerir={sugerir}
       aoSair={aoSair}
       carregando={!lista && !falhou}

@@ -1,6 +1,11 @@
 import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import { banco } from "../src/banco.js";
-import { criarAnimal, criarTutor, criarVeterinario, limparBanco } from "./apoio.js";
+import {
+  criarAnimal,
+  criarTutor,
+  criarVeterinario,
+  limparBanco,
+} from "./apoio.js";
 
 // A regra de encerramento de conta (seção 6 do modelo de dados e F5):
 // apaga-se o que é só sobre a pessoa; preserva-se o que documenta um ato
@@ -31,7 +36,11 @@ async function montarCenario() {
   const zeus = await criarAnimal({ tutorId: tutora.id, nome: "Zeus" });
   const thor = await criarAnimal({ tutorId: vet.id, nome: "Thor" });
 
-  const assinatura = { veterinarioNome: vet.nomeCompleto, crmv: "78120", ufCrmv: "MG" };
+  const assinatura = {
+    veterinarioNome: vet.nomeCompleto,
+    crmv: "78120",
+    ufCrmv: "MG",
+  };
   await banco.validacao.create({
     data: {
       ...assinatura,
@@ -82,17 +91,23 @@ describe("encerrar a conta do veterinário", () => {
 
     // conferir: os registros continuam, sem o vínculo com a conta apagada,
     // mas com a assinatura legível
-    const validacao = await banco.validacao.findFirstOrThrow({ where: { animalId: zeus.id } });
+    const validacao = await banco.validacao.findFirstOrThrow({
+      where: { animalId: zeus.id },
+    });
     expect(validacao.veterinarioId).toBeNull();
     expect(validacao.veterinarioNome).toBe("Victor Hugo Martins");
     expect(validacao.crmv).toBe("78120");
     expect(await banco.validacaoCriterio.count()).toBe(1);
 
-    const doacao = await banco.doacao.findFirstOrThrow({ where: { animalId: zeus.id } });
+    const doacao = await banco.doacao.findFirstOrThrow({
+      where: { animalId: zeus.id },
+    });
     expect(doacao.veterinarioId).toBeNull();
     expect(doacao.veterinarioNome).toBe("Victor Hugo Martins");
 
-    const observacao = await banco.observacao.findFirstOrThrow({ where: { animalId: zeus.id } });
+    const observacao = await banco.observacao.findFirstOrThrow({
+      where: { animalId: zeus.id },
+    });
     expect(observacao.autorId).toBeNull();
     expect(observacao.autorNome).toBe("Victor Hugo Martins");
   });
@@ -102,7 +117,9 @@ describe("encerrar a conta do veterinário", () => {
 
     await banco.usuario.delete({ where: { id: vet.id } });
 
-    expect(await banco.animal.findUnique({ where: { id: thor.id } })).toBeNull();
+    expect(
+      await banco.animal.findUnique({ where: { id: thor.id } }),
+    ).toBeNull();
     expect(await banco.veterinario.count()).toBe(0);
     expect(await banco.liberacaoContato.count()).toBe(0);
   });
@@ -114,7 +131,9 @@ describe("encerrar a conta da tutora", () => {
 
     await banco.usuario.delete({ where: { id: tutora.id } });
 
-    expect(await banco.animal.findUnique({ where: { id: zeus.id } })).toBeNull();
+    expect(
+      await banco.animal.findUnique({ where: { id: zeus.id } }),
+    ).toBeNull();
     expect(await banco.validacao.count()).toBe(0);
     expect(await banco.validacaoCriterio.count()).toBe(0);
     expect(await banco.doacao.count()).toBe(0);
@@ -122,7 +141,9 @@ describe("encerrar a conta da tutora", () => {
     expect(await banco.liberacaoContato.count()).toBe(0);
 
     // O veterinário não é afetado.
-    expect(await banco.usuario.findUnique({ where: { id: vet.id } })).not.toBeNull();
+    expect(
+      await banco.usuario.findUnique({ where: { id: vet.id } }),
+    ).not.toBeNull();
   });
 });
 

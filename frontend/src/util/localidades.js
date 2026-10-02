@@ -11,7 +11,7 @@ import { BAIRROS } from "../dados/bairros";
 // Nos dois, maiúsculas, acentos e pontuação não contam. O mapa guarda de que
 // letra do texto original veio cada letra da chave, para destacar na tela o
 // trecho que casou.
-export function normalizar(texto, peloSom = true) {
+function normalizar(texto, peloSom = true) {
   let chave = "";
   const mapa = [];
   const minusculo = texto.toLowerCase();
@@ -89,11 +89,44 @@ const ehIgual = (item, termos) =>
         item.extras?.[i] === termos[i].chave),
   );
 
+// ───────────────────────────── Estados ─────────────────────────────
+
+// Siglas das 27 unidades da federação (usadas, por exemplo, na UF do CRMV).
+export const UFS = [
+  "AC",
+  "AL",
+  "AM",
+  "AP",
+  "BA",
+  "CE",
+  "DF",
+  "ES",
+  "GO",
+  "MA",
+  "MG",
+  "MS",
+  "MT",
+  "PA",
+  "PB",
+  "PE",
+  "PI",
+  "PR",
+  "RJ",
+  "RN",
+  "RO",
+  "RR",
+  "RS",
+  "SC",
+  "SE",
+  "SP",
+  "TO",
+];
+
 // ───────────────────────────── Cidades ─────────────────────────────
 
 // A cidade é guardada como "Nome - UF", o mesmo formato já usado no resto do
 // site. Nome e UF juntos são únicos no Brasil; só o nome, não (há três Viçosas).
-export const rotuloCidade = (nome, uf) => `${nome} - ${uf}`;
+const rotuloCidade = (nome, uf) => `${nome} - ${uf}`;
 
 let municipios = null;
 
@@ -225,12 +258,13 @@ export function buscarBairros(lista, texto) {
   const escrito = texto.trim().replace(/\s+/g, " ");
   const ordemAlfabetica = (x, y) => x.nome.localeCompare(y.nome, "pt-BR");
 
-  const achados = termos[0].chave || termos[1].chave
-    ? lista
-        .map((b) => ({ b, ...comparar(b, termos) }))
-        .filter((r) => r.nivel >= 0)
-        .sort((x, y) => x.nivel - y.nivel || ordemAlfabetica(x.b, y.b))
-    : [...lista].sort(ordemAlfabetica).map((b) => ({ b, trecho: null }));
+  const achados =
+    termos[0].chave || termos[1].chave
+      ? lista
+          .map((b) => ({ b, ...comparar(b, termos) }))
+          .filter((r) => r.nivel >= 0)
+          .sort((x, y) => x.nivel - y.nivel || ordemAlfabetica(x.b, y.b))
+      : [...lista].sort(ordemAlfabetica).map((b) => ({ b, trecho: null }));
 
   const itens = achados.map(({ b, trecho }) => ({
     id: b.nome,

@@ -1,16 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+
+// Botão "?" que explica um dado num balão. No computador abre ao pousar o
+// mouse por um instante, sem precisar clicar; no celular, e para quem prefere,
+// abre com clique. Um clique "fixa" o balão aberto até clicar fora, apertar
+// Esc, rolar a página ou mudar o tamanho da janela.
+//
+// Para um "?" que abre um modal com a explicação completa, use BotaoAjuda.
 
 const LARGURA = 264;
 const MARGEM = 12;
-// Altura de um balão com texto mais longo; abaixo disso, abre para cima
+// Altura de um balão com texto mais longo; abaixo disso, abre para cima.
 const ESPACO_MINIMO_ABAIXO = 220;
 const ATRASO_ABRIR = 350;
 const ATRASO_FECHAR = 180;
-
-// Botão "?" que explica um dado. No computador abre ao pousar o mouse por um
-// instante (sem precisar clicar); no celular, e para quem prefere, abre com
-// clique. Um clique "fixa" o balão aberto até clicar fora.
 function Ajuda({ titulo, children, claro = false, className = "" }) {
   const [posicao, setPosicao] = useState(null);
   const [fixado, setFixado] = useState(false);
@@ -18,9 +21,8 @@ function Ajuda({ titulo, children, claro = false, className = "" }) {
   const balaoRef = useRef(null);
   const timer = useRef(null);
 
-  const temHover = () =>
-    typeof window !== "undefined" &&
-    window.matchMedia("(hover: hover)").matches;
+  // Só dispositivos com mouse abrem o balão ao pousar o ponteiro.
+  const temHover = () => window.matchMedia("(hover: hover)").matches;
 
   const calcularPosicao = () => {
     const r = botaoRef.current.getBoundingClientRect();
@@ -40,11 +42,11 @@ function Ajuda({ titulo, children, claro = false, className = "" }) {
     timer.current = setTimeout(fn, ms);
   };
 
-  const fechar = () => {
+  const fechar = useCallback(() => {
     clearTimeout(timer.current);
     setPosicao(null);
     setFixado(false);
-  };
+  }, []);
 
   const aoEntrar = () => {
     if (!temHover() || fixado) return;
@@ -73,32 +75,27 @@ function Ajuda({ titulo, children, claro = false, className = "" }) {
 
   useEffect(() => {
     if (!aberto) return;
-    const fecharTudo = () => {
-      clearTimeout(timer.current);
-      setPosicao(null);
-      setFixado(false);
-    };
     const fecharFora = (e) => {
       if (
         balaoRef.current?.contains(e.target) ||
         botaoRef.current?.contains(e.target)
       )
         return;
-      fecharTudo();
+      fechar();
     };
-    const fecharTecla = (e) => e.key === "Escape" && fecharTudo();
+    const fecharTecla = (e) => e.key === "Escape" && fechar();
 
     document.addEventListener("mousedown", fecharFora);
     document.addEventListener("keydown", fecharTecla);
-    window.addEventListener("scroll", fecharTudo, true);
-    window.addEventListener("resize", fecharTudo);
+    window.addEventListener("scroll", fechar, true);
+    window.addEventListener("resize", fechar);
     return () => {
       document.removeEventListener("mousedown", fecharFora);
       document.removeEventListener("keydown", fecharTecla);
-      window.removeEventListener("scroll", fecharTudo, true);
-      window.removeEventListener("resize", fecharTudo);
+      window.removeEventListener("scroll", fechar, true);
+      window.removeEventListener("resize", fechar);
     };
-  }, [aberto]);
+  }, [aberto, fechar]);
 
   return (
     <>
@@ -110,6 +107,14 @@ function Ajuda({ titulo, children, claro = false, className = "" }) {
         onMouseLeave={aoSair}
         onFocus={() => !posicao && setPosicao(calcularPosicao())}
         onBlur={() => !fixado && setPosicao(null)}
+        onKeyDown={(e) => {
+          // Com o balão aberto, o Esc fecha só o balão, e não o modal em
+          // volta dele.
+          if (e.key === "Escape" && posicao) {
+            e.preventDefault();
+            fechar();
+          }
+        }}
         aria-label={`Entenda: ${titulo}`}
         aria-expanded={!!posicao}
         className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold leading-none normal-case tracking-normal cursor-help transition-colors shrink-0 ${

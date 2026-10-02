@@ -36,7 +36,11 @@ describe("dados pessoais no banco", () => {
     await criarTutor(beatriz);
 
     await expect(
-      criarTutor({ ...beatriz, cpf: "111.444.777-35", email: "Beatriz.Reis@Gmail.com" }),
+      criarTutor({
+        ...beatriz,
+        cpf: "111.444.777-35",
+        email: "Beatriz.Reis@Gmail.com",
+      }),
     ).rejects.toMatchObject({ code: "P2002" });
     expect(await banco.usuario.count()).toBe(1);
   });
@@ -45,7 +49,11 @@ describe("dados pessoais no banco", () => {
     await criarTutor(beatriz);
 
     await expect(
-      criarTutor({ ...beatriz, email: "outro.email@gmail.com", cpf: "12944780655" }),
+      criarTutor({
+        ...beatriz,
+        email: "outro.email@gmail.com",
+        cpf: "12944780655",
+      }),
     ).rejects.toMatchObject({ code: "P2002" });
     expect(await banco.usuario.count()).toBe(1);
   });

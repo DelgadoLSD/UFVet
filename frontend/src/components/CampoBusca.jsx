@@ -36,14 +36,12 @@ function CampoBusca({
   onEscolher,
   sugerir,
   aoSair,
-  aoFocar,
   placeholder,
   desabilitado = false,
   carregando = false,
   dica,
   vazio,
   erro,
-  ajuda,
   rodape,
   maxLength,
 }) {
@@ -140,13 +138,15 @@ function CampoBusca({
       : itens.length
         ? `${itens.length} ${itens.length === 1 ? "opção" : "opções"}. Use as setas para escolher.`
         : mensagem || "";
-  const aviso = pendente ? erro : ajuda;
+  // Aviso embaixo do campo: só quando falta escolher da lista.
+  const aviso = pendente ? erro : null;
   const textoRodape = rodape?.({
     total,
     mostrados: itens.length,
     sugestoes: !!sugestoes,
   });
-  const mostrarPainel = aberto && !desabilitado && (itens.length > 0 || mensagem);
+  const mostrarPainel =
+    aberto && !desabilitado && (itens.length > 0 || mensagem);
 
   return (
     <div>
@@ -179,7 +179,6 @@ function CampoBusca({
           value={termo ?? valor}
           onFocus={(e) => {
             e.target.select();
-            aoFocar?.();
             setAberto(true);
             // A lista abre já rolada até o que está escolhido, e as setas
             // partem dali.
@@ -248,7 +247,8 @@ function CampoBusca({
                           add
                         </span>
                         <span className="flex-1 min-w-0 truncate">
-                          Usar “<span className="font-semibold">{item.rotulo}</span>”
+                          Usar “
+                          <span className="font-semibold">{item.rotulo}</span>”
                         </span>
                       </>
                     ) : (

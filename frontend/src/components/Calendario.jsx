@@ -1,28 +1,16 @@
 import { useState } from "react";
+import { MESES } from "../util/datas";
 
 // Calendário do site. Existe porque escolher a data da coleta é o gesto
 // central do registro de doação, e o seletor nativo do navegador muda de
 // cara em cada sistema — aqui ele tem a mesma tipografia e o mesmo vermelho
 // do resto do UFVet.
-// Datas futuras ficam desligadas: uma coleta só é registrada depois de
-// acontecer.
+//
+// Trabalha com objetos Date: `valor` é o dia escolhido (ou null) e
+// `onEscolher` recebe o dia clicado. Datas depois de `limite` (por padrão,
+// hoje) ficam desligadas: uma coleta só é registrada depois de acontecer.
 
 const DIAS_DA_SEMANA = ["D", "S", "T", "Q", "Q", "S", "S"];
-
-const MESES = [
-  "janeiro",
-  "fevereiro",
-  "março",
-  "abril",
-  "maio",
-  "junho",
-  "julho",
-  "agosto",
-  "setembro",
-  "outubro",
-  "novembro",
-  "dezembro",
-];
 
 const mesmoDia = (a, b) =>
   a &&
@@ -41,7 +29,11 @@ function Calendario({ valor, onEscolher, limite = new Date() }) {
   const [mes, setMes] = useState(() => primeiroDoMes(valor || new Date()));
 
   const hoje = new Date();
-  const ultimoDia = new Date(mes.getFullYear(), mes.getMonth() + 1, 0).getDate();
+  const ultimoDia = new Date(
+    mes.getFullYear(),
+    mes.getMonth() + 1,
+    0,
+  ).getDate();
   const vaziosAntes = mes.getDay();
   const dias = Array.from({ length: ultimoDia }, (_, i) => i + 1);
 
@@ -57,7 +49,10 @@ function Calendario({ valor, onEscolher, limite = new Date() }) {
           aria-label="Mês anterior"
           className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8f6f6e] hover:bg-[#faf6f6] hover:text-[#8e001b] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a]"
         >
-          <span className="material-symbols-outlined text-[20px]">
+          <span
+            aria-hidden="true"
+            className="material-symbols-outlined text-[20px]"
+          >
             chevron_left
           </span>
         </button>
@@ -74,7 +69,10 @@ function Calendario({ valor, onEscolher, limite = new Date() }) {
           aria-label="Próximo mês"
           className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8f6f6e] hover:bg-[#faf6f6] hover:text-[#8e001b] transition-colors disabled:opacity-30 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a]"
         >
-          <span className="material-symbols-outlined text-[20px]">
+          <span
+            aria-hidden="true"
+            className="material-symbols-outlined text-[20px]"
+          >
             chevron_right
           </span>
         </button>

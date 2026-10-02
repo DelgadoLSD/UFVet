@@ -8,16 +8,16 @@ import LayoutAutenticacao, {
 // "Shelter dog ready for adoption", foto de Michael G (Unsplash, uso livre)
 import fotoCaoVermelho from "../assets/auth/cao-vermelho.jpg";
 
+// Página de entrar: CPF e senha. Por enquanto o envio só avisa; na
+// integração, ele passa a chamar a API, que confere a senha e abre a sessão.
 function LoginPage() {
-  const [formData, setFormData] = useState({ cpf: "", password: "" });
+  const [dados, setDados] = useState({ cpf: "", senha: "" });
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  const mudar = (campo, valor) =>
+    setDados((prev) => ({ ...prev, [campo]: valor }));
 
-  const handleSubmit = (e) => {
+  const entrar = (e) => {
     e.preventDefault();
-    console.log("Login:", formData);
     alert("Login enviado! (integração com back-end em breve)");
   };
 
@@ -35,7 +35,7 @@ function LoginPage() {
         animais.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-10 space-y-5">
+      <form onSubmit={entrar} className="mt-10 space-y-5">
         <Campo
           id="cpf"
           rotulo="CPF"
@@ -43,19 +43,20 @@ function LoginPage() {
           inputMode="numeric"
           autoComplete="username"
           required
-          value={formData.cpf}
-          onChange={(e) => handleChange("cpf", e.target.value)}
+          value={dados.cpf}
+          onChange={(e) => mudar("cpf", e.target.value)}
         />
         <Campo
-          id="password"
+          id="senha"
           rotulo="Senha"
           senha
           placeholder="Sua senha"
           autoComplete="current-password"
           required
-          value={formData.password}
-          onChange={(e) => handleChange("password", e.target.value)}
+          value={dados.senha}
+          onChange={(e) => mudar("senha", e.target.value)}
           extra={
+            // A recuperação de senha ainda não existe.
             <a
               href="#"
               className="text-sm font-semibold text-[#8e001b] hover:underline"

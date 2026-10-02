@@ -6,13 +6,20 @@ import Campo from "../components/Campo";
 import CampoBairro from "../components/CampoBairro";
 import CampoCidade from "../components/CampoCidade";
 import Avatar from "../components/Avatar";
-import ModalEncerrarConta from "../components/ModalEncerrarConta";
-import { useSessao, atualizarConta } from "../util/sessao";
+import FormularioSenha from "./conta/FormularioSenha";
+import ModalEncerrarConta from "./conta/ModalEncerrarConta";
+import { useSessao, atualizarConta } from "../servicos/sessao";
+import { LIMITES } from "../regras/limites";
+import { ehVeterinario, rotuloPapel } from "../util/texto";
 
-// Os dados do animal são editados no card dele, em modal. A conta tem página
-// própria porque encerrar uma conta pede espaço para dizer o que se perde —
-// isso não cabe num modal aberto por engano.
+// Página "Sua conta": dados pessoais, foto, senha e encerramento da conta.
+//
+// Os dados do animal são editados no cartão dele, em modal. A conta tem
+// página própria porque encerrar uma conta pede espaço para dizer o que se
+// perde, e isso não cabe num modal aberto por engano.
 
+// Campos que a pessoa pode mudar por aqui. CPF e CRMV ficam de fora (ver
+// DadoFixo).
 const CAMPOS_EDITAVEIS = [
   "nomeCompleto",
   "email",
@@ -22,6 +29,7 @@ const CAMPOS_EDITAVEIS = [
   "hospital",
 ];
 
+// Cartão branco de uma seção da página, com rodapé opcional para os botões.
 function Secao({ titulo, texto, children, rodape }) {
   return (
     <section className="bg-white rounded-2xl border border-[#eadede] shadow-[0_1px_2px_rgba(26,28,28,0.04)] overflow-hidden">
@@ -48,7 +56,10 @@ function Secao({ titulo, texto, children, rodape }) {
 function DadoFixo({ rotulo, valor, motivo }) {
   return (
     <div className="flex items-start gap-3 py-3">
-      <span className="material-symbols-outlined text-[18px] text-[#b9a9a9] mt-0.5 shrink-0">
+      <span
+        aria-hidden="true"
+        className="material-symbols-outlined text-[18px] text-[#b9a9a9] mt-0.5 shrink-0"
+      >
         lock
       </span>
       <div className="min-w-0">
@@ -61,70 +72,18 @@ function DadoFixo({ rotulo, valor, motivo }) {
   );
 }
 
-function FormularioSenha({ onSalvar, onCancelar }) {
-  const [atual, setAtual] = useState("");
-  const [nova, setNova] = useState("");
-  const [confirmacao, setConfirmacao] = useState("");
-
-  const curta = nova.length > 0 && nova.length < 8;
-  const diferentes = confirmacao.length > 0 && nova !== confirmacao;
-  const pronto = atual && nova.length >= 8 && nova === confirmacao;
-
+// Confirmação verde depois de salvar.
+function AvisoSalvo({ children }) {
   return (
-    <form
-      className="flex flex-col gap-5 max-w-md"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSalvar();
-      }}
-    >
-      <Campo
-        id="senha-atual"
-        rotulo="Senha atual"
-        senha
-        autoComplete="current-password"
-        value={atual}
-        onChange={(e) => setAtual(e.target.value)}
-      />
-      <div>
-        <Campo
-          id="senha-nova"
-          rotulo="Nova senha"
-          senha
-          autoComplete="new-password"
-          value={nova}
-          onChange={(e) => setNova(e.target.value)}
-        />
-        <p
-          className={`text-xs mt-2 ${curta ? "text-red-600" : "text-[#5f5e5e]"}`}
-        >
-          Pelo menos 8 caracteres.
-        </p>
-      </div>
-      <div>
-        <Campo
-          id="senha-confirmacao"
-          rotulo="Repita a nova senha"
-          senha
-          autoComplete="new-password"
-          value={confirmacao}
-          onChange={(e) => setConfirmacao(e.target.value)}
-        />
-        {diferentes && (
-          <p className="text-xs text-red-600 mt-2">
-            As duas senhas estão diferentes.
-          </p>
-        )}
-      </div>
-      <div className="flex gap-2">
-        <Botao type="submit" disabled={!pronto}>
-          Salvar senha
-        </Botao>
-        <Botao variante="secundario" onClick={onCancelar}>
-          Cancelar
-        </Botao>
-      </div>
-    </form>
+    <p className="text-sm text-[#1a7f4b] flex items-center gap-1.5">
+      <span
+        aria-hidden="true"
+        className="material-symbols-outlined text-[18px]"
+      >
+        check_circle
+      </span>
+      {children}
+    </p>
   );
 }
 
@@ -136,16 +95,18 @@ function ContaPage() {
   const [form, setForm] = useState(() =>
     Object.fromEntries(CAMPOS_EDITAVEIS.map((c) => [c, usuario[c] || ""])),
   );
+  // URL temporária da foto escolhida, até salvar.
   const [foto, setFoto] = useState(null);
   const [salvo, setSalvo] = useState(false);
   const [trocandoSenha, setTrocandoSenha] = useState(false);
   const [senhaSalva, setSenhaSalva] = useState(false);
   const [encerrando, setEncerrando] = useState(false);
 
-  const ehVet = usuario.role === "vet";
+  const ehVet = ehVeterinario(usuario);
   const alterado =
     !!foto || CAMPOS_EDITAVEIS.some((c) => form[c] !== (usuario[c] || ""));
-  // Trocar de cidade apaga o bairro: só dá para salvar depois de escolher o novo.
+  // Trocar de cidade apaga o bairro: só dá para salvar depois de escolher o
+  // novo.
   const localizacaoCompleta = !!form.cidade && !!form.bairro;
 
   const mudar = (campo, valor) => {
@@ -160,6 +121,8 @@ function ContaPage() {
     setSalvo(false);
   };
 
+  // Sem API, salvar atualiza a conta simulada (vale até recarregar a página).
+  // O nome curto do topo passa a ser o nome completo digitado.
   const salvar = (e) => {
     e.preventDefault();
     const dados = { ...form, nome: form.nomeCompleto };
@@ -175,12 +138,12 @@ function ContaPage() {
 
   return (
     <>
-      <Header dark={true} />
+      <Header />
 
       {encerrando && (
         <ModalEncerrarConta
           usuario={usuario}
-          onClose={() => setEncerrando(false)}
+          onFechar={() => setEncerrando(false)}
           onEncerrar={() => navegar("/")}
         />
       )}
@@ -191,7 +154,7 @@ function ContaPage() {
             Sua conta
           </h1>
           <p className="text-sm text-[#5f5e5e] mt-1">
-            {usuario.papel} · código #{usuario.codigo}
+            {rotuloPapel(usuario)} · código #{usuario.codigo}
           </p>
         </div>
 
@@ -213,14 +176,7 @@ function ContaPage() {
                       Escolha a cidade e o bairro para salvar.
                     </p>
                   )}
-                  {salvo && (
-                    <p className="text-sm text-[#1a7f4b] flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[18px]">
-                        check_circle
-                      </span>
-                      Alterações salvas
-                    </p>
-                  )}
+                  {salvo && <AvisoSalvo>Alterações salvas</AvisoSalvo>}
                 </div>
               }
             >
@@ -258,6 +214,7 @@ function ContaPage() {
                   id="nome"
                   rotulo="Nome completo"
                   autoComplete="name"
+                  maxLength={LIMITES.nomeCompleto}
                   value={form.nomeCompleto}
                   onChange={(e) => mudar("nomeCompleto", e.target.value)}
                 />
@@ -282,7 +239,7 @@ function ContaPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <CampoCidade
                     valor={form.cidade}
-                    onChange={(cidade) => {
+                    onEscolher={(cidade) => {
                       if (cidade === form.cidade) return;
                       mudar("cidade", cidade);
                       mudar("bairro", "");
@@ -291,7 +248,7 @@ function ContaPage() {
                   <CampoBairro
                     cidade={form.cidade}
                     valor={form.bairro}
-                    onChange={(bairro) => mudar("bairro", bairro)}
+                    onEscolher={(bairro) => mudar("bairro", bairro)}
                   />
                 </div>
                 {ehVet && (
@@ -345,14 +302,7 @@ function ContaPage() {
                 >
                   Alterar senha
                 </Botao>
-                {senhaSalva && (
-                  <p className="text-sm text-[#1a7f4b] flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[18px]">
-                      check_circle
-                    </span>
-                    Senha alterada
-                  </p>
-                )}
+                {senhaSalva && <AvisoSalvo>Senha alterada</AvisoSalvo>}
               </div>
             )}
           </Secao>

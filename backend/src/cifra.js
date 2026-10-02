@@ -44,7 +44,10 @@ function lerChave(nome) {
 export function cifrar(texto) {
   const iv = randomBytes(BYTES_IV);
   const cifrador = createCipheriv(ALGORITMO, lerChave("CHAVE_CIFRAGEM"), iv);
-  const dados = Buffer.concat([cifrador.update(texto, "utf8"), cifrador.final()]);
+  const dados = Buffer.concat([
+    cifrador.update(texto, "utf8"),
+    cifrador.final(),
+  ]);
   const etiqueta = cifrador.getAuthTag();
   return `${VERSAO}:${Buffer.concat([iv, etiqueta, dados]).toString("base64")}`;
 }
@@ -61,7 +64,11 @@ export function decifrar(cifrado) {
   const etiqueta = bruto.subarray(BYTES_IV, BYTES_IV + BYTES_ETIQUETA);
   const dados = bruto.subarray(BYTES_IV + BYTES_ETIQUETA);
 
-  const decifrador = createDecipheriv(ALGORITMO, lerChave("CHAVE_CIFRAGEM"), iv);
+  const decifrador = createDecipheriv(
+    ALGORITMO,
+    lerChave("CHAVE_CIFRAGEM"),
+    iv,
+  );
   decifrador.setAuthTag(etiqueta);
   return Buffer.concat([decifrador.update(dados), decifrador.final()]).toString(
     "utf8",

@@ -29,6 +29,9 @@ function IconeGoogle() {
   );
 }
 
+// Divisória "ou" seguida do botão de entrar com o Google, no fim dos
+// formulários de entrar e de criar conta. Por enquanto o botão é só visual:
+// o login com o Google ainda não existe.
 export function BotaoGoogle({ children }) {
   return (
     <>
@@ -70,7 +73,7 @@ function LayoutAutenticacao({
 
   return (
     <>
-      <Header dark />
+      <Header />
       <main className="min-h-screen pt-20 grid md:grid-cols-2 bg-white">
         {fotoAEsquerda && painelFoto}
         <section className="flex items-start md:items-center justify-center px-5 py-10 md:py-12 md:px-12">

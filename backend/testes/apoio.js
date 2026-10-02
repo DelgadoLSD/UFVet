@@ -9,7 +9,9 @@ import { cifrar, indiceCpf, indiceEmail } from "../src/cifra.js";
 export async function limparBanco() {
   const [{ nome }] = await banco.$queryRaw`select current_database() as nome`;
   if (!nome.endsWith("_test")) {
-    throw new Error(`Recusado: limparBanco só roda no banco de testes, não em "${nome}".`);
+    throw new Error(
+      `Recusado: limparBanco só roda no banco de testes, não em "${nome}".`,
+    );
   }
   const tabelas = await banco.$queryRaw`
     select tablename from pg_tables

@@ -1,27 +1,33 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Avatar from "./Avatar";
-import { CONTAS, useSessao, trocarConta } from "../util/sessao";
+import { CONTAS, useSessao, trocarConta } from "../servicos/sessao";
+import { rotuloPapel } from "../util/texto";
 
-// Simula estado de autenticação — vira true quando back-end estiver pronto
+// Barra do topo, presente em todas as páginas: logo, navegação principal e o
+// menu da conta. No celular, a navegação vai para um menu que abre por baixo.
+
+// Enquanto não há login de verdade, sempre há alguém "logado": a conta
+// simulada que o menu da conta alterna. Na integração, este valor passa a vir
+// da sessão; sem ninguém logado, o topo mostra "Entrar" e "Criar conta".
 const LOGADO = true;
 
 const LINKS = [
-  { to: "/", label: "Início" },
-  { to: "/buscar", label: "Buscar doadores" },
+  { to: "/", rotulo: "Início" },
+  { to: "/buscar", rotulo: "Buscar doadores" },
 ];
 
 // Menu da conta: leva ao perfil e troca a conta simulada, que é como dá para
 // ver o mesmo site pelos olhos de um tutor e de um veterinário.
 function MenuConta({ conta, noPerfil }) {
   const [aberto, setAberto] = useState(false);
-  const raiz = useRef(null);
+  const raizRef = useRef(null);
   const navegar = useNavigate();
 
   useEffect(() => {
     if (!aberto) return;
     const fecharFora = (e) => {
-      if (!raiz.current?.contains(e.target)) setAberto(false);
+      if (!raizRef.current?.contains(e.target)) setAberto(false);
     };
     const aoTeclar = (e) => e.key === "Escape" && setAberto(false);
     document.addEventListener("mousedown", fecharFora);
@@ -33,7 +39,7 @@ function MenuConta({ conta, noPerfil }) {
   }, [aberto]);
 
   return (
-    <div ref={raiz} className="relative">
+    <div ref={raizRef} className="relative">
       <button
         type="button"
         onClick={() => setAberto((v) => !v)}
@@ -48,7 +54,9 @@ function MenuConta({ conta, noPerfil }) {
         <Avatar pessoa={conta} />
         <span className="hidden sm:flex flex-col leading-tight text-left">
           <span className="text-sm font-bold text-white">{conta.nome}</span>
-          <span className="text-[11px] text-white/55">{conta.papel}</span>
+          <span className="text-[11px] text-white/55">
+            {rotuloPapel(conta)}
+          </span>
         </span>
         <span
           aria-hidden="true"
@@ -90,11 +98,14 @@ function MenuConta({ conta, noPerfil }) {
                         {c.nome}
                       </span>
                       <span className="block text-xs text-[#5f5e5e]">
-                        {c.papel}
+                        {rotuloPapel(c)}
                       </span>
                     </span>
                     {ativa && (
-                      <span className="material-symbols-outlined text-[20px] text-[#8e001b]">
+                      <span
+                        aria-hidden="true"
+                        className="material-symbols-outlined text-[20px] text-[#8e001b]"
+                      >
                         check
                       </span>
                     )}
@@ -111,7 +122,10 @@ function MenuConta({ conta, noPerfil }) {
               onClick={() => setAberto(false)}
               className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-[#1a1c1c] hover:bg-[#faf6f6] transition-colors"
             >
-              <span className="material-symbols-outlined text-[20px] text-[#8e001b]">
+              <span
+                aria-hidden="true"
+                className="material-symbols-outlined text-[20px] text-[#8e001b]"
+              >
                 manage_accounts
               </span>
               Sua conta
@@ -122,7 +136,10 @@ function MenuConta({ conta, noPerfil }) {
               onClick={() => setAberto(false)}
               className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-[#1a1c1c] hover:bg-[#faf6f6] transition-colors"
             >
-              <span className="material-symbols-outlined text-[20px] text-[#8e001b]">
+              <span
+                aria-hidden="true"
+                className="material-symbols-outlined text-[20px] text-[#8e001b]"
+              >
                 logout
               </span>
               Sair
@@ -154,15 +171,15 @@ function Header() {
   // rolar para cima — dá espaço de leitura sem esconder a navegação de vez.
   useEffect(() => {
     let ultimoY = window.scrollY;
-    const handleScroll = () => {
+    const aoRolar = () => {
       const y = window.scrollY;
       const descendo = y > ultimoY && y > 120;
       setEscondido(descendo);
       if (descendo) setMenuAberto(false);
       ultimoY = y;
     };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", aoRolar, { passive: true });
+    return () => window.removeEventListener("scroll", aoRolar);
   }, []);
 
   const noPerfil = location.pathname === "/meu-perfil";
@@ -204,7 +221,7 @@ function Header() {
                   ativo ? "text-white" : "text-white/55 hover:text-white"
                 }`}
               >
-                {link.label}
+                {link.rotulo}
                 <span
                   aria-hidden="true"
                   className={`absolute left-0 right-0 -bottom-px h-[3px] rounded-t-full bg-[#b7102a] origin-center transition-transform duration-200 motion-reduce:transition-none ${
@@ -244,7 +261,7 @@ function Header() {
             aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
             className="md:hidden w-11 h-11 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a]"
           >
-            <span className="material-symbols-outlined">
+            <span aria-hidden="true" className="material-symbols-outlined">
               {menuAberto ? "close" : "menu"}
             </span>
           </button>
@@ -272,7 +289,7 @@ function Header() {
                   aria-hidden="true"
                   className={`w-[3px] h-5 rounded-full ${ativo ? "bg-[#b7102a]" : "bg-transparent"}`}
                 />
-                {link.label}
+                {link.rotulo}
               </Link>
             );
           })}

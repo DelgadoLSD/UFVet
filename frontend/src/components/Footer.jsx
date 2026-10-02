@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
 
+// Rodapé das páginas públicas (início e busca): apresentação curta do UFVet,
+// atalhos de navegação e contato.
+
 const LINKS = [
-  { to: "/", label: "Início" },
-  { to: "/buscar", label: "Buscar doadores" },
-  { to: "/cadastrar", label: "Criar conta" },
-  { to: "/login", label: "Entrar" },
+  { to: "/", rotulo: "Início" },
+  { to: "/buscar", rotulo: "Buscar doadores" },
+  { to: "/cadastrar", rotulo: "Criar conta" },
+  { to: "/login", rotulo: "Entrar" },
 ];
 
 function Footer() {
@@ -28,8 +31,11 @@ function Footer() {
             <ul className="mt-4 space-y-3 text-sm text-white/60">
               {LINKS.map((link) => (
                 <li key={link.to}>
-                  <Link to={link.to} className="hover:text-white transition-colors">
-                    {link.label}
+                  <Link
+                    to={link.to}
+                    className="hover:text-white transition-colors"
+                  >
+                    {link.rotulo}
                   </Link>
                 </li>
               ))}
@@ -47,6 +53,8 @@ function Footer() {
 
         <div className="mt-14 pt-8 border-t border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs text-white/45">
           <p>© 2026 UFVet. Parceria UFV e Hospital Veterinário da UFV.</p>
+          {/* Os termos de uso e a política de privacidade ainda não foram
+              escritos; os links ficam no lugar onde vão morar. */}
           <div className="flex gap-6">
             <a href="#" className="hover:text-white transition-colors">
               Termos de uso

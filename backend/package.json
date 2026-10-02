@@ -13,9 +13,12 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
+    "prettier": "^3.9.9",
     "prisma": "7.10.0",
     "vitest": "^5.0.2"
   },

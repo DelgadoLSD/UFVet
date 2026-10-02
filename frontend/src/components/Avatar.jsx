@@ -1,5 +1,7 @@
 // Foto de uma pessoa, com as iniciais como reserva para quem ainda não subiu
-// foto — usado no header, na confirmação de código e nos pedidos.
+// foto. Aparece no menu da conta, nos cartões de quem libera ou pede acesso aos
+// contatos e na página da conta. `fotoPosicao` e `fotoZoom`, nos dados da
+// pessoa, ajustam o enquadramento de cada retrato.
 function Avatar({
   pessoa,
   tamanho = "w-9 h-9",

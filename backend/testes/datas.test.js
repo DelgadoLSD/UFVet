@@ -16,9 +16,16 @@ describe("datas e fuso horário", () => {
 
     // agir: grava e lê de volta pelo Prisma
     const { id } = await banco.estabelecimento.create({
-      data: { nome: "Hospital de teste", cidade: "Viçosa", uf: "MG", criadoEm: meioDia },
+      data: {
+        nome: "Hospital de teste",
+        cidade: "Viçosa",
+        uf: "MG",
+        criadoEm: meioDia,
+      },
     });
-    const lido = await banco.estabelecimento.findUniqueOrThrow({ where: { id } });
+    const lido = await banco.estabelecimento.findUniqueOrThrow({
+      where: { id },
+    });
 
     // conferir o instante gravado de verdade, lido como texto para não passar
     // pelo adaptador. Só comparar a volta pelo Prisma não basta: sem a

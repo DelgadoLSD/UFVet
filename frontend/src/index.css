@@ -2,11 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fonte Sora, carregada do Google Fonts no index.html. */
 body {
   font-family: "Sora", sans-serif;
   letter-spacing: -0.02em;
 }
 
+/* Ícones do Material Symbols, sempre no traço vazado e no peso normal. */
 .material-symbols-outlined {
   font-variation-settings:
     "FILL" 0,
