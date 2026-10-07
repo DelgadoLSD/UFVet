@@ -2,22 +2,20 @@ import fotoVictor from "../../assets/people/man1_0-image.jpg";
 import fotoBeatriz from "../../assets/people/women1_0-image.jpg";
 import fotoLucas from "../../assets/people/man2_0-image.jpg";
 
-// Pessoas e locais de exemplo, enquanto o site não está ligado à API.
+// Pessoas e locais de exemplo, para as telas que ainda não estão ligadas à
+// API (perfis visitados, liberações de contato, pedidos).
 //
-// Cada pessoa é escrita uma vez só; as listas exportadas no fim (contas da
-// simulação de login, tutores, veterinários) apontam para os mesmos objetos.
-// Na integração, estes dados passam a vir do banco, pela API.
+// Cada pessoa é escrita uma vez só; as listas exportadas no fim apontam para
+// os mesmos objetos. Os campos seguem a tabela usuario do banco (papel,
+// nomeCompleto, cidade no formato "Nome - UF", tratamento DR/DRA dos
+// veterinários), mais dois que são só de exibição:
+// - animaisResumo: o resumo "Zeus (cão) e Luna (gato)", que vai sair das
+//   tabelas de animais;
+// - fotoPosicao e fotoZoom: ajustam o enquadramento de cada retrato.
 //
-// Os campos seguem a tabela usuario do banco (papel, nomeCompleto, cidade no
-// formato "Nome - UF"...), com três diferenças que ainda precisam de decisão
-// antes da integração, porque o banco não guarda estes dados:
-// - nome: o nome curto exibido no topo e nos cartões ("Victor Hugo");
-// - genero: escolhe entre "Tutor" e "Tutora", "Dr." e "Dra." (o banco só tem o
-//   tratamento DR/DRA, e só para veterinários);
-// - animaisResumo: o resumo "Zeus (cão) e Luna (gato)", que viria das tabelas
-//   de animais.
-// Os campos de foto (fotoPosicao, fotoZoom) ajustam o enquadramento de cada
-// retrato e são só de exibição.
+// Victor e Beatriz também existem como contas de exemplo no banco, com os
+// mesmos códigos (backend/prisma/exemplos.js): quem entra com elas vê os
+// animais, pedidos e liberações de exemplo destas telas.
 
 export const HOSPITAIS = [
   { id: "hv-ufv", nome: "Hospital Veterinário UFV", cidade: "Viçosa - MG" },
@@ -26,15 +24,13 @@ export const HOSPITAIS = [
 
 const [HV_UFV, CLINICA_VIDA] = HOSPITAIS;
 
-// ─── Contas da simulação de login ─────────────────────────────────────────────
+// ─── Contas de exemplo ────────────────────────────────────────────────────────
 
 const VICTOR = {
   codigo: "V7H4M2",
   papel: "VETERINARIO",
-  nome: "Victor Hugo",
   nomeCompleto: "Victor Hugo Martins",
-  genero: "M",
-  cpf: "084.512.336-70",
+  tratamento: "DR",
   email: "victor.hugo@ufv.br",
   telefone: "(31) 99204-7715",
   cidade: "Viçosa - MG",
@@ -54,10 +50,7 @@ const VICTOR = {
 const BEATRIZ = {
   codigo: "T3M8P1",
   papel: "TUTOR",
-  nome: "Beatriz dos Reis",
   nomeCompleto: "Beatriz dos Reis",
-  genero: "F",
-  cpf: "129.447.806-55",
   email: "beatriz.reis@gmail.com",
   telefone: "(31) 98871-4402",
   cidade: "Viçosa - MG",
@@ -73,9 +66,7 @@ const BEATRIZ = {
 const LUCAS = {
   codigo: "T7X9K2",
   papel: "TUTOR",
-  nome: "Lucas Delgado",
   nomeCompleto: "Lucas Silva Delgado",
-  genero: "M",
   email: "lucas.delgado@gmail.com",
   telefone: "(31) 99715-2280",
   cidade: "Viçosa - MG",
@@ -89,9 +80,7 @@ const LUCAS = {
 const PEDRO = {
   codigo: "T5K2W7",
   papel: "TUTOR",
-  nome: "Pedro Alves",
   nomeCompleto: "Pedro Alves",
-  genero: "M",
   cidade: "Viçosa - MG",
   membroDesde: "2025-09-15",
   animaisResumo: "Max (cão)",
@@ -100,9 +89,7 @@ const PEDRO = {
 const CAMILA_NUNES = {
   codigo: "T5W2K6",
   papel: "TUTOR",
-  nome: "Camila Nunes",
   nomeCompleto: "Camila Nunes",
-  genero: "F",
   cidade: "Teixeiras - MG",
   membroDesde: "2026-06-03",
   animaisResumo: "Amora (gato)",
@@ -110,12 +97,11 @@ const CAMILA_NUNES = {
 
 // ─── Outros veterinários ──────────────────────────────────────────────────────
 
-const veterinario = (codigo, nome, genero, crmv, hospital) => ({
+const veterinario = (codigo, nomeCompleto, tratamento, crmv, hospital) => ({
   codigo,
   papel: "VETERINARIO",
-  nome,
-  nomeCompleto: nome,
-  genero,
+  nomeCompleto,
+  tratamento,
   crmv,
   hospitalId: hospital.id,
   hospital: hospital.nome,
@@ -124,41 +110,39 @@ const veterinario = (codigo, nome, genero, crmv, hospital) => ({
 const CAMILA_DUARTE = veterinario(
   "V2C8D5",
   "Camila Duarte",
-  "F",
+  "DRA",
   "45210-MG",
   HV_UFV,
 );
 const PAULO_REZENDE = veterinario(
   "V9P3R7",
   "Paulo Rezende",
-  "M",
+  "DR",
   "88214-MG",
   HV_UFV,
 );
 const BEATRIZ_TAVARES = veterinario(
   "V4T1B8",
   "Beatriz Tavares",
-  "F",
+  "DRA",
   "51903-MG",
   CLINICA_VIDA,
 );
 const MURILO_NOGUEIRA = veterinario(
   "V6M5N3",
   "Murilo Nogueira",
-  "M",
+  "DR",
   "63771-MG",
   CLINICA_VIDA,
 );
 
 // ─── Listas usadas pelo site ──────────────────────────────────────────────────
 
-// As duas contas que o menu do topo alterna: o mesmo site visto pelo
-// veterinário, que vê os contatos livremente, e pela tutora, que só vê com
-// liberação. A primeira é a que abre o site.
-export const CONTAS = [VICTOR, BEATRIZ];
+// Perfil que um veterinário abre pela busca.
+export const TUTORA_DE_EXEMPLO = BEATRIZ;
 
-// Perfil visitado pela tutora: sem ele, ela só veria o próprio perfil, e o
-// contato bloqueado nunca apareceria.
+// Perfil que um tutor (ou um visitante) abre pela busca: é onde o contato
+// bloqueado aparece.
 export const OUTRO_TUTOR = LUCAS;
 
 // Tutores que um veterinário pode encontrar pelo código para liberar acesso.
@@ -173,3 +157,6 @@ export const VETERINARIOS = [
   BEATRIZ_TAVARES,
   MURILO_NOGUEIRA,
 ];
+
+// Todas as pessoas de exemplo, para achar uma pelo código.
+export const PESSOAS = [VICTOR, ...TUTORES, ...VETERINARIOS.slice(1)];

@@ -54,9 +54,11 @@ export const liberacoesDe = (codigoVeterinario, liberacoes) =>
 export const pedidosPara = (codigoVeterinario, { pedidos }) =>
   pedidos.filter((p) => p.veterinarioCodigo === codigoVeterinario);
 
-// Regra única de quem vê contato: veterinário vê sempre; tutor, só com
-// liberação ativa de um veterinário. O "motivo" decide o texto da tela.
+// Regra única de quem vê contato (F33): veterinário vê sempre; tutor, só com
+// liberação ativa de um veterinário; o visitante, sem conta, nunca. O
+// "motivo" decide o texto da tela.
 export function acessoDe(usuario, { liberacoes, pedidos }) {
+  if (!usuario) return { pode: false, motivo: "visitante" };
   if (ehVeterinario(usuario)) return { pode: true, motivo: "veterinario" };
 
   const liberacao = liberacoesAtivas(liberacoes).find(

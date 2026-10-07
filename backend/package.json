@@ -2,16 +2,20 @@
   "name": "ufvet-backend",
   "version": "0.1.0",
   "private": true,
-  "description": "Back-end do UFVet: banco de dados PostgreSQL com Prisma e, em seguida, a API em Express.",
+  "description": "Back-end do UFVet: a API em Express e o banco de dados PostgreSQL, acessado pelo Prisma.",
   "type": "module",
   "engines": {
     "node": ">=22.18.0"
   },
   "scripts": {
+    "dev": "node --watch src/servidor.js",
+    "start": "node src/servidor.js",
+    "convite": "node scripts/convite.js",
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
+    "db:exemplos": "node prisma/exemplos.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write .",
@@ -20,13 +24,21 @@
   "devDependencies": {
     "prettier": "^3.9.9",
     "prisma": "7.10.0",
+    "supertest": "^7.3.1",
     "vitest": "^5.0.2"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^18.0.4",
-    "pg": "^8.23.0"
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.0",
+    "zod": "^4.6.5"
   },
   "allowScripts": {
     "@prisma/engines@7.10.0": true,

@@ -1,8 +1,9 @@
 # UFVet — front-end
 
-O site do UFVet, em React. Por enquanto ele funciona sozinho, com dados de
-exemplo no lugar da API: dá para navegar por todas as telas, mas nada é salvo
-de verdade, e recarregar a página volta tudo ao começo.
+O site do UFVet, em React. O login e o cadastro já falam com a API (pasta
+`backend`). O resto das telas (perfis, animais, busca, liberações) ainda usa
+dados de exemplo no lugar da API: dá para navegar por tudo, mas o que muda
+nessas telas não é salvo, e recarregar a página volta ao começo.
 
 ## Como rodar
 
@@ -12,6 +13,11 @@ Precisa do Node.js 22 ou mais novo.
 npm install        # baixa as dependências (só na primeira vez)
 npm run dev        # abre o site em http://localhost:5173
 ```
+
+A API precisa estar ligada ao mesmo tempo, em outro terminal (`npm run dev`
+na pasta `backend`; o README de lá explica a primeira vez). O site repassa
+para ela tudo o que começa com `/api` (ver `vite.config.js`). Sem a API, o
+site abre, mas ninguém consegue entrar.
 
 Outros comandos:
 
@@ -25,10 +31,20 @@ Outros comandos:
 
 ## Como entrar como veterinário ou tutora
 
-Ainda não há login de verdade. O site sempre abre com uma conta simulada: o
-veterinário Victor Hugo. O menu da conta, no canto superior direito, troca para
-a tutora Beatriz dos Reis, e assim dá para ver o mesmo site pelos dois lados
-(por exemplo, o contato que o veterinário vê e a tutora não).
+Com as contas de exemplo do back-end (`npm run db:exemplos`):
+
+| Conta                | E-mail                | Senha           |
+| -------------------- | --------------------- | --------------- |
+| Victor (veterinário) | `victor@example.com`  | `ufvet-exemplo` |
+| Beatriz (tutora)     | `beatriz@example.com` | `ufvet-exemplo` |
+
+Elas têm os mesmos códigos públicos das pessoas dos dados de exemplo, então o
+site mostra os animais, pedidos e liberações de exemplo de cada uma. Entrando
+com uma e com a outra, dá para ver o mesmo site pelos dois lados (por exemplo,
+o contato que o veterinário vê e a tutora não).
+
+Sem entrar, o site mostra o que o visitante vê: o início, a busca e os perfis,
+sem os contatos. O próprio perfil e a conta pedem login.
 
 ## Estrutura
 
@@ -68,13 +84,14 @@ As telas não leem os dados de exemplo diretamente: elas sempre passam por
 `servicos/`.
 
 ```
-tela  →  servicos/  →  dados/exemplos/   (hoje)
-tela  →  servicos/  →  API               (na integração)
+tela  →  servicos/  →  API               (sessão, login e cadastro)
+tela  →  servicos/  →  dados/exemplos/   (o resto, por enquanto)
 ```
 
 | Serviço                      | O que oferece                                                  |
 | ---------------------------- | -------------------------------------------------------------- |
-| `servicos/sessao.js`         | Quem está logado (`useSessao`) e a edição da própria conta     |
+| `servicos/api.js`            | A conversa com a API, usada pelos outros serviços              |
+| `servicos/sessao.js`         | Quem está logado (`useSessao`), entrar, sair e criar conta     |
 | `servicos/pessoas.js`        | Hospitais, tutores e veterinários pelo código, perfil visitado |
 | `servicos/animais.js`        | Animais de um tutor                                            |
 | `servicos/doadores.js`       | Doadores da busca                                              |
@@ -111,16 +128,21 @@ precisar mostrar um "carregando").
 - **Formatação** pelo Prettier (`npm run format`), com a configuração do
   arquivo `.prettierrc.json` na raiz do repositório.
 
+## Pessoas: nome e tratamento
+
+O banco guarda só o nome completo. O nome curto do topo e dos cartões
+("Victor Martins") é calculado: primeiro nome e último sobrenome
+(`nomeCurto`, em `util/texto.js`). O veterinário escolhe no cadastro como
+assina (Dr. ou Dra.), e é isso que decide "Veterinário" ou "Veterinária". O
+banco não guarda gênero de tutores, então eles aparecem como "Tutor(a)".
+
 ## O que falta para a integração com a API
 
-- Trocar os dados de exemplo pelas chamadas à API, dentro de `servicos/`.
-- Login de verdade: hoje `LOGADO` (em `components/Header.jsx`) é sempre
-  verdadeiro e a conta é simulada.
-- Os formulários (login, cadastro, animal, conta) hoje só mostram um aviso ao
-  enviar.
-- Pontos que dependem de decisão, porque o banco guarda de outro jeito:
-  - o nome curto do topo (`nome`): o banco só tem `nomeCompleto`;
-  - `genero`, usado para "Tutor"/"Tutora" e "Dr."/"Dra.": o banco só guarda o
-    tratamento (`DR`/`DRA`), e só de veterinários;
-  - `animaisResumo` ("Zeus (cão) e Luna (gato)"): virá das tabelas de animais;
-  - o CRMV aparece junto com a UF ("78120-MG"); no banco são duas colunas.
+- Trocar os dados de exemplo pelas chamadas à API, dentro de `servicos/`,
+  uma funcionalidade por vez (conta, animais, busca, liberações...).
+- Os formulários do animal e da conta ainda só mostram um aviso ou guardam a
+  mudança até recarregar a página.
+- `animaisResumo` ("Zeus (cão) e Luna (gato)") vai sair das tabelas de
+  animais.
+- Publicado o site, a hospedagem precisa repassar `/api` para a API, como o
+  Vite faz no computador.

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Botao from "../../components/Botao";
 import BotaoAjuda from "../../components/BotaoAjuda";
 import { acharVeterinario } from "../../servicos/pessoas";
@@ -44,6 +45,13 @@ function conteudoDaFaixa(acesso) {
           "Os contatos dos tutores aparecem quando um veterinário libera seu acesso durante um atendimento.",
         destaque: true,
       };
+    case "visitante":
+      return {
+        icone: "lock",
+        texto:
+          "Os contatos dos tutores aparecem para quem tem conta e recebe a liberação de um veterinário durante um atendimento.",
+        destaque: true,
+      };
     default:
       return null;
   }
@@ -72,6 +80,11 @@ function FaixaAcessoContatos({ acesso, onPedirLiberacao, onComoFunciona }) {
         {acesso.motivo === "sem-liberacao" && (
           <Botao tamanho="sm" onClick={onPedirLiberacao}>
             Pedir liberação
+          </Botao>
+        )}
+        {acesso.motivo === "visitante" && (
+          <Botao as={Link} to="/login?voltar=/buscar" tamanho="sm">
+            Entrar
           </Botao>
         )}
         <BotaoAjuda

@@ -92,6 +92,7 @@ Table usuario {
   cidade varchar(80) [not null]
   bairro varchar(80) [not null]
   foto_url varchar(255)
+  sessoes_validas_desde timestamptz [note: 'Sessões emitidas antes deste instante deixam de valer (troca de senha, sair de todos os aparelhos).']
   criado_em timestamptz [not null]
   atualizado_em timestamptz [not null]
 
@@ -122,6 +123,25 @@ Table aceite {
   aceito_em timestamptz [not null]
 
   Note: 'Prova de que o usuário aceitou os termos e a ciência sobre custos de insumos, com a versão vigente na data.'
+}
+
+Table convite_veterinario {
+  id uuid [pk]
+  codigo_indice char(64) [unique, not null, note: 'HMAC do código do convite; o código em si não é guardado.']
+  nome varchar(120) [not null]
+  crmv varchar(12) [not null]
+  uf_crmv char(2) [not null]
+  estabelecimento_id uuid [not null]
+  criado_em timestamptz [not null]
+  expira_em timestamptz [not null]
+  usado_em timestamptz
+  usado_por_id uuid
+
+  indexes {
+    (crmv, uf_crmv)
+  }
+
+  Note: 'Convite com que um veterinário cria a conta. A instituição informa nome e CRMV; o convite vale uma vez, por poucos dias, e é dele que vêm o CRMV e o estabelecimento.'
 }
 
 // ─────────────────────────── Animal ───────────────────────────
@@ -300,6 +320,8 @@ Table liberacao_contato {
 Ref: veterinario.usuario_id - usuario.id [delete: cascade]
 Ref: veterinario.estabelecimento_id > estabelecimento.id [delete: restrict]
 Ref: aceite.usuario_id > usuario.id [delete: cascade]
+Ref: convite_veterinario.estabelecimento_id > estabelecimento.id [delete: cascade]
+Ref: convite_veterinario.usado_por_id > usuario.id [delete: set null]
 
 Ref: animal.tutor_id > usuario.id [delete: cascade]
 Ref: animal.tipagem_validacao_id - validacao.id [delete: set null]

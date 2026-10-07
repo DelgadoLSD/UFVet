@@ -95,3 +95,19 @@ export const normalizarCpf = (cpf) => cpf.replace(/\D/g, "");
 export const indiceEmail = (email) => impressaoDigital(normalizarEmail(email));
 
 export const indiceCpf = (cpf) => impressaoDigital(normalizarCpf(cpf));
+
+// Código de convite de veterinário ("7K3P-9XQ2"): vale com ou sem o traço e
+// em minúsculas. O prefixo separa os convites dos outros índices, para nunca
+// coincidirem com o de um e-mail ou CPF.
+export const normalizarConvite = (codigo) =>
+  codigo.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+export const indiceConvite = (codigo) =>
+  impressaoDigital(`convite:${normalizarConvite(codigo)}`);
+
+// Confere de uma vez as duas chaves, para a API se recusar a ligar sem elas
+// (em vez de falhar só no primeiro cadastro).
+export function verificarChaves() {
+  lerChave("CHAVE_CIFRAGEM");
+  lerChave("CHAVE_INDICE");
+}

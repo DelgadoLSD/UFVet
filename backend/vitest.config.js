@@ -13,9 +13,11 @@ export default defineConfig({
     // Antes de qualquer teste importar src/banco.js, a conexão é trocada pela
     // do banco de testes. O banco de desenvolvimento nunca é tocado.
     env: {
+      NODE_ENV: "test",
       DATABASE_URL: process.env.TEST_DATABASE_URL,
       CHAVE_CIFRAGEM: chaveDeTeste(1),
       CHAVE_INDICE: chaveDeTeste(2),
+      JWT_SEGREDO: chaveDeTeste(3),
     },
     // Cria o banco de testes, se faltar, e aplica as migrações.
     globalSetup: ["./testes/preparar-banco.js"],

@@ -20,6 +20,21 @@ export async function limparBanco() {
   await banco.$executeRawUnsafe(`truncate ${lista} cascade`);
 }
 
+// CPF válido (com os dígitos verificadores certos) a partir de 9 números.
+// Os testes da API precisam de CPFs que passem na validação.
+export function gerarCpf(nove) {
+  const digito = (numeros) => {
+    let soma = 0;
+    for (let i = 0; i < numeros.length; i++) {
+      soma += Number(numeros[i]) * (numeros.length + 1 - i);
+    }
+    const resto = (soma * 10) % 11;
+    return resto === 10 ? 0 : resto;
+  };
+  const dez = nove + digito(nove);
+  return dez + digito(dez);
+}
+
 // Códigos públicos (#T3M8P1) únicos dentro de uma rodada de testes.
 let contador = 0;
 const proximoCodigo = () =>

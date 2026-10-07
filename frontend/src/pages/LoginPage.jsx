@@ -1,25 +1,46 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
 import Campo from "../components/Campo";
 import LayoutAutenticacao, {
   BotaoGoogle,
 } from "../components/LayoutAutenticacao";
+import { entrar, useSessao } from "../servicos/sessao";
+import { destinoSeguro } from "../util/navegacao";
 // "Shelter dog ready for adoption", foto de Michael G (Unsplash, uso livre)
 import fotoCaoVermelho from "../assets/auth/cao-vermelho.jpg";
 
-// Página de entrar: CPF e senha. Por enquanto o envio só avisa; na
-// integração, ele passa a chamar a API, que confere a senha e abre a sessão.
+// Página de entrar, com e-mail e senha (F2). Depois de entrar, a pessoa volta
+// para a página de onde veio (?voltar=...) ou vai para o próprio perfil.
 function LoginPage() {
-  const [dados, setDados] = useState({ cpf: "", senha: "" });
+  const usuario = useSessao();
+  const navegar = useNavigate();
+  const [parametros] = useSearchParams();
+  const destino = destinoSeguro(parametros.get("voltar"));
+
+  const [dados, setDados] = useState({ email: "", senha: "" });
+  const [erro, setErro] = useState("");
+  const [enviando, setEnviando] = useState(false);
 
   const mudar = (campo, valor) =>
     setDados((prev) => ({ ...prev, [campo]: valor }));
 
-  const entrar = (e) => {
+  const enviar = async (e) => {
     e.preventDefault();
-    alert("Login enviado! (integração com back-end em breve)");
+    setEnviando(true);
+    setErro("");
+    try {
+      await entrar(dados.email, dados.senha);
+      navegar(destino, { replace: true });
+    } catch (falha) {
+      setErro(falha.message);
+      setEnviando(false);
+    }
   };
+
+  // Quem já está logado e abre "Entrar" segue direto.
+  if (usuario && !enviando) return <Navigate to={destino} replace />;
 
   return (
     <LayoutAutenticacao
@@ -35,16 +56,16 @@ function LoginPage() {
         animais.
       </p>
 
-      <form onSubmit={entrar} className="mt-10 space-y-5">
+      <form onSubmit={enviar} className="mt-10 space-y-5">
         <Campo
-          id="cpf"
-          rotulo="CPF"
-          placeholder="000.000.000-00"
-          inputMode="numeric"
-          autoComplete="username"
+          id="email"
+          rotulo="E-mail"
+          type="email"
+          placeholder="seu@email.com"
+          autoComplete="email"
           required
-          value={dados.cpf}
-          onChange={(e) => mudar("cpf", e.target.value)}
+          value={dados.email}
+          onChange={(e) => mudar("email", e.target.value)}
         />
         <Campo
           id="senha"
@@ -65,9 +86,15 @@ function LoginPage() {
             </a>
           }
         />
+        <AvisoErro>{erro}</AvisoErro>
         <div className="pt-3">
-          <Botao type="submit" tamanho="lg" className="w-full">
-            Entrar
+          <Botao
+            type="submit"
+            tamanho="lg"
+            className="w-full"
+            disabled={enviando}
+          >
+            {enviando ? "Entrando…" : "Entrar"}
           </Botao>
         </div>
       </form>

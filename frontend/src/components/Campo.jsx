@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 
 // Campo de formulário de uma linha, com rótulo em cima. `extra` fica à direita
 // do rótulo (ex.: "Esqueceu a senha?"); `senha` adiciona o botão de
-// mostrar/ocultar. As outras props (value, onChange, placeholder...) vão
-// direto para o <input>.
+// mostrar/ocultar; `erro` mostra embaixo o que está errado no campo. As
+// outras props (value, onChange, placeholder...) vão direto para o <input>.
 
 // Aparência da caixa de texto. Exportada para os campos com lista (cidade,
 // bairro) terem a mesma cara dos vizinhos no formulário.
@@ -14,12 +14,20 @@ function Campo({
   id,
   rotulo,
   extra,
+  erro,
   senha = false,
   type = "text",
   className = "",
   ...props
 }) {
   const [visivel, setVisivel] = useState(false);
+  const erroId = useId();
+
+  // A mensagem de erro é ligada ao campo, junto com a dica que ele já tenha,
+  // para o leitor de tela ler as duas.
+  const descricao =
+    [props["aria-describedby"], erro && erroId].filter(Boolean).join(" ") ||
+    undefined;
 
   return (
     <div className={className}>
@@ -34,6 +42,8 @@ function Campo({
           id={id}
           type={senha ? (visivel ? "text" : "password") : type}
           {...props}
+          aria-invalid={erro ? true : undefined}
+          aria-describedby={descricao}
           className={`w-full h-12 px-4 ${senha ? "pr-12" : ""} ${CLASSE_ENTRADA}`}
         />
         {senha && (
@@ -53,6 +63,11 @@ function Campo({
           </button>
         )}
       </div>
+      {erro && (
+        <p id={erroId} className="text-xs text-red-600 mt-2">
+          {erro}
+        </p>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import Botao from "../../components/Botao";
 import BotaoAjuda from "../../components/BotaoAjuda";
 import { useCopiar } from "../../hooks/useCopiar";
@@ -7,8 +8,8 @@ import { nomeProfissionalCurto, primeiroNome, pronome } from "../../util/texto";
 
 // Contato (e-mail e telefone) no cartão de um perfil. Só aparece inteiro para
 // quem tem acesso: veterinários, ou tutores com liberação de um veterinário.
-// Para os outros, os dados ficam mascarados e um aviso diz o que fazer, em vez
-// de só barrar.
+// Para os outros, inclusive o visitante sem conta, os dados ficam mascarados
+// e um aviso diz o que fazer, em vez de só barrar (NF33.2).
 //
 // `acesso` é o resultado de acessoDe() (servicos/acessoContatos): se a pessoa
 // pode ver e por quê.
@@ -69,6 +70,33 @@ function AvisoAcesso({ children, acao }) {
       <p className="text-xs text-[#5b403f] leading-relaxed">{children}</p>
       {acao}
     </div>
+  );
+}
+
+// Para quem ainda não entrou: o primeiro passo é ter uma conta.
+function AvisoVisitante({ onComoFunciona }) {
+  const local = useLocation();
+  return (
+    <AvisoAcesso
+      acao={
+        <div className="mt-2.5 flex items-center gap-3 flex-wrap">
+          <Botao
+            as={Link}
+            to={`/login?voltar=${encodeURIComponent(local.pathname)}`}
+            tamanho="sm"
+          >
+            Entrar
+          </Botao>
+          <BotaoAjuda
+            rotulo="Como funciona o acesso aos contatos?"
+            onClick={onComoFunciona}
+          />
+        </div>
+      }
+    >
+      O contato aparece para quem tem conta e recebe a liberação de um
+      veterinário durante um atendimento.
+    </AvisoAcesso>
   );
 }
 
@@ -142,13 +170,15 @@ function BlocoContato({
       ) : acesso.pode ? (
         <p className="mt-2.5 text-xs text-[#5f5e5e] leading-relaxed">
           {revelado
-            ? `A doação é voluntária: combine com ${primeiroNome(perfil.nome)} antes de contar com ela.`
+            ? `A doação é voluntária: combine com ${primeiroNome(perfil.nomeCompleto)} antes de contar com ela.`
             : acesso.motivo === "veterinario"
               ? "Você vê os contatos por ser veterinário."
               : "Seu acesso foi liberado por um veterinário e vale até o prazo terminar."}
         </p>
       ) : acesso.motivo === "pedido-enviado" ? (
         <AvisoPedidoEnviado pedido={acesso.pedido} />
+      ) : acesso.motivo === "visitante" ? (
+        <AvisoVisitante onComoFunciona={onComoFunciona} />
       ) : (
         <AvisoAcesso
           acao={

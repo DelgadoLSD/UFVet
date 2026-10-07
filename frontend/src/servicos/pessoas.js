@@ -1,7 +1,7 @@
 import {
-  CONTAS,
   HOSPITAIS,
   OUTRO_TUTOR,
+  TUTORA_DE_EXEMPLO,
   TUTORES,
   VETERINARIOS,
 } from "../dados/exemplos/pessoas";
@@ -18,6 +18,14 @@ export { HOSPITAIS };
 
 export const acharHospital = (id) => HOSPITAIS.find((h) => h.id === id);
 
+// O local onde um veterinário atua, na lista acima. A conta logada vem da API,
+// com o id do banco, e a lista ainda vem dos dados de exemplo, com outros ids:
+// por isso a ligação também vale pelo nome, até a lista vir da API.
+export const hospitalDe = (veterinario) =>
+  HOSPITAIS.find(
+    (h) => h.id === veterinario.hospitalId || h.nome === veterinario.hospital,
+  );
+
 // Tutor pelo código público, para o veterinário conferir quem vai liberar.
 export const acharTutor = (codigo) => TUTORES.find((t) => t.codigo === codigo);
 
@@ -30,8 +38,8 @@ export const veterinariosDe = (hospitalId) =>
   VETERINARIOS.filter((v) => v.hospitalId === hospitalId);
 
 // Perfil aberto em /tutor/:codigo. Enquanto não há API, o código da rota não
-// é consultado: o veterinário sempre visita a tutora de exemplo, e a tutora
-// visita outro tutor, que é quando o contato bloqueado aparece. Na
-// integração, o perfil passa a ser buscado pelo código.
+// é consultado: o veterinário sempre visita a tutora de exemplo, e o tutor
+// (ou o visitante, sem conta) visita outro tutor, que é quando o contato
+// bloqueado aparece. Na integração, o perfil passa a ser buscado pelo código.
 export const perfilVisitado = (usuario) =>
-  ehVeterinario(usuario) ? CONTAS[1] : OUTRO_TUTOR;
+  ehVeterinario(usuario) ? TUTORA_DE_EXEMPLO : OUTRO_TUTOR;

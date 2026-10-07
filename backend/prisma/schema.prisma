@@ -107,6 +107,7 @@ model Estabelecimento {
 
   veterinarios Veterinario[]
   doacoes      Doacao[]
+  convites     ConviteVeterinario[]
 
   @@map("estabelecimento")
 }
@@ -140,10 +141,16 @@ model Usuario {
   cidade          String       @db.VarChar(80)
   bairro          String       @db.VarChar(80)
   fotoUrl         String?      @map("foto_url") @db.VarChar(255)
+  /// Crachás de sessão (JWT) emitidos antes deste instante deixam de valer.
+  /// É preenchido ao trocar a senha e ao "sair de todos os aparelhos"; fica
+  /// nulo enquanto nada disso acontece. Sem ele, um crachá esquecido num
+  /// computador continuaria valendo até vencer sozinho.
+  sessoesValidasDesde DateTime? @map("sessoes_validas_desde") @db.Timestamptz(3)
   criadoEm        DateTime     @default(now()) @map("criado_em") @db.Timestamptz(3)
   atualizadoEm    DateTime     @updatedAt @map("atualizado_em") @db.Timestamptz(3)
 
   veterinario          Veterinario?
+  convitesUsados       ConviteVeterinario[]
   aceites              Aceite[]
   animais              Animal[]
   documentosEnviados   DocumentoVersao[]
@@ -173,6 +180,35 @@ model Veterinario {
 
   @@unique([crmv, ufCrmv])
   @@map("veterinario")
+}
+
+/// Convite para criar uma conta de veterinário. O CRMV é público, então
+/// conferir que ele existe não prova que quem se cadastra é o dono do registro.
+/// Quem garante a pessoa é a instituição: a direção do hospital informa nome e
+/// CRMV, e o convite gerado só vale para aquele registro, uma vez e por poucos
+/// dias. É do convite que vêm o CRMV e o estabelecimento da conta.
+///
+/// O código do convite não é guardado, só a impressão digital dele (HMAC, como
+/// o e-mail): quem ler o banco não consegue usar um convite pendente.
+model ConviteVeterinario {
+  id                String    @id @default(uuid()) @db.Uuid
+  codigoIndice      String    @unique @map("codigo_indice") @db.Char(64)
+  /// Para quem o convite foi gerado; serve de referência a quem administra.
+  nome              String    @db.VarChar(120)
+  crmv              String    @db.VarChar(12)
+  ufCrmv            String    @map("uf_crmv") @db.Char(2)
+  estabelecimentoId String    @map("estabelecimento_id") @db.Uuid
+  criadoEm          DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
+  expiraEm          DateTime  @map("expira_em") @db.Timestamptz(3)
+  /// Preenchido quando o convite é usado; depois disso ele não vale mais.
+  usadoEm           DateTime? @map("usado_em") @db.Timestamptz(3)
+  usadoPorId        String?   @map("usado_por_id") @db.Uuid
+
+  estabelecimento Estabelecimento @relation(fields: [estabelecimentoId], references: [id], onDelete: Cascade)
+  usadoPor        Usuario?        @relation(fields: [usadoPorId], references: [id], onDelete: SetNull)
+
+  @@index([crmv, ufCrmv])
+  @@map("convite_veterinario")
 }
 
 /// Prova de que o usuário aceitou os termos e a ciência sobre os custos de

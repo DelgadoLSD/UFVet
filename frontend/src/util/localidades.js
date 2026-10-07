@@ -89,39 +89,6 @@ const ehIgual = (item, termos) =>
         item.extras?.[i] === termos[i].chave),
   );
 
-// ───────────────────────────── Estados ─────────────────────────────
-
-// Siglas das 27 unidades da federação (usadas, por exemplo, na UF do CRMV).
-export const UFS = [
-  "AC",
-  "AL",
-  "AM",
-  "AP",
-  "BA",
-  "CE",
-  "DF",
-  "ES",
-  "GO",
-  "MA",
-  "MG",
-  "MS",
-  "MT",
-  "PA",
-  "PB",
-  "PE",
-  "PI",
-  "PR",
-  "RJ",
-  "RN",
-  "RO",
-  "RR",
-  "RS",
-  "SC",
-  "SE",
-  "SP",
-  "TO",
-];
-
 // ───────────────────────────── Cidades ─────────────────────────────
 
 // A cidade é guardada como "Nome - UF", o mesmo formato já usado no resto do

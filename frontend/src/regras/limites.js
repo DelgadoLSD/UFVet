@@ -6,7 +6,6 @@
 export const LIMITES = {
   nomeCompleto: 120, // usuario.nome_completo
   bairro: 80, // usuario.bairro
-  crmv: 12, // veterinario.crmv
   nomeAnimal: 60, // animal.nome
   raca: 60, // animal.raca
   casoLiberacao: 160, // liberacao_contato.caso

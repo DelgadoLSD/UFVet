@@ -3,7 +3,7 @@
 Fase de Concepção (RUP). Elaborado conforme o modelo de Wazlawick (2004),
 apresentado em INF323 — Engenharia de Software II.
 
-TCC — Ciência da Computação, UFV. Versão de 25/09/2026.
+TCC — Ciência da Computação, UFV. Versão de 06/10/2026.
 
 ---
 
@@ -112,8 +112,9 @@ seção 4.
 **Descrição:** O sistema deve permitir que uma pessoa crie uma conta,
 escolhendo entre os perfis de tutor e de veterinário. São coletados nome
 completo, CPF, e-mail, telefone, cidade, bairro e senha. Quando o perfil
-escolhido é o de veterinário, também são coletados o CRMV, a UF do conselho e
-o estabelecimento onde atua.
+escolhido é o de veterinário, a pessoa informa também o código de convite
+recebido da instituição onde atua e o tratamento com que assina (Dr. ou Dra.);
+o CRMV, a UF do conselho e o estabelecimento vêm do convite.
 
 | Código | Nome | Restrição | Categoria | Desejável | Permanente |
 |---|---|---|---|---|---|
@@ -124,6 +125,7 @@ o estabelecimento onde atua.
 | NF1.5 | Cifragem de dados pessoais | CPF, e-mail e telefone devem ser armazenados cifrados, com chave mantida fora do banco de dados. A unicidade exigida por NF1.2 e a localização da conta no login devem ser feitas por índice derivado com chave secreta, sem decifrar os registros. | Segurança | ( ) | (x) |
 | NF1.6 | Coleta mínima | Não devem ser coletados dados sem uso no serviço. A localização do usuário se limita a cidade e bairro, sem CEP nem endereço. | Legal | ( ) | (x) |
 | NF1.7 | Localidade escolhida em lista | A cidade deve ser escolhida na lista oficial de municípios do IBGE. Ao abrir, o campo já oferece as cidades da região imediata de Viçosa; digitar permite buscar qualquer outra, com tolerância a acentos e grafias próximas ("Vicosa", "Vissosa"). O bairro deve ser escolhido na lista da cidade, quando houver uma, com a opção de informar outro nome. Assim o filtro da busca por cidade e bairro não se perde em grafias diferentes do mesmo lugar. | Interface | ( ) | ( ) |
+| NF1.8 | Veterinário por convite | A conta de veterinário só pode ser criada com um convite gerado a pedido da instituição onde ele atua, válido para um único CRMV, uma única vez e por prazo limitado. O CRMV é público e não prova, sozinho, a identidade de quem se cadastra. O código do convite não deve ser armazenado em texto legível. | Segurança | ( ) | (x) |
 
 ---
 
@@ -137,6 +139,8 @@ ver e fazer.
 |---|---|---|---|---|---|
 | NF2.1 | Mecanismo de sessão | A sessão deve ser mantida por token JWT assinado pelo servidor. | Implementação | ( ) | ( ) |
 | NF2.2 | Mensagem de erro genérica | A falha de autenticação não deve revelar se o e-mail existe no sistema. | Segurança | ( ) | (x) |
+| NF2.3 | Expiração da sessão | A sessão deve expirar sozinha em 8 horas, e o usuário deve poder encerrar a sessão em todos os aparelhos de uma vez. A troca de senha encerra as sessões abertas nos outros aparelhos. | Segurança | ( ) | ( ) |
+| NF2.4 | Limite de tentativas | Tentativas de login malsucedidas devem ser limitadas por período, para impedir a descoberta de senhas por tentativa e erro. | Segurança | ( ) | (x) |
 
 ---
 

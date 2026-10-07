@@ -6,7 +6,7 @@ import AreaTexto from "../../components/AreaTexto";
 import Calendario from "../../components/Calendario";
 import MarcadorData from "./MarcadorData";
 import { useSessao } from "../../servicos/sessao";
-import { HOSPITAIS, acharHospital } from "../../servicos/pessoas";
+import { HOSPITAIS, acharHospital, hospitalDe } from "../../servicos/pessoas";
 import { formatarData, paraISO } from "../../util/datas";
 import { idProvisorio } from "../../util/ids";
 import { nomeProfissional } from "../../util/texto";
@@ -46,7 +46,7 @@ function FormularioDoacao({ animal, hospitalPadrao, onSalvar }) {
   const [hospital, setHospital] = useState(hospitalPadrao || "");
   const [nota, setNota] = useState("");
 
-  const pronto = data && Number(volume) > 0 && hospital;
+  const pronto = data && Number(volume) > 0 && acharHospital(hospital);
 
   const enviar = (e) => {
     e.preventDefault();
@@ -183,7 +183,7 @@ function ModalDoacoes({
         <FormularioDoacao
           animal={animal}
           // O local já vem preenchido com o hospital de quem registra.
-          hospitalPadrao={usuario.hospitalId}
+          hospitalPadrao={hospitalDe(usuario)?.id}
           onSalvar={(dados) => {
             onRegistrar({
               ...dados,

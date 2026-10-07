@@ -10,23 +10,22 @@ import FormularioSenha from "./conta/FormularioSenha";
 import ModalEncerrarConta from "./conta/ModalEncerrarConta";
 import { useSessao, atualizarConta } from "../servicos/sessao";
 import { LIMITES } from "../regras/limites";
-import { ehVeterinario, rotuloPapel } from "../util/texto";
+import { ehVeterinario, formatarTelefone, rotuloPapel } from "../util/texto";
 
-// Página "Sua conta": dados pessoais, foto, senha e encerramento da conta.
+// Página "Minha conta": dados pessoais, foto, senha e encerramento da conta.
 //
 // Os dados do animal são editados no cartão dele, em modal. A conta tem
 // página própria porque encerrar uma conta pede espaço para dizer o que se
 // perde, e isso não cabe num modal aberto por engano.
 
-// Campos que a pessoa pode mudar por aqui. CPF e CRMV ficam de fora (ver
-// DadoFixo).
+// Campos que a pessoa pode mudar por aqui. CPF, CRMV e o local de atuação
+// do veterinário ficam de fora (ver DadoFixo).
 const CAMPOS_EDITAVEIS = [
   "nomeCompleto",
   "email",
   "telefone",
   "cidade",
   "bairro",
-  "hospital",
 ];
 
 // Cartão branco de uma seção da página, com rodapé opcional para os botões.
@@ -121,11 +120,11 @@ function ContaPage() {
     setSalvo(false);
   };
 
-  // Sem API, salvar atualiza a conta simulada (vale até recarregar a página).
-  // O nome curto do topo passa a ser o nome completo digitado.
+  // Por enquanto, salvar atualiza só a cópia da conta no navegador (vale até
+  // recarregar a página). Gravar na API é a próxima etapa (F3).
   const salvar = (e) => {
     e.preventDefault();
-    const dados = { ...form, nome: form.nomeCompleto };
+    const dados = { ...form };
     if (foto) {
       dados.foto = foto;
       dados.fotoPosicao = "center top";
@@ -151,7 +150,7 @@ function ContaPage() {
       <main className="pb-20 px-5 md:px-16 max-w-[820px] mx-auto pt-28">
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold tracking-tight text-[#1a1c1c]">
-            Sua conta
+            Minha conta
           </h1>
           <p className="text-sm text-[#5f5e5e] mt-1">
             {rotuloPapel(usuario)} · código #{usuario.codigo}
@@ -233,7 +232,9 @@ function ContaPage() {
                     type="tel"
                     autoComplete="tel"
                     value={form.telefone}
-                    onChange={(e) => mudar("telefone", e.target.value)}
+                    onChange={(e) =>
+                      mudar("telefone", formatarTelefone(e.target.value))
+                    }
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -251,14 +252,6 @@ function ContaPage() {
                     onEscolher={(bairro) => mudar("bairro", bairro)}
                   />
                 </div>
-                {ehVet && (
-                  <Campo
-                    id="hospital"
-                    rotulo="Local de atuação"
-                    value={form.hospital}
-                    onChange={(e) => mudar("hospital", e.target.value)}
-                  />
-                )}
               </div>
 
               <div className="mt-6 pt-5 border-t border-[#f0e6e6] divide-y divide-[#f6f0f0]">
@@ -268,11 +261,18 @@ function ContaPage() {
                   motivo="Identifica você nos registros de doação e por isso não muda por aqui."
                 />
                 {ehVet && (
-                  <DadoFixo
-                    rotulo="CRMV"
-                    valor={usuario.crmv}
-                    motivo="Sua assinatura nas validações. Para trocar, o suporte confirma o registro no conselho."
-                  />
+                  <>
+                    <DadoFixo
+                      rotulo="CRMV"
+                      valor={usuario.crmv}
+                      motivo="Sua assinatura nas validações. Para trocar, o suporte confirma o registro no conselho."
+                    />
+                    <DadoFixo
+                      rotulo="Local de atuação"
+                      valor={usuario.hospital}
+                      motivo="Veio do convite do hospital. Para mudar, fale com a direção do novo local."
+                    />
+                  </>
                 )}
               </div>
             </Secao>

@@ -106,7 +106,7 @@ function estatisticasDe(perfil, animais, ehProprio) {
       valor: doacoes,
       detalhe: ehProprio
         ? "feitas pelos seus animais"
-        : `feitas pelos animais de ${primeiroNome(perfil.nome)}`,
+        : `feitas pelos animais de ${primeiroNome(perfil.nomeCompleto)}`,
       destaque: true,
     },
     {
@@ -202,7 +202,7 @@ function CartaoPerfil({
           {perfil.foto ? (
             <img
               src={perfil.foto}
-              alt={perfil.nome}
+              alt={perfil.nomeCompleto}
               style={{
                 objectPosition: perfil.fotoPosicao || "center top",
                 transform: `scale(${perfil.fotoZoom || 1})`,

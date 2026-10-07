@@ -3,7 +3,7 @@
 Documento de apoio ao TCC "Doação de Sangue Animal". Descreve o modelo de
 dados do portal UFVet, as decisões que o sustentam e o dicionário de dados.
 
-Atualizado em 25/09/2026. Banco: PostgreSQL. ORM: Prisma.
+Atualizado em 06/10/2026. Banco: PostgreSQL. ORM: Prisma.
 
 Arquivos que acompanham este documento:
 
@@ -58,6 +58,11 @@ para ela.
 **`aceite`** — registro de que o usuário aceitou os termos de uso e declarou
 ciência sobre os custos de insumos, com a versão vigente na data. É a prova
 documental do consentimento.
+
+**`convite_veterinario`** — o convite com que um veterinário cria a conta.
+A direção do hospital informa nome e CRMV, e o convite gerado só vale para
+aquele registro, uma vez e por poucos dias. É dele que vêm o CRMV e o
+estabelecimento da conta (ver "Ninguém vira veterinário sozinho", na seção 4).
 
 ### Animal e seus exames
 
@@ -117,6 +122,8 @@ o veterinário pode renovar ou encerrar antes.
 | `usuario` → `doacao` | 1:N | Quem registrou a coleta |
 | `usuario` → `pedido_liberacao` | 1:N (duas vezes) | Um como solicitante, outro como destinatário |
 | `usuario` → `liberacao_contato` | 1:N (duas vezes) | Um como autorizado, outro como quem autorizou |
+| `estabelecimento` → `convite_veterinario` | 1:N | Os convites para atuar naquele local |
+| `usuario` → `convite_veterinario` | 1:N (opcional) | A conta criada com o convite |
 
 Os relacionamentos duplos com `usuario` (pedido e liberação) existem porque
 essas duas entidades registram sempre uma relação entre **duas** pessoas: quem
@@ -146,6 +153,20 @@ absoluta; nenhuma rotina precisa rodar para revogar. Uma autorização está
 ativa quando `encerrada_em IS NULL AND expira_em > agora()`. O controle de
 quem vê um contato está aí, no momento em que o acesso é concedido, e não numa
 auditoria posterior.
+
+**Ninguém vira veterinário sozinho.** O CRMV é público, por isso conferir que
+ele existe não prova que quem se cadastra é o dono do registro. A conta de
+veterinário só nasce de um `convite_veterinario` gerado a pedido da
+instituição, e o CRMV e o estabelecimento vêm do convite, não do que a pessoa
+digita. O código do convite não é guardado: fica só a impressão digital dele
+(HMAC, como o e-mail), e quem lê o banco não consegue usar um convite
+pendente. Um convite é usado uma vez (`usado_em`) e vence em `expira_em`.
+
+**Uma sessão pode ser derrubada antes de vencer.** O login é um crachá
+assinado (JWT) que vale 8 horas, e a API não guarda lista de sessões. Para
+desconectar os aparelhos de alguém antes disso (ao trocar a senha ou em "sair
+de todos os aparelhos"), `usuario.sessoes_validas_desde` registra o instante a
+partir do qual os crachás valem; os emitidos antes são recusados.
 
 **Cada veterinário administra apenas o que liberou.** O painel do profissional
 filtra por `liberacao_contato.veterinario_id`: renovar ou encerrar é
@@ -351,6 +372,7 @@ UQ = restrição de unicidade.
 | cidade | varchar(80) | NOT NULL | Cidade, usada no filtro da busca |
 | bairro | varchar(80) | NOT NULL | Bairro, usado no filtro da busca |
 | foto_url | varchar(255) | NULL | Foto de perfil |
+| sessoes_validas_desde | timestamptz | NULL | Sessões (crachás JWT) emitidas antes deste instante deixam de valer; preenchido ao trocar a senha ou sair de todos os aparelhos |
 | criado_em | timestamptz | NOT NULL | Data de cadastro |
 | atualizado_em | timestamptz | NOT NULL | Última alteração |
 
@@ -373,6 +395,21 @@ UQ = restrição de unicidade.
 | tipo | enum | NOT NULL | TERMOS_DE_USO ou CIENCIA_RESPONSABILIDADE |
 | versao | varchar(20) | NOT NULL | Versão do texto aceito |
 | aceito_em | timestamptz | NOT NULL | Momento do aceite |
+
+### `convite_veterinario`
+
+| Campo | Tipo | Restrições | Descrição |
+|---|---|---|---|
+| id | uuid | PK | Identificador |
+| codigo_indice | char(64) | UQ, NOT NULL | HMAC-SHA256 do código do convite; o código em si não é guardado |
+| nome | varchar(120) | NOT NULL | Para quem o convite foi gerado (referência de quem administra) |
+| crmv | varchar(12) | NOT NULL | CRMV que a conta vai ter |
+| uf_crmv | char(2) | NOT NULL | UF do conselho |
+| estabelecimento_id | uuid | FK → estabelecimento | Onde o veterinário vai atuar |
+| criado_em | timestamptz | NOT NULL | Geração do convite |
+| expira_em | timestamptz | NOT NULL | Depois disso o convite não vale |
+| usado_em | timestamptz | NULL | Quando foi usado; um convite vale uma vez só |
+| usado_por_id | uuid | FK → usuario, NULL | A conta criada com ele |
 
 ### `animal`
 

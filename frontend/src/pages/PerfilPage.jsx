@@ -11,7 +11,7 @@ import { useSessao } from "../servicos/sessao";
 import { perfilVisitado } from "../servicos/pessoas";
 import { animaisDe } from "../servicos/animais";
 import { acessoDe, useAcessoContatos } from "../servicos/acessoContatos";
-import { ehVeterinario, nomeProfissional } from "../util/texto";
+import { ehVeterinario, nomeCurto, nomeProfissional } from "../util/texto";
 
 // Página de perfil, em duas rotas:
 // - /meu-perfil: o perfil de quem está logado, com os próprios animais (e,
@@ -99,7 +99,7 @@ function PerfilPage() {
             animais={animais}
             ehProprio={ehProprio}
             acesso={acesso}
-            meuCodigo={usuario.codigo}
+            meuCodigo={usuario?.codigo}
             onPedirLiberacao={() => setModal("pedido")}
             onComoFuncionaContato={() => setModal("comoFunciona")}
           />
@@ -117,7 +117,7 @@ function PerfilPage() {
 
         <div className="flex justify-between items-end mb-6">
           <h2 className="text-2xl font-bold text-[#1a1c1c]">
-            {ehProprio ? "Meus animais" : `Animais de ${perfil.nome}`}
+            {ehProprio ? "Meus animais" : `Animais de ${nomeCurto(perfil)}`}
           </h2>
           <span className="text-sm text-[#5f5e5e]">
             {animais.length}{" "}
@@ -132,7 +132,7 @@ function PerfilPage() {
               animal={animal}
               ehDono={ehProprio}
               ehVet={ehVet}
-              nomeTutor={perfil.nome}
+              nomeTutor={perfil.nomeCompleto}
             />
           ))}
           {ehProprio && (
