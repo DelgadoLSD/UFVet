@@ -18,7 +18,7 @@ Portal web para conexão de doadores de sangue animal sob demanda, desenvolvido 
 
 - **Front-end:** React, Vite, Tailwind CSS e React Router
 - **Back-end:** Node.js e Express, com PostgreSQL acessado pelo Prisma
-- **Testes:** Vitest
+- **Testes:** Vitest, no back-end e no front-end
 - **Formatação:** Prettier, com a configuração em `.prettierrc.json`
 
 ## Documentação

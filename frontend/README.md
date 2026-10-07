@@ -27,6 +27,8 @@ Outros comandos:
 | `npm run build`        | Gera a versão de produção na pasta `dist/`                |
 | `npm run preview`      | Serve a versão gerada pelo build, para conferir           |
 | `npm run lint`         | Procura erros comuns de código (ESLint)                   |
+| `npm test`             | Roda os testes automatizados uma vez                      |
+| `npm run test:watch`   | Roda os testes de novo a cada arquivo salvo               |
 | `npm run format`       | Formata todos os arquivos no estilo do projeto (Prettier) |
 | `npm run format:check` | Só confere se está tudo formatado, sem mudar nada         |
 
@@ -74,6 +76,8 @@ src/
 ├── hooks/              hooks do React reaproveitados
 └── assets/             imagens
 ```
+
+Fora de `src/`, a pasta `testes/` guarda os testes automatizados (Vitest).
 
 Regra para escolher a pasta de um componente novo: se só uma página usa, ele
 fica na pasta daquela página (`pages/perfil/`, por exemplo); se duas ou mais
@@ -128,6 +132,18 @@ precisar mostrar um "carregando").
   quente; os ícones são da fonte Material Symbols.
 - **Formatação** pelo Prettier (`npm run format`), com a configuração do
   arquivo `.prettierrc.json` na raiz do repositório.
+
+## Testes
+
+`npm test` confere as regras que rodam no navegador antes de qualquer dado
+chegar à API: as máscaras de CPF e telefone, a conferência dos dígitos do CPF
+e do telefone, as mensagens dos campos de cadastro e conta e o destino depois
+de entrar (que só aceita páginas do próprio site). Os testes não abrem o
+navegador nem precisam da API ligada.
+
+Essas regras são cópias das que a API confere (`backend/src/validacao.js`), e
+os exemplos dos testes são os mesmos dos testes de lá. Mudou uma regra num
+lado, mude no outro e rode os testes dos dois.
 
 ## Pessoas: nome e tratamento
 
