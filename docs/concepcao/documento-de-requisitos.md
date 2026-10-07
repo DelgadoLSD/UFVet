@@ -220,6 +220,7 @@ na busca imediatamente após o cadastro.
 | NF8.2 | Idade alternativa | O tutor deve informar a data de nascimento ou, quando não a souber, uma idade aproximada, que o sistema converte na data de nascimento equivalente e registra como aproximada. | Especificação | ( ) | (x) |
 | NF8.3 | Limite de fotos | No máximo cinco fotos por animal; a primeira é a principal. | Interface | ( ) | ( ) |
 | NF8.4 | Espécies atendidas | O sistema atende cães e gatos. | Especificação | ( ) | ( ) |
+| NF8.5 | Tratamento das fotos | Toda foto enviada, do animal ou de perfil (F3), deve ser conferida como imagem JPG, PNG ou WebP de até 10 MB, reduzida e gravada sem os metadados do arquivo original, inclusive a localização de onde foi tirada (NF16.1). | Segurança | ( ) | (x) |
 
 ---
 

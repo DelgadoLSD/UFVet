@@ -12,6 +12,7 @@ import ModalValidacao from "./ModalValidacao";
 import ModalHistoricoValidacao from "./ModalHistoricoValidacao";
 import ModalDoacoes from "./ModalDoacoes";
 import ModalExcluirAnimal from "./ModalExcluirAnimal";
+import { confirmar } from "../../hooks/confirmacoes";
 import { salvarAnimal } from "../../servicos/animais";
 import { useSessao } from "../../servicos/sessao";
 import {
@@ -19,6 +20,7 @@ import {
   REFERENCIA_DOADOR,
   SEXOS,
   dataUltimaDoacao,
+  finalDoGenero,
   nomeRaca,
   situacaoRecuperacao,
   textoCastracao,
@@ -114,6 +116,11 @@ function CartaoAnimal({
     setErroDisponibilidade("");
     try {
       onAlterado(await salvarAnimal(animal.codigo, { disponivel: nova }));
+      confirmar(
+        nova
+          ? `${animal.nome} voltou para a busca`
+          : `${animal.nome} saiu da busca`,
+      );
     } catch (falha) {
       setErroDisponibilidade(falha.message);
     } finally {
@@ -239,7 +246,10 @@ function CartaoAnimal({
       <div className="p-8 flex flex-col gap-6">
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="w-full lg:w-64 shrink-0">
-            <CarrosselFotos fotos={animal.fotos} nome={animal.nome} />
+            <CarrosselFotos
+              fotos={animal.fotos.map((foto) => foto.url)}
+              nome={animal.nome}
+            />
           </div>
 
           <div className="flex-1 min-w-0 flex flex-col gap-4">
@@ -325,6 +335,7 @@ function CartaoAnimal({
           onFechar={fecharModal}
           onSalvo={(salvo) => {
             onAlterado(salvo);
+            confirmar("Alterações salvas");
             fecharModal();
           }}
         />
@@ -338,7 +349,10 @@ function CartaoAnimal({
             fecharModal();
             await mudarDisponibilidade(false);
           }}
-          onExcluido={() => onExcluido(animal.codigo)}
+          onExcluido={() => {
+            onExcluido(animal.codigo);
+            confirmar(`${animal.nome} excluíd${finalDoGenero(animal)}`);
+          }}
           onFechar={fecharModal}
         />
       )}

@@ -150,3 +150,6 @@ vite.config.ts.timestamp-*
 # Cliente do Prisma, gerado a partir do schema.prisma por `npm run db:generate`.
 # Não se versiona código que se regenera com um comando.
 backend/generated/
+
+# Fotos enviadas enquanto a API roda no computador (backend/src/armazenamento.js).
+backend/arquivos/

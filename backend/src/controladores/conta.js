@@ -1,6 +1,8 @@
+import { apagarArquivos, guardarImagem } from "../armazenamento.js";
 import { banco } from "../banco.js";
 import { cifrar, decifrar, indiceEmail } from "../cifra.js";
 import { ErroApi } from "../erros.js";
+import { prepararFoto } from "../imagens.js";
 import { buscarUsuarioPorId, dadosDaConta } from "../modelos/usuario.js";
 import { registrar } from "../registro.js";
 import { conferirSenha, gerarHashSenha } from "../senha.js";
@@ -11,8 +13,8 @@ import {
   esquemaTrocaSenha,
 } from "../validacao.js";
 
-// Controller (do MVC) da própria conta: mudar os dados (F3), trocar a senha
-// (F4) e encerrar a conta (F5). É sempre a conta de quem está logado
+// Controller (do MVC) da própria conta: mudar os dados e a foto (F3), trocar
+// a senha (F4) e encerrar a conta (F5). É sempre a conta de quem está logado
 // (req.usuario, que vem do crachá de sessão): nenhum destes endereços recebe
 // o id de uma conta, e por isso ninguém consegue mexer na de outra pessoa.
 
@@ -97,6 +99,43 @@ export async function atualizarConta(req, res) {
   res.json({ usuario: await dadosDaConta(usuario) });
 }
 
+// Grava a nova foto de perfil (ou nenhuma) e apaga o arquivo da anterior.
+// Se gravar falhar, o arquivo novo é que sai.
+async function mudarFoto(req, res, fotoUrl) {
+  try {
+    await banco.usuario.update({
+      where: { id: req.usuario.id },
+      data: { fotoUrl },
+    });
+  } catch (erro) {
+    await apagarArquivos([fotoUrl]);
+    throw erro;
+  }
+  await apagarArquivos([req.usuario.fotoUrl]);
+  registrar(fotoUrl ? "foto_de_perfil_trocada" : "foto_de_perfil_removida", {
+    usuarioId: req.usuario.id,
+  });
+  const usuario = await buscarUsuarioPorId(req.usuario.id);
+  res.json({ usuario: await dadosDaConta(usuario) });
+}
+
+// PUT /api/conta/foto — troca a foto de perfil (F3), que chega num
+// formulário com arquivo, no campo "foto". A imagem é tratada como as dos
+// animais: conferida, reduzida e sem a localização (imagens.js).
+export async function trocarFoto(req, res) {
+  if (!req.file) {
+    const mensagem = "Escolha uma foto.";
+    throw new ErroApi(400, mensagem, { campos: { foto: mensagem } });
+  }
+  const imagem = await prepararFoto(req.file.buffer, "foto");
+  await mudarFoto(req, res, await guardarImagem(imagem));
+}
+
+// DELETE /api/conta/foto — volta para as iniciais no lugar da foto.
+export async function removerFoto(req, res) {
+  await mudarFoto(req, res, null);
+}
+
 // PUT /api/conta/senha — troca a senha (F4), com a senha atual. Os outros
 // aparelhos saem da conta (NF2.3): se alguém tinha descoberto a senha antiga
 // e entrado com ela, perde o acesso. Este aparelho recebe um crachá novo e
@@ -131,13 +170,22 @@ export async function trocarSenha(req, res) {
 // regra de cada tabela está no schema.prisma (onDelete) e é testada em
 // exclusao-conta.test.js.
 //
-// Quando o site passar a guardar fotos e exames, os arquivos também vão
-// precisar ser apagados do armazenamento aqui.
+// Depois do banco, saem os arquivos: a foto de perfil e as fotos dos
+// animais. Quando os exames forem enviados de verdade, os arquivos deles
+// também precisam sair aqui.
 export async function encerrarConta(req, res) {
   const { senhaAtual } = esquemaEncerramento.parse(req.body ?? {});
   await conferirSenhaAtual(req, res, senhaAtual);
 
+  const fotosDosAnimais = await banco.animalFoto.findMany({
+    where: { animal: { tutorId: req.usuario.id } },
+    select: { url: true },
+  });
   await banco.usuario.delete({ where: { id: req.usuario.id } });
+  await apagarArquivos([
+    req.usuario.fotoUrl,
+    ...fotosDosAnimais.map((foto) => foto.url),
+  ]);
   registrar("conta_encerrada", {
     usuarioId: req.usuario.id,
     papel: req.usuario.papel,

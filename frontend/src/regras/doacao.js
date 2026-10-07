@@ -133,8 +133,11 @@ export const nomeRaca = (animal) => animal.raca ?? "SRD";
 // "ele" ou "ela", conforme o sexo do animal.
 export const pronomeAnimal = ({ sexo }) => (sexo === "FEMEA" ? "ela" : "ele");
 
+// A última letra das palavras sobre o animal: "cadastrada", "castrado".
+export const finalDoGenero = ({ sexo }) => (sexo === "FEMEA" ? "a" : "o");
+
 // "Castrado", "Não castrada"...
-export function textoCastracao({ sexo, castrado }) {
-  const final = sexo === "FEMEA" ? "a" : "o";
-  return castrado ? `Castrad${final}` : `Não castrad${final}`;
+export function textoCastracao(animal) {
+  const final = finalDoGenero(animal);
+  return animal.castrado ? `Castrad${final}` : `Não castrad${final}`;
 }

@@ -1,11 +1,11 @@
 # UFVet — front-end
 
-O site do UFVet, em React. O login, o cadastro, a página da conta e os
-animais do próprio perfil já falam com a API (pasta `backend`). O resto (os
-perfis de outras pessoas, a busca, as fotos, as validações, as doações e as
-liberações) ainda usa dados de exemplo no lugar da API: dá para navegar por
-tudo, mas o que muda nessas partes não é salvo, e recarregar a página volta
-ao começo.
+O site do UFVet, em React. O login, o cadastro, a página da conta (com a
+foto de perfil) e os animais do próprio perfil (com as fotos) já falam com a
+API (pasta `backend`). O resto (os perfis de outras pessoas, a busca, os
+exames, as validações, as doações e as liberações) ainda usa dados de
+exemplo no lugar da API: dá para navegar por tudo, mas o que muda nessas
+partes não é salvo, e recarregar a página volta ao começo.
 
 ## Como rodar
 
@@ -43,9 +43,10 @@ Com as contas de exemplo do back-end (`npm run db:exemplos`):
 | Beatriz (tutora)     | `beatriz@example.com` | `ufvet-exemplo` |
 
 Elas têm os mesmos códigos públicos das pessoas dos dados de exemplo, então o
-site mostra os pedidos e as liberações de exemplo de cada uma. Os animais
-delas vêm do banco (o mesmo comando os cria), com as fotos e o histórico dos
-dados de exemplo, até essas partes virem da API. Entrando com uma e com a
+site mostra os pedidos e as liberações de exemplo de cada uma. Os retratos,
+os animais e as fotos deles vêm do banco (o mesmo comando os cria); o
+histórico dos animais ainda sai dos dados de exemplo, até essas partes virem
+da API. Entrando com uma e com a
 outra, dá para ver o mesmo site pelos dois lados (por exemplo, o contato que o
 veterinário vê e a tutora não).
 
@@ -74,7 +75,8 @@ src/
 ├── servicos/           de onde as telas tiram os dados (hoje simulados)
 ├── dados/              listas fixas e dados de exemplo
 │   └── exemplos/           pessoas, animais e doadores de mentira
-├── regras/             regras do negócio (doação, acesso aos contatos, conta)
+├── regras/             regras do negócio (doação, acesso aos contatos, conta,
+│                       fotos)
 ├── util/               funções pequenas de datas, textos e localidades
 ├── hooks/              hooks do React reaproveitados
 └── assets/             imagens
@@ -130,6 +132,10 @@ precisar mostrar um "carregando").
 - **Limites de texto iguais aos do banco**, em `regras/limites.js`.
 - **Comentários explicam o porquê**, não o óbvio. Cada arquivo começa dizendo
   o que é aquela parte do site.
+- **Avisos depois de uma ação:** o que deu certo se confirma com
+  `confirmar("Alterações salvas")` (`hooks/confirmacoes.js`), que mostra a faixa
+  preta embaixo da tela; o que deu errado aparece no próprio formulário, com
+  `AvisoErro` ou embaixo do campo.
 - **Estilo** com Tailwind, direto nas classes. As cores do site são o vermelho
   `#b7102a` (ação), o vermelho escuro `#8e001b` (destaque) e os tons de cinza
   quente; os ícones são da fonte Material Symbols.
@@ -142,8 +148,9 @@ precisar mostrar um "carregando").
 chegar à API: as máscaras de CPF e telefone, a conferência dos dígitos do CPF
 e do telefone, as mensagens dos campos de cadastro e conta, o destino depois
 de entrar (que só aceita páginas do próprio site), a idade e o prazo de
-recuperação dos animais e o formulário do animal (o que ele confere e o que
-manda para a API). Os testes não abrem o
+recuperação dos animais, o formulário do animal (o que ele confere e o que
+manda para a API) e as fotos (formatos aceitos, tamanho e a ordem que vai para
+a API). Os testes não abrem o
 navegador nem precisam da API ligada.
 
 Essas regras são cópias das que a API confere (`backend/src/validacao.js`), e
@@ -165,8 +172,6 @@ banco não guarda gênero de tutores, então eles aparecem como "Tutor(a)".
   liberações...).
 - Nos cartões dos animais, validações, doações, observações e exames ainda
   ficam só no navegador, até recarregar a página.
-- A troca de foto (da pessoa e dos animais) espera o armazenamento de
-  arquivos.
 - `animaisResumo` ("Zeus (cão) e Luna (gato)") vai sair das tabelas de
   animais.
 - Publicado o site, a hospedagem precisa repassar `/api` para a API, como o

@@ -1,4 +1,6 @@
 import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { verificarChaves } from "./cifra.js";
 
 // Configuração da API, lida do .env no computador ou das variáveis de
@@ -38,4 +40,11 @@ export const config = Object.freeze({
   // este número, o limite de tentativas enxergaria todo mundo com o endereço
   // do intermediário.
   proxiesConfiaveis: Number(process.env.PROXIES_CONFIAVEIS ?? 0),
+
+  // A pasta das fotos enviadas, enquanto elas ficam no próprio computador
+  // (ver armazenamento.js). Os testes usam uma pasta temporária.
+  pastaArquivos: path.resolve(
+    process.env.PASTA_ARQUIVOS ??
+      fileURLToPath(new URL("../arquivos", import.meta.url)),
+  ),
 });

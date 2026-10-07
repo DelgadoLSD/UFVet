@@ -89,6 +89,8 @@ describe("cadastrar um animal (F8)", () => {
       tipoSanguineo: null,
       // Já nasce disponível para doação.
       disponivel: true,
+      // Sem fotos enviadas, a lista vem vazia.
+      fotos: [],
       criadoEm: expect.any(String),
     });
     const dono = await banco.usuario.findFirstOrThrow();

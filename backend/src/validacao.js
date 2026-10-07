@@ -377,7 +377,25 @@ export const esquemaAnimal = z
     },
   );
 
-// Edição (F9) e disponibilidade (F11): vem só o que mudou.
+// As fotos do animal depois da edição, na ordem em que ficam (a primeira é
+// a principal, NF8.3): o id de cada foto que continua e "nova" no lugar de
+// cada foto enviada no pedido, na ordem do envio. Foto que não está na lista
+// é removida.
+const ordemDasFotos = z
+  .array(z.union([z.literal("nova"), z.uuid()]), {
+    error: "Lista de fotos inválida.",
+  })
+  .max(5, "Cada animal pode ter até 5 fotos.")
+  .refine(
+    (lista) => {
+      const ids = lista.filter((item) => item !== "nova");
+      return new Set(ids).size === ids.length;
+    },
+    { message: "Lista de fotos inválida." },
+  );
+
+// Edição (F9) e disponibilidade (F11): vem só o que mudou. Sem `fotos`, as
+// fotos ficam como estão, e as enviadas entram no fim.
 export const esquemaEdicaoAnimal = z
   .object({
     ...Object.fromEntries(
@@ -387,6 +405,7 @@ export const esquemaEdicaoAnimal = z
       ]),
     ),
     disponivel: campos.disponivel.optional(),
+    fotos: ordemDasFotos.optional(),
   })
   .refine(
     (dados) =>

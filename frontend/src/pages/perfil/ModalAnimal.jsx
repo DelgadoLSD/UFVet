@@ -1,10 +1,18 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Modal from "../../components/Modal";
 import Ajuda from "../../components/Ajuda";
 import AvisoErro from "../../components/AvisoErro";
 import Botao from "../../components/Botao";
 import Segmentado from "../../components/Segmentado";
 import { ESPECIES, REFERENCIA_DOADOR, SEXOS } from "../../regras/doacao";
+import {
+  MAXIMO_FOTOS,
+  TAMANHO_MAXIMO_MB,
+  TIPOS_ACEITOS,
+  erroDoArquivo,
+  pedidoDasFotos,
+  tornarPrincipal,
+} from "../../regras/fotos";
 import { LIMITES } from "../../regras/limites";
 import { cadastrarAnimal, salvarAnimal } from "../../servicos/animais";
 import { formatarData } from "../../util/datas";
@@ -51,6 +59,7 @@ const CAMPO_DA_API = {
   dataNascimento: ["dataNascimento"],
   idadeEstimada: ["idadeAproximada"],
   peso: ["pesoKg"],
+  fotos: ["fotos"],
 };
 
 const CLASSE_CAMPO =
@@ -69,6 +78,95 @@ function Erro({ id, children }) {
   );
 }
 
+// Botão redondo sobre a miniatura de uma foto.
+function BotaoMiniatura({ icone, rotulo, onClick, posicao }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={rotulo}
+      title={rotulo}
+      className={`absolute ${posicao} w-6 h-6 rounded-full bg-white/95 text-[#1a1c1c] shadow flex items-center justify-center hover:text-[#8e001b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8e001b]`}
+    >
+      <span
+        aria-hidden="true"
+        className="material-symbols-outlined text-[16px]"
+      >
+        {icone}
+      </span>
+    </button>
+  );
+}
+
+// As fotos escolhidas, da principal em diante, e o botão de adicionar, até o
+// limite. Cada miniatura tem remover e, fora a primeira, tornar principal.
+function CampoFotos({ fotos, onEscolher, onRemover, onTornarPrincipal }) {
+  const entrada = useRef(null);
+  return (
+    <div className="flex gap-3 flex-wrap">
+      {fotos.map((foto, i) => (
+        <div
+          key={foto.url}
+          className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-[#e4bebc]"
+        >
+          <img
+            src={foto.url}
+            alt={`Foto ${i + 1}`}
+            className="w-full h-full object-cover"
+          />
+          {i === 0 ? (
+            <span className="absolute bottom-1 left-1 bg-[#8e001b] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+              Principal
+            </span>
+          ) : (
+            <BotaoMiniatura
+              icone="star"
+              rotulo={`Tornar a foto ${i + 1} a principal`}
+              onClick={() => onTornarPrincipal(i)}
+              posicao="bottom-1 left-1"
+            />
+          )}
+          <BotaoMiniatura
+            icone="close"
+            rotulo={`Remover a foto ${i + 1}`}
+            onClick={() => onRemover(i)}
+            posicao="top-1 right-1"
+          />
+        </div>
+      ))}
+
+      {fotos.length < MAXIMO_FOTOS && (
+        <button
+          type="button"
+          onClick={() => entrada.current.click()}
+          className="w-20 h-20 rounded-xl border-2 border-dashed border-[#e4bebc] flex flex-col items-center justify-center gap-0.5 text-[#8f6f6e] hover:border-[#8e001b] hover:bg-[#faf0f0] hover:text-[#8e001b] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8e001b]"
+        >
+          <span
+            aria-hidden="true"
+            className="material-symbols-outlined text-2xl"
+          >
+            add_photo_alternate
+          </span>
+          <span className="text-[10px] font-semibold">Adicionar</span>
+        </button>
+      )}
+      <input
+        ref={entrada}
+        id="animal-fotos"
+        type="file"
+        accept={TIPOS_ACEITOS.join(",")}
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          onEscolher(Array.from(e.target.files));
+          // Para a mesma foto poder ser escolhida de novo depois de removida.
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
+
 // Sem `animal`, cadastra um novo; com ele, edita. `onSalvo` recebe o animal
 // como a API gravou.
 function ModalAnimal({ animal, onFechar, onSalvo }) {
@@ -79,6 +177,15 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState("");
   const [enviando, setEnviando] = useState(false);
+  // As fotos na tela: { id, url } das salvas e { arquivo, url } das escolhidas
+  // agora, que só vão para a API ao salvar (ver regras/fotos.js).
+  const [fotos, setFotos] = useState(() => animal?.fotos ?? []);
+  // As URLs temporárias das fotos escolhidas, liberadas ao fechar a janela.
+  const previas = useRef(new Set());
+  useEffect(() => {
+    const abertas = previas.current;
+    return () => abertas.forEach((url) => URL.revokeObjectURL(url));
+  }, []);
 
   const ref = REFERENCIA_DOADOR[form.especie];
   const afetados = criteriosAfetados(form, animal);
@@ -100,6 +207,37 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
     setErroGeral("");
   };
 
+  const mudarFotos = (novas) => {
+    setFotos(novas);
+    setErros((prev) => {
+      const sem = { ...prev };
+      delete sem.fotos;
+      return sem;
+    });
+    setErroGeral("");
+  };
+
+  // Entram as que cabem e passam na conferência; a primeira recusada diz por
+  // quê.
+  const escolherFotos = (arquivos) => {
+    const cabem = MAXIMO_FOTOS - fotos.length;
+    const aceitas = [];
+    let problema;
+    for (const arquivo of arquivos) {
+      const erro = erroDoArquivo(arquivo);
+      if (erro) problema ??= erro;
+      else if (aceitas.length < cabem) aceitas.push(arquivo);
+      else problema ??= `Cada animal pode ter até ${MAXIMO_FOTOS} fotos.`;
+    }
+    const novas = aceitas.map((arquivo) => {
+      const url = URL.createObjectURL(arquivo);
+      previas.current.add(url);
+      return { arquivo, url };
+    });
+    mudarFotos([...fotos, ...novas]);
+    if (problema) setErros((prev) => ({ ...prev, fotos: problema }));
+  };
+
   // Atributos de um campo de texto com erro.
   const comErro = (chave) =>
     erros[chave]
@@ -114,6 +252,8 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
       return;
     }
     const pedido = pedidoDoFormulario(form, animal);
+    const { arquivos, ordem } = pedidoDasFotos(fotos, animal?.fotos);
+    if (editando && ordem) pedido.fotos = ordem;
     // Editando sem ter mudado nada, não há o que gravar.
     if (editando && Object.keys(pedido).length === 0) {
       onFechar();
@@ -123,9 +263,10 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
     setEnviando(true);
     setErroGeral("");
     try {
+      // Dados e fotos vão juntos: ou tudo é gravado, ou nada.
       const salvo = editando
-        ? await salvarAnimal(animal.codigo, pedido)
-        : await cadastrarAnimal(pedido);
+        ? await salvarAnimal(animal.codigo, pedido, arquivos)
+        : await cadastrarAnimal(pedido, arquivos);
       onSalvo(salvo);
     } catch (falha) {
       // Problema num campo aparece embaixo dele; o resto, acima dos botões.
@@ -429,12 +570,27 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
           </div>
         )}
 
-        {/* As fotos chegam na próxima etapa, junto com a foto de perfil:
-            precisam de um lugar para guardar arquivos. */}
         <div>
-          <p className={CLASSE_ROTULO}>Fotos do animal</p>
-          <p className="text-xs text-[#5f5e5e]">
-            O envio de fotos chega em breve.
+          <label htmlFor="animal-fotos" className={CLASSE_ROTULO}>
+            Fotos do animal
+            <span className="ml-2 text-[#5f5e5e] font-normal">
+              ({fotos.length}/{MAXIMO_FOTOS})
+            </span>
+          </label>
+          <CampoFotos
+            fotos={fotos}
+            onEscolher={escolherFotos}
+            onRemover={(indice) =>
+              mudarFotos(fotos.filter((_, i) => i !== indice))
+            }
+            onTornarPrincipal={(indice) =>
+              mudarFotos(tornarPrincipal(fotos, indice))
+            }
+          />
+          <Erro id="erro-fotos">{erros.fotos}</Erro>
+          <p className="text-[11px] text-[#5f5e5e] mt-1.5">
+            JPG, PNG ou WebP, até {TAMANHO_MAXIMO_MB} MB cada. A primeira é a
+            principal. A localização guardada na foto pelo celular é apagada.
           </p>
         </div>
       </form>

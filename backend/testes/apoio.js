@@ -1,5 +1,8 @@
+import { readdir, rm } from "node:fs/promises";
+import sharp from "sharp";
 import { banco } from "../src/banco.js";
 import { cifrar, indiceCpf, indiceEmail } from "../src/cifra.js";
+import { config } from "../src/config.js";
 
 // Ferramentas que os testes usam para preparar o cenário.
 
@@ -96,3 +99,37 @@ export function criarAnimal({ tutorId, nome }) {
     },
   });
 }
+
+// ─── Fotos ────────────────────────────────────────────────────────────────────
+
+// Esvazia a pasta temporária das fotos dos testes (ver vitest.config.js).
+export async function limparArquivos() {
+  await rm(config.pastaArquivos, { recursive: true, force: true });
+}
+
+// Os arquivos que estão na pasta das fotos agora.
+export const arquivosGuardados = () =>
+  readdir(config.pastaArquivos).catch(() => []);
+
+// Uma foto JPEG como as de celular: com os dados da câmera e a localização
+// GPS de onde foi tirada (no bloco EXIF, que vai dentro do arquivo).
+export const fotoDeCelular = ({ largura = 400, altura = 300 } = {}) =>
+  sharp({
+    create: {
+      width: largura,
+      height: altura,
+      channels: 3,
+      background: { r: 183, g: 16, b: 42 },
+    },
+  })
+    .jpeg()
+    .withExif({
+      IFD0: { Make: "Celular de teste" },
+      IFD3: {
+        GPSLatitudeRef: "S",
+        GPSLatitude: "20/1 45/1 14/1",
+        GPSLongitudeRef: "W",
+        GPSLongitude: "42/1 52/1 55/1",
+      },
+    })
+    .toBuffer();

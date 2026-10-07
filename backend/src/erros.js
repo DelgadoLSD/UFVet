@@ -1,5 +1,31 @@
+import multer from "multer";
 import { ZodError } from "zod";
+import {
+  MAXIMO_FOTOS_POR_ANIMAL,
+  TAMANHO_MAXIMO_MB,
+} from "./middlewares/envio.js";
 import { registrar } from "./registro.js";
+
+// O que dizer quando um envio de fotos passa dos limites, ou null quando o
+// formulário veio fora do combinado (um campo de arquivo que não existe).
+function mensagemDeEnvio({ code, field }) {
+  if (code === "LIMIT_FILE_SIZE") {
+    return `Cada foto pode ter no máximo ${TAMANHO_MAXIMO_MB} MB.`;
+  }
+  // Passar do total de arquivos só acontece com as fotos de um animal (a de
+  // perfil é uma só, e a segunda já é barrada como inesperada); esse aviso
+  // não diz o campo.
+  if (
+    code === "LIMIT_FILE_COUNT" ||
+    (code === "LIMIT_UNEXPECTED_FILE" && field === "fotos")
+  ) {
+    return `Cada animal pode ter até ${MAXIMO_FOTOS_POR_ANIMAL} fotos.`;
+  }
+  if (code === "LIMIT_UNEXPECTED_FILE" && field === "foto") {
+    return "Envie uma foto só.";
+  }
+  return null;
+}
 
 // Respostas de erro da API, todas no mesmo formato:
 //
@@ -61,6 +87,18 @@ export function tratarErros(erro, req, res, next) {
     return res
       .status(413)
       .json({ erro: "Os dados enviados são grandes demais." });
+  }
+  // Limites do envio de fotos (middlewares/envio.js).
+  if (erro instanceof multer.MulterError) {
+    const mensagem = mensagemDeEnvio(erro);
+    if (!mensagem) {
+      return res
+        .status(400)
+        .json({ erro: "Os dados enviados estão mal formados." });
+    }
+    return res
+      .status(erro.code === "LIMIT_FILE_SIZE" ? 413 : 400)
+      .json({ erro: mensagem, campos: { [erro.field ?? "fotos"]: mensagem } });
   }
   // Duas pessoas cadastrando o mesmo e-mail no mesmo instante: a checagem
   // dos controladores passa para as duas, e o banco barra a segunda.

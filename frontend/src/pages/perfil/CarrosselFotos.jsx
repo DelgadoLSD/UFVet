@@ -18,8 +18,11 @@ function BotaoSeta({ onClick, rotulo, icone, lado }) {
   );
 }
 
+// `fotos`: os endereços das fotos, da principal em diante.
 function CarrosselFotos({ fotos, nome }) {
-  const [atual, setAtual] = useState(0);
+  const [escolhida, setAtual] = useState(0);
+  // Se fotos saírem da lista, a escolhida pode deixar de existir.
+  const atual = Math.min(escolhida, Math.max(fotos.length - 1, 0));
   const temFotos = fotos && fotos.length > 0;
   const temVarias = temFotos && fotos.length > 1;
 
@@ -49,7 +52,7 @@ function CarrosselFotos({ fotos, nome }) {
           ser um esmaecer suave, sem piscar enquanto a imagem carrega. */}
       {fotos.map((foto, i) => (
         <img
-          key={i}
+          key={foto}
           src={foto}
           alt={`${nome} — foto ${i + 1}`}
           className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500 ${

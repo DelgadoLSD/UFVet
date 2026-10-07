@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Confirmacao from "./components/Confirmacao";
 import RotaProtegida from "./components/RotaProtegida";
 import InicioPage from "./pages/InicioPage";
 import CadastroPage from "./pages/CadastroPage";
@@ -38,6 +39,8 @@ function App() {
           }
         />
       </Routes>
+      {/* A confirmação de "salvo", uma só para o site inteiro. */}
+      <Confirmacao />
     </BrowserRouter>
   );
 }

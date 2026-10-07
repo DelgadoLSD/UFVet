@@ -88,6 +88,21 @@ export function criarLimites() {
       },
     }),
 
+    // Envios de fotos, por conta: tratar uma imagem custa processamento, e
+    // o limite barra quem tentasse ocupar a API com envios em sequência. Só
+    // contam os pedidos que trazem arquivo (mudar a disponibilidade, por
+    // exemplo, não).
+    envioFotos: rateLimit({
+      ...opcoesComuns,
+      windowMs: 60 * MINUTO,
+      limit: 60,
+      skip: (req) => !req.is("multipart/form-data"),
+      keyGenerator: (req) => req.usuario.id,
+      message: {
+        erro: "Muitas fotos enviadas em pouco tempo. Tente de novo mais tarde.",
+      },
+    }),
+
     // Conferência de e-mail e CPF durante o cadastro. Responde se um e-mail
     // tem conta, então o limite barra quem tentaria testar uma lista inteira.
     // Um cadastro normal faz poucas conferências.

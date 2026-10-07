@@ -15,6 +15,33 @@ input::-ms-clear {
   display: none;
 }
 
+/* A confirmação de "salvo" (components/Confirmacao.jsx): sobe um pouco ao
+   entrar e desce ao sair. Com movimento reduzido, só aparece e some. */
+@keyframes confirmacao-entra {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+}
+@keyframes confirmacao-sai {
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.confirmacao {
+  animation: confirmacao-entra 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.confirmacao-saindo {
+  animation: confirmacao-sai 180ms ease-in forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .confirmacao,
+  .confirmacao-saindo {
+    animation-duration: 1ms;
+  }
+}
+
 /* Ícones do Material Symbols, sempre no traço vazado e no peso normal. */
 .material-symbols-outlined {
   font-variation-settings:

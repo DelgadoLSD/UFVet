@@ -11,6 +11,8 @@ import ModalAnimal from "./perfil/ModalAnimal";
 import PainelAcessoContatos from "./perfil/PainelAcessoContatos";
 import { useSessao } from "../servicos/sessao";
 import { perfilVisitado } from "../servicos/pessoas";
+import { confirmar } from "../hooks/confirmacoes";
+import { finalDoGenero } from "../regras/doacao";
 import { animaisDeExemplo, listarAnimais } from "../servicos/animais";
 import { acessoDe, useAcessoContatos } from "../servicos/acessoContatos";
 import { ehVeterinario, nomeCurto, nomeProfissional } from "../util/texto";
@@ -166,6 +168,7 @@ function PerfilPage() {
           onFechar={fecharModal}
           onSalvo={(animal) => {
             meus.adicionar(animal);
+            confirmar(`${animal.nome} cadastrad${finalDoGenero(animal)}`);
             fecharModal();
           }}
         />

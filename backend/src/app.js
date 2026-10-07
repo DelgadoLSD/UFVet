@@ -29,8 +29,22 @@ export function criarApp() {
   const limites = criarLimites();
   app.use("/api", limites.geral);
 
-  // Lê o corpo dos pedidos em JSON, com teto de tamanho (fotos e exames, que
-  // são maiores, vão ter caminho próprio).
+  // As fotos guardadas na pasta da API (ver armazenamento.js). Só arquivos
+  // dessa pasta, sem listar o que há nela e sem arquivos ocultos; caminhos
+  // com "../" são barrados. Uma foto nunca muda (trocar cria outro arquivo),
+  // então o navegador pode guardá-la por muito tempo.
+  app.use(
+    "/api/arquivos",
+    express.static(config.pastaArquivos, {
+      index: false,
+      dotfiles: "deny",
+      immutable: true,
+      maxAge: "365d",
+    }),
+  );
+
+  // Lê o corpo dos pedidos em JSON, com teto de tamanho. As fotos, que são
+  // maiores, chegam por outro caminho (middlewares/envio.js).
   app.use(express.json({ limit: "20kb" }));
   app.use(cookieParser());
 

@@ -6,8 +6,8 @@ import Botao from "../components/Botao";
 import Campo from "../components/Campo";
 import CampoBairro from "../components/CampoBairro";
 import CampoCidade from "../components/CampoCidade";
-import Avatar from "../components/Avatar";
 import FormularioSenha from "./conta/FormularioSenha";
+import FotoDePerfil from "./conta/FotoDePerfil";
 import ModalEncerrarConta from "./conta/ModalEncerrarConta";
 import {
   conferirDisponibilidade,
@@ -21,6 +21,7 @@ import {
   erroTelefone,
   soComProblema,
 } from "../regras/conta";
+import { confirmar } from "../hooks/confirmacoes";
 import { LIMITES } from "../regras/limites";
 import { ehVeterinario, formatarTelefone, rotuloPapel } from "../util/texto";
 
@@ -97,24 +98,6 @@ function DadoFixo({ rotulo, valor, motivo }) {
   );
 }
 
-// Confirmação verde depois de salvar.
-function AvisoSalvo({ children }) {
-  return (
-    <p
-      role="status"
-      className="text-sm text-[#1a7f4b] flex items-center gap-1.5"
-    >
-      <span
-        aria-hidden="true"
-        className="material-symbols-outlined text-[18px]"
-      >
-        check_circle
-      </span>
-      {children}
-    </p>
-  );
-}
-
 // Mensagem de erro embaixo de um campo que não é um Campo (cidade, bairro).
 function ErroDoCampo({ children }) {
   if (!children) return null;
@@ -131,14 +114,11 @@ function ContaPage() {
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState("");
   const [salvando, setSalvando] = useState(false);
-  // A mensagem depois de salvar.
-  const [salvo, setSalvo] = useState("");
   // O e-mail digitado por último: a resposta atrasada da conferência de um
   // e-mail que a pessoa já mudou é ignorada.
   const emailDigitado = useRef(form.email);
 
   const [trocandoSenha, setTrocandoSenha] = useState(false);
-  const [senhaSalva, setSenhaSalva] = useState(false);
   const [saindo, setSaindo] = useState(false);
   const [erroAparelhos, setErroAparelhos] = useState("");
   const [encerrando, setEncerrando] = useState(false);
@@ -156,7 +136,6 @@ function ContaPage() {
     setForm((prev) => ({ ...prev, [campo]: valor }));
     setErros((prev) => ({ ...prev, [campo]: undefined }));
     setErroGeral("");
-    setSalvo("");
   };
 
   // Ao sair de um campo de texto: se está mal escrito, avisa já. Um e-mail
@@ -209,10 +188,9 @@ function ContaPage() {
       setForm(dadosDoFormulario(atualizado));
       emailDigitado.current = atualizado.email;
       setSenhaParaEmail("");
-      setSalvo(
-        trocandoEmail
-          ? "Alterações salvas. Use o novo e-mail para entrar."
-          : "Alterações salvas",
+      confirmar(
+        "Alterações salvas",
+        trocandoEmail ? "Use o novo e-mail para entrar." : undefined,
       );
     } catch (falha) {
       // Problema num campo aparece embaixo dele; o resto, acima do botão.
@@ -244,7 +222,10 @@ function ContaPage() {
         <ModalEncerrarConta
           usuario={usuario}
           onFechar={() => setEncerrando(false)}
-          onEncerrada={() => navegar("/", { replace: true })}
+          onEncerrada={() => {
+            navegar("/", { replace: true });
+            confirmar("Sua conta foi encerrada");
+          }}
         />
       )}
 
@@ -276,8 +257,10 @@ function ContaPage() {
                       Escolha a cidade e o bairro para salvar.
                     </p>
                   )}
+                  {/* Situação, então em pílula, como as outras etiquetas
+                      de situação do site. */}
                   {alterado && localizacaoCompleta && !salvando && (
-                    <p className="text-sm text-[#5f5e5e] flex items-center gap-2">
+                    <p className="inline-flex items-center gap-2 rounded-full bg-[#f4efef] px-3 py-1.5 text-[13px] font-semibold text-[#1a1c1c]">
                       <span
                         aria-hidden="true"
                         className="w-2 h-2 rounded-full bg-[#b7102a]"
@@ -285,25 +268,10 @@ function ContaPage() {
                       Alterações não salvas
                     </p>
                   )}
-                  {salvo && !alterado && <AvisoSalvo>{salvo}</AvisoSalvo>}
                 </div>
               }
             >
-              {/* A troca de foto entra junto com o envio das fotos dos
-                  animais, que usa o mesmo armazenamento de arquivos. */}
-              <div className="flex items-center gap-4 pb-6 mb-6 border-b border-[#f0e6e6]">
-                <Avatar
-                  pessoa={usuario}
-                  tamanho="w-20 h-20"
-                  fundo="bg-[#b7102a]"
-                  formato="rounded-2xl"
-                  textoIniciais="text-xl"
-                />
-                <p className="text-sm text-[#5f5e5e] max-w-xs">
-                  Quem recebe seu contato vê essa foto. A troca de foto chega em
-                  breve.
-                </p>
-              </div>
+              <FotoDePerfil usuario={usuario} />
 
               <div className="flex flex-col gap-5">
                 <Campo
@@ -428,28 +396,21 @@ function ContaPage() {
               <FormularioSenha
                 onSalvar={() => {
                   setTrocandoSenha(false);
-                  setSenhaSalva(true);
+                  confirmar(
+                    "Senha alterada",
+                    "Os outros aparelhos saíram da conta.",
+                  );
                 }}
                 onCancelar={() => setTrocandoSenha(false)}
               />
             ) : (
-              <div className="flex items-center gap-4 flex-wrap">
-                <Botao
-                  variante="secundario"
-                  icone="key"
-                  onClick={() => {
-                    setTrocandoSenha(true);
-                    setSenhaSalva(false);
-                  }}
-                >
-                  Alterar senha
-                </Botao>
-                {senhaSalva && (
-                  <AvisoSalvo>
-                    Senha alterada. Os outros aparelhos saíram da conta.
-                  </AvisoSalvo>
-                )}
-              </div>
+              <Botao
+                variante="secundario"
+                icone="key"
+                onClick={() => setTrocandoSenha(true)}
+              >
+                Alterar senha
+              </Botao>
             )}
           </Secao>
 

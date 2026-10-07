@@ -15,13 +15,19 @@ export class ErroApi extends Error {
   }
 }
 
+// `corpo` vai em JSON; com arquivos (fotos), é um FormData, que o navegador
+// envia como formulário com arquivos e com o cabeçalho certo.
 export async function chamarApi(caminho, { metodo = "GET", corpo } = {}) {
+  const comArquivos = corpo instanceof FormData;
   let resposta;
   try {
     resposta = await fetch(`/api${caminho}`, {
       method: metodo,
-      headers: corpo ? { "Content-Type": "application/json" } : undefined,
-      body: corpo ? JSON.stringify(corpo) : undefined,
+      headers:
+        corpo && !comArquivos
+          ? { "Content-Type": "application/json" }
+          : undefined,
+      body: corpo && !comArquivos ? JSON.stringify(corpo) : corpo,
     });
   } catch {
     throw new ErroApi(

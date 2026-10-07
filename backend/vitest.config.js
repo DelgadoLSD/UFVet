@@ -1,4 +1,6 @@
 import dotenv from "dotenv";
+import os from "node:os";
+import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 dotenv.config({ quiet: true });
@@ -18,6 +20,9 @@ export default defineConfig({
       CHAVE_CIFRAGEM: chaveDeTeste(1),
       CHAVE_INDICE: chaveDeTeste(2),
       JWT_SEGREDO: chaveDeTeste(3),
+      // As fotos dos testes vão para uma pasta temporária, nunca para a
+      // pasta de fotos do desenvolvimento.
+      PASTA_ARQUIVOS: path.join(os.tmpdir(), "ufvet-testes-arquivos"),
     },
     // Cria o banco de testes, se faltar, e aplica as migrações.
     globalSetup: ["./testes/preparar-banco.js"],

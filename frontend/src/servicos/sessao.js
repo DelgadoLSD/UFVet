@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from "react";
-import { PESSOAS } from "../dados/exemplos/pessoas";
 import { chamarApi } from "./api";
 
 // Quem está usando o site: a conta logada, ou ninguém (o visitante). Também
@@ -27,19 +26,6 @@ const definir = (novo) => {
   ouvintes.forEach((aviso) => aviso());
 };
 
-// Enquanto as fotos não podem ser enviadas, as contas de exemplo mostram o
-// retrato dos dados de exemplo de mesmo código.
-function retratoDeExemplo(codigo) {
-  const pessoa = PESSOAS.find((p) => p.codigo === codigo);
-  return pessoa?.foto
-    ? {
-        foto: pessoa.foto,
-        fotoPosicao: pessoa.fotoPosicao,
-        fotoZoom: pessoa.fotoZoom,
-      }
-    : {};
-}
-
 // A conta como a API manda -> a conta como as telas usam (os mesmos campos
 // dos dados de exemplo).
 function paraUsuario(conta) {
@@ -56,7 +42,6 @@ function paraUsuario(conta) {
     bairro: conta.bairro,
     membroDesde: conta.membroDesde,
     foto: conta.fotoUrl,
-    ...(!conta.fotoUrl && retratoDeExemplo(conta.codigo)),
     ...(veterinario && {
       tratamento: veterinario.tratamento,
       crmv: `${veterinario.crmv}-${veterinario.ufCrmv}`,
@@ -173,6 +158,26 @@ export async function salvarConta(dados) {
   });
   logar(usuario);
   return estado.usuario;
+}
+
+// Troca a foto de perfil. A API confere a imagem, reduz e apaga a
+// localização guardada pelo celular.
+export async function trocarFotoDePerfil(arquivo) {
+  const formulario = new FormData();
+  formulario.append("foto", arquivo);
+  const { usuario } = await chamarComLogin("/conta/foto", {
+    metodo: "PUT",
+    corpo: formulario,
+  });
+  logar(usuario);
+}
+
+// Volta para as iniciais no lugar da foto.
+export async function removerFotoDePerfil() {
+  const { usuario } = await chamarComLogin("/conta/foto", {
+    metodo: "DELETE",
+  });
+  logar(usuario);
 }
 
 // Os outros aparelhos saem da conta; este continua.
