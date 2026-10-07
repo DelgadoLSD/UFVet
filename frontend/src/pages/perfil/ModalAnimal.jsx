@@ -1,77 +1,33 @@
 import { useState } from "react";
 import Modal from "../../components/Modal";
 import Ajuda from "../../components/Ajuda";
+import AvisoErro from "../../components/AvisoErro";
 import Botao from "../../components/Botao";
 import Segmentado from "../../components/Segmentado";
-import {
-  CRITERIOS_DOACAO,
-  ESPECIES,
-  REFERENCIA_DOADOR,
-  SEXOS,
-} from "../../regras/doacao";
+import { ESPECIES, REFERENCIA_DOADOR, SEXOS } from "../../regras/doacao";
 import { LIMITES } from "../../regras/limites";
+import { cadastrarAnimal, salvarAnimal } from "../../servicos/animais";
 import { formatarData } from "../../util/datas";
+import {
+  FORM_VAZIO,
+  IDADE_MAXIMA,
+  criteriosAfetados,
+  errosDoFormulario,
+  formularioDoAnimal,
+  pedidoDoFormulario,
+} from "./formularioAnimal";
 
-// Cadastro e edição de um animal pelo tutor.
+// Cadastro (F8) e edição (F9) de um animal pelo tutor.
 //
 // Só o que o tutor sabe e o que importa para doação. Os critérios clínicos
 // (sorologias, vacinação, transfusão) são conferidos pelo veterinário. O mesmo
 // formulário cadastra e edita: são os mesmos campos, e manter um só evita que
-// as duas telas se afastem com o tempo.
+// as duas telas se afastem com o tempo. As regras do formulário estão em
+// formularioAnimal.js.
 //
 // O tipo sanguíneo não está aqui de propósito. É resultado de exame, e um
 // palpite de tutor exibido com a mesma cara de um dado conferido engana tanto
 // quem procura doador quanto o veterinário que dá a validação por feita.
-
-const MAXIMO_FOTOS = 5;
-
-const FORM_VAZIO = {
-  nome: "",
-  especie: "CAO",
-  raca: "",
-  racaSRD: false,
-  sexo: "",
-  castrado: "",
-  idadeConhecida: true,
-  dataNascimento: "",
-  idadeEstimada: "",
-  peso: "",
-};
-
-const formularioDoAnimal = (animal) => ({
-  ...FORM_VAZIO,
-  nome: animal.nome,
-  especie: animal.especie,
-  raca: animal.raca ?? "",
-  racaSRD: !animal.raca,
-  sexo: animal.sexo,
-  castrado: animal.castrado ? "sim" : "nao",
-  dataNascimento: animal.dataNascimento,
-  peso: String(animal.pesoKg),
-});
-
-// Dados que o veterinário assinou: mudar um deles derruba o critério que ele
-// confirmou, porque a conferência foi feita sobre o valor antigo. Peso muda de
-// verdade ao longo da vida, e a data de nascimento pode ter sido digitada
-// errada; nos dois casos o tutor corrige e a validação volta para a fila. No
-// banco, são os motivos EDICAO_PESO e EDICAO_NASCIMENTO da invalidação.
-const CRITERIO_POR_CAMPO = {
-  peso: "PESO_IDADE",
-  dataNascimento: "PESO_IDADE",
-};
-
-function criteriosAfetados(form, animal) {
-  if (!animal?.validacao) return [];
-  const original = formularioDoAnimal(animal);
-  const chaves = new Set(
-    Object.entries(CRITERIO_POR_CAMPO)
-      .filter(([campo]) => form[campo] !== original[campo])
-      .map(([, criterio]) => criterio),
-  );
-  return CRITERIOS_DOACAO.filter(
-    (c) => chaves.has(c.chave) && animal.validacao.criterios[c.chave],
-  );
-}
 
 const OPCOES_ESPECIE = Object.entries(ESPECIES).map(([valor, e]) => ({
   valor,
@@ -83,103 +39,46 @@ const OPCOES_SEXO = Object.entries(SEXOS).map(([valor, rotulo]) => ({
   rotulo,
 }));
 
+// Campo do formulário -> campo da API, onde caem as mensagens de erro.
+const CAMPO_DA_API = {
+  nome: ["nome"],
+  especie: ["especie"],
+  raca: ["raca"],
+  racaSRD: ["raca"],
+  sexo: ["sexo"],
+  castrado: ["castrado"],
+  idadeConhecida: ["dataNascimento", "idadeAproximada"],
+  dataNascimento: ["dataNascimento"],
+  idadeEstimada: ["idadeAproximada"],
+  peso: ["pesoKg"],
+};
+
 const CLASSE_CAMPO =
-  "w-full px-4 py-2.5 bg-white border border-[#e4bebc] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b] focus:border-[#8e001b] placeholder:text-gray-400";
+  "w-full px-4 py-2.5 bg-white border border-[#e4bebc] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b] focus:border-[#8e001b] placeholder:text-gray-400 aria-[invalid=true]:border-red-500";
 const CLASSE_TITULO = "text-sm font-semibold text-[#1a1c1c]";
 const CLASSE_ROTULO = `block mb-1.5 ${CLASSE_TITULO}`;
 
-// Escolha de fotos: os quadradinhos das que já estão escolhidas (a primeira é
-// a principal) e o botão de adicionar, até o limite.
-function CampoFotos({ fotos, onAdicionar, onRemover }) {
-  const entrada = (
-    <input
-      type="file"
-      accept="image/*"
-      multiple
-      className="hidden"
-      onChange={onAdicionar}
-    />
-  );
-
-  if (fotos.length === 0) {
-    return (
-      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#e4bebc] rounded-xl cursor-pointer hover:border-[#8e001b] hover:bg-[#faf0f0] transition-all">
-        <span
-          aria-hidden="true"
-          className="material-symbols-outlined text-[#c9a5a5] text-4xl mb-2"
-        >
-          photo_camera
-        </span>
-        <span className="text-sm font-semibold text-[#5f5e5e]">
-          Clique para adicionar fotos
-        </span>
-        <span className="text-xs text-[#c9a5a5] mt-1">
-          JPG, PNG — até {MAXIMO_FOTOS} fotos. A primeira é a principal.
-        </span>
-        {entrada}
-      </label>
-    );
-  }
-
+// Mensagem de erro embaixo de um campo; o id liga a mensagem ao campo, para
+// o leitor de tela ler as duas.
+function Erro({ id, children }) {
+  if (!children) return null;
   return (
-    <div className="flex gap-3 flex-wrap">
-      {fotos.map((foto, i) => (
-        <div
-          key={i}
-          className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-[#e4bebc] group"
-        >
-          <img
-            src={foto.preview}
-            alt={`Foto ${i + 1}`}
-            className="w-full h-full object-cover"
-          />
-          {i === 0 && (
-            <div className="absolute top-1 left-1 bg-[#8e001b] text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
-              Principal
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={() => onRemover(i)}
-            aria-label={`Remover foto ${i + 1}`}
-            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-          >
-            <span
-              aria-hidden="true"
-              className="material-symbols-outlined text-white text-xl"
-            >
-              delete
-            </span>
-          </button>
-        </div>
-      ))}
-
-      {fotos.length < MAXIMO_FOTOS && (
-        <label className="w-20 h-20 rounded-xl border-2 border-dashed border-[#e4bebc] flex items-center justify-center cursor-pointer hover:border-[#8e001b] hover:bg-[#faf0f0] transition-all">
-          <span
-            aria-hidden="true"
-            className="material-symbols-outlined text-[#c9a5a5] text-2xl"
-          >
-            add_photo_alternate
-          </span>
-          {entrada}
-        </label>
-      )}
-    </div>
+    <p id={id} className="text-xs text-red-600 mt-1.5">
+      {children}
+    </p>
   );
 }
 
-// Sem `animal`, cadastra um novo; com ele, edita.
-function ModalAnimal({ animal, onFechar }) {
+// Sem `animal`, cadastra um novo; com ele, edita. `onSalvo` recebe o animal
+// como a API gravou.
+function ModalAnimal({ animal, onFechar, onSalvo }) {
   const editando = !!animal;
   const [form, setForm] = useState(() =>
     editando ? formularioDoAnimal(animal) : FORM_VAZIO,
   );
-  // Cada foto é { preview, existente } (já estava no perfil) ou
-  // { preview, file } (escolhida agora, com uma URL temporária para mostrar).
-  const [fotos, setFotos] = useState(() =>
-    (animal?.fotos || []).map((preview) => ({ preview, existente: true })),
-  );
+  const [erros, setErros] = useState({});
+  const [erroGeral, setErroGeral] = useState("");
+  const [enviando, setEnviando] = useState(false);
 
   const ref = REFERENCIA_DOADOR[form.especie];
   const afetados = criteriosAfetados(form, animal);
@@ -190,37 +89,50 @@ function ModalAnimal({ animal, onFechar }) {
   // para ficar aberto; quem discorda pede revisão ao veterinário.
   const tipagemConfirmada = !!validacao?.criterios.TIPAGEM;
 
-  const mudar = (campo, valor) =>
+  // Mudar um campo apaga o erro dele.
+  const mudar = (campo, valor) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
-
-  const adicionarFotos = (e) => {
-    const arquivos = Array.from(e.target.files);
-    const permitidos = arquivos.slice(0, MAXIMO_FOTOS - fotos.length);
-    const novas = permitidos.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
-    setFotos((prev) => [...prev, ...novas]);
-  };
-
-  // Foto que já estava no perfil não tem URL temporária para liberar.
-  const removerFoto = (indice) => {
-    setFotos((prev) => {
-      if (!prev[indice].existente) URL.revokeObjectURL(prev[indice].preview);
-      return prev.filter((_, i) => i !== indice);
+    setErros((prev) => {
+      const sem = { ...prev };
+      for (const chave of CAMPO_DA_API[campo]) delete sem[chave];
+      return sem;
     });
+    setErroGeral("");
   };
 
-  // Sem API, salvar só avisa e fecha.
-  const salvar = (e) => {
+  // Atributos de um campo de texto com erro.
+  const comErro = (chave) =>
+    erros[chave]
+      ? { "aria-invalid": true, "aria-describedby": `erro-${chave}` }
+      : {};
+
+  const salvar = async (e) => {
     e.preventDefault();
-    alert(
-      editando
-        ? "Alterações salvas! (integração com back-end em breve)"
-        : "Animal cadastrado! (integração com back-end em breve)",
-    );
-    fotos.forEach((f) => !f.existente && URL.revokeObjectURL(f.preview));
-    onFechar();
+    const problemas = errosDoFormulario(form);
+    if (Object.keys(problemas).length > 0) {
+      setErros(problemas);
+      return;
+    }
+    const pedido = pedidoDoFormulario(form, animal);
+    // Editando sem ter mudado nada, não há o que gravar.
+    if (editando && Object.keys(pedido).length === 0) {
+      onFechar();
+      return;
+    }
+
+    setEnviando(true);
+    setErroGeral("");
+    try {
+      const salvo = editando
+        ? await salvarAnimal(animal.codigo, pedido)
+        : await cadastrarAnimal(pedido);
+      onSalvo(salvo);
+    } catch (falha) {
+      // Problema num campo aparece embaixo dele; o resto, acima dos botões.
+      if (falha.campos) setErros(falha.campos);
+      else setErroGeral(falha.message);
+      setEnviando(false);
+    }
   };
 
   return (
@@ -256,22 +168,33 @@ function ModalAnimal({ animal, onFechar }) {
               </p>
             </div>
           )}
+          <AvisoErro>{erroGeral}</AvisoErro>
           <div className="flex justify-end gap-2">
-            <Botao variante="secundario" onClick={onFechar}>
+            <Botao variante="secundario" onClick={onFechar} disabled={enviando}>
               Cancelar
             </Botao>
             <Botao
               type="submit"
               form="form-cadastro-animal"
               icone={editando ? undefined : "add"}
+              disabled={enviando}
             >
-              {editando ? "Salvar alterações" : "Cadastrar animal"}
+              {enviando
+                ? "Salvando…"
+                : editando
+                  ? "Salvar alterações"
+                  : "Cadastrar animal"}
             </Botao>
           </div>
         </div>
       }
     >
-      <form id="form-cadastro-animal" onSubmit={salvar} className="space-y-6">
+      <form
+        id="form-cadastro-animal"
+        onSubmit={salvar}
+        noValidate
+        className="space-y-6"
+      >
         {!editando && (
           <div className="flex gap-3 bg-[#faf0f0] border border-[#e4bebc] rounded-xl p-4">
             <span
@@ -301,9 +224,10 @@ function ModalAnimal({ animal, onFechar }) {
             maxLength={LIMITES.nomeAnimal}
             value={form.nome}
             onChange={(e) => mudar("nome", e.target.value)}
-            required
             className={CLASSE_CAMPO}
+            {...comErro("nome")}
           />
+          <Erro id="erro-nome">{erros.nome}</Erro>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -315,6 +239,7 @@ function ModalAnimal({ animal, onFechar }) {
               valor={form.especie}
               onEscolher={(valor) => mudar("especie", valor)}
             />
+            <Erro id="erro-especie">{erros.especie}</Erro>
           </div>
 
           <div>
@@ -325,6 +250,7 @@ function ModalAnimal({ animal, onFechar }) {
               valor={form.sexo}
               onEscolher={(valor) => mudar("sexo", valor)}
             />
+            <Erro id="erro-sexo">{erros.sexo}</Erro>
           </div>
         </div>
 
@@ -344,6 +270,7 @@ function ModalAnimal({ animal, onFechar }) {
               onChange={(e) => mudar("raca", e.target.value)}
               disabled={form.racaSRD}
               className={`${CLASSE_CAMPO} ${form.racaSRD ? "bg-[#f3f3f3] text-[#5f5e5e]" : ""}`}
+              {...comErro("raca")}
             />
             <label className="flex items-center gap-2 mt-2 cursor-pointer w-fit">
               <input
@@ -359,11 +286,12 @@ function ModalAnimal({ animal, onFechar }) {
                 SRD / Não sei a raça
               </span>
             </label>
+            <Erro id="erro-raca">{erros.raca}</Erro>
           </div>
 
           <div>
             <div className="flex items-center gap-1.5 mb-1.5">
-              <span className={CLASSE_TITULO}>Castrado(a)?</span>
+              <span className={CLASSE_TITULO}>Castrado(a)? *</span>
               <Ajuda titulo="Por que perguntamos?">
                 <p>
                   A castração não é obrigatória para doar. Mas fêmeas não
@@ -385,6 +313,7 @@ function ModalAnimal({ animal, onFechar }) {
               valor={form.castrado}
               onEscolher={(valor) => mudar("castrado", valor)}
             />
+            <Erro id="erro-castrado">{erros.castrado}</Erro>
           </div>
         </div>
 
@@ -396,7 +325,7 @@ function ModalAnimal({ animal, onFechar }) {
               }
               className={CLASSE_ROTULO}
             >
-              Idade
+              Idade *
             </label>
             <div className="mb-2">
               <Segmentado
@@ -410,22 +339,36 @@ function ModalAnimal({ animal, onFechar }) {
               />
             </div>
             {form.idadeConhecida ? (
-              <input
-                id="animal-nascimento"
-                type="date"
-                value={form.dataNascimento}
-                onChange={(e) => mudar("dataNascimento", e.target.value)}
-                className={CLASSE_CAMPO}
-              />
+              <>
+                <input
+                  id="animal-nascimento"
+                  type="date"
+                  value={form.dataNascimento}
+                  onChange={(e) => mudar("dataNascimento", e.target.value)}
+                  className={CLASSE_CAMPO}
+                  {...comErro("dataNascimento")}
+                />
+                <Erro id="erro-dataNascimento">{erros.dataNascimento}</Erro>
+              </>
             ) : (
-              <input
-                id="animal-idade"
-                type="text"
-                placeholder="Ex: cerca de 3 anos"
-                value={form.idadeEstimada}
-                onChange={(e) => mudar("idadeEstimada", e.target.value)}
-                className={CLASSE_CAMPO}
-              />
+              <>
+                {/* Vira uma data aproximada, que envelhece junto com o
+                    animal; a tela mostra "cerca de N anos". */}
+                <input
+                  id="animal-idade"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  max={IDADE_MAXIMA}
+                  step="1"
+                  placeholder="Anos, ex.: 3"
+                  value={form.idadeEstimada}
+                  onChange={(e) => mudar("idadeEstimada", e.target.value)}
+                  className={CLASSE_CAMPO}
+                  {...comErro("idadeAproximada")}
+                />
+                <Erro id="erro-idadeAproximada">{erros.idadeAproximada}</Erro>
+              </>
             )}
             <p className="text-[11px] text-[#5f5e5e] mt-1.5">
               Doadores têm entre {ref.idadeMin} e {ref.idadeMax} anos.
@@ -434,7 +377,7 @@ function ModalAnimal({ animal, onFechar }) {
 
           <div>
             <label htmlFor="animal-peso" className={CLASSE_ROTULO}>
-              Peso (kg)
+              Peso (kg) *
             </label>
             {/* Espaço do tamanho do seletor ao lado, para os dois campos
                 ficarem na mesma linha. */}
@@ -442,13 +385,16 @@ function ModalAnimal({ animal, onFechar }) {
             <input
               id="animal-peso"
               type="number"
+              inputMode="decimal"
               placeholder={`Ex: ${form.especie === "CAO" ? "30" : "4,5"}`}
               min="0"
               step="0.1"
               value={form.peso}
               onChange={(e) => mudar("peso", e.target.value)}
               className={CLASSE_CAMPO}
+              {...comErro("pesoKg")}
             />
+            <Erro id="erro-pesoKg">{erros.pesoKg}</Erro>
             <p className="text-[11px] text-[#5f5e5e] mt-1.5">
               Peso mínimo para doar: {ref.pesoMin} kg.
             </p>
@@ -483,18 +429,13 @@ function ModalAnimal({ animal, onFechar }) {
           </div>
         )}
 
+        {/* As fotos chegam na próxima etapa, junto com a foto de perfil:
+            precisam de um lugar para guardar arquivos. */}
         <div>
-          <p className={CLASSE_ROTULO}>
-            Fotos do animal
-            <span className="ml-2 text-[#5f5e5e] normal-case font-normal tracking-normal">
-              ({fotos.length}/{MAXIMO_FOTOS})
-            </span>
+          <p className={CLASSE_ROTULO}>Fotos do animal</p>
+          <p className="text-xs text-[#5f5e5e]">
+            O envio de fotos chega em breve.
           </p>
-          <CampoFotos
-            fotos={fotos}
-            onAdicionar={adicionarFotos}
-            onRemover={removerFoto}
-          />
         </div>
       </form>
     </Modal>

@@ -1,10 +1,10 @@
 # UFVet — back-end
 
 A API do UFVet, em Express, e o banco de dados PostgreSQL, acessado pelo
-Prisma. Por enquanto a API cuida das contas: cadastro, convite de
-veterinário, login, sessão e a própria conta (dados, senha e encerramento).
-Animais, busca, validações, doações e liberações de contato entram nas
-próximas etapas.
+Prisma. Por enquanto a API cuida das contas (cadastro, convite de
+veterinário, login, sessão e a própria conta: dados, senha e encerramento) e
+dos animais (cadastro, edição, exclusão e disponibilidade). Fotos, busca,
+validações, doações e liberações de contato entram nas próximas etapas.
 
 ## Pré-requisitos
 
@@ -30,7 +30,7 @@ próximas etapas.
    npm run db:migrate     # cria o banco "ufvet", se faltar, e aplica as migrações
    npm run db:generate    # gera o cliente do Prisma na pasta generated/
    npm run db:seed        # cadastra o Hospital Veterinário UFV
-   npm run db:exemplos    # opcional: as contas de exemplo (ver abaixo)
+   npm run db:exemplos    # opcional: contas e animais de exemplo (ver abaixo)
    ```
 
 4. Confira se está tudo certo:
@@ -52,9 +52,15 @@ tudo o que começa com `/api`. Para conferir se está no ar, abra
 
 ## Contas de exemplo
 
-`npm run db:exemplos` cria duas contas, as mesmas pessoas dos dados de exemplo
-do site e com os mesmos códigos públicos. Entrando com elas, o site mostra os
-animais, pedidos e liberações de exemplo que as telas já têm.
+`npm run db:exemplos` cria duas contas e os animais delas (Zeus e Luna, da
+Beatriz; Bela e Nina, do Victor): as mesmas pessoas e os mesmos animais dos
+dados de exemplo do site, com os mesmos códigos públicos. Entrando com elas,
+o site mostra também as fotos, os pedidos, as liberações e o histórico dos
+animais que as telas de exemplo já têm.
+
+O comando só cria o que falta. Uma conta de exemplo que você alterou (com
+outra senha, por exemplo) não volta sozinha: encerre a conta pelo site e rode
+o comando de novo.
 
 | Conta               | Papel       | E-mail                | Senha           |
 | ------------------- | ----------- | --------------------- | --------------- |
@@ -97,6 +103,10 @@ Para outra validade, use `--dias` (de 1 a 30).
 | `PATCH /api/conta`                   | Muda os dados da própria conta (o e-mail, só com a senha)     |
 | `PUT /api/conta/senha`               | Troca a senha, com a atual; os outros aparelhos saem          |
 | `DELETE /api/conta`                  | Encerra a própria conta, com a senha                          |
+| `GET /api/usuarios/:codigo/animais`  | Os animais de uma pessoa (público, como a busca)              |
+| `POST /api/animais`                  | Cadastra um animal de quem está logado                        |
+| `PATCH /api/animais/:codigo`         | Edita um animal ou muda a disponibilidade (só o dono)         |
+| `DELETE /api/animais/:codigo`        | Exclui um animal (só o dono)                                  |
 
 Os erros vêm sempre no mesmo formato: `{ "erro": "mensagem" }`, com
 `"campos": { "email": "mensagem" }` quando o problema é num dado enviado.
@@ -112,7 +122,7 @@ Os erros vêm sempre no mesmo formato: `{ "erro": "mensagem" }`, com
 | `npm run db:migrate`   | Cria uma migração a partir do esquema e aplica no banco      |
 | `npm run db:generate`  | Gera de novo o cliente do Prisma (depois de mudar o esquema) |
 | `npm run db:seed`      | Carga inicial; pode rodar de novo sem duplicar nada          |
-| `npm run db:exemplos`  | Cria as contas de exemplo; nunca em produção                 |
+| `npm run db:exemplos`  | Cria as contas e os animais de exemplo; nunca em produção    |
 | `npm test`             | Roda os testes automatizados uma vez                         |
 | `npm run test:watch`   | Roda os testes de novo a cada arquivo salvo                  |
 | `npm run format`       | Formata os arquivos no estilo do projeto (Prettier)          |
@@ -139,7 +149,7 @@ backend/
 │   ├── app.js              monta a API: os passos por que todo pedido passa
 │   ├── rotas.js            o cardápio: cada endereço e quem o atende
 │   ├── controladores/      as regras de cada pedido (Controller)
-│   ├── modelos/            como achar e gravar contas e convites (Model)
+│   ├── modelos/            como achar e mostrar contas, convites e animais (Model)
 │   ├── middlewares/        filtros antes do controlador: login, limites
 │   ├── validacao.js        as regras dos dados que chegam (Zod)
 │   ├── erros.js            as respostas de erro, todas no mesmo formato
@@ -147,6 +157,7 @@ backend/
 │   ├── senha.js            o hash das senhas (bcrypt)
 │   ├── cifra.js            cifragem e índices de CPF, e-mail e telefone
 │   ├── codigos.js          sorteio dos códigos públicos e de convite
+│   ├── datas.js            datas sem hora (nascimento) entre a API e o banco
 │   ├── registro.js         o registro de eventos de segurança
 │   ├── config.js           a configuração, lida do .env
 │   └── banco.js            o cliente do banco, único para todo o back-end
@@ -172,12 +183,15 @@ O que a API já faz:
   mudam por eles, mesmo que o pedido traga. Trocar o e-mail ou a senha e
   encerrar a conta pedem a senha atual, e o e-mail novo só é conferido
   depois dela, para o endereço não revelar quem tem conta.
+- **Animais, só pelo dono:** editar e excluir exigem ser o dono, e o animal
+  de outra pessoa recebe a mesma resposta de um que não existe. O tipo
+  sanguíneo nunca vem do tutor: só uma validação assinada o preenche.
 - **Login:** e-mail errado e senha errada recebem a mesma resposta, no mesmo
   tempo, para ninguém descobrir quem tem conta.
 - **Limite de tentativas:** 20 logins errados a cada 15 minutos, 30 cadastros
   por hora, 60 conferências de e-mail e CPF a cada 15 minutos e 300 pedidos
-  por minuto, por endereço de rede; e 10 senhas atuais erradas a cada 15
-  minutos, por conta.
+  por minuto, por endereço de rede; e, por conta, 10 senhas atuais erradas a
+  cada 15 minutos e 30 animais cadastrados por hora.
 - **Validação:** todo dado que chega é conferido e normalizado
   (`src/validacao.js`). O banco é acessado só pelo Prisma, que nunca mistura o
   dado digitado com o comando (sem risco de SQL injection).
@@ -200,8 +214,9 @@ recebe as mesmas migrações do banco de desenvolvimento; antes de cada teste,
 ele é esvaziado. Por segurança, os testes se recusam a rodar num banco cujo
 nome não termine em `_test`, e usam chaves próprias, nunca as do `.env`.
 
-Os testes da API (`cadastro-api`, `sessao-api` e `conta-api`) chamam os
-endereços como o site chamaria, sem ligar a API numa porta.
+Os testes da API (`cadastro-api`, `sessao-api`, `conta-api` e
+`animais-api`) chamam os endereços como o site chamaria, sem ligar a API numa
+porta.
 
 ## Como mudar o banco
 

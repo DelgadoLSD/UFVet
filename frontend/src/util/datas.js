@@ -90,8 +90,14 @@ export function idadeEmAnos(nascimento) {
   return anos;
 }
 
-export const textoIdade = (anos) =>
-  anos <= 0 ? "Menos de 1 ano" : `${anos} ano${anos > 1 ? "s" : ""}`;
+// "3 anos", "Menos de 1 ano". Quando a data de nascimento é uma estimativa
+// do tutor, "Cerca de 3 anos": a tela não sugere precisão que o dado não tem
+// (NF12.1).
+export function textoIdade(anos, aproximada = false) {
+  if (anos <= 0) return "Menos de 1 ano";
+  const texto = `${anos} ano${anos > 1 ? "s" : ""}`;
+  return aproximada ? `Cerca de ${texto}` : texto;
+}
 
 // ─── Prazos em horas (acesso aos contatos) ────────────────────────────────────
 

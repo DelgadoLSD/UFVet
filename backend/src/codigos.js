@@ -19,6 +19,20 @@ const sortear = (quantos) =>
 export const sortearCodigoPublico = (papel) =>
   (papel === "VETERINARIO" ? "V" : "T") + sortear(5);
 
+// Código público de um animal (F6): seis caracteres, sem prefixo.
+export const sortearCodigoAnimal = () => sortear(6);
+
+// Sorteia até achar um código que ninguém usa (NF6.1). São centenas de
+// milhões de combinações: repetir é raríssimo, e as tentativas extras são só
+// por garantia. `emUso(codigo)` diz se o código já está gravado.
+export async function sortearCodigoLivre(sortearCodigo, emUso) {
+  for (let tentativa = 0; tentativa < 10; tentativa++) {
+    const codigo = sortearCodigo();
+    if (!(await emUso(codigo))) return codigo;
+  }
+  throw new Error("Não foi possível sortear um código público livre.");
+}
+
 // Código de convite: oito caracteres, em dois blocos para facilitar a cópia.
 // Com 31 opções por caractere, são cerca de 850 bilhões de combinações.
 export const sortearCodigoConvite = () => `${sortear(4)}-${sortear(4)}`;

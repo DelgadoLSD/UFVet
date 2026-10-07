@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { normalizarConvite } from "./cifra.js";
+import { dataExiste, hojeISO, subtrairAnos } from "./datas.js";
 import { BYTES_MAXIMOS_SENHA } from "./senha.js";
 
 // Regras dos dados que chegam à API. A API nunca confia no que recebe: alguém
@@ -57,6 +58,12 @@ const limparEspacos = (valor) =>
 
 const soDigitos = (valor) =>
   typeof valor === "string" ? valor.replace(/\D/g, "") : valor;
+
+// Limites que nenhum cão ou gato passa: servem para pegar erro de digitação
+// ("320" no lugar de "32,0"), não para decidir quem pode doar.
+const PESO_MAXIMO = 150;
+const IDADE_MAXIMA = 30;
+const IDADE_FORA = `Informe a idade em anos, de 0 a ${IDADE_MAXIMA}.`;
 
 // ─── CPF ──────────────────────────────────────────────────────────────────────
 
@@ -189,6 +196,65 @@ export const campos = {
     (valor) => (typeof valor === "string" ? valor.trim().toUpperCase() : valor),
     z.enum(UFS, { error: "UF inválida." }),
   ),
+
+  // ─── Animal ───
+
+  nomeAnimal: z.preprocess(
+    limparEspacos,
+    z
+      .string(obrigatorio)
+      .min(1, PREENCHA)
+      .max(60, "O nome pode ter no máximo 60 caracteres."),
+  ),
+
+  especie: z.enum(["CAO", "GATO"], { error: "Escolha cão ou gato." }),
+
+  sexo: z.enum(["MACHO", "FEMEA"], { error: "Escolha macho ou fêmea." }),
+
+  // Vazio quer dizer SRD (sem raça definida), que o banco guarda como nulo.
+  raca: z.preprocess(
+    (valor) =>
+      typeof valor === "string" ? limparEspacos(valor) || null : valor,
+    z
+      .string(obrigatorio)
+      .max(60, "A raça pode ter no máximo 60 caracteres.")
+      .nullable(),
+  ),
+
+  castrado: z.boolean({ error: "Responda se é castrado." }),
+
+  disponivel: z.boolean({ error: "Valor inválido." }),
+
+  // Em kg, com até duas casas (a coluna é decimal(5,2)). Aceita "4,5".
+  pesoKg: z.preprocess(
+    (valor) =>
+      typeof valor === "string" && valor.trim()
+        ? Number(valor.replace(",", "."))
+        : valor,
+    z
+      .number({ error: "Informe o peso em kg." })
+      .min(0.1, "Informe o peso em kg.")
+      .max(PESO_MAXIMO, `Confira o peso: mais de ${PESO_MAXIMO} kg.`)
+      .transform((kg) => Math.round(kg * 100) / 100),
+  ),
+
+  dataNascimento: z
+    .string(obrigatorio)
+    .refine(dataExiste, "Informe uma data válida.")
+    .refine(
+      (dia) => dia <= hojeISO(),
+      "A data de nascimento não pode ser depois de hoje.",
+    )
+    .refine(
+      (dia) => dia >= subtrairAnos(hojeISO(), IDADE_MAXIMA),
+      `Confira a data: mais de ${IDADE_MAXIMA} anos atrás.`,
+    ),
+
+  // A idade que o tutor estima quando não sabe a data, em anos inteiros.
+  idadeAproximada: z
+    .int({ error: IDADE_FORA })
+    .min(0, IDADE_FORA)
+    .max(IDADE_MAXIMA, IDADE_FORA),
 };
 
 // ─── Pedidos ──────────────────────────────────────────────────────────────────
@@ -279,3 +345,54 @@ export const esquemaTrocaSenha = z.object({
 export const esquemaEncerramento = z.object({
   senhaAtual: senhaDigitada,
 });
+
+// Os dados do animal que o tutor informa. O tipo sanguíneo não está aqui
+// (NF8.1): é resultado de exame, e só o veterinário o grava, ao assinar a
+// tipagem. O dono também não: é sempre quem está logado. O que não está no
+// esquema é descartado.
+const dadosDoAnimal = {
+  nome: campos.nomeAnimal,
+  especie: campos.especie,
+  raca: campos.raca.optional(),
+  sexo: campos.sexo,
+  castrado: campos.castrado,
+  pesoKg: campos.pesoKg,
+  // A idade vem de um jeito só (NF8.2): a data de nascimento, ou a idade
+  // aproximada em anos, que a API converte numa data.
+  dataNascimento: campos.dataNascimento.optional(),
+  idadeAproximada: campos.idadeAproximada.optional(),
+};
+
+const informou = (valor) => valor !== undefined;
+
+// Cadastro de animal (F8).
+export const esquemaAnimal = z
+  .object(dadosDoAnimal)
+  .refine(
+    (dados) =>
+      informou(dados.dataNascimento) !== informou(dados.idadeAproximada),
+    {
+      message: "Informe a data de nascimento ou a idade aproximada.",
+      path: ["dataNascimento"],
+    },
+  );
+
+// Edição (F9) e disponibilidade (F11): vem só o que mudou.
+export const esquemaEdicaoAnimal = z
+  .object({
+    ...Object.fromEntries(
+      Object.entries(dadosDoAnimal).map(([campo, regra]) => [
+        campo,
+        regra.optional(),
+      ]),
+    ),
+    disponivel: campos.disponivel.optional(),
+  })
+  .refine(
+    (dados) =>
+      !informou(dados.dataNascimento) || !informou(dados.idadeAproximada),
+    {
+      message: "Informe só um: a data de nascimento ou a idade aproximada.",
+      path: ["dataNascimento"],
+    },
+  );

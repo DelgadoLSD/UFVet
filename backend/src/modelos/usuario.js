@@ -1,6 +1,6 @@
 import { banco } from "../banco.js";
 import { decifrar, indiceEmail } from "../cifra.js";
-import { sortearCodigoPublico } from "../codigos.js";
+import { sortearCodigoLivre, sortearCodigoPublico } from "../codigos.js";
 
 // Model (do MVC) das contas: como achar uma conta no banco e o que dela pode
 // sair da API. As tabelas em si estão em prisma/schema.prisma.
@@ -19,20 +19,16 @@ export const buscarUsuarioPorEmail = (email) =>
     include: COM_VETERINARIO,
   });
 
-// Sorteia um código público que ninguém usa (NF6.1). São 28 milhões de
-// combinações por papel: repetir é raríssimo, e as tentativas extras são só
-// por garantia.
-export async function codigoPublicoLivre(papel) {
-  for (let tentativa = 0; tentativa < 10; tentativa++) {
-    const codigo = sortearCodigoPublico(papel);
-    const emUso = await banco.usuario.findUnique({
-      where: { codigo },
-      select: { id: true },
-    });
-    if (!emUso) return codigo;
-  }
-  throw new Error("Não foi possível sortear um código público livre.");
-}
+// Um código público que nenhuma conta usa (NF6.1).
+export const codigoPublicoLivre = (papel) =>
+  sortearCodigoLivre(
+    () => sortearCodigoPublico(papel),
+    async (codigo) =>
+      !!(await banco.usuario.findUnique({
+        where: { codigo },
+        select: { id: true },
+      })),
+  );
 
 // "12944780655" -> "•••.447.806-••": o bastante para a pessoa reconhecer o
 // próprio CPF, sem o número inteiro aparecer na tela.

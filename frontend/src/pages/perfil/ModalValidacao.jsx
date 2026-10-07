@@ -98,7 +98,10 @@ function ModalValidacao({ animal, validacao, onSalvar, onFechar }) {
         ESPECIES[animal.especie].rotulo,
         animal.tipoSanguineo || "sem tipagem",
         formatarPeso(animal.pesoKg),
-        textoIdade(idadeEmAnos(animal.dataNascimento)),
+        textoIdade(
+          idadeEmAnos(animal.dataNascimento),
+          animal.nascimentoAproximado,
+        ).toLowerCase(),
       ].join(", ")}
       onFechar={onFechar}
       rodape={

@@ -1,10 +1,11 @@
 # UFVet — front-end
 
-O site do UFVet, em React. O login, o cadastro e a página da conta já falam
-com a API (pasta `backend`). O resto das telas (perfis, animais, busca,
+O site do UFVet, em React. O login, o cadastro, a página da conta e os
+animais do próprio perfil já falam com a API (pasta `backend`). O resto (os
+perfis de outras pessoas, a busca, as fotos, as validações, as doações e as
 liberações) ainda usa dados de exemplo no lugar da API: dá para navegar por
-tudo, mas o que muda nessas telas não é salvo, e recarregar a página volta ao
-começo.
+tudo, mas o que muda nessas partes não é salvo, e recarregar a página volta
+ao começo.
 
 ## Como rodar
 
@@ -42,9 +43,11 @@ Com as contas de exemplo do back-end (`npm run db:exemplos`):
 | Beatriz (tutora)     | `beatriz@example.com` | `ufvet-exemplo` |
 
 Elas têm os mesmos códigos públicos das pessoas dos dados de exemplo, então o
-site mostra os animais, pedidos e liberações de exemplo de cada uma. Entrando
-com uma e com a outra, dá para ver o mesmo site pelos dois lados (por exemplo,
-o contato que o veterinário vê e a tutora não).
+site mostra os pedidos e as liberações de exemplo de cada uma. Os animais
+delas vêm do banco (o mesmo comando os cria), com as fotos e o histórico dos
+dados de exemplo, até essas partes virem da API. Entrando com uma e com a
+outra, dá para ver o mesmo site pelos dois lados (por exemplo, o contato que o
+veterinário vê e a tutora não).
 
 Sem entrar, o site mostra o que o visitante vê: o início, a busca e os perfis,
 sem os contatos. O próprio perfil e a conta pedem login.
@@ -89,7 +92,7 @@ As telas não leem os dados de exemplo diretamente: elas sempre passam por
 `servicos/`.
 
 ```
-tela  →  servicos/  →  API               (sessão, login, cadastro e conta)
+tela  →  servicos/  →  API               (sessão, login, cadastro, conta e animais)
 tela  →  servicos/  →  dados/exemplos/   (o resto, por enquanto)
 ```
 
@@ -98,7 +101,7 @@ tela  →  servicos/  →  dados/exemplos/   (o resto, por enquanto)
 | `servicos/api.js`            | A conversa com a API, usada pelos outros serviços              |
 | `servicos/sessao.js`         | Quem está logado (`useSessao`); entrar, sair e a conta         |
 | `servicos/pessoas.js`        | Hospitais, tutores e veterinários pelo código, perfil visitado |
-| `servicos/animais.js`        | Animais de um tutor                                            |
+| `servicos/animais.js`        | Animais do próprio perfil (API) e dos perfis visitados         |
 | `servicos/doadores.js`       | Doadores da busca                                              |
 | `servicos/acessoContatos.js` | Liberações e pedidos de acesso aos contatos, e quem pode ver   |
 
@@ -137,8 +140,10 @@ precisar mostrar um "carregando").
 
 `npm test` confere as regras que rodam no navegador antes de qualquer dado
 chegar à API: as máscaras de CPF e telefone, a conferência dos dígitos do CPF
-e do telefone, as mensagens dos campos de cadastro e conta e o destino depois
-de entrar (que só aceita páginas do próprio site). Os testes não abrem o
+e do telefone, as mensagens dos campos de cadastro e conta, o destino depois
+de entrar (que só aceita páginas do próprio site), a idade e o prazo de
+recuperação dos animais e o formulário do animal (o que ele confere e o que
+manda para a API). Os testes não abrem o
 navegador nem precisam da API ligada.
 
 Essas regras são cópias das que a API confere (`backend/src/validacao.js`), e
@@ -156,8 +161,10 @@ banco não guarda gênero de tutores, então eles aparecem como "Tutor(a)".
 ## O que falta para a integração com a API
 
 - Trocar os dados de exemplo pelas chamadas à API, dentro de `servicos/`,
-  uma funcionalidade por vez (conta, animais, busca, liberações...).
-- O formulário do animal ainda só guarda a mudança até recarregar a página.
+  uma funcionalidade por vez (busca, perfis visitados, validações, doações,
+  liberações...).
+- Nos cartões dos animais, validações, doações, observações e exames ainda
+  ficam só no navegador, até recarregar a página.
 - A troca de foto (da pessoa e dos animais) espera o armazenamento de
   arquivos.
 - `animaisResumo` ("Zeus (cão) e Luna (gato)") vai sair das tabelas de

@@ -76,6 +76,18 @@ export function criarLimites() {
       },
     }),
 
+    // Cadastro de animais, por conta: folga para quem cuida de muitos
+    // animais, e um teto para quem tentasse encher o banco.
+    cadastroAnimal: rateLimit({
+      ...opcoesComuns,
+      windowMs: 60 * MINUTO,
+      limit: 30,
+      keyGenerator: (req) => req.usuario.id,
+      message: {
+        erro: "Muitos animais cadastrados em pouco tempo. Tente de novo mais tarde.",
+      },
+    }),
+
     // Conferência de e-mail e CPF durante o cadastro. Responde se um e-mail
     // tem conta, então o limite barra quem tentaria testar uma lista inteira.
     // Um cadastro normal faz poucas conferências.

@@ -12,6 +12,7 @@ import ModalValidacao from "./ModalValidacao";
 import ModalHistoricoValidacao from "./ModalHistoricoValidacao";
 import ModalDoacoes from "./ModalDoacoes";
 import ModalExcluirAnimal from "./ModalExcluirAnimal";
+import { salvarAnimal } from "../../servicos/animais";
 import { useSessao } from "../../servicos/sessao";
 import {
   ESPECIES,
@@ -28,9 +29,11 @@ import { nomeProfissional } from "../../util/texto";
 // Cartão de um animal no perfil: cabeçalho com nome e disponibilidade, fotos,
 // dados de doador, validação veterinária, observações e documentos.
 //
-// O cartão guarda o estado do próprio animal. Sem API, o que muda aqui
-// (validação, doação, observação, documento, disponibilidade) vale só até
-// recarregar a página; na integração, cada alteração passa a chamar a API.
+// Os dados do animal e a disponibilidade gravam na API, e o perfil recebe o
+// animal novo por `onAlterado` (ou o aviso de que ele saiu, por
+// `onExcluido`). O resto (validação, doação, observação, documento) ainda é
+// guardado só no cartão e vale até recarregar a página; cada parte passa a
+// chamar a API na etapa dela.
 //
 // - `ehDono`: o perfil é de quem está logado; pode editar, excluir, mudar a
 //   disponibilidade e enviar documentos.
@@ -61,9 +64,18 @@ function estiloDisponibilidade(disponivel, recuperacao) {
   };
 }
 
-function CartaoAnimal({ animal, ehDono, ehVet, nomeTutor }) {
+function CartaoAnimal({
+  animal,
+  ehDono,
+  ehVet,
+  nomeTutor,
+  onAlterado,
+  onExcluido,
+}) {
   const usuario = useSessao();
-  const [disponivel, setDisponivel] = useState(animal.disponivel);
+  const disponivel = animal.disponivel;
+  const [mudandoDisponibilidade, setMudandoDisponibilidade] = useState(false);
+  const [erroDisponibilidade, setErroDisponibilidade] = useState("");
   // O histórico é a fonte de verdade; "validacao" é sempre a mais recente
   // dele. Uma validação assinada nunca é editada: revisar cria uma entrada
   // nova, no começo da lista, e a anterior continua no histórico,
@@ -95,6 +107,19 @@ function CartaoAnimal({ animal, ehDono, ehVet, nomeTutor }) {
     REFERENCIA_DOADOR[animal.especie],
   );
   const etiqueta = estiloDisponibilidade(disponivel, recuperacao);
+
+  // Tirar da busca ou devolver (F11).
+  const mudarDisponibilidade = async (nova) => {
+    setMudandoDisponibilidade(true);
+    setErroDisponibilidade("");
+    try {
+      onAlterado(await salvarAnimal(animal.codigo, { disponivel: nova }));
+    } catch (falha) {
+      setErroDisponibilidade(falha.message);
+    } finally {
+      setMudandoDisponibilidade(false);
+    }
+  };
 
   const adicionarObservacao = (texto) =>
     setObservacoes((prev) => [
@@ -146,7 +171,9 @@ function CartaoAnimal({ animal, ehDono, ehVet, nomeTutor }) {
               {ehDono ? (
                 <button
                   type="button"
-                  onClick={() => setDisponivel(!disponivel)}
+                  onClick={() => mudarDisponibilidade(!disponivel)}
+                  disabled={mudandoDisponibilidade}
+                  aria-label={`${etiqueta.texto}. Clique para marcar como ${disponivel ? "indisponível" : "disponível"}.`}
                   className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full transition-all hover:brightness-95 active:scale-95 ${etiqueta.classe}`}
                 >
                   {conteudoEtiqueta}
@@ -172,6 +199,11 @@ function CartaoAnimal({ animal, ehDono, ehVet, nomeTutor }) {
               />
             </div>
           </div>
+          {erroDisponibilidade && (
+            <p role="alert" className="text-xs text-red-600">
+              {erroDisponibilidade}
+            </p>
+          )}
           <div className="flex items-center gap-2.5 flex-wrap">
             <p className="text-sm text-[#5f5e5e]">
               {nomeRaca(animal)}, {SEXOS[animal.sexo].toLowerCase()},{" "}
@@ -288,21 +320,25 @@ function CartaoAnimal({ animal, ehDono, ehVet, nomeTutor }) {
       )}
 
       {modal === "editar" && (
-        <ModalAnimal animal={animalAtual} onFechar={fecharModal} />
+        <ModalAnimal
+          animal={animalAtual}
+          onFechar={fecharModal}
+          onSalvo={(salvo) => {
+            onAlterado(salvo);
+            fecharModal();
+          }}
+        />
       )}
 
       {modal === "excluir" && (
         <ModalExcluirAnimal
           animal={animalAtual}
           disponivel={disponivel}
-          onMarcarIndisponivel={() => {
-            setDisponivel(false);
+          onMarcarIndisponivel={async () => {
             fecharModal();
+            await mudarDisponibilidade(false);
           }}
-          onExcluir={() => {
-            fecharModal();
-            alert("Animal excluído! (integração com back-end em breve)");
-          }}
+          onExcluido={() => onExcluido(animal.codigo)}
           onFechar={fecharModal}
         />
       )}

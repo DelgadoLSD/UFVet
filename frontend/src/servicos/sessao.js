@@ -152,8 +152,8 @@ export function apagarAviso() {
 // Pedido que só vale com login. Se a sessão venceu (8 horas) ou foi
 // derrubada em outro aparelho, a API responde 401: o site passa a tratar a
 // pessoa como visitante, e a página protegida a leva para "Entrar", com o
-// aviso do porquê.
-async function chamarComLogin(caminho, opcoes) {
+// aviso do porquê. Os outros serviços (animais) também passam por aqui.
+export async function chamarComLogin(caminho, opcoes) {
   try {
     return await chamarApi(caminho, opcoes);
   } catch (falha) {

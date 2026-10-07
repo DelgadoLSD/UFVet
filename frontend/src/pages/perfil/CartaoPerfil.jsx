@@ -73,9 +73,13 @@ function LinhaInfo({ icone, children }) {
 }
 
 // Os três números do cartão. O veterinário destaca as validações que assinou;
-// o tutor, as doações dos seus animais.
+// o tutor, as doações dos seus animais. Sem a lista de animais (`null`,
+// enquanto ela vem da API ou se não veio), os números que dependem dela
+// aparecem como um traço, em vez de um zero que não é verdade.
 function estatisticasDe(perfil, animais, ehProprio) {
-  const doacoes = animais.reduce((soma, a) => soma + a.doacoes.length, 0);
+  const doacoes = animais
+    ? animais.reduce((soma, a) => soma + a.doacoes.length, 0)
+    : "–";
   const membroDesde = {
     rotulo: "Membro desde",
     valor: mesAno(perfil.membroDesde),
@@ -110,8 +114,8 @@ function estatisticasDe(perfil, animais, ehProprio) {
       destaque: true,
     },
     {
-      rotulo: animais.length === 1 ? "Animal" : "Animais",
-      valor: animais.length,
+      rotulo: animais?.length === 1 ? "Animal" : "Animais",
+      valor: animais ? animais.length : "–",
       detalhe: "cadastrados como doadores",
     },
     membroDesde,

@@ -114,7 +114,7 @@ function DadosDoAnimal({
       />
       <DadoDoador
         rotulo="Idade"
-        valor={textoIdade(anos)}
+        valor={textoIdade(anos, animal.nascimentoAproximado)}
         detalhe={
           idadeOk
             ? `faixa ideal: ${ref.idadeMin} a ${ref.idadeMax} anos`

@@ -233,6 +233,7 @@ errado; a alteração de qualquer um deles aciona F21.
 |---|---|---|---|---|---|
 | NF9.1 | Aviso de impacto na validação | Antes de salvar, o sistema deve informar quais critérios validados serão invalidados pela alteração, indicando quem os havia assinado e quando. | Usabilidade | ( ) | (x) |
 | NF9.2 | Tipagem confirmada bloqueada | Havendo tipagem confirmada, o tipo sanguíneo deve ser exibido apenas para leitura, com indicação de quem assinou. | Segurança | ( ) | (x) |
+| NF9.3 | Espécie fixa após a tipagem | Havendo tipagem confirmada, a espécie não pode ser alterada, porque os tipos sanguíneos dependem dela (NF20.2). | Especificação | ( ) | (x) |
 
 ---
 

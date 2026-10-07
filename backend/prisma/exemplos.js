@@ -1,11 +1,13 @@
 import { banco } from "../src/banco.js";
 import { cifrar, indiceCpf, indiceEmail } from "../src/cifra.js";
+import { paraDataDoBanco } from "../src/datas.js";
 import { gerarHashSenha } from "../src/senha.js";
 
-// Contas de exemplo, para desenvolver e demonstrar o site. São as mesmas
-// pessoas dos dados de exemplo do front-end (frontend/src/dados/exemplos),
-// com os mesmos códigos públicos: entrando com elas, o site mostra os
-// animais, pedidos e liberações de exemplo que as telas já têm.
+// Contas e animais de exemplo, para desenvolver e demonstrar o site. São as
+// mesmas pessoas e os mesmos animais dos dados de exemplo do front-end
+// (frontend/src/dados/exemplos), com os mesmos códigos públicos: entrando com
+// essas contas, o site mostra os pedidos, as liberações e o histórico dos
+// animais que as telas já têm.
 //
 // Roda com `npm run db:exemplos`, depois de `npm run db:seed`, e pode rodar
 // de novo sem duplicar. Nunca roda em produção: a senha está escrita aqui e
@@ -38,6 +40,83 @@ const CONTAS = [
     bairro: "Ramos",
   },
 ];
+
+// Os animais das contas acima, com os dados e os códigos dos animais de
+// exemplo do site (frontend/src/dados/exemplos/animais.js). Só os dados do
+// animal: fotos, validações, doações e o resto do histórico continuam saindo
+// dos exemplos do site até cada parte ser ligada à API. O tipo sanguíneo
+// fica vazio, porque só uma validação assinada pode preenchê-lo (NF8.1).
+const ANIMAIS = [
+  {
+    tutor: "T3M8P1",
+    codigo: "Z7R2K4",
+    nome: "Zeus",
+    especie: "CAO",
+    raca: "Golden Retriever",
+    sexo: "MACHO",
+    castrado: true,
+    dataNascimento: "2021-08-20",
+    pesoKg: 32,
+    disponivel: true,
+  },
+  {
+    tutor: "T3M8P1",
+    codigo: "L4N8C1",
+    nome: "Luna",
+    especie: "GATO",
+    raca: null,
+    sexo: "FEMEA",
+    castrado: true,
+    dataNascimento: "2024-06-10",
+    pesoKg: 4.5,
+    disponivel: false,
+  },
+  {
+    tutor: "V7H4M2",
+    codigo: "B3L6D9",
+    nome: "Bela",
+    especie: "CAO",
+    raca: "Labrador",
+    sexo: "FEMEA",
+    castrado: true,
+    dataNascimento: "2023-05-10",
+    pesoKg: 28,
+    disponivel: true,
+  },
+  {
+    tutor: "V7H4M2",
+    codigo: "N9P2F5",
+    nome: "Nina",
+    especie: "GATO",
+    raca: "Persa",
+    sexo: "FEMEA",
+    castrado: false,
+    dataNascimento: "2022-02-14",
+    pesoKg: 3.8,
+    disponivel: false,
+  },
+];
+
+async function criarAnimais() {
+  for (const { tutor, ...animal } of ANIMAIS) {
+    const existente = await banco.animal.findUnique({
+      where: { codigo: animal.codigo },
+    });
+    if (existente) {
+      console.log(`Já existia: ${animal.nome} (#${animal.codigo})`);
+      continue;
+    }
+    const dono = await banco.usuario.findUnique({ where: { codigo: tutor } });
+    await banco.animal.create({
+      data: {
+        ...animal,
+        tutorId: dono.id,
+        dataNascimento: paraDataDoBanco(animal.dataNascimento),
+      },
+    });
+    console.log(`Criado: ${animal.nome} (#${animal.codigo})`);
+  }
+}
 
 async function main() {
   if (process.env.NODE_ENV === "production") {
@@ -90,6 +169,7 @@ async function main() {
     });
     console.log(`Criada: ${conta.nomeCompleto} (${conta.email})`);
   }
+  await criarAnimais();
   console.log(`\nSenha das contas de exemplo: ${SENHA_DE_EXEMPLO}`);
 }
 

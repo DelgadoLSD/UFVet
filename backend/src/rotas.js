@@ -1,5 +1,11 @@
 import { Router } from "express";
 import {
+  cadastrarAnimal,
+  editarAnimal,
+  excluirAnimal,
+  listarAnimais,
+} from "./controladores/animais.js";
+import {
   atualizarConta,
   encerrarConta,
   trocarSenha,
@@ -50,6 +56,13 @@ export function criarRotas(limites) {
   rotas.patch("/conta", exigirLogin, limites.senhaAtual, atualizarConta);
   rotas.put("/conta/senha", exigirLogin, limites.senhaAtual, trocarSenha);
   rotas.delete("/conta", exigirLogin, limites.senhaAtual, encerrarConta);
+
+  // Animais (F8 a F11). Ver é público, como a busca; cadastrar, editar e
+  // excluir exigem login, e só o dono mexe (ver controladores/animais.js).
+  rotas.get("/usuarios/:codigo/animais", listarAnimais);
+  rotas.post("/animais", exigirLogin, limites.cadastroAnimal, cadastrarAnimal);
+  rotas.patch("/animais/:codigo", exigirLogin, editarAnimal);
+  rotas.delete("/animais/:codigo", exigirLogin, excluirAnimal);
 
   return rotas;
 }
