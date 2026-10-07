@@ -2,8 +2,9 @@
 
 A API do UFVet, em Express, e o banco de dados PostgreSQL, acessado pelo
 Prisma. Por enquanto a API cuida das contas: cadastro, convite de
-veterinário, login e sessão. Animais, busca, validações, doações e liberações
-de contato entram nas próximas etapas.
+veterinário, login, sessão e a própria conta (dados, senha e encerramento).
+Animais, busca, validações, doações e liberações de contato entram nas
+próximas etapas.
 
 ## Pré-requisitos
 
@@ -93,6 +94,9 @@ Para outra validade, use `--dias` (de 1 a 30).
 | `POST /api/sessao`                   | Entra com e-mail e senha                                      |
 | `DELETE /api/sessao`                 | Sai neste aparelho                                            |
 | `DELETE /api/sessoes`                | Sai de todos os aparelhos (exige login)                       |
+| `PATCH /api/conta`                   | Muda os dados da própria conta (o e-mail, só com a senha)     |
+| `PUT /api/conta/senha`               | Troca a senha, com a atual; os outros aparelhos saem          |
+| `DELETE /api/conta`                  | Encerra a própria conta, com a senha                          |
 
 Os erros vêm sempre no mesmo formato: `{ "erro": "mensagem" }`, com
 `"campos": { "email": "mensagem" }` quando o problema é num dado enviado.
@@ -162,12 +166,18 @@ O que a API já faz:
   banco (`src/cifra.js`), com as chaves fora do código, no `.env`.
 - **Sessão:** um crachá (JWT) assinado, num cookie que o JavaScript da página
   não lê e que só volta para o próprio site. Vale 8 horas; "sair de todos os
-  aparelhos" invalida os crachás antigos.
+  aparelhos" e a troca de senha invalidam os crachás antigos.
+- **A própria conta, e só ela:** os endereços de `/api/conta` agem sobre a
+  conta do crachá, sem receber id de ninguém. CPF, CRMV, papel e código não
+  mudam por eles, mesmo que o pedido traga. Trocar o e-mail ou a senha e
+  encerrar a conta pedem a senha atual, e o e-mail novo só é conferido
+  depois dela, para o endereço não revelar quem tem conta.
 - **Login:** e-mail errado e senha errada recebem a mesma resposta, no mesmo
   tempo, para ninguém descobrir quem tem conta.
 - **Limite de tentativas:** 20 logins errados a cada 15 minutos, 30 cadastros
   por hora, 60 conferências de e-mail e CPF a cada 15 minutos e 300 pedidos
-  por minuto, por endereço de rede.
+  por minuto, por endereço de rede; e 10 senhas atuais erradas a cada 15
+  minutos, por conta.
 - **Validação:** todo dado que chega é conferido e normalizado
   (`src/validacao.js`). O banco é acessado só pelo Prisma, que nunca mistura o
   dado digitado com o comando (sem risco de SQL injection).
@@ -190,8 +200,8 @@ recebe as mesmas migrações do banco de desenvolvimento; antes de cada teste,
 ele é esvaziado. Por segurança, os testes se recusam a rodar num banco cujo
 nome não termine em `_test`, e usam chaves próprias, nunca as do `.env`.
 
-Os testes da API (`cadastro-api` e `sessao-api`) chamam os endereços como o
-site chamaria, sem ligar a API numa porta.
+Os testes da API (`cadastro-api`, `sessao-api` e `conta-api`) chamam os
+endereços como o site chamaria, sem ligar a API numa porta.
 
 ## Como mudar o banco
 

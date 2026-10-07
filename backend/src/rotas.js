@@ -1,4 +1,9 @@
 import { Router } from "express";
+import {
+  atualizarConta,
+  encerrarConta,
+  trocarSenha,
+} from "./controladores/conta.js";
 import { consultarConvite } from "./controladores/convites.js";
 import {
   entrar,
@@ -39,6 +44,12 @@ export function criarRotas(limites) {
   rotas.post("/sessao", limites.login, entrar);
   rotas.delete("/sessao", sair);
   rotas.delete("/sessoes", exigirLogin, sairDeTodos);
+
+  // A própria conta: dados (F3), senha (F4) e encerramento (F5). Sempre a
+  // de quem está logado (ver controladores/conta.js).
+  rotas.patch("/conta", exigirLogin, limites.senhaAtual, atualizarConta);
+  rotas.put("/conta/senha", exigirLogin, limites.senhaAtual, trocarSenha);
+  rotas.delete("/conta", exigirLogin, limites.senhaAtual, encerrarConta);
 
   return rotas;
 }

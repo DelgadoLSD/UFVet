@@ -9,7 +9,15 @@ import LayoutAutenticacao, {
   BotaoGoogle,
 } from "../components/LayoutAutenticacao";
 import Segmentado from "../components/Segmentado";
-import { TAMANHO_MINIMO_SENHA } from "../regras/conta";
+import {
+  PREENCHA,
+  TAMANHO_MINIMO_SENHA,
+  erroCpf,
+  erroEmail,
+  erroNome,
+  erroTelefone,
+  soComProblema,
+} from "../regras/conta";
 import { LIMITES } from "../regras/limites";
 import {
   cadastrar,
@@ -17,12 +25,7 @@ import {
   consultarConvite,
   useSessao,
 } from "../servicos/sessao";
-import {
-  cpfValido,
-  formatarCpf,
-  formatarTelefone,
-  telefoneValido,
-} from "../util/texto";
+import { formatarCpf, formatarTelefone } from "../util/texto";
 // Foto de santosh verma (Unsplash, uso livre)
 import fotoGatoParede from "../assets/auth/gato-parede-vermelha.jpg";
 
@@ -95,8 +98,6 @@ const OPCOES_TRATAMENTO = [
   { valor: "DRA", rotulo: "Dra." },
 ];
 
-const PREENCHA = "Preencha este campo.";
-
 // "7k3p9x" -> "7K3P-9X": maiúsculas, sem símbolos, com o traço no meio.
 function formatarConvite(texto) {
   const limpo = texto
@@ -106,33 +107,16 @@ function formatarConvite(texto) {
   return limpo.length > 4 ? `${limpo.slice(0, 4)}-${limpo.slice(4)}` : limpo;
 }
 
-const digitos = (texto = "") => texto.replace(/\D/g, "");
-
 // O básico de cada etapa, conferido antes de avançar.
 function errosDaEtapa(etapa, dados, convite) {
   const erros = {};
   if (etapa === 2) {
-    const nome = (dados.nomeCompleto ?? "").trim();
-    if (!nome) erros.nomeCompleto = PREENCHA;
-    else if (!nome.includes(" ")) {
-      erros.nomeCompleto = "Informe o nome e o sobrenome.";
-    }
-    if (digitos(dados.cpf).length !== 11) {
-      erros.cpf = "O CPF tem 11 números.";
-    } else if (!cpfValido(dados.cpf)) {
-      erros.cpf = "CPF inválido. Confira os números.";
-    }
-    if (!/^\S+@\S+\.\S+$/.test((dados.email ?? "").trim())) {
-      erros.email = "Informe um e-mail válido.";
-    }
+    erros.nomeCompleto = erroNome(dados.nomeCompleto);
+    erros.cpf = erroCpf(dados.cpf);
+    erros.email = erroEmail(dados.email);
   }
   if (etapa === 3) {
-    const telefone = digitos(dados.telefone).length;
-    if (telefone < 10) {
-      erros.telefone = "Informe o telefone com DDD.";
-    } else if (!telefoneValido(dados.telefone)) {
-      erros.telefone = "Telefone inválido. Confira o DDD e o número.";
-    }
+    erros.telefone = erroTelefone(dados.telefone);
     if (!dados.cidade) erros.cidade = "Escolha a cidade na lista.";
     if (!(dados.bairro ?? "").trim()) erros.bairro = PREENCHA;
   }
@@ -156,7 +140,7 @@ function errosDaEtapa(etapa, dados, convite) {
       erros.aceites = "É preciso aceitar os dois itens para criar a conta.";
     }
   }
-  return erros;
+  return soComProblema(erros);
 }
 
 // Mensagem de erro embaixo de um campo que não é um Campo (lista, botões).

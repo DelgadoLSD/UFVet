@@ -8,6 +8,13 @@ body {
   letter-spacing: -0.02em;
 }
 
+/* O Edge põe um olho próprio nos campos de senha, ao lado do botão de
+   mostrar/ocultar do site (components/Campo.jsx). Fica só o do site. */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
 /* Ícones do Material Symbols, sempre no traço vazado e no peso normal. */
 .material-symbols-outlined {
   font-variation-settings:

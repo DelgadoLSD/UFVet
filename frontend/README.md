@@ -1,9 +1,10 @@
 # UFVet — front-end
 
-O site do UFVet, em React. O login e o cadastro já falam com a API (pasta
-`backend`). O resto das telas (perfis, animais, busca, liberações) ainda usa
-dados de exemplo no lugar da API: dá para navegar por tudo, mas o que muda
-nessas telas não é salvo, e recarregar a página volta ao começo.
+O site do UFVet, em React. O login, o cadastro e a página da conta já falam
+com a API (pasta `backend`). O resto das telas (perfis, animais, busca,
+liberações) ainda usa dados de exemplo no lugar da API: dá para navegar por
+tudo, mas o que muda nessas telas não é salvo, e recarregar a página volta ao
+começo.
 
 ## Como rodar
 
@@ -84,14 +85,14 @@ As telas não leem os dados de exemplo diretamente: elas sempre passam por
 `servicos/`.
 
 ```
-tela  →  servicos/  →  API               (sessão, login e cadastro)
+tela  →  servicos/  →  API               (sessão, login, cadastro e conta)
 tela  →  servicos/  →  dados/exemplos/   (o resto, por enquanto)
 ```
 
 | Serviço                      | O que oferece                                                  |
 | ---------------------------- | -------------------------------------------------------------- |
 | `servicos/api.js`            | A conversa com a API, usada pelos outros serviços              |
-| `servicos/sessao.js`         | Quem está logado (`useSessao`), entrar, sair e criar conta     |
+| `servicos/sessao.js`         | Quem está logado (`useSessao`); entrar, sair e a conta         |
 | `servicos/pessoas.js`        | Hospitais, tutores e veterinários pelo código, perfil visitado |
 | `servicos/animais.js`        | Animais de um tutor                                            |
 | `servicos/doadores.js`       | Doadores da busca                                              |
@@ -140,8 +141,9 @@ banco não guarda gênero de tutores, então eles aparecem como "Tutor(a)".
 
 - Trocar os dados de exemplo pelas chamadas à API, dentro de `servicos/`,
   uma funcionalidade por vez (conta, animais, busca, liberações...).
-- Os formulários do animal e da conta ainda só mostram um aviso ou guardam a
-  mudança até recarregar a página.
+- O formulário do animal ainda só guarda a mudança até recarregar a página.
+- A troca de foto (da pessoa e dos animais) espera o armazenamento de
+  arquivos.
 - `animaisResumo` ("Zeus (cão) e Luna (gato)") vai sair das tabelas de
   animais.
 - Publicado o site, a hospedagem precisa repassar `/api` para a API, como o

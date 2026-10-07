@@ -57,6 +57,25 @@ export function criarLimites() {
       },
     }),
 
+    // Mudanças confirmadas com a senha atual: trocar o e-mail ou a senha e
+    // encerrar a conta. Quem encontrar um computador com a conta aberta
+    // poderia tentar adivinhar a senha por aqui. Só as senhas erradas contam
+    // (o controlador marca res.locals.senhaRecusada), e a conta é a chave,
+    // porque só chega aqui quem está logado. Pedidos sem senha (trocar só o
+    // telefone, por exemplo) nem passam pelo limite.
+    senhaAtual: rateLimit({
+      ...opcoesComuns,
+      windowMs: 15 * MINUTO,
+      limit: 10,
+      skip: (req) => req.body?.senhaAtual === undefined,
+      keyGenerator: (req) => req.usuario.id,
+      skipSuccessfulRequests: true,
+      requestWasSuccessful: (req, res) => !res.locals.senhaRecusada,
+      message: {
+        erro: "Muitas tentativas com a senha errada. Espere 15 minutos e tente de novo.",
+      },
+    }),
+
     // Conferência de e-mail e CPF durante o cadastro. Responde se um e-mail
     // tem conta, então o limite barra quem tentaria testar uma lista inteira.
     // Um cadastro normal faz poucas conferências.

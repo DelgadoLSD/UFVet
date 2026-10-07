@@ -2,15 +2,19 @@ import { useSyncExternalStore } from "react";
 import { PESSOAS } from "../dados/exemplos/pessoas";
 import { chamarApi } from "./api";
 
-// Quem está usando o site: a conta logada, ou ninguém (o visitante).
+// Quem está usando o site: a conta logada, ou ninguém (o visitante). Também
+// as ações sobre a própria conta: entrar, criar, mudar os dados, trocar a
+// senha, sair e encerrar.
 //
 // A sessão de verdade fica na API, num cookie que o site nem consegue ler.
 // Aqui fica só uma cópia dos dados da conta, para as telas desenharem. O
 // site pergunta à API quem está logado assim que abre (carregarSessao, em
 // main.jsx); até a resposta chegar, `carregando` fica verdadeiro e as páginas
-// que exigem login esperam.
+// que exigem login esperam. `aviso` diz, na página de entrar, por que a
+// pessoa saiu da conta sem ter clicado em "Sair" (a sessão venceu, por
+// exemplo).
 
-let estado = { usuario: null, carregando: true };
+let estado = { usuario: null, carregando: true, aviso: "" };
 const ouvintes = new Set();
 
 const assinar = (aviso) => {
@@ -63,8 +67,8 @@ function paraUsuario(conta) {
   };
 }
 
-const logar = (conta) =>
-  definir({ usuario: paraUsuario(conta), carregando: false });
+const logar = (conta, aviso = "") =>
+  definir({ usuario: paraUsuario(conta), carregando: false, aviso });
 
 // ─── Leitura, para as telas ───────────────────────────────────────────────────
 
@@ -73,7 +77,8 @@ export function useSessao() {
   return useSyncExternalStore(assinar, () => estado).usuario;
 }
 
-// { usuario, carregando }, para quem precisa saber se a resposta já chegou.
+// { usuario, carregando, aviso }, para quem precisa saber se a resposta já
+// chegou ou por que a pessoa saiu.
 export function useEstadoSessao() {
   return useSyncExternalStore(assinar, () => estado);
 }
@@ -136,8 +141,56 @@ export async function consultarConvite(codigo) {
   return convite;
 }
 
-// Edição do próprio cadastro. Por enquanto vale só até recarregar a página:
-// gravar na API é a próxima etapa (F3).
-export function atualizarConta(dados) {
-  definir({ ...estado, usuario: { ...estado.usuario, ...dados } });
+// A página de entrar apaga o aviso assim que o mostra, para ele não
+// reaparecer numa próxima visita.
+export function apagarAviso() {
+  if (estado.aviso) definir({ ...estado, aviso: "" });
+}
+
+// ─── A própria conta (F3, F4 e F5) ────────────────────────────────────────────
+
+// Pedido que só vale com login. Se a sessão venceu (8 horas) ou foi
+// derrubada em outro aparelho, a API responde 401: o site passa a tratar a
+// pessoa como visitante, e a página protegida a leva para "Entrar", com o
+// aviso do porquê.
+async function chamarComLogin(caminho, opcoes) {
+  try {
+    return await chamarApi(caminho, opcoes);
+  } catch (falha) {
+    if (falha.status === 401) {
+      logar(null, "Sua sessão terminou. Entre de novo para continuar.");
+    }
+    throw falha;
+  }
+}
+
+// Grava os dados da conta. Trocar o e-mail pede também `senhaAtual`.
+// Devolve a conta atualizada, do jeito que as telas usam.
+export async function salvarConta(dados) {
+  const { usuario } = await chamarComLogin("/conta", {
+    metodo: "PATCH",
+    corpo: dados,
+  });
+  logar(usuario);
+  return estado.usuario;
+}
+
+// Os outros aparelhos saem da conta; este continua.
+export async function trocarSenha(senhaAtual, senhaNova) {
+  await chamarComLogin("/conta/senha", {
+    metodo: "PUT",
+    corpo: { senhaAtual, senhaNova },
+  });
+}
+
+// Inclusive neste aparelho.
+export async function sairDeTodosOsAparelhos() {
+  await chamarComLogin("/sessoes", { metodo: "DELETE" });
+  logar(null, "Você saiu da conta em todos os aparelhos, inclusive neste.");
+}
+
+// Não tem volta: a API apaga a conta e o que é só dela.
+export async function encerrarConta(senhaAtual) {
+  await chamarComLogin("/conta", { metodo: "DELETE", corpo: { senhaAtual } });
+  logar(null);
 }

@@ -3,7 +3,7 @@
 Fase de Concepção (RUP). Elaborado conforme o modelo de Wazlawick (2004),
 apresentado em INF323 — Engenharia de Software II.
 
-TCC — Ciência da Computação, UFV. Versão de 06/10/2026.
+TCC — Ciência da Computação, UFV. Versão de 07/10/2026.
 
 ---
 
@@ -140,19 +140,20 @@ ver e fazer.
 | NF2.1 | Mecanismo de sessão | A sessão deve ser mantida por token JWT assinado pelo servidor. | Implementação | ( ) | ( ) |
 | NF2.2 | Mensagem de erro genérica | A falha de autenticação não deve revelar se o e-mail existe no sistema. | Segurança | ( ) | (x) |
 | NF2.3 | Expiração da sessão | A sessão deve expirar sozinha em 8 horas, e o usuário deve poder encerrar a sessão em todos os aparelhos de uma vez. A troca de senha encerra as sessões abertas nos outros aparelhos. | Segurança | ( ) | ( ) |
-| NF2.4 | Limite de tentativas | Tentativas de login malsucedidas devem ser limitadas por período, para impedir a descoberta de senhas por tentativa e erro. | Segurança | ( ) | (x) |
+| NF2.4 | Limite de tentativas | Tentativas de login malsucedidas, e confirmações com a senha atual incorreta (troca de e-mail ou de senha e encerramento da conta), devem ser limitadas por período, para impedir a descoberta de senhas por tentativa e erro. | Segurança | ( ) | (x) |
 
 ---
 
 ### F3 — Manter dados da conta · Evidente · Obrigatório
 
-**Descrição:** O sistema deve permitir que o usuário altere seus dados de
-contato, cidade, bairro e foto de perfil.
+**Descrição:** O sistema deve permitir que o usuário altere seu nome, seus
+dados de contato (e-mail e telefone), cidade, bairro e foto de perfil.
 
 | Código | Nome | Restrição | Categoria | Desejável | Permanente |
 |---|---|---|---|---|---|
 | NF3.1 | Dados imutáveis | CPF e CRMV não podem ser alterados pelo próprio usuário, por identificarem a pessoa nos registros de doação e nas validações assinadas. | Segurança | ( ) | (x) |
 | NF3.2 | Confirmação de alteração | O sistema deve indicar visualmente quando há alterações não salvas e confirmar a gravação. | Interface | (x) | ( ) |
+| NF3.3 | Troca de e-mail confirmada por senha | O e-mail é o identificador de acesso: sua troca só é efetivada com a senha atual, e o novo e-mail não pode pertencer a outra conta. | Segurança | ( ) | (x) |
 
 ---
 
@@ -165,6 +166,7 @@ senha atual.
 |---|---|---|---|---|---|
 | NF4.1 | Comprimento mínimo | A nova senha deve ter ao menos oito caracteres. | Segurança | ( ) | ( ) |
 | NF4.2 | Confirmação da nova senha | A nova senha deve ser digitada duas vezes e conferir. | Interface | ( ) | (x) |
+| NF4.3 | Senha nova diferente | A nova senha não pode repetir a atual. | Segurança | ( ) | ( ) |
 
 ---
 

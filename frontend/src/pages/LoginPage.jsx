@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
@@ -6,7 +6,7 @@ import Campo from "../components/Campo";
 import LayoutAutenticacao, {
   BotaoGoogle,
 } from "../components/LayoutAutenticacao";
-import { entrar, useSessao } from "../servicos/sessao";
+import { apagarAviso, entrar, useEstadoSessao } from "../servicos/sessao";
 import { destinoSeguro } from "../util/navegacao";
 // "Shelter dog ready for adoption", foto de Michael G (Unsplash, uso livre)
 import fotoCaoVermelho from "../assets/auth/cao-vermelho.jpg";
@@ -14,8 +14,12 @@ import fotoCaoVermelho from "../assets/auth/cao-vermelho.jpg";
 // Página de entrar, com e-mail e senha (F2). Depois de entrar, a pessoa volta
 // para a página de onde veio (?voltar=...) ou vai para o próprio perfil.
 function LoginPage() {
-  const usuario = useSessao();
+  const { usuario, aviso: avisoDaSessao } = useEstadoSessao();
   const navegar = useNavigate();
+  // Por que a pessoa saiu da conta sem pedir (a sessão venceu, por exemplo).
+  // Fica na tela enquanto ela estiver aqui; na sessão, é apagado logo.
+  const [aviso] = useState(avisoDaSessao);
+  useEffect(() => apagarAviso(), []);
   const [parametros] = useSearchParams();
   const destino = destinoSeguro(parametros.get("voltar"));
 
@@ -55,6 +59,20 @@ function LoginPage() {
         Acesse sua conta para buscar doadores ou cuidar do cadastro dos seus
         animais.
       </p>
+      {aviso && (
+        <p
+          role="status"
+          className="mt-6 flex items-start gap-2 rounded-xl bg-[#f4efef] px-3.5 py-3 text-sm text-[#1a1c1c] leading-snug"
+        >
+          <span
+            aria-hidden="true"
+            className="material-symbols-outlined text-[18px] text-[#5f5e5e] shrink-0"
+          >
+            info
+          </span>
+          {aviso}
+        </p>
+      )}
 
       <form onSubmit={enviar} className="mt-10 space-y-5">
         <Campo

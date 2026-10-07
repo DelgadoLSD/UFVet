@@ -233,13 +233,49 @@ export const esquemaDisponibilidade = z.object({
   cpf: campos.cpf.optional(),
 });
 
-// Login (F2). Aqui o formato não é conferido: e-mail mal digitado e senha
-// errada recebem a mesma resposta (NF2.2). O teto de 200 caracteres evita
-// gastar processamento com textos enormes.
+// Senha digitada para entrar ou para confirmar uma mudança. O formato não é
+// conferido, só se ela bate com o hash guardado. O teto de 200 caracteres
+// evita gastar processamento com textos enormes.
+const senhaDigitada = z.string(obrigatorio).min(1, PREENCHA).max(200);
+
+// Login (F2). Aqui o formato do e-mail também não é conferido: e-mail mal
+// digitado e senha errada recebem a mesma resposta (NF2.2).
 export const esquemaLogin = z.object({
   email: z.preprocess(
     (valor) => (typeof valor === "string" ? valor.trim().toLowerCase() : valor),
     z.string(obrigatorio).min(1, PREENCHA).max(254),
   ),
-  senha: z.string(obrigatorio).min(1, PREENCHA).max(200),
+  senha: senhaDigitada,
+});
+
+// Dados da própria conta (F3). Vem só o que a pessoa mudou, e a senha atual
+// quando o e-mail muda. CPF, CRMV, papel e código não fazem parte do
+// esquema, e o que não faz parte é descartado: não há como mudá-los por aqui
+// (NF3.1).
+export const esquemaConta = z
+  .object({
+    nomeCompleto: campos.nomeCompleto.optional(),
+    email: campos.email.optional(),
+    telefone: campos.telefone.optional(),
+    cidade: campos.cidade.optional(),
+    bairro: campos.bairro.optional(),
+    senhaAtual: senhaDigitada.optional(),
+  })
+  // O bairro é da cidade: trocar de cidade sem escolher o bairro deixaria a
+  // conta com um bairro de outro lugar.
+  .refine((dados) => dados.cidade === undefined || dados.bairro !== undefined, {
+    message: "Escolha o bairro da nova cidade.",
+    path: ["bairro"],
+  });
+
+// Troca de senha (F4): a atual, para provar que é a própria pessoa, e a nova,
+// com as mesmas regras do cadastro (NF4.1).
+export const esquemaTrocaSenha = z.object({
+  senhaAtual: senhaDigitada,
+  senhaNova: campos.senha,
+});
+
+// Encerramento da conta (F5): só com a senha (NF5.1).
+export const esquemaEncerramento = z.object({
+  senhaAtual: senhaDigitada,
 });

@@ -30,8 +30,9 @@ Portal web para conexão de doadores de sangue animal sob demanda, desenvolvido 
 
 ## Status
 
-- **Front-end:** todas as telas prontas. Login e cadastro já falam com a API;
-  as outras telas ainda usam dados de exemplo.
+- **Front-end:** todas as telas prontas. Login, cadastro e a página da conta
+  já falam com a API; as outras telas ainda usam dados de exemplo.
 - **Back-end:** banco criado e testado, com os dados pessoais cifrados. A API
-  já faz cadastro (veterinário só com convite), login e sessão.
+  já faz cadastro (veterinário só com convite), login, sessão e a própria
+  conta (dados, senha e encerramento).
 - **Próxima etapa:** ligar as outras funcionalidades à API, uma por vez.

@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import AvisoErro from "../../components/AvisoErro";
 import Modal from "../../components/Modal";
 import Botao from "../../components/Botao";
 import Campo from "../../components/Campo";
+import { encerrarConta } from "../../servicos/sessao";
 import { ehVeterinario } from "../../util/texto";
 
 // Encerrar a conta é a única ação do site que ninguém desfaz. Por isso a tela
-// faz três coisas, nesta ordem: oferece a saída mais leve, diz o que se perde
-// com as palavras do próprio site e só então pede a senha.
+// faz três coisas, nesta ordem: oferece a saída mais leve (NF5.3), diz o que
+// se perde com as palavras do próprio site (NF5.2) e só então pede a senha
+// (NF5.1).
 
 const CONSEQUENCIAS_TUTOR = [
   {
@@ -51,9 +54,27 @@ const DADOS_PESSOAIS = {
   texto: "Seus dados pessoais saem do UFVet e não há como recuperar depois.",
 };
 
-function ModalEncerrarConta({ usuario, onFechar, onEncerrar }) {
+function ModalEncerrarConta({ usuario, onFechar, onEncerrada }) {
   const [senha, setSenha] = useState("");
+  const [erro, setErro] = useState("");
+  const [erroGeral, setErroGeral] = useState("");
+  const [enviando, setEnviando] = useState(false);
   const navegar = useNavigate();
+
+  const encerrar = async (e) => {
+    e.preventDefault();
+    if (!senha) return;
+    setEnviando(true);
+    setErroGeral("");
+    try {
+      await encerrarConta(senha);
+      onEncerrada();
+    } catch (falha) {
+      if (falha.campos?.senhaAtual) setErro(falha.campos.senhaAtual);
+      else setErroGeral(falha.message);
+      setEnviando(false);
+    }
+  };
 
   const ehVet = ehVeterinario(usuario);
   const consequencias = [
@@ -68,18 +89,17 @@ function ModalEncerrarConta({ usuario, onFechar, onEncerrar }) {
       onFechar={onFechar}
       rodape={
         <div className="flex justify-end gap-2">
-          <Botao variante="secundario" onClick={onFechar}>
+          <Botao variante="secundario" onClick={onFechar} disabled={enviando}>
             Cancelar
           </Botao>
+          {/* Envia o formulário da senha, que fica no corpo da janela. */}
           <Botao
+            type="submit"
+            form="form-encerrar-conta"
             variante="perigoSolido"
-            disabled={!senha}
-            onClick={() => {
-              onEncerrar();
-              onFechar();
-            }}
+            disabled={!senha || enviando}
           >
-            Encerrar conta
+            {enviando ? "Encerrando…" : "Encerrar conta"}
           </Botao>
         </div>
       }
@@ -129,7 +149,11 @@ function ModalEncerrarConta({ usuario, onFechar, onEncerrar }) {
           </ul>
         </div>
 
-        <div className="border-t border-[#f0e6e6] pt-5">
+        <form
+          id="form-encerrar-conta"
+          onSubmit={encerrar}
+          className="border-t border-[#f0e6e6] pt-5 flex flex-col gap-4"
+        >
           <Campo
             id="senha-encerrar"
             rotulo="Digite sua senha para confirmar"
@@ -137,9 +161,14 @@ function ModalEncerrarConta({ usuario, onFechar, onEncerrar }) {
             autoComplete="current-password"
             placeholder="Sua senha"
             value={senha}
-            onChange={(e) => setSenha(e.target.value)}
+            onChange={(e) => {
+              setSenha(e.target.value);
+              setErro("");
+            }}
+            erro={erro}
           />
-        </div>
+          <AvisoErro>{erroGeral}</AvisoErro>
+        </form>
       </div>
     </Modal>
   );
