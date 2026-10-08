@@ -24,14 +24,14 @@ function SecaoFontes() {
                 id={`fonte-${i + 1}`}
                 className="scroll-mt-28 grid grid-cols-[1.75rem_1fr] gap-2 px-3 py-2 -mx-3 rounded-lg target:bg-[#fdecee]"
               >
-                <span className="text-sm font-bold text-[#b7102a] tabular-nums">
+                <span className="text-sm font-bold text-[#9e0a24] tabular-nums">
                   {i + 1}
                 </span>
                 <a
                   href={f.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-sm text-[#5b403f] leading-relaxed hover:text-[#8e001b] hover:underline underline-offset-2"
+                  className="text-sm text-[#5b403f] leading-relaxed hover:text-[#7d0a1d] hover:underline underline-offset-2"
                 >
                   {f.completa}
                 </a>

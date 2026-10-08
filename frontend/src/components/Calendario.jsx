@@ -47,7 +47,7 @@ function Calendario({ valor, onEscolher, limite = new Date() }) {
           type="button"
           onClick={() => setMes(somarMeses(mes, -1))}
           aria-label="Mês anterior"
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8f6f6e] hover:bg-[#faf6f6] hover:text-[#8e001b] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a]"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8f6f6e] hover:bg-[#faf6f6] hover:text-[#7d0a1d] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
         >
           <span
             aria-hidden="true"
@@ -67,7 +67,7 @@ function Calendario({ valor, onEscolher, limite = new Date() }) {
           onClick={() => setMes(somarMeses(mes, 1))}
           disabled={!proximoMesDisponivel}
           aria-label="Próximo mês"
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8f6f6e] hover:bg-[#faf6f6] hover:text-[#8e001b] transition-colors disabled:opacity-30 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a]"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8f6f6e] hover:bg-[#faf6f6] hover:text-[#7d0a1d] transition-colors disabled:opacity-30 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
         >
           <span
             aria-hidden="true"
@@ -107,13 +107,13 @@ function Calendario({ valor, onEscolher, limite = new Date() }) {
               aria-pressed={selecionado}
               aria-label={`${dia} de ${MESES[mes.getMonth()]} de ${mes.getFullYear()}`}
               onClick={() => onEscolher(data)}
-              className={`h-9 rounded-lg text-sm tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a] ${
+              className={`h-9 rounded-lg text-sm tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24] ${
                 selecionado
-                  ? "bg-[#b7102a] text-white font-bold"
+                  ? "bg-[#9e0a24] text-white font-bold"
                   : futuro
                     ? "text-[#d5cccc] cursor-not-allowed"
                     : ehHoje
-                      ? "text-[#8e001b] font-bold ring-1 ring-inset ring-[#e4bebc] hover:bg-[#fdecee]"
+                      ? "text-[#9e0a24] font-bold ring-1 ring-inset ring-[#e4bebc] hover:bg-[#fdecee]"
                       : "text-[#1a1c1c] hover:bg-[#faf6f6]"
               }`}
             >

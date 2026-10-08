@@ -43,7 +43,7 @@ function CampoBuscaTexto({ valor, onMudar }) {
         value={valor}
         onChange={(e) => onMudar(e.target.value)}
         placeholder="Buscar por nome, raça, bairro ou código (#)..."
-        className="w-full pl-12 pr-12 py-3.5 bg-white border border-[#dccfcf] rounded-2xl text-sm shadow-[0_1px_2px_rgba(26,28,28,0.04)] transition-colors hover:border-[#c9b6b6] focus:outline-none focus:border-[#b7102a] focus:ring-4 focus:ring-[#b7102a]/10"
+        className="w-full pl-12 pr-12 py-3.5 bg-white border border-[#dccfcf] rounded-2xl text-sm shadow-[0_1px_2px_rgba(26,28,28,0.04)] transition-colors hover:border-[#c9b6b6] focus:outline-none focus:border-[#9e0a24] focus:ring-4 focus:ring-[#9e0a24]/10"
       />
       {valor && (
         <button
@@ -54,7 +54,7 @@ function CampoBuscaTexto({ valor, onMudar }) {
         >
           <span
             aria-hidden="true"
-            className="material-symbols-outlined text-[#8f6f6e] hover:text-[#8e001b]"
+            className="material-symbols-outlined text-[#8f6f6e] hover:text-[#7d0a1d]"
           >
             close
           </span>
@@ -70,7 +70,7 @@ function SemResultados({ onLimpar }) {
       <div className="w-24 h-24 rounded-full bg-[#fdecee] flex items-center justify-center mb-6">
         <span
           aria-hidden="true"
-          className="material-symbols-outlined text-[#8e001b] text-6xl"
+          className="material-symbols-outlined text-[#9e0a24] text-6xl"
         >
           pets
         </span>
@@ -163,7 +163,7 @@ function BuscaPage() {
                   type="button"
                   onClick={() => setOrdem(o.valor)}
                   aria-pressed={ordem === o.valor}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors border ${ordem === o.valor ? "bg-[#8e001b] text-white border-[#8e001b]" : "bg-white text-[#5f5e5e] border-[#e2d6d6] hover:border-[#8e001b] hover:text-[#8e001b]"}`}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors border ${ordem === o.valor ? "bg-[#9e0a24] text-white border-[#9e0a24]" : "bg-white text-[#5f5e5e] border-[#e2d6d6] hover:border-[#7d0a1d] hover:text-[#7d0a1d]"}`}
                 >
                   {o.rotulo}
                 </button>

@@ -1,20 +1,27 @@
 import Ajuda from "../../components/Ajuda";
 import { pronomeAnimal } from "../../regras/doacao";
 
-// O "?" ao lado da etiqueta de disponibilidade do animal. Para o dono, explica
-// como pausar as doações; para quem visita, o que a etiqueta quer dizer agora.
-// `recuperacao` vem de situacaoRecuperacao() (regras/doacao).
-function AjudaDisponibilidade({ animal, ehDono, disponivel, recuperacao }) {
+// O "?" ao lado da disponibilidade do animal, embaixo da foto. Para o dono,
+// explica como pausar as doações; para quem visita, o que a situação quer
+// dizer agora. `recuperacao` vem de situacaoRecuperacao() (regras/doacao).
+// `claro` é a versão para fundos vermelhos.
+function AjudaDisponibilidade({
+  animal,
+  ehDono,
+  disponivel,
+  recuperacao,
+  claro = false,
+}) {
   const femeaNaoCastrada = animal.sexo === "FEMEA" && !animal.castrado;
 
   if (ehDono) {
     return (
-      <Ajuda titulo="Disponibilidade para doação">
+      <Ajuda titulo="Disponibilidade para doação" claro={claro}>
         <p>
-          Clique na etiqueta para mudar. Vai viajar ou {animal.nome} não pode
-          doar por um tempo? Marque como indisponível: outros tutores vão saber
+          Use a chave embaixo da foto para mudar. Vai viajar ou {animal.nome}
+          não pode doar por um tempo? Pause as doações: outros tutores vão saber
           que {pronomeAnimal(animal)} não está disponível agora, e seu contato
-          deixa de aparecer para pedidos de doação até você reativar.
+          deixa de aparecer para pedidos de doação até você retomar.
         </p>
         {femeaNaoCastrada && (
           <p>
@@ -33,7 +40,7 @@ function AjudaDisponibilidade({ animal, ehDono, disponivel, recuperacao }) {
   }
 
   return (
-    <Ajuda titulo="Disponibilidade para doação">
+    <Ajuda titulo="Disponibilidade para doação" claro={claro}>
       {!disponivel ? (
         <p>
           O tutor pausou as doações por um tempo — por exemplo, durante uma

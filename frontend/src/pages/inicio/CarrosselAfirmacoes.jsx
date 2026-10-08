@@ -13,12 +13,12 @@ const ARRASTO_MINIMO = 40;
 const CORES = {
   verdade: {
     cartao: "bg-white text-[#1a1c1c]",
-    titulo: "text-[#b7102a]",
+    titulo: "text-[#9e0a24]",
     resposta: "text-[#5b403f]",
     seta: "border-[#eadede] text-[#1a1c1c] hover:bg-[#fdecee]",
-    ponto: "bg-[#b7102a]",
+    ponto: "bg-[#9e0a24]",
     pontoInativo: "bg-[#eadede]",
-    foco: "focus-visible:ring-[#b7102a]",
+    foco: "focus-visible:ring-[#9e0a24]",
   },
   mito: {
     cartao: "bg-[#5e0013] text-white",

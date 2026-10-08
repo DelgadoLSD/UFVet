@@ -32,7 +32,7 @@ function Prazo({ expiraEm }) {
   return (
     <span
       className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${
-        urgente ? "bg-[#fdecee] text-[#8e001b]" : "bg-[#f3eeee] text-[#5b403f]"
+        urgente ? "bg-[#fdecee] text-[#9e0a24]" : "bg-[#f3eeee] text-[#5b403f]"
       }`}
     >
       <span
@@ -163,7 +163,7 @@ function PainelAcessoContatos({ onComoFunciona }) {
       </div>
 
       {pedidos.length > 0 && (
-        <div className="rounded-xl bg-[#8e001b] overflow-hidden">
+        <div className="rounded-xl bg-[#9e0a24] overflow-hidden">
           <p className="px-5 pt-4 text-sm font-semibold text-white">
             {pedidos.length === 1
               ? "1 tutor esperando liberação"

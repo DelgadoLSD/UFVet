@@ -8,7 +8,7 @@ function MarcadorData({ data }) {
   const d = paraData(data);
   return (
     <div className="w-12 shrink-0 text-center">
-      <p className="text-xl font-extrabold text-[#8e001b] leading-none tabular-nums">
+      <p className="text-xl font-extrabold text-[#9e0a24] leading-none tabular-nums">
         {String(d.getDate()).padStart(2, "0")}
       </p>
       <p className="text-[11px] text-[#8f6f6e] mt-1 leading-none">

@@ -119,8 +119,8 @@ function Ajuda({ titulo, children, claro = false, className = "" }) {
         aria-expanded={!!posicao}
         className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold leading-none normal-case tracking-normal cursor-help transition-colors shrink-0 ${
           claro
-            ? "bg-white/25 text-white hover:bg-white hover:text-[#8e001b]"
-            : "bg-[#8e001b]/10 text-[#8e001b] hover:bg-[#8e001b] hover:text-white"
+            ? "bg-white/25 text-white hover:bg-white hover:text-[#7d0a1d]"
+            : "bg-[#9e0a24]/10 text-[#9e0a24] hover:bg-[#7d0a1d] hover:text-white"
         } ${className}`}
       >
         ?

@@ -137,7 +137,7 @@ function ModalEncerrarConta({ usuario, onFechar, onEncerrada }) {
               <li key={item.texto} className="flex items-start gap-3">
                 <span
                   aria-hidden="true"
-                  className="material-symbols-outlined text-[20px] text-[#8e001b] shrink-0"
+                  className="material-symbols-outlined text-[20px] text-[#9e0a24] shrink-0"
                 >
                   {item.icone}
                 </span>

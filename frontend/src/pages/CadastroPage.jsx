@@ -146,7 +146,7 @@ function errosDaEtapa(etapa, dados, convite) {
 // Mensagem de erro embaixo de um campo que não é um Campo (lista, botões).
 function ErroDoCampo({ children }) {
   if (!children) return null;
-  return <p className="text-xs text-red-600 mt-2">{children}</p>;
+  return <p className="text-xs text-[#9e0a24] mt-2">{children}</p>;
 }
 
 // Etapa 1: escolher o papel já avança para a próxima.
@@ -158,11 +158,11 @@ function EtapaPapel({ onEscolher }) {
           key={papel.valor}
           type="button"
           onClick={() => onEscolher(papel.valor)}
-          className="group w-full flex items-center gap-4 p-4 rounded-2xl bg-white border border-[#eadede] text-left transition-colors hover:border-[#b7102a] hover:bg-[#fffafa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a]"
+          className="group w-full flex items-center gap-4 p-4 rounded-2xl bg-white border border-[#eadede] text-left transition-colors hover:border-[#9e0a24] hover:bg-[#fffafa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
         >
           <span
             aria-hidden="true"
-            className="w-12 h-12 rounded-xl bg-[#fdecee] text-[#8e001b] flex items-center justify-center shrink-0 transition-colors group-hover:bg-[#b7102a] group-hover:text-white"
+            className="w-12 h-12 rounded-xl bg-[#fdecee] text-[#9e0a24] flex items-center justify-center shrink-0 transition-colors group-hover:bg-[#9e0a24] group-hover:text-white"
           >
             <span className="material-symbols-outlined">{papel.icone}</span>
           </span>
@@ -176,7 +176,7 @@ function EtapaPapel({ onEscolher }) {
           </span>
           <span
             aria-hidden="true"
-            className="material-symbols-outlined text-[#b9a9a9] transition-colors group-hover:text-[#8e001b]"
+            className="material-symbols-outlined text-[#b9a9a9] transition-colors group-hover:text-[#7d0a1d]"
           >
             chevron_right
           </span>
@@ -335,7 +335,7 @@ function Confirmacao({ id, checked, onChange, children }) {
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className="mt-0.5 w-5 h-5 shrink-0 rounded-md border-[#cfbcbc] text-[#b7102a] cursor-pointer focus:ring-2 focus:ring-[#b7102a]/30 focus:ring-offset-0"
+        className="mt-0.5 w-5 h-5 shrink-0 rounded-md border-[#cfbcbc] text-[#9e0a24] cursor-pointer focus:ring-2 focus:ring-[#9e0a24]/30 focus:ring-offset-0"
       />
       <label
         htmlFor={id}
@@ -379,11 +379,11 @@ function EtapaSenha({ dados, erros, onMudar }) {
           onChange={(e) => onMudar("aceiteTermos", e.target.checked)}
         >
           Li e aceito os{" "}
-          <a href="#" className="font-semibold text-[#8e001b] hover:underline">
+          <a href="#" className="font-semibold text-[#9e0a24] hover:underline">
             Termos de uso
           </a>{" "}
           e a{" "}
-          <a href="#" className="font-semibold text-[#8e001b] hover:underline">
+          <a href="#" className="font-semibold text-[#9e0a24] hover:underline">
             Política de privacidade
           </a>
           .
@@ -593,7 +593,7 @@ function CadastroPage() {
           <span
             key={i}
             className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
-              i < etapaVisual ? "bg-[#b7102a]" : "bg-[#eadede]"
+              i < etapaVisual ? "bg-[#9e0a24]" : "bg-[#eadede]"
             }`}
           />
         ))}
@@ -674,7 +674,7 @@ function CadastroPage() {
         Já tem uma conta?{" "}
         <Link
           to="/login"
-          className="font-semibold text-[#8e001b] hover:underline"
+          className="font-semibold text-[#9e0a24] hover:underline"
         >
           Entrar
         </Link>

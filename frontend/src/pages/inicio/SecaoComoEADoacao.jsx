@@ -65,11 +65,11 @@ function SecaoComoEADoacao() {
                 />
               )}
               <Surgir atraso={i * 90} className="relative flex md:block gap-5">
-                <span className="shrink-0 w-12 h-12 rounded-full bg-[#b7102a] text-white text-lg font-extrabold flex items-center justify-center">
+                <span className="shrink-0 w-12 h-12 rounded-full bg-[#9e0a24] text-white text-lg font-extrabold flex items-center justify-center">
                   {i + 1}
                 </span>
                 <div className="md:mt-5">
-                  <span className="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-[#fdecee] text-[#8e001b]">
+                  <span className="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-[#fdecee] text-[#9e0a24]">
                     {e.destaque}
                   </span>
                   <h3 className="text-xl font-bold text-[#1a1c1c] mt-3">

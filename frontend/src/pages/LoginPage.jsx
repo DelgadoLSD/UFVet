@@ -98,7 +98,7 @@ function LoginPage() {
             // A recuperação de senha ainda não existe.
             <a
               href="#"
-              className="text-sm font-semibold text-[#8e001b] hover:underline"
+              className="text-sm font-semibold text-[#9e0a24] hover:underline"
             >
               Esqueceu a senha?
             </a>
@@ -123,7 +123,7 @@ function LoginPage() {
         Ainda não tem conta?{" "}
         <Link
           to="/cadastrar"
-          className="font-semibold text-[#8e001b] hover:underline"
+          className="font-semibold text-[#9e0a24] hover:underline"
         >
           Criar conta
         </Link>

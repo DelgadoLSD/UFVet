@@ -3,18 +3,21 @@
 // "o que eu clico" de "o que só informa".
 const VARIANTES = {
   primario:
-    "text-white bg-[#b7102a] shadow-[0_1px_2px_rgba(142,0,27,0.25)] hover:bg-[#8e001b]",
+    "text-white bg-[#9e0a24] shadow-[0_1px_2px_rgba(158,10,36,0.25)] hover:bg-[#7d0a1d]",
   secundario:
     "text-[#1a1c1c] bg-white border border-[#e6dcdc] shadow-[0_1px_2px_rgba(26,28,28,0.06)] hover:bg-[#faf6f6] hover:border-[#d6c3c3]",
   // Editar é uma ação comum, não um destaque: botão neutro, no tom da página.
   editar: "text-[#1a1c1c] bg-[#f4efef] hover:bg-[#ebe3e3]",
   // Excluir tem o mesmo formato de editar e só assume o vermelho no hover.
-  perigo: "text-[#5f5e5e] bg-[#f4efef] hover:text-red-600 hover:bg-red-50",
-  perigoSolido: "text-white bg-red-600 hover:bg-red-700",
-  fantasma: "text-[#8e001b] hover:bg-[#8e001b]/[0.06]",
+  perigo: "text-[#5f5e5e] bg-[#f4efef] hover:text-[#9e0a24] hover:bg-[#fdecee]",
+  perigoSolido: "text-white bg-[#9e0a24] hover:bg-[#7d0a1d]",
+  fantasma: "text-[#9e0a24] hover:bg-[#7d0a1d]/[0.06]",
   // Para blocos escuros ou vermelhos, onde o vermelho sólido sumiria.
-  claro: "text-[#8e001b] bg-white hover:bg-white/90",
+  claro: "text-[#9e0a24] bg-white hover:bg-white/90",
   contornoClaro: "text-white border border-white/40 hover:bg-white/10",
+  // Editar e excluir no cabeçalho vermelho dos cartões dos animais: o mesmo
+  // botão quadrado neutro, em branco translúcido.
+  sobreVermelho: "text-white bg-white/15 hover:bg-white hover:text-[#7d0a1d]",
 };
 
 const TAMANHOS = {
@@ -48,7 +51,7 @@ function Botao({
     <Componente
       {...extras}
       {...props}
-      className={`inline-flex items-center justify-center font-semibold whitespace-nowrap select-none cursor-pointer transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8e001b]/40 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ${t.classe} ${soIcone} ${VARIANTES[variante]} ${className}`}
+      className={`inline-flex items-center justify-center font-semibold whitespace-nowrap select-none cursor-pointer transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]/40 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ${t.classe} ${soIcone} ${VARIANTES[variante]} ${className}`}
     >
       {icone && (
         <span

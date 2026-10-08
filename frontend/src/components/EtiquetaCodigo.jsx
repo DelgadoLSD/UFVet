@@ -6,7 +6,7 @@ function EtiquetaCodigo({ codigo, claro = false }) {
   return (
     <span
       className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
-        claro ? "bg-white/20 text-white" : "bg-[#fdecee] text-[#8e001b]"
+        claro ? "bg-white/20 text-white" : "bg-[#fdecee] text-[#9e0a24]"
       }`}
     >
       #{codigo}

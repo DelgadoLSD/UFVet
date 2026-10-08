@@ -27,7 +27,7 @@ function OpcaoCriterio({ criterio, referencia, marcado, onAlternar }) {
       className={`flex items-start gap-3 text-left rounded-xl border p-3 transition-colors ${
         marcado
           ? "border-emerald-300 bg-emerald-50/60"
-          : "border-[#e4bebc] hover:border-[#8e001b]/50"
+          : "border-[#e4bebc] hover:border-[#7d0a1d]/50"
       }`}
     >
       <span
@@ -142,7 +142,7 @@ function ModalValidacao({ animal, validacao, onSalvar, onFechar }) {
           <button
             type="button"
             onClick={() => setCriterios(todosCriterios(!completa))}
-            className="text-xs font-semibold text-[#8e001b] hover:underline underline-offset-2"
+            className="text-xs font-semibold text-[#9e0a24] hover:underline underline-offset-2"
           >
             {completa ? "Desmarcar todos" : "Marcar todos"}
           </button>
@@ -179,8 +179,8 @@ function ModalValidacao({ animal, validacao, onSalvar, onFechar }) {
                   aria-pressed={tipo === t}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                     tipo === t
-                      ? "bg-[#8e001b] text-white border-[#8e001b]"
-                      : "bg-white text-[#1a1c1c] border-[#d8cfcf] hover:border-[#8e001b]"
+                      ? "bg-[#9e0a24] text-white border-[#9e0a24]"
+                      : "bg-white text-[#1a1c1c] border-[#d8cfcf] hover:border-[#7d0a1d]"
                   }`}
                 >
                   {t}
@@ -193,7 +193,7 @@ function ModalValidacao({ animal, validacao, onSalvar, onFechar }) {
               </p>
             ) : (
               tipo !== animal.tipoSanguineo && (
-                <p className="text-xs text-[#8e001b] font-semibold mt-3">
+                <p className="text-xs text-[#9e0a24] font-semibold mt-3">
                   O perfil passa a mostrar {tipo}, com sua assinatura.
                 </p>
               )
@@ -214,7 +214,7 @@ function ModalValidacao({ animal, validacao, onSalvar, onFechar }) {
             onChange={(e) => setNota(e.target.value)}
             rows={2}
             placeholder="Ex.: sorologia de Leishmania ainda não apresentada."
-            className="w-full bg-white text-gray-900 [color-scheme:light] border border-[#e4bebc] rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#8e001b]"
+            className="w-full bg-white text-gray-900 [color-scheme:light] border border-[#e4bebc] rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#9e0a24]"
           />
         </div>
       </div>

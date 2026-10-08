@@ -7,9 +7,9 @@ import {
 import { formatarData, idadeEmAnos, textoIdade } from "../../util/datas";
 import { formatarPeso } from "../../util/texto";
 
-// Os quatro quadros de dados do cartão do animal: tipo sanguíneo, peso, idade
-// e doações. Peso e idade são comparados com os limites da espécie, e o
-// detalhe avisa quando estão fora.
+// A faixa de dados do cartão do animal: tipo sanguíneo, peso, idade e
+// doações, em células vermelho-claras com divisões brancas. Peso e idade são
+// comparados com os limites da espécie, e o detalhe avisa quando estão fora.
 
 // Explicação do "?" do tipo sanguíneo: sem tipo, diz de onde ele vem; com
 // tipo, explica a tipagem da espécie.
@@ -71,12 +71,14 @@ function DadosDoAnimal({
   const idadeOk = anos >= ref.idadeMin && anos <= ref.idadeMax;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {/* O destaque vermelho é do tipo confirmado em exame. Sem confirmação o
-          quadro fica igual aos outros: assim ninguém lê um palpite como se
-          fosse resultado. */}
+    // As divisões são o fundo branco aparecendo nos vãos de 2px entre as
+    // células. No celular, duas por linha.
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-[2px] bg-white rounded-xl overflow-hidden">
+      {/* O vermelho é do tipo confirmado em exame. Sem confirmação o valor
+          fica cinza: assim ninguém lê um palpite como se fosse resultado. */}
       <DadoDoador
         destaque={!!tipoSanguineo}
+        apagado={!tipoSanguineo}
         rotulo="Tipo sanguíneo"
         valor={tipoSanguineo || "A confirmar"}
         detalhe={

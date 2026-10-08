@@ -8,7 +8,7 @@ import { useId, useState } from "react";
 // Aparência da caixa de texto. Exportada para os campos com lista (cidade,
 // bairro) terem a mesma cara dos vizinhos no formulário.
 export const CLASSE_ENTRADA =
-  "bg-white border border-[#dccfcf] rounded-xl text-base text-[#1a1c1c] placeholder:text-[#a79d9d] shadow-[0_1px_2px_rgba(26,28,28,0.04)] transition-colors hover:border-[#c9b6b6] focus:outline-none focus:border-[#b7102a] focus:ring-4 focus:ring-[#b7102a]/10";
+  "bg-white border border-[#dccfcf] rounded-xl text-base text-[#1a1c1c] placeholder:text-[#a79d9d] shadow-[0_1px_2px_rgba(26,28,28,0.04)] transition-colors hover:border-[#c9b6b6] focus:outline-none focus:border-[#9e0a24] focus:ring-4 focus:ring-[#9e0a24]/10";
 
 function Campo({
   id,
@@ -52,7 +52,7 @@ function Campo({
             onClick={() => setVisivel((v) => !v)}
             aria-label={visivel ? "Ocultar senha" : "Mostrar senha"}
             aria-pressed={visivel}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-[#8f6f6e] hover:text-[#8e001b] hover:bg-[#fdecee] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a]"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-[#8f6f6e] hover:text-[#7d0a1d] hover:bg-[#fdecee] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
           >
             <span
               aria-hidden="true"
@@ -64,7 +64,7 @@ function Campo({
         )}
       </div>
       {erro && (
-        <p id={erroId} className="text-xs text-red-600 mt-2">
+        <p id={erroId} className="text-xs text-[#9e0a24] mt-2">
           {erro}
         </p>
       )}

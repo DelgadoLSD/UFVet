@@ -47,11 +47,11 @@ function ModalComoFuncionaValidacao({ onFechar }) {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-[auto_auto_1fr_auto] gap-4">
-          <div className={`${CARTAO} bg-[#8e001b] text-white/85`}>
+          <div className={`${CARTAO} bg-[#9e0a24] text-white/85`}>
             <div className="flex items-center gap-2.5">
               <span
                 aria-hidden="true"
-                className="w-9 h-9 rounded-full bg-white text-[#8e001b] flex items-center justify-center shrink-0"
+                className="w-9 h-9 rounded-full bg-white text-[#9e0a24] flex items-center justify-center shrink-0"
               >
                 <span className="material-symbols-outlined text-[20px]">
                   verified_user

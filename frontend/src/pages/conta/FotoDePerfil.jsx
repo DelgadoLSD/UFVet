@@ -47,7 +47,7 @@ function FotoDePerfil({ usuario }) {
         <Avatar
           pessoa={usuario}
           tamanho="w-20 h-20 sm:w-24 sm:h-24"
-          fundo="bg-[#b7102a]"
+          fundo="bg-[#9e0a24]"
           formato="rounded-2xl"
           textoIniciais="text-2xl"
         />

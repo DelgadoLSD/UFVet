@@ -101,7 +101,7 @@ function DadoFixo({ rotulo, valor, motivo }) {
 // Mensagem de erro embaixo de um campo que não é um Campo (cidade, bairro).
 function ErroDoCampo({ children }) {
   if (!children) return null;
-  return <p className="text-xs text-red-600 mt-2">{children}</p>;
+  return <p className="text-xs text-[#9e0a24] mt-2">{children}</p>;
 }
 
 function ContaPage() {
@@ -263,7 +263,7 @@ function ContaPage() {
                     <p className="inline-flex items-center gap-2 rounded-full bg-[#f4efef] px-3 py-1.5 text-[13px] font-semibold text-[#1a1c1c]">
                       <span
                         aria-hidden="true"
-                        className="w-2 h-2 rounded-full bg-[#b7102a]"
+                        className="w-2 h-2 rounded-full bg-[#9e0a24]"
                       />
                       Alterações não salvas
                     </p>

@@ -28,8 +28,12 @@ import {
 import { formatarData } from "../../util/datas";
 import { nomeProfissional } from "../../util/texto";
 
-// Cartão de um animal no perfil: cabeçalho com nome e disponibilidade, fotos,
-// dados de doador, validação veterinária, observações e documentos.
+// Cartão de um animal no perfil. O cabeçalho é vermelho, com as letras em
+// branco: nome, espécie, raça, código e a situação para doar, que o dono liga
+// e desliga ali mesmo. Embaixo, a foto à esquerda (a da pessoa fica à
+// direita, no cartão dela), a faixa de dados, a validação veterinária e, por
+// fim, as observações para a coleta e os exames, cada parte num painel com
+// faixa colorida no topo.
 //
 // Os dados do animal e a disponibilidade gravam na API, e o perfil recebe o
 // animal novo por `onAlterado` (ou o aviso de que ele saiu, por
@@ -42,28 +46,21 @@ import { nomeProfissional } from "../../util/texto";
 // - `ehVet`: quem está logado é veterinário; pode validar, registrar doações
 //   e escrever observações, inclusive nos próprios animais.
 
-// Etiqueta de disponibilidade. Fala só de disponibilidade; o que a validação
-// muda na prática está no painel de validação, logo abaixo.
-function estiloDisponibilidade(disponivel, recuperacao) {
+// Situação para doar, mostrada no cabeçalho. Fala só de disponibilidade; o
+// que a validação muda na prática está no painel de validação, logo abaixo.
+// O `tom` escolhe a cor do ponto: verde pode doar, preto está se recuperando
+// de uma doação e cinza foi pausado pelo tutor.
+function situacaoParaDoar(disponivel, recuperacao) {
   if (!disponivel) {
-    return {
-      texto: "Indisponível no momento",
-      classe: "bg-[#eeeeee] text-[#5f5e5e]",
-      ponto: "bg-gray-400",
-    };
+    return { texto: "Indisponível no momento", tom: "pausado" };
   }
   if (!recuperacao.apto) {
     return {
       texto: `Em recuperação até ${formatarData(recuperacao.liberadaEm)}`,
-      classe: "bg-sky-50 text-sky-800",
-      ponto: "bg-sky-500",
+      tom: "recuperacao",
     };
   }
-  return {
-    texto: "Disponível para doação",
-    classe: "bg-emerald-50 text-emerald-700",
-    ponto: "bg-emerald-500 animate-pulse",
-  };
+  return { texto: "Disponível para doação", tom: "disponivel" };
 }
 
 function CartaoAnimal({
@@ -108,7 +105,11 @@ function CartaoAnimal({
     ultimaDoacao,
     REFERENCIA_DOADOR[animal.especie],
   );
-  const etiqueta = estiloDisponibilidade(disponivel, recuperacao);
+  const situacao = situacaoParaDoar(disponivel, recuperacao);
+  // Para quem visita, a etiqueta da situação é cheia, para ser lida de
+  // relance: verde quando o animal pode doar agora; preta quando não pode
+  // (pausado pelo tutor ou se recuperando de uma doação).
+  const podeDoarAgora = situacao.tom === "disponivel";
 
   // Tirar da busca ou devolver (F11).
   const mudarDisponibilidade = async (nova) => {
@@ -153,103 +154,148 @@ function CartaoAnimal({
     );
   };
 
-  const conteudoEtiqueta = (
-    <>
-      <span className={`w-2 h-2 rounded-full ${etiqueta.ponto}`} />
-      {etiqueta.texto}
-    </>
+  // A disponibilidade, logo abaixo da foto do animal e na largura dela: é
+  // sobre aquele animal, então fica junto dele. Para o dono, uma chave de
+  // duas opções numa pílula branca: um fundo vermelho desliza para a opção
+  // escolhida (letra branca), e a outra fica branca com a letra vermelha.
+  // Para quem visita, uma etiqueta com a situação.
+  const disponibilidade = (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-center gap-1.5">
+        <p className="text-xs font-semibold text-[#5f5e5e]">
+          Disponibilidade para doação
+        </p>
+        <AjudaDisponibilidade
+          animal={animal}
+          ehDono={ehDono}
+          disponivel={disponivel}
+          recuperacao={recuperacao}
+        />
+      </div>
+
+      {ehDono ? (
+        <div
+          role="group"
+          aria-label={`Disponibilidade de ${animal.nome} para doação`}
+          className="relative grid grid-cols-2 p-1 rounded-full bg-white border border-[#eadede]"
+        >
+          <span
+            aria-hidden="true"
+            className={`absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-[#9e0a24] transition-transform duration-200 ease-out motion-reduce:transition-none ${
+              disponivel ? "translate-x-0" : "translate-x-full"
+            }`}
+          />
+          {[
+            { valor: true, rotulo: "Disponível" },
+            { valor: false, rotulo: "Indisponível" },
+          ].map((opcao) => {
+            const escolhida = disponivel === opcao.valor;
+            return (
+              <button
+                key={opcao.rotulo}
+                type="button"
+                aria-pressed={escolhida}
+                onClick={() => !escolhida && mudarDisponibilidade(opcao.valor)}
+                disabled={mudandoDisponibilidade}
+                className={`relative h-9 rounded-full text-xs font-bold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24] focus-visible:ring-offset-1 disabled:cursor-wait ${
+                  escolhida ? "text-white" : "text-[#9e0a24] hover:bg-[#fdecee]"
+                }`}
+              >
+                {opcao.rotulo}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <p
+          className={`flex items-center justify-center gap-2 h-11 px-4 rounded-full text-xs font-bold text-white whitespace-nowrap ${
+            podeDoarAgora ? "bg-emerald-700" : "bg-[#1a1c1c]"
+          }`}
+        >
+          <span
+            aria-hidden="true"
+            className={`w-2 h-2 shrink-0 rounded-full ${
+              podeDoarAgora
+                ? "bg-white animate-pulse motion-reduce:animate-none"
+                : "bg-white/50"
+            }`}
+          />
+          {situacao.texto}
+        </p>
+      )}
+
+      {/* Para o dono, a chave diz só disponível ou não; a data da volta
+          depois de uma doação fica logo embaixo. */}
+      {ehDono && disponivel && !recuperacao.apto && (
+        <p className="text-xs text-[#5f5e5e] text-center">{situacao.texto}</p>
+      )}
+      {erroDisponibilidade && (
+        <p role="alert" className="text-xs font-semibold text-[#9e0a24]">
+          {erroDisponibilidade}
+        </p>
+      )}
+    </div>
   );
 
   return (
-    <div className="bg-white rounded-2xl border border-[#eadede] shadow-[0_1px_2px_rgba(26,28,28,0.04)] overflow-hidden">
-      {/* ── Cabeçalho ── */}
-      <div className="px-8 py-5 flex justify-between items-center gap-4 flex-wrap border-b border-[#eadede]">
-        <div className="flex flex-col gap-1.5 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h3 className="font-extrabold text-2xl text-[#8e001b] leading-none">
+    <article
+      aria-label={animal.nome}
+      className="bg-white rounded-2xl border border-[#eadede] overflow-hidden"
+    >
+      {/* ── Cabeçalho vermelho, em duas linhas ── Na primeira, o nome e, à
+          direita, editar e excluir (só para o dono); na segunda, raça e
+          código. A disponibilidade fica embaixo da foto. */}
+      <header className="bg-[#9e0a24] text-white px-5 py-4 md:px-8 md:py-5 flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          <div className="min-w-0 flex items-center gap-3 flex-wrap">
+            <h3 className="font-extrabold text-[1.75rem] leading-none tracking-tight">
               {animal.nome}
             </h3>
-            <span className="text-xs font-semibold text-[#5b403f] bg-[#f3eeee] px-2.5 py-1 rounded-md">
+            <span className="text-xs font-semibold bg-white/15 px-2.5 py-1 rounded-md">
               {ESPECIES[animal.especie].rotulo}
             </span>
-            <div className="flex items-center gap-1.5">
-              {/* Para o dono, a etiqueta é um botão que alterna a
-                  disponibilidade; para os outros, só informa. */}
-              {ehDono ? (
-                <button
-                  type="button"
-                  onClick={() => mudarDisponibilidade(!disponivel)}
-                  disabled={mudandoDisponibilidade}
-                  aria-label={`${etiqueta.texto}. Clique para marcar como ${disponivel ? "indisponível" : "disponível"}.`}
-                  className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full transition-all hover:brightness-95 active:scale-95 ${etiqueta.classe}`}
-                >
-                  {conteudoEtiqueta}
-                  <span
-                    aria-hidden="true"
-                    className="material-symbols-outlined text-[14px] opacity-60"
-                  >
-                    swap_horiz
-                  </span>
-                </button>
-              ) : (
-                <span
-                  className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${etiqueta.classe}`}
-                >
-                  {conteudoEtiqueta}
-                </span>
-              )}
-              <AjudaDisponibilidade
-                animal={animal}
-                ehDono={ehDono}
-                disponivel={disponivel}
-                recuperacao={recuperacao}
+          </div>
+          {ehDono && (
+            <div className="flex items-center gap-2 shrink-0">
+              <Botao
+                variante="sobreVermelho"
+                tamanho="md"
+                icone="edit"
+                aria-label={`Editar ${animal.nome}`}
+                title="Editar"
+                onClick={() => setModal("editar")}
+              />
+              <Botao
+                variante="sobreVermelho"
+                tamanho="md"
+                icone="delete"
+                aria-label={`Excluir ${animal.nome}`}
+                title="Excluir"
+                onClick={() => setModal("excluir")}
               />
             </div>
-          </div>
-          {erroDisponibilidade && (
-            <p role="alert" className="text-xs text-red-600">
-              {erroDisponibilidade}
-            </p>
           )}
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <p className="text-sm text-[#5f5e5e]">
-              {nomeRaca(animal)}, {SEXOS[animal.sexo].toLowerCase()},{" "}
-              {textoCastracao(animal).toLowerCase()}
-            </p>
-            <CodigoCopiavel codigo={animal.codigo} />
-          </div>
         </div>
-
-        {ehDono && (
-          <div className="flex items-center gap-2">
-            <Botao
-              variante="editar"
-              tamanho="md"
-              icone="edit"
-              aria-label={`Editar ${animal.nome}`}
-              title="Editar"
-              onClick={() => setModal("editar")}
-            />
-            <Botao
-              variante="perigo"
-              tamanho="md"
-              icone="delete"
-              aria-label={`Excluir ${animal.nome}`}
-              title="Excluir"
-              onClick={() => setModal("excluir")}
-            />
-          </div>
-        )}
-      </div>
+        <div className="flex items-center gap-x-2.5 gap-y-1.5 flex-wrap">
+          <p className="text-sm text-white/85">
+            {nomeRaca(animal)}, {SEXOS[animal.sexo].toLowerCase()},{" "}
+            {textoCastracao(animal).toLowerCase()}
+          </p>
+          <CodigoCopiavel codigo={animal.codigo} claro />
+        </div>
+      </header>
 
       {/* ── Corpo ── */}
-      <div className="p-8 flex flex-col gap-6">
+      <div className="p-5 md:p-8 flex flex-col gap-6">
         <div className="flex flex-col lg:flex-row gap-6">
-          <div className="w-full lg:w-64 shrink-0">
+          {/* A foto ocupa a altura que sobra na coluna; a disponibilidade
+              fica embaixo dela, na mesma largura. */}
+          <div className="w-full lg:w-64 shrink-0 flex flex-col gap-4">
             <CarrosselFotos
               fotos={animal.fotos.map((foto) => foto.url)}
               nome={animal.nome}
             />
+            {disponibilidade}
           </div>
 
           <div className="flex-1 min-w-0 flex flex-col gap-4">
@@ -356,7 +402,7 @@ function CartaoAnimal({
           onFechar={fecharModal}
         />
       )}
-    </div>
+    </article>
   );
 }
 

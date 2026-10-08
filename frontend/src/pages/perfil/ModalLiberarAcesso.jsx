@@ -33,7 +33,7 @@ function CartaoTutor({ tutor, liberacaoAtiva }) {
       <Avatar
         pessoa={tutor}
         tamanho="w-16 h-16"
-        fundo="bg-[#b7102a]"
+        fundo="bg-[#9e0a24]"
         formato="rounded-xl"
         textoIniciais="text-lg"
       />
@@ -51,7 +51,7 @@ function CartaoTutor({ tutor, liberacaoAtiva }) {
           </p>
         )}
         {liberacaoAtiva && (
-          <p className="mt-2 text-sm font-semibold text-[#8e001b]">
+          <p className="mt-2 text-sm font-semibold text-[#9e0a24]">
             Já está com acesso liberado,{" "}
             {tempoRestante(liberacaoAtiva.expiraEm)}.
           </p>
@@ -68,7 +68,7 @@ function Vazio({ children, alerta = false }) {
     <div
       className={`rounded-xl border border-dashed px-4 py-6 text-center text-sm ${
         alerta
-          ? "border-[#e9aab3] bg-[#fff7f7] text-[#8e001b]"
+          ? "border-[#e9aab3] bg-[#fff7f7] text-[#9e0a24]"
           : "border-[#e2cfcf] text-[#8f6f6e]"
       }`}
     >

@@ -73,7 +73,7 @@ function EscolhaEspecie({ especie, onEscolher }) {
     <div
       role="group"
       aria-label="Espécie"
-      className="flex p-1.5 bg-white rounded-full gap-1 self-start md:self-auto shadow-[0_1px_2px_rgba(142,0,27,0.08)]"
+      className="flex p-1.5 bg-white rounded-full gap-1 self-start md:self-auto shadow-[0_1px_2px_rgba(158,10,36,0.08)]"
     >
       {Object.entries(POR_ESPECIE).map(([chave, e]) => (
         <button
@@ -81,9 +81,9 @@ function EscolhaEspecie({ especie, onEscolher }) {
           type="button"
           onClick={() => onEscolher(chave)}
           aria-pressed={especie === chave}
-          className={`h-12 pl-1.5 pr-5 rounded-full flex items-center gap-2.5 font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a] ${
+          className={`h-12 pl-1.5 pr-5 rounded-full flex items-center gap-2.5 font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24] ${
             especie === chave
-              ? "bg-[#b7102a] text-white"
+              ? "bg-[#9e0a24] text-white"
               : "text-[#5b403f] hover:bg-[#fdecee]"
           }`}
         >
@@ -174,7 +174,7 @@ function SecaoPodeDoar() {
                     key={`${especie}-${c.valor}`}
                     className="h-full rounded-2xl bg-white p-6 animate-aparecer"
                   >
-                    <p className="text-3xl font-extrabold tracking-tight text-[#b7102a]">
+                    <p className="text-3xl font-extrabold tracking-tight text-[#9e0a24]">
                       {c.valor}
                     </p>
                     <p className="text-[#5b403f] mt-1">{c.texto}</p>

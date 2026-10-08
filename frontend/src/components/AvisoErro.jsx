@@ -6,7 +6,7 @@ function AvisoErro({ children }) {
   return (
     <p
       role="alert"
-      className="flex items-start gap-2 rounded-xl bg-[#fdecee] px-3.5 py-3 text-sm text-[#8e001b] leading-snug"
+      className="flex items-start gap-2 rounded-xl bg-[#fdecee] px-3.5 py-3 text-sm text-[#9e0a24] leading-snug"
     >
       <span
         aria-hidden="true"

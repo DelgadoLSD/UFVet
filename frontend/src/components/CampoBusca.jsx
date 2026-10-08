@@ -21,7 +21,7 @@ function Trecho({ texto, trecho }) {
   return (
     <>
       {texto.slice(0, inicio)}
-      <mark className="bg-transparent font-bold text-[#8e001b]">
+      <mark className="bg-transparent font-bold text-[#9e0a24]">
         {texto.slice(inicio, fim)}
       </mark>
       {texto.slice(fim)}
@@ -242,7 +242,7 @@ function CampoBusca({
                       <>
                         <span
                           aria-hidden="true"
-                          className="material-symbols-outlined text-[18px] text-[#8e001b]"
+                          className="material-symbols-outlined text-[18px] text-[#9e0a24]"
                         >
                           add
                         </span>
@@ -270,7 +270,7 @@ function CampoBusca({
                         {escolhido && (
                           <span
                             aria-hidden="true"
-                            className="material-symbols-outlined text-[18px] text-[#8e001b] shrink-0"
+                            className="material-symbols-outlined text-[18px] text-[#9e0a24] shrink-0"
                           >
                             check
                           </span>
@@ -298,7 +298,7 @@ function CampoBusca({
       {aviso && (
         <p
           id={avisoId}
-          className={`text-xs mt-2 ${pendente ? "text-red-600" : "text-[#5f5e5e]"}`}
+          className={`text-xs mt-2 ${pendente ? "text-[#9e0a24]" : "text-[#5f5e5e]"}`}
         >
           {aviso}
         </p>

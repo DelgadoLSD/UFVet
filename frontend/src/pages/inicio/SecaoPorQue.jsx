@@ -63,7 +63,7 @@ function ComoEHoje() {
             key={i}
             className="max-w-[88%] rounded-2xl rounded-tl-md bg-white px-4 py-2.5 shadow-[0_1px_1px_rgba(0,0,0,0.06)]"
           >
-            <p className="text-xs font-bold text-[#8e001b]">{m.autor}</p>
+            <p className="text-xs font-bold text-[#9e0a24]">{m.autor}</p>
             <p className="text-[15px] text-[#1a1c1c] leading-snug">{m.texto}</p>
             <p className="text-[11px] text-[#8f8a8a] text-right mt-0.5">
               {m.hora}
@@ -78,7 +78,7 @@ function ComoEHoje() {
 // Cartão vermelho: os filtros e um doador de exemplo, como fica no UFVet.
 function NoUFVet() {
   return (
-    <div className="h-full rounded-[2rem] bg-[#b7102a] text-white p-6 md:p-8">
+    <div className="h-full rounded-[2rem] bg-[#9e0a24] text-white p-6 md:p-8">
       <p className="font-bold">No UFVet</p>
       <p className="text-sm text-white/75 mt-1">
         Um canal feito só para encontrar doadores.
@@ -88,7 +88,7 @@ function NoUFVet() {
         <span className="px-3 py-1.5 rounded-full bg-white/15 text-sm font-semibold">
           Cão
         </span>
-        <span className="px-3 py-1.5 rounded-full bg-white text-[#8e001b] text-sm font-semibold">
+        <span className="px-3 py-1.5 rounded-full bg-white text-[#9e0a24] text-sm font-semibold">
           Só validados
         </span>
         <span className="px-3 py-1.5 rounded-full bg-white/15 text-sm font-semibold">
@@ -105,7 +105,7 @@ function NoUFVet() {
         <div className="min-w-0 flex-1 py-1">
           <div className="flex items-center justify-between gap-2">
             <p className="text-lg font-bold">Bento</p>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-[#fdecee] text-[#8e001b]">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-[#fdecee] text-[#9e0a24]">
               DEA 1.1+
             </span>
           </div>

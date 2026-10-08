@@ -18,7 +18,7 @@ function NotaFonte({ ids, claro = false }) {
             title={f.curta}
             aria-label={`Fonte ${f.numero}: ${f.curta}`}
             className={`px-px hover:underline ${
-              claro ? "text-white/70 hover:text-white" : "text-[#b7102a]"
+              claro ? "text-white/70 hover:text-white" : "text-[#9e0a24]"
             }`}
           >
             {f.numero}

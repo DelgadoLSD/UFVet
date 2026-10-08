@@ -30,7 +30,7 @@ function CartaoVeterinario({ veterinario }) {
       <Avatar
         pessoa={veterinario}
         tamanho="w-14 h-14"
-        fundo="bg-[#b7102a]"
+        fundo="bg-[#9e0a24]"
         formato="rounded-xl"
       />
       <div className="min-w-0 flex-1">
@@ -55,9 +55,9 @@ function ListaVeterinarios({ veterinarios, onEscolher }) {
           <button
             type="button"
             onClick={() => onEscolher(v.codigo)}
-            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#faf6f6] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a]"
+            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#faf6f6] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
           >
-            <Avatar pessoa={v} tamanho="w-9 h-9" fundo="bg-[#b7102a]" />
+            <Avatar pessoa={v} tamanho="w-9 h-9" fundo="bg-[#9e0a24]" />
             <span className="flex-1 min-w-0">
               <span className="block text-sm font-semibold text-[#1a1c1c] truncate">
                 {tratamento(v)} {v.nomeCompleto}
@@ -171,7 +171,7 @@ function ModalPedirLiberacao({ onFechar }) {
           <li className="flex items-start gap-2">
             <span
               aria-hidden="true"
-              className="material-symbols-outlined text-[18px] text-[#8e001b] shrink-0"
+              className="material-symbols-outlined text-[18px] text-[#9e0a24] shrink-0"
             >
               schedule
             </span>
@@ -180,7 +180,7 @@ function ModalPedirLiberacao({ onFechar }) {
           <li className="flex items-start gap-2">
             <span
               aria-hidden="true"
-              className="material-symbols-outlined text-[18px] text-[#8e001b] shrink-0"
+              className="material-symbols-outlined text-[18px] text-[#9e0a24] shrink-0"
             >
               volunteer_activism
             </span>

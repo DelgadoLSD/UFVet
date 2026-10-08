@@ -81,16 +81,16 @@ function Selecao({
         aria-haspopup="listbox"
         onClick={() => (aberto ? setAberto(false) : abrir())}
         onKeyDown={aoTeclar}
-        className={`w-full h-11 flex items-center gap-2.5 pl-3 pr-2 bg-white border rounded-xl text-sm text-left transition-all shadow-[0_1px_2px_rgba(26,28,28,0.05)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8e001b]/30 ${
+        className={`w-full h-11 flex items-center gap-2.5 pl-3 pr-2 bg-white border rounded-xl text-sm text-left transition-all shadow-[0_1px_2px_rgba(26,28,28,0.05)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]/30 ${
           aberto
-            ? "border-[#8e001b] ring-2 ring-[#8e001b]/15"
+            ? "border-[#9e0a24] ring-2 ring-[#9e0a24]/15"
             : "border-[#e4bebc] hover:border-[#cfa9a7]"
         }`}
       >
         <span
           aria-hidden="true"
           className={`material-symbols-outlined text-[18px] shrink-0 ${
-            selecionada ? "text-[#8e001b]" : "text-[#8f6f6e]"
+            selecionada ? "text-[#9e0a24]" : "text-[#8f6f6e]"
           }`}
         >
           {selecionada?.icone ?? icone}
@@ -122,7 +122,7 @@ function Selecao({
             onEscolher("");
             setAberto(false);
           }}
-          className="absolute top-1/2 -translate-y-1/2 right-9 w-6 h-6 flex items-center justify-center rounded-md text-[#8f6f6e] hover:text-[#8e001b] hover:bg-[#faf0f0] transition-colors"
+          className="absolute top-1/2 -translate-y-1/2 right-9 w-6 h-6 flex items-center justify-center rounded-md text-[#8f6f6e] hover:text-[#7d0a1d] hover:bg-[#faf0f0] transition-colors"
         >
           <span
             aria-hidden="true"
@@ -157,8 +157,8 @@ function Selecao({
                   aria-hidden="true"
                   className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                     ativa
-                      ? "bg-[#8e001b] text-white"
-                      : "bg-[#f5efef] text-[#8e001b]"
+                      ? "bg-[#9e0a24] text-white"
+                      : "bg-[#f5efef] text-[#9e0a24]"
                   }`}
                 >
                   <span className="material-symbols-outlined text-[18px]">
@@ -178,7 +178,7 @@ function Selecao({
                 {ativa && (
                   <span
                     aria-hidden="true"
-                    className="material-symbols-outlined text-[18px] text-[#8e001b]"
+                    className="material-symbols-outlined text-[18px] text-[#9e0a24]"
                   >
                     check
                   </span>

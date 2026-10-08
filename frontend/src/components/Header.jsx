@@ -23,7 +23,7 @@ function ItemMenu({ as: Componente = Link, icone, children, ...props }) {
     <Componente role="menuitem" className={CLASSE_ITEM} {...props}>
       <span
         aria-hidden="true"
-        className="material-symbols-outlined text-[20px] text-[#8e001b]"
+        className="material-symbols-outlined text-[20px] text-[#9e0a24]"
       >
         {icone}
       </span>
@@ -68,9 +68,9 @@ function MenuConta({ conta, noPerfil }) {
         aria-expanded={aberto}
         aria-haspopup="menu"
         aria-label={`Menu da conta de ${nomeCurto(conta)}`}
-        className={`flex items-center gap-3 rounded-full p-1 sm:pr-3 border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a] ${
+        className={`flex items-center gap-3 rounded-full p-1 sm:pr-3 border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24] ${
           noPerfil
-            ? "border-[#b7102a] bg-white/[0.08]"
+            ? "border-[#9e0a24] bg-white/[0.08]"
             : "border-white/10 bg-white/[0.04] hover:bg-white/[0.09]"
         }`}
       >
@@ -182,10 +182,10 @@ function Header() {
       <div className="h-20 px-5 md:px-8 max-w-[1200px] mx-auto flex items-center gap-7">
         <Link
           to="/"
-          className="font-extrabold text-3xl tracking-tighter shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a]"
+          className="font-extrabold text-3xl tracking-tighter shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
         >
           <span className="text-white">UF</span>
-          <span className="text-[#b7102a]">Vet</span>
+          <span className="text-[#9e0a24]">Vet</span>
         </Link>
 
         <span
@@ -213,7 +213,7 @@ function Header() {
                 {link.rotulo}
                 <span
                   aria-hidden="true"
-                  className={`absolute left-0 right-0 -bottom-px h-[3px] rounded-t-full bg-[#b7102a] origin-center transition-transform duration-200 motion-reduce:transition-none ${
+                  className={`absolute left-0 right-0 -bottom-px h-[3px] rounded-t-full bg-[#9e0a24] origin-center transition-transform duration-200 motion-reduce:transition-none ${
                     ativo ? "scale-x-100" : "scale-x-0"
                   }`}
                 />
@@ -239,7 +239,7 @@ function Header() {
                   topo não quebrar em duas linhas. */}
               <Link
                 to="/cadastrar"
-                className="hidden sm:inline-block bg-[#b7102a] text-white px-5 py-2.5 rounded-full font-bold text-[13px] uppercase tracking-wider whitespace-nowrap hover:bg-[#8e001b] transition-colors"
+                className="hidden sm:inline-block bg-[#9e0a24] text-white px-5 py-2.5 rounded-full font-bold text-[13px] uppercase tracking-wider whitespace-nowrap hover:bg-[#7d0a1d] transition-colors"
               >
                 Criar conta
               </Link>
@@ -252,7 +252,7 @@ function Header() {
             aria-expanded={menuAberto}
             aria-controls="menu-celular"
             aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
-            className="md:hidden w-11 h-11 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a]"
+            className="md:hidden w-11 h-11 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
           >
             <span aria-hidden="true" className="material-symbols-outlined">
               {menuAberto ? "close" : "menu"}
@@ -280,7 +280,7 @@ function Header() {
               >
                 <span
                   aria-hidden="true"
-                  className={`w-[3px] h-5 rounded-full ${ativo ? "bg-[#b7102a]" : "bg-transparent"}`}
+                  className={`w-[3px] h-5 rounded-full ${ativo ? "bg-[#9e0a24]" : "bg-transparent"}`}
                 />
                 {link.rotulo}
               </Link>

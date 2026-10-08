@@ -30,7 +30,7 @@ function Confirmacao() {
         >
           <span
             aria-hidden="true"
-            className="w-8 h-8 rounded-full bg-[#b7102a] flex items-center justify-center shrink-0"
+            className="w-8 h-8 rounded-full bg-[#9e0a24] flex items-center justify-center shrink-0"
           >
             <span
               className="material-symbols-outlined text-[19px]"

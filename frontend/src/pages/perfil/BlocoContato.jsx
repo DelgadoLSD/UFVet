@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import Botao from "../../components/Botao";
 import BotaoAjuda from "../../components/BotaoAjuda";
 import { useCopiar } from "../../hooks/useCopiar";
+import PainelSecao, { CampoPainel } from "./PainelSecao";
 import { acharVeterinario } from "../../servicos/pessoas";
 import { nomeProfissionalCurto, primeiroNome, pronome } from "../../util/texto";
 
@@ -23,22 +24,6 @@ const ocultarEmail = (email) => {
   return `${usuario.slice(0, 1)}${"•".repeat(Math.max(usuario.length - 1, 3))}@${dominio}`;
 };
 
-function LinhaContato({ icone, children }) {
-  return (
-    <li className="flex items-center gap-2.5 text-sm text-[#1a1c1c] min-w-0">
-      <span
-        aria-hidden="true"
-        className="material-symbols-outlined text-[18px] text-[#8f6f6e] shrink-0"
-      >
-        {icone}
-      </span>
-      <span className="min-w-0 flex items-center gap-1.5 flex-wrap">
-        {children}
-      </span>
-    </li>
-  );
-}
-
 // O dado à mostra, com um botão ao lado para copiar.
 function ValorCopiavel({ valor, rotulo }) {
   const [copiado, copiar] = useCopiar();
@@ -50,7 +35,7 @@ function ValorCopiavel({ valor, rotulo }) {
         type="button"
         onClick={() => copiar(valor)}
         aria-label={`Copiar ${rotulo}`}
-        className="w-6 h-6 rounded-md flex items-center justify-center text-[#8f6f6e] hover:text-[#8e001b] hover:bg-[#fdecee] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a]"
+        className="w-6 h-6 rounded-md flex items-center justify-center text-[#8f6f6e] hover:text-[#7d0a1d] hover:bg-[#fdecee] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
       >
         <span
           aria-hidden="true"
@@ -66,7 +51,7 @@ function ValorCopiavel({ valor, rotulo }) {
 // Caixa de aviso dos estados sem acesso, logo abaixo dos dados ocultos.
 function AvisoAcesso({ children, acao }) {
   return (
-    <div className="mt-3 rounded-xl bg-[#fdecee] px-3.5 py-3">
+    <div className="rounded-xl bg-[#fdecee] px-3.5 py-3">
       <p className="text-xs text-[#5b403f] leading-relaxed">{children}</p>
       {acao}
     </div>
@@ -128,47 +113,48 @@ function BlocoContato({
   const visivel = ehProprio || revelado;
 
   return (
-    <div className="min-w-0">
-      <div className="flex items-baseline justify-between gap-3 mb-2">
-        <p className="text-xs font-semibold text-[#8f6f6e]">Contato</p>
-        {!ehProprio && acesso.pode && !revelado && (
+    <PainelSecao
+      titulo="Contato"
+      nivel="h2"
+      acao={
+        !ehProprio &&
+        acesso.pode &&
+        !revelado && (
           <Botao
-            variante="editar"
+            variante="claro"
             tamanho="sm"
             onClick={() => setRevelado(true)}
           >
             Ver contato
           </Botao>
+        )
+      }
+    >
+      <CampoPainel rotulo="E-mail">
+        {visivel ? (
+          <ValorCopiavel valor={perfil.email} rotulo="e-mail" />
+        ) : (
+          <span className="truncate font-normal text-[#5f5e5e]">
+            {ocultarEmail(perfil.email)}
+          </span>
         )}
-      </div>
-
-      <ul className="flex flex-col gap-2">
-        <LinhaContato icone="mail">
-          {visivel ? (
-            <ValorCopiavel valor={perfil.email} rotulo="e-mail" />
-          ) : (
-            <span className="truncate text-[#5f5e5e]">
-              {ocultarEmail(perfil.email)}
-            </span>
-          )}
-        </LinhaContato>
-        <LinhaContato icone="call">
-          {visivel ? (
-            <ValorCopiavel valor={perfil.telefone} rotulo="telefone" />
-          ) : (
-            <span className="tracking-wider text-[#5f5e5e]">
-              {TELEFONE_OCULTO}
-            </span>
-          )}
-        </LinhaContato>
-      </ul>
+      </CampoPainel>
+      <CampoPainel rotulo="Telefone">
+        {visivel ? (
+          <ValorCopiavel valor={perfil.telefone} rotulo="telefone" />
+        ) : (
+          <span className="tracking-wider font-normal text-[#5f5e5e]">
+            {TELEFONE_OCULTO}
+          </span>
+        )}
+      </CampoPainel>
 
       {ehProprio ? (
-        <p className="mt-2.5 text-xs text-[#5f5e5e] leading-relaxed">
+        <p className="text-xs text-[#5f5e5e] leading-relaxed">
           Só quem tem acesso liberado por um veterinário vê seu contato.
         </p>
       ) : acesso.pode ? (
-        <p className="mt-2.5 text-xs text-[#5f5e5e] leading-relaxed">
+        <p className="text-xs text-[#5f5e5e] leading-relaxed">
           {revelado
             ? `A doação é voluntária: combine com ${primeiroNome(perfil.nomeCompleto)} antes de contar com ela.`
             : acesso.motivo === "veterinario"
@@ -197,7 +183,7 @@ function BlocoContato({
           caso. Ele libera pelo seu código #{meuCodigo}.
         </AvisoAcesso>
       )}
-    </div>
+    </PainelSecao>
   );
 }
 

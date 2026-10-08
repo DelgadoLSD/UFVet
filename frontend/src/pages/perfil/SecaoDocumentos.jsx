@@ -2,6 +2,7 @@ import { useState } from "react";
 import Modal from "../../components/Modal";
 import Ajuda from "../../components/Ajuda";
 import Botao from "../../components/Botao";
+import PainelSecao from "./PainelSecao";
 import { TIPOS_DOCUMENTO } from "../../regras/doacao";
 import { formatarData } from "../../util/datas";
 
@@ -34,7 +35,7 @@ function ModalDocumento({ tipo, versoes, onFechar }) {
               {formatarData(versao.enviadoEm)}
             </span>
             {temVarias && indice === ultima && (
-              <span className="text-[11px] font-semibold text-[#8e001b] bg-[#faf0f0] px-2 py-0.5 rounded-full">
+              <span className="text-[11px] font-semibold text-[#9e0a24] bg-[#faf0f0] px-2 py-0.5 rounded-full">
                 Mais recente
               </span>
             )}
@@ -81,8 +82,8 @@ function ModalDocumento({ tipo, versoes, onFechar }) {
                     aria-pressed={v.i === indice}
                     className={`w-full flex items-center justify-between gap-3 text-left px-4 py-2.5 rounded-xl border transition-colors ${
                       v.i === indice
-                        ? "border-[#8e001b] bg-[#faf0f0]"
-                        : "border-[#e4bebc] hover:border-[#8e001b]/50"
+                        ? "border-[#9e0a24] bg-[#faf0f0]"
+                        : "border-[#e4bebc] hover:border-[#7d0a1d]/50"
                     }`}
                   >
                     <span className="text-sm font-semibold text-[#1a1c1c]">
@@ -109,39 +110,41 @@ function SecaoDocumentos({ documentos, podeEnviar, onEnviar }) {
   const documentoAberto = documentos.find((d) => d.tipo === tipoAberto);
 
   return (
-    <section className="border border-[#f0e6e6] bg-[#fafafa] rounded-xl p-5 flex flex-col gap-4">
-      <div>
-        <h4 className="flex items-center gap-1.5 text-base font-bold text-[#1a1c1c]">
-          Exames e documentos
-          <Ajuda titulo="Por que enviar documentos?">
-            <p>
-              Com exames recentes e a carteira de vacinação em mãos, um
-              veterinário consegue validar o animal sem pedir que os exames
-              sejam refeitos.
-            </p>
-            <p>
-              Sem eles, o hospital pode precisar repetir esses exames antes da
-              coleta — o que leva mais tempo e pode ter custo.
-            </p>
-          </Ajuda>
-        </h4>
-        <p className="text-xs text-[#5f5e5e] mt-1">
-          Evitam que exames sejam refeitos no hospital
-        </p>
-      </div>
-
-      <ul className="divide-y divide-[#f0e6e6] bg-white border border-[#f0e6e6] rounded-xl">
+    <PainelSecao
+      titulo="Exames e documentos"
+      ajuda={
+        <Ajuda titulo="Por que enviar documentos?" claro>
+          <p>
+            Com exames recentes e a carteira de vacinação em mãos, um
+            veterinário consegue validar o animal sem pedir que os exames sejam
+            refeitos.
+          </p>
+          <p>
+            Sem eles, o hospital pode precisar repetir esses exames antes da
+            coleta — o que leva mais tempo e pode ter custo.
+          </p>
+        </Ajuda>
+      }
+      subtitulo="Evitam que exames sejam refeitos no hospital"
+    >
+      {/* As linhas vão de borda a borda do painel, com divisões finas. */}
+      <ul className="divide-y divide-[#f0e6e6] -mx-4 -mb-4 border-t border-[#f0e6e6]">
         {documentos.map((doc) => {
           const ultima = doc.versoes.at(-1);
           const qtd = doc.versoes.length;
           return (
-            <li key={doc.tipo} className="flex items-center gap-2 px-4 py-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#1a1c1c] truncate">
+            <li
+              key={doc.tipo}
+              className="flex flex-wrap items-center gap-x-2 gap-y-2 px-4 py-3"
+            >
+              {/* O nome nunca encolhe abaixo de uma largura legível: no
+                  celular estreito, os botões descem para a linha de baixo. */}
+              <div className="flex-1 min-w-[9.5rem]">
+                <p className="text-sm font-semibold text-[#1a1c1c]">
                   {TIPOS_DOCUMENTO[doc.tipo]}
                 </p>
                 <p
-                  className={`text-xs mt-0.5 ${ultima ? "text-[#5f5e5e]" : "text-[#c9a5a5] italic"}`}
+                  className={`text-xs mt-0.5 ${ultima ? "text-[#5f5e5e]" : "text-[#8f6f6e] italic"}`}
                 >
                   {ultima
                     ? `Enviado em ${formatarData(ultima.enviadoEm)}${qtd > 1 ? `, ${qtd} versões` : ""}`
@@ -151,41 +154,43 @@ function SecaoDocumentos({ documentos, podeEnviar, onEnviar }) {
 
               {/* Colunas de ação com largura fixa: cada botão cai sempre no
                   mesmo lugar, tenha o documento sido enviado ou não. */}
-              <div className="w-[4.5rem] flex justify-end">
-                {ultima && (
-                  <Botao
-                    variante="fantasma"
-                    tamanho="sm"
-                    onClick={() => setTipoAberto(doc.tipo)}
-                  >
-                    Abrir
-                  </Botao>
+              <div className="flex items-center gap-2 ml-auto">
+                <div className="w-[4.5rem] flex justify-end">
+                  {ultima && (
+                    <Botao
+                      variante="fantasma"
+                      tamanho="sm"
+                      onClick={() => setTipoAberto(doc.tipo)}
+                    >
+                      Abrir
+                    </Botao>
+                  )}
+                </div>
+
+                {podeEnviar && (
+                  <div className="w-[6.75rem] flex justify-end">
+                    <Botao
+                      as="label"
+                      variante={ultima ? "secundario" : "primario"}
+                      tamanho="sm"
+                      icone="upload"
+                    >
+                      {ultima ? "Atualizar" : "Enviar"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          onEnviar(doc.tipo, e.target.files[0]);
+                          // Limpa a escolha para o mesmo arquivo poder ser
+                          // enviado de novo.
+                          e.target.value = "";
+                        }}
+                      />
+                    </Botao>
+                  </div>
                 )}
               </div>
-
-              {podeEnviar && (
-                <div className="w-[6.75rem] flex justify-end">
-                  <Botao
-                    as="label"
-                    variante={ultima ? "secundario" : "primario"}
-                    tamanho="sm"
-                    icone="upload"
-                  >
-                    {ultima ? "Atualizar" : "Enviar"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        onEnviar(doc.tipo, e.target.files[0]);
-                        // Limpa a escolha para o mesmo arquivo poder ser
-                        // enviado de novo.
-                        e.target.value = "";
-                      }}
-                    />
-                  </Botao>
-                </div>
-              )}
             </li>
           );
         })}
@@ -198,7 +203,7 @@ function SecaoDocumentos({ documentos, podeEnviar, onEnviar }) {
           onFechar={() => setTipoAberto(null)}
         />
       )}
-    </section>
+    </PainelSecao>
   );
 }
 

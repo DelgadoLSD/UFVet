@@ -19,7 +19,7 @@ function Pilula({ ativa, onClick, children }) {
       type="button"
       onClick={onClick}
       aria-pressed={ativa}
-      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${ativa ? "bg-[#8e001b] border-[#8e001b] text-white" : "bg-white border-[#e2d6d6] text-[#1a1c1c] hover:border-[#8e001b] hover:text-[#8e001b]"}`}
+      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${ativa ? "bg-[#9e0a24] border-[#9e0a24] text-white" : "bg-white border-[#e2d6d6] text-[#1a1c1c] hover:border-[#7d0a1d] hover:text-[#7d0a1d]"}`}
     >
       {children}
     </button>
@@ -36,7 +36,7 @@ function FiltroApenasValidados({ ativo, onMudar }) {
         >
           <span
             aria-hidden="true"
-            className="material-symbols-outlined text-[18px] text-[#8e001b]"
+            className="material-symbols-outlined text-[18px] text-[#9e0a24]"
             style={{ fontVariationSettings: "'FILL' 1" }}
           >
             verified
@@ -60,7 +60,7 @@ function FiltroApenasValidados({ ativo, onMudar }) {
         role="switch"
         aria-checked={ativo}
         onClick={() => onMudar(!ativo)}
-        className={`relative w-11 h-6 rounded-full transition-colors duration-300 shrink-0 ${ativo ? "bg-[#8e001b]" : "bg-[#d0d0d0]"}`}
+        className={`relative w-11 h-6 rounded-full transition-colors duration-300 shrink-0 ${ativo ? "bg-[#9e0a24]" : "bg-[#d0d0d0]"}`}
       >
         <span
           className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${ativo ? "translate-x-5" : "translate-x-0"}`}
@@ -89,7 +89,7 @@ function FiltrosBusca({ filtros, cidades, bairros, onFiltrar, onLimpar }) {
           <button
             type="button"
             onClick={onLimpar}
-            className="text-[#8e001b] text-sm font-semibold hover:underline"
+            className="text-[#9e0a24] text-sm font-semibold hover:underline"
           >
             Limpar
           </button>
@@ -162,7 +162,7 @@ function FiltrosBusca({ filtros, cidades, bairros, onFiltrar, onLimpar }) {
         <div className="mb-7">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-sm font-semibold">Peso máximo</h3>
-            <span className="text-xs font-bold text-[#8e001b] bg-[#fdecee] px-2 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-[#9e0a24] bg-[#fdecee] px-2 py-0.5 rounded-full">
               até {pesoMax} kg
             </span>
           </div>
@@ -173,7 +173,7 @@ function FiltrosBusca({ filtros, cidades, bairros, onFiltrar, onLimpar }) {
             max={limites.max}
             value={pesoMax}
             onChange={(e) => onFiltrar({ pesoMax: Number(e.target.value) })}
-            className="w-full h-2 bg-[#e2e2e2] rounded-lg appearance-none cursor-pointer accent-[#8e001b]"
+            className="w-full h-2 bg-[#e2e2e2] rounded-lg appearance-none cursor-pointer accent-[#9e0a24]"
           />
           <div className="flex justify-between text-[11px] text-[#5f5e5e] mt-1">
             <span>{limites.min} kg</span>

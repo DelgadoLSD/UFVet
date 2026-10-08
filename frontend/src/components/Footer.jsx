@@ -18,7 +18,7 @@ function Footer() {
           <div>
             <p className="text-3xl font-extrabold tracking-tighter">
               <span className="text-white">UF</span>
-              <span className="text-[#b7102a]">Vet</span>
+              <span className="text-[#9e0a24]">Vet</span>
             </p>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/55">
               Portal que conecta doadores voluntários de sangue animal a quem

@@ -99,15 +99,9 @@ function EstadoDaLista({ erro, onTentarDeNovo }) {
 // pode fazer ali e que a assinatura dele fica visível.
 function AvisoVeterinario({ usuario }) {
   return (
-    <div className="mb-8 bg-[#fdecee] rounded-2xl px-6 py-4 flex items-center gap-4">
-      <span
-        aria-hidden="true"
-        className="material-symbols-outlined text-[#8e001b] text-[28px]"
-      >
-        medical_services
-      </span>
-      <div className="flex flex-col">
-        <span className="font-bold text-[#8e001b] text-sm">
+    <div className="mb-8 bg-[#fdecee] rounded-2xl px-6 py-4">
+      <div className="flex flex-col gap-0.5">
+        <span className="font-bold text-[#9e0a24] text-sm">
           Você está acessando como veterinário
         </span>
         <span className="text-[#5b403f] text-xs leading-relaxed">
@@ -120,23 +114,38 @@ function AvisoVeterinario({ usuario }) {
   );
 }
 
-function BotaoCadastrarAnimal({ onClick }) {
+// Fim da lista dos próprios animais: o lugar do próximo cartão, tracejado,
+// com as fotos dos animais já cadastrados em fila e o "+" vermelho como o
+// próximo da fila. Sem nenhum animal ainda, fica só o "+".
+function BotaoCadastrarAnimal({ animais, onClick }) {
+  const fotos = animais
+    .filter((animal) => animal.fotos.length > 0)
+    .slice(0, 3)
+    .map((animal) => ({ url: animal.fotos[0].url, nome: animal.nome }));
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full py-9 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#e2cfcf] hover:border-[#b7102a]/50 hover:bg-[#fffafa] transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a]"
+      className="group w-full py-9 px-6 flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[#e2cfcf] bg-white hover:border-[#9e0a24]/60 hover:bg-[#fffafa] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
     >
-      <div
-        aria-hidden="true"
-        className="w-11 h-11 rounded-full bg-[#b7102a] flex items-center justify-center text-white mb-1 transition-colors group-hover:bg-[#8e001b]"
-      >
-        <span className="material-symbols-outlined text-[26px]">add</span>
-      </div>
-      <span className="text-sm font-semibold text-[#1a1c1c]">
+      <span aria-hidden="true" className="flex items-center -space-x-3">
+        {fotos.map((foto) => (
+          <img
+            key={foto.url}
+            src={foto.url}
+            alt=""
+            className="w-12 h-12 rounded-full object-cover ring-4 ring-white"
+          />
+        ))}
+        <span className="w-12 h-12 rounded-full bg-[#9e0a24] ring-4 ring-white flex items-center justify-center text-white transition-transform group-hover:scale-110 motion-reduce:group-hover:scale-100">
+          <span className="material-symbols-outlined text-[28px]">add</span>
+        </span>
+      </span>
+      <span className="text-lg font-extrabold tracking-tight text-[#1a1c1c]">
         Cadastrar novo animal
       </span>
-      <span className="text-xs text-[#5f5e5e]">
+      <span className="text-sm text-[#5f5e5e]">
         Cada doador cadastrado pode ajudar a salvar uma vida
       </span>
     </button>
@@ -178,7 +187,7 @@ function PerfilPage() {
         <ModalComoFuncionaContato onFechar={fecharModal} />
       )}
 
-      <main className="pb-20 px-5 md:px-16 max-w-[1200px] mx-auto pt-28">
+      <main className="pb-20 px-5 md:px-16 max-w-[1200px] mx-auto pt-28 selection:bg-[#fdecee] selection:text-[#9e0a24]">
         <section className="mb-10">
           <CartaoPerfil
             perfil={perfil}
@@ -201,12 +210,12 @@ function PerfilPage() {
 
         {ehVet && !ehProprio && <AvisoVeterinario usuario={usuario} />}
 
-        <div className="flex justify-between items-end mb-6">
+        <div className="flex flex-wrap justify-between items-end gap-x-4 gap-y-1 mb-6">
           <h2 className="text-2xl font-bold text-[#1a1c1c]">
             {ehProprio ? "Meus animais" : `Animais de ${nomeCurto(perfil)}`}
           </h2>
           {listaPronta && (
-            <span className="text-sm text-[#5f5e5e]">
+            <span className="text-sm text-[#5f5e5e] whitespace-nowrap">
               {animais.length}{" "}
               {animais.length === 1
                 ? "animal cadastrado"
@@ -235,7 +244,10 @@ function PerfilPage() {
             />
           )}
           {ehProprio && listaPronta && (
-            <BotaoCadastrarAnimal onClick={() => setModal("cadastrar")} />
+            <BotaoCadastrarAnimal
+              animais={animais}
+              onClick={() => setModal("cadastrar")}
+            />
           )}
         </section>
       </main>

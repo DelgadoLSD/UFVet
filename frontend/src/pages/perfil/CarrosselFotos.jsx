@@ -32,14 +32,8 @@ function CarrosselFotos({ fotos, nome }) {
 
   if (!temFotos) {
     return (
-      <div className="w-full h-56 lg:h-full min-h-[240px] bg-[#faf0f0] border-2 border-dashed border-[#e4bebc] flex flex-col items-center justify-center gap-2 rounded-2xl">
-        <span
-          aria-hidden="true"
-          className="material-symbols-outlined text-[#c9a5a5] text-5xl"
-        >
-          photo_camera
-        </span>
-        <span className="text-[#c9a5a5] text-xs font-semibold">
+      <div className="w-full h-56 lg:h-auto lg:flex-1 min-h-[240px] bg-[#fdecee] flex items-center justify-center rounded-2xl">
+        <span className="text-[#8f6f6e] text-sm font-semibold">
           Sem foto ainda
         </span>
       </div>
@@ -47,7 +41,7 @@ function CarrosselFotos({ fotos, nome }) {
   }
 
   return (
-    <div className="relative w-full h-56 lg:h-full min-h-[240px] rounded-2xl overflow-hidden border border-[#eadede] group">
+    <div className="relative w-full h-56 lg:h-auto lg:flex-1 min-h-[240px] rounded-2xl overflow-hidden border border-[#eadede] group">
       {/* Todas as fotos ficam empilhadas; só a atual aparece, para a troca
           ser um esmaecer suave, sem piscar enquanto a imagem carrega. */}
       {fotos.map((foto, i) => (

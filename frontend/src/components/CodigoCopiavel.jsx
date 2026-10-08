@@ -2,7 +2,8 @@ import { useCopiar } from "../hooks/useCopiar";
 
 // Código público de uma pessoa ou de um animal (#T3M8P1). Um clique copia o
 // código: útil para passar a alguém por mensagem ou para achar na busca.
-function CodigoCopiavel({ codigo, rotulo = "Código" }) {
+// `claro` é a versão para o cabeçalho vermelho dos cartões dos animais.
+function CodigoCopiavel({ codigo, rotulo = "Código", claro = false }) {
   const [copiado, copiar] = useCopiar();
 
   return (
@@ -14,7 +15,9 @@ function CodigoCopiavel({ codigo, rotulo = "Código" }) {
       className={`inline-flex items-center gap-1 h-6 px-2 rounded-md border text-[11px] font-bold tracking-wide transition-colors ${
         copiado
           ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-          : "bg-[#faf6f6] border-[#eadede] text-[#8e001b] hover:bg-[#f5e9e9] hover:border-[#dcc6c6]"
+          : claro
+            ? "bg-white/10 border-white/30 text-white hover:bg-white/20"
+            : "bg-[#faf6f6] border-[#eadede] text-[#9e0a24] hover:bg-[#f5e9e9] hover:border-[#dcc6c6]"
       }`}
     >
       #{codigo}

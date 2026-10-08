@@ -73,7 +73,7 @@ function SecaoMitos() {
   return (
     <section
       id="mitos-e-verdades"
-      className="py-24 md:py-32 bg-[#8e001b] text-white"
+      className="py-24 md:py-32 bg-[#9e0a24] text-white"
     >
       <div className={CONTAINER}>
         <Surgir className="max-w-3xl mb-12">

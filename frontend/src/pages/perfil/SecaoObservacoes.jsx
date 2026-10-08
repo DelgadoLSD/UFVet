@@ -2,6 +2,7 @@ import { useState } from "react";
 import Modal from "../../components/Modal";
 import Ajuda from "../../components/Ajuda";
 import Botao from "../../components/Botao";
+import PainelSecao from "./PainelSecao";
 import { formatarData, formatarHora } from "../../util/datas";
 
 // Observações para a coleta: anotações de veterinários sobre como o animal se
@@ -10,9 +11,11 @@ import { formatarData, formatarHora } from "../../util/datas";
 
 const OBSERVACOES_VISIVEIS = 3;
 
+// Uma observação: quem escreveu e quando, e o texto. As observações se
+// separam por linhas finas, numa lista sem caixa em volta.
 function ItemObservacao({ item }) {
   return (
-    <div className="border-l-2 border-[#e4bebc] pl-4 py-0.5">
+    <div className="py-3 first:pt-0 last:pb-0">
       <p className="flex flex-wrap items-baseline gap-x-2 text-xs">
         <span className="font-semibold text-[#1a1c1c]">{item.autorNome}</span>
         <span className="text-[#5f5e5e]">
@@ -45,41 +48,37 @@ function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
   };
 
   return (
-    <section className="border border-[#f0e6e6] bg-[#fafafa] rounded-xl p-5 flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h4 className="flex items-center gap-1.5 text-base font-bold text-[#1a1c1c]">
-            Observações para a coleta
-            <Ajuda titulo="Observações para a coleta">
-              <p>
-                Anotações de veterinários sobre como o animal se comportou em
-                coletas anteriores — por exemplo, se é calmo ou se precisa de
-                mais cuidado.
-              </p>
-              <p>
-                Elas ajudam a equipe a preparar uma coleta tranquila para o
-                doador.
-              </p>
-            </Ajuda>
-          </h4>
-          <p className="text-xs text-[#5f5e5e] mt-1">
-            Temperamento e comportamento em coletas anteriores
+    <PainelSecao
+      titulo="Observações para a coleta"
+      ajuda={
+        <Ajuda titulo="Observações para a coleta" claro>
+          <p>
+            Anotações de veterinários sobre como o animal se comportou em
+            coletas anteriores — por exemplo, se é calmo ou se precisa de mais
+            cuidado.
           </p>
-        </div>
-        {podeAdicionar && !adicionando && (
+          <p>
+            Elas ajudam a equipe a preparar uma coleta tranquila para o doador.
+          </p>
+        </Ajuda>
+      }
+      acao={
+        podeAdicionar &&
+        !adicionando && (
           <Botao
-            variante="secundario"
+            variante="claro"
             tamanho="sm"
             icone="add"
             onClick={() => setAdicionando(true)}
           >
             Adicionar
           </Botao>
-        )}
-      </div>
-
+        )
+      }
+      subtitulo="Temperamento e comportamento em coletas anteriores"
+    >
       {adicionando && (
-        <div className="bg-white border border-[#e4bebc] rounded-xl p-3 focus-within:ring-2 focus-within:ring-[#8e001b]/30">
+        <div className="bg-white border border-[#e4bebc] rounded-xl p-3 focus-within:ring-2 focus-within:ring-[#9e0a24]/30">
           <textarea
             autoFocus
             aria-label="Nova observação"
@@ -101,7 +100,7 @@ function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
       )}
 
       {observacoes.length > 0 ? (
-        <div className="space-y-3">
+        <div className="divide-y divide-[#f0e6e6]">
           {observacoes.slice(0, OBSERVACOES_VISIVEIS).map((item, i) => (
             <ItemObservacao key={i} item={item} />
           ))}
@@ -118,7 +117,7 @@ function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
         <button
           type="button"
           onClick={() => setTodasAbertas(true)}
-          className="flex items-center gap-1.5 text-[#8e001b] font-semibold text-xs hover:underline underline-offset-2 w-fit mt-auto"
+          className="flex items-center gap-1.5 text-[#9e0a24] font-semibold text-xs hover:underline underline-offset-2 w-fit mt-auto"
         >
           <span
             aria-hidden="true"
@@ -136,14 +135,14 @@ function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
           subtitulo={`${observacoes.length} registros`}
           onFechar={() => setTodasAbertas(false)}
         >
-          <div className="space-y-4">
+          <div className="divide-y divide-[#f0e6e6]">
             {observacoes.map((item, i) => (
               <ItemObservacao key={i} item={item} />
             ))}
           </div>
         </Modal>
       )}
-    </section>
+    </PainelSecao>
   );
 }
 

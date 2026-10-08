@@ -19,9 +19,9 @@ function Segmentado({ opcoes, valor, onEscolher, rotulo, altura = "h-9" }) {
             type="button"
             onClick={() => onEscolher(opcao.valor)}
             aria-pressed={escolhida}
-            className={`flex-1 ${altura} px-2 rounded-lg flex items-center justify-center gap-1.5 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7102a] ${
+            className={`flex-1 ${altura} px-2 rounded-lg flex items-center justify-center gap-1.5 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24] ${
               escolhida
-                ? "bg-[#b7102a] text-white"
+                ? "bg-[#9e0a24] text-white"
                 : "text-[#5f5e5e] hover:text-[#1a1c1c]"
             }`}
           >

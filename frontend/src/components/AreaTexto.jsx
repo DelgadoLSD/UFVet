@@ -19,7 +19,7 @@ function AreaTexto({ id, rotulo, dica, linhas = 3, ...props }) {
         rows={linhas}
         aria-describedby={dica ? dicaId : undefined}
         {...props}
-        className="w-full px-4 py-3 bg-white border border-[#dccfcf] rounded-xl text-base text-[#1a1c1c] placeholder:text-[#a79d9d] resize-none transition-colors hover:border-[#c9b6b6] focus:outline-none focus:border-[#b7102a] focus:ring-4 focus:ring-[#b7102a]/10"
+        className="w-full px-4 py-3 bg-white border border-[#dccfcf] rounded-xl text-base text-[#1a1c1c] placeholder:text-[#a79d9d] resize-none transition-colors hover:border-[#c9b6b6] focus:outline-none focus:border-[#9e0a24] focus:ring-4 focus:ring-[#9e0a24]/10"
       />
       {dica && (
         <p id={dicaId} className="text-xs text-[#5f5e5e] mt-2">

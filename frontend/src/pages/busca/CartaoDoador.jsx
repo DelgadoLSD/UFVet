@@ -53,7 +53,7 @@ function CartaoDoador({ doador, onVerPerfil }) {
           {/* Tipo em vermelho só quando saiu de um exame assinado. Sem
               tipagem, a etiqueta fica cinza e diz o que falta. */}
           {doador.tipoSanguineo ? (
-            <span className="bg-[#8e001b] text-white text-xs font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">
+            <span className="bg-[#9e0a24] text-white text-xs font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">
               {doador.tipoSanguineo}
             </span>
           ) : (

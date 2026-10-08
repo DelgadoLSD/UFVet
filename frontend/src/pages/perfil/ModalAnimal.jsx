@@ -63,7 +63,7 @@ const CAMPO_DA_API = {
 };
 
 const CLASSE_CAMPO =
-  "w-full px-4 py-2.5 bg-white border border-[#e4bebc] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8e001b] focus:border-[#8e001b] placeholder:text-gray-400 aria-[invalid=true]:border-red-500";
+  "w-full px-4 py-2.5 bg-white border border-[#e4bebc] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#9e0a24] focus:border-[#9e0a24] placeholder:text-gray-400 aria-[invalid=true]:border-[#9e0a24]";
 const CLASSE_TITULO = "text-sm font-semibold text-[#1a1c1c]";
 const CLASSE_ROTULO = `block mb-1.5 ${CLASSE_TITULO}`;
 
@@ -72,7 +72,7 @@ const CLASSE_ROTULO = `block mb-1.5 ${CLASSE_TITULO}`;
 function Erro({ id, children }) {
   if (!children) return null;
   return (
-    <p id={id} className="text-xs text-red-600 mt-1.5">
+    <p id={id} className="text-xs text-[#9e0a24] mt-1.5">
       {children}
     </p>
   );
@@ -86,7 +86,7 @@ function BotaoMiniatura({ icone, rotulo, onClick, posicao }) {
       onClick={onClick}
       aria-label={rotulo}
       title={rotulo}
-      className={`absolute ${posicao} w-6 h-6 rounded-full bg-white/95 text-[#1a1c1c] shadow flex items-center justify-center hover:text-[#8e001b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8e001b]`}
+      className={`absolute ${posicao} w-6 h-6 rounded-full bg-white/95 text-[#1a1c1c] shadow flex items-center justify-center hover:text-[#7d0a1d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]`}
     >
       <span
         aria-hidden="true"
@@ -115,7 +115,7 @@ function CampoFotos({ fotos, onEscolher, onRemover, onTornarPrincipal }) {
             className="w-full h-full object-cover"
           />
           {i === 0 ? (
-            <span className="absolute bottom-1 left-1 bg-[#8e001b] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+            <span className="absolute bottom-1 left-1 bg-[#9e0a24] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
               Principal
             </span>
           ) : (
@@ -139,7 +139,7 @@ function CampoFotos({ fotos, onEscolher, onRemover, onTornarPrincipal }) {
         <button
           type="button"
           onClick={() => entrada.current.click()}
-          className="w-20 h-20 rounded-xl border-2 border-dashed border-[#e4bebc] flex flex-col items-center justify-center gap-0.5 text-[#8f6f6e] hover:border-[#8e001b] hover:bg-[#faf0f0] hover:text-[#8e001b] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8e001b]"
+          className="w-20 h-20 rounded-xl border-2 border-dashed border-[#e4bebc] flex flex-col items-center justify-center gap-0.5 text-[#8f6f6e] hover:border-[#7d0a1d] hover:bg-[#faf0f0] hover:text-[#7d0a1d] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
         >
           <span
             aria-hidden="true"
@@ -291,16 +291,16 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
           {/* O aviso fica colado no botão porque é sobre o que salvar provoca:
               no meio do formulário ele passa despercebido. */}
           {afetados.length > 0 && (
-            <div className="flex items-start gap-2 bg-[#fdecee] border border-[#b7102a]/25 rounded-lg px-3 py-2.5">
+            <div className="flex items-start gap-2 bg-[#fdecee] border border-[#9e0a24]/25 rounded-lg px-3 py-2.5">
               <span
                 aria-hidden="true"
-                className="material-symbols-outlined text-[#8e001b] text-[18px] shrink-0"
+                className="material-symbols-outlined text-[#9e0a24] text-[18px] shrink-0"
               >
                 release_alert
               </span>
               <p className="text-xs text-[#5b403f] leading-relaxed">
                 Salvar desfaz a validação de{" "}
-                <strong className="font-semibold text-[#8e001b]">
+                <strong className="font-semibold text-[#9e0a24]">
                   {afetados.map((c) => c.rotulo.toLowerCase()).join(" e ")}
                 </strong>
                 , assinada por {validacao.veterinarioNome} em{" "}
@@ -340,7 +340,7 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
           <div className="flex gap-3 bg-[#faf0f0] border border-[#e4bebc] rounded-xl p-4">
             <span
               aria-hidden="true"
-              className="material-symbols-outlined text-[#8e001b] text-[22px] shrink-0"
+              className="material-symbols-outlined text-[#9e0a24] text-[22px] shrink-0"
             >
               verified_user
             </span>
@@ -421,7 +421,7 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
                   mudar("racaSRD", e.target.checked);
                   mudar("raca", "");
                 }}
-                className="w-4 h-4 rounded accent-[#8e001b]"
+                className="w-4 h-4 rounded accent-[#9e0a24]"
               />
               <span className="text-xs text-[#5f5e5e] font-medium">
                 SRD / Não sei a raça

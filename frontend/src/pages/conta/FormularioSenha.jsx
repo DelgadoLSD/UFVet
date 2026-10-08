@@ -67,7 +67,7 @@ function FormularioSenha({ onSalvar, onCancelar }) {
         />
         {!erros.senhaNova && (
           <p
-            className={`text-xs mt-2 ${curta ? "text-red-600" : "text-[#5f5e5e]"}`}
+            className={`text-xs mt-2 ${curta ? "text-[#9e0a24]" : "text-[#5f5e5e]"}`}
           >
             Pelo menos {TAMANHO_MINIMO_SENHA} caracteres.
           </p>
@@ -83,7 +83,7 @@ function FormularioSenha({ onSalvar, onCancelar }) {
           onChange={(e) => setConfirmacao(e.target.value)}
         />
         {diferentes && (
-          <p className="text-xs text-red-600 mt-2">
+          <p className="text-xs text-[#9e0a24] mt-2">
             As duas senhas estão diferentes.
           </p>
         )}

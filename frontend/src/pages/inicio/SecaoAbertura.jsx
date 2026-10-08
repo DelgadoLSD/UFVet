@@ -17,7 +17,7 @@ function SecaoAbertura() {
         <div className="max-w-2xl text-left">
           <h1 className="text-5xl md:text-7xl mb-8 leading-[1.05] font-extrabold tracking-tighter text-white">
             Seu pet pode <br />
-            <span className="text-[#b7102a] italic">salvar uma vida!</span>
+            <span className="text-[#9e0a24] italic">salvar uma vida!</span>
           </h1>
           <p className="text-lg md:text-xl mb-12 max-w-xl leading-relaxed text-white">
             Conectamos tutores de animais que precisam de transfusão a doadores

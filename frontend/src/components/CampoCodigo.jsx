@@ -12,7 +12,7 @@ function CampoCodigo({ id, rotulo, dica, placeholder, valor, onMudar }) {
         </label>
         <span className="text-xs text-[#5f5e5e]">{dica}</span>
       </div>
-      <div className="flex items-center h-12 pl-4 bg-white border border-[#dccfcf] rounded-xl shadow-[0_1px_2px_rgba(26,28,28,0.04)] transition-colors focus-within:border-[#b7102a] focus-within:ring-4 focus-within:ring-[#b7102a]/10">
+      <div className="flex items-center h-12 pl-4 bg-white border border-[#dccfcf] rounded-xl shadow-[0_1px_2px_rgba(26,28,28,0.04)] transition-colors focus-within:border-[#9e0a24] focus-within:ring-4 focus-within:ring-[#9e0a24]/10">
         <span
           aria-hidden="true"
           className="text-lg font-semibold text-[#8f6f6e] select-none"

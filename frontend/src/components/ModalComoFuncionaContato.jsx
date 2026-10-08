@@ -11,7 +11,7 @@ function Item({ escuro, children }) {
       <span
         aria-hidden="true"
         className={`material-symbols-outlined text-[18px] shrink-0 ${
-          escuro ? "text-white" : "text-[#8e001b]"
+          escuro ? "text-white" : "text-[#9e0a24]"
         }`}
       >
         check_small
@@ -42,7 +42,7 @@ function ModalComoFuncionaContato({ onFechar }) {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-[auto_1fr] gap-4">
-          <div className={`${CARTAO} bg-[#8e001b] text-white/85`}>
+          <div className={`${CARTAO} bg-[#9e0a24] text-white/85`}>
             <h3 className="font-bold text-white">Se você é tutor</h3>
             <ul className="flex flex-col gap-2">
               <Item escuro>
