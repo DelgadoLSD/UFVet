@@ -13,6 +13,12 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "106acf230014cbb43ca34e6410371321b56ca742f9ee0442e8ec05bf02eb0384"
     },
+    "impeccable": {
+      "source": "pbakaus/impeccable",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/impeccable/SKILL.md",
+      "computedHash": "1862731c18a1cc31dd819e44731d0dbc158a16ff4c0f8dde580314e826c44eef"
+    },
     "prisma-database-setup": {
       "source": "prisma/skills",
       "sourceType": "github",
