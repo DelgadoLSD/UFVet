@@ -6,8 +6,24 @@ import { TAMANHO_MINIMO_SENHA } from "../../regras/conta";
 import { trocarSenha } from "../../servicos/sessao";
 
 // Troca de senha na página da conta (F4): a senha atual, a nova e a
-// repetição (NF4.2). Só libera o botão quando a nova tem o tamanho mínimo e
-// as duas batem. A API confere a senha atual e derruba os outros aparelhos.
+// repetição (NF4.2). O botão fica sempre ligado: ao salvar, o que falta
+// aparece embaixo de cada campo. A API confere a senha atual e derruba os
+// outros aparelhos.
+
+// O que falta para trocar a senha, campo a campo.
+function errosDaSenha(atual, nova, confirmacao) {
+  const erros = {};
+  if (!atual) erros.senhaAtual = "Digite a sua senha atual.";
+  if (nova.length < TAMANHO_MINIMO_SENHA) {
+    erros.senhaNova = `A nova senha precisa ter pelo menos ${TAMANHO_MINIMO_SENHA} caracteres.`;
+  } else if (!confirmacao) {
+    erros.confirmacao = "Repita a nova senha para confirmar.";
+  } else if (confirmacao !== nova) {
+    erros.confirmacao = "As duas senhas estão diferentes: repita a mesma.";
+  }
+  return erros;
+}
+
 function FormularioSenha({ onSalvar, onCancelar }) {
   const [atual, setAtual] = useState("");
   const [nova, setNova] = useState("");
@@ -18,12 +34,14 @@ function FormularioSenha({ onSalvar, onCancelar }) {
 
   const curta = nova.length > 0 && nova.length < TAMANHO_MINIMO_SENHA;
   const diferentes = confirmacao.length > 0 && nova !== confirmacao;
-  const pronto =
-    atual && nova.length >= TAMANHO_MINIMO_SENHA && nova === confirmacao;
 
   const salvar = async (e) => {
     e.preventDefault();
-    if (!pronto) return;
+    const problemas = errosDaSenha(atual, nova, confirmacao);
+    if (Object.keys(problemas).length > 0) {
+      setErros(problemas);
+      return;
+    }
     setEnviando(true);
     setErroGeral("");
     try {
@@ -80,9 +98,13 @@ function FormularioSenha({ onSalvar, onCancelar }) {
           senha
           autoComplete="new-password"
           value={confirmacao}
-          onChange={(e) => setConfirmacao(e.target.value)}
+          onChange={(e) => {
+            setConfirmacao(e.target.value);
+            setErros((prev) => ({ ...prev, confirmacao: undefined }));
+          }}
+          erro={erros.confirmacao}
         />
-        {diferentes && (
+        {diferentes && !erros.confirmacao && (
           <p className="text-xs text-[#9e0a24] mt-2">
             As duas senhas estão diferentes.
           </p>
@@ -94,7 +116,7 @@ function FormularioSenha({ onSalvar, onCancelar }) {
       </p>
       <AvisoErro>{erroGeral}</AvisoErro>
       <div className="flex gap-2">
-        <Botao type="submit" disabled={!pronto || enviando}>
+        <Botao type="submit" disabled={enviando}>
           {enviando ? "Salvando…" : "Salvar senha"}
         </Botao>
         <Botao variante="secundario" onClick={onCancelar} disabled={enviando}>

@@ -68,3 +68,23 @@ export async function dadosDaConta(usuario) {
     },
   };
 }
+
+// "Victor Hugo Martins" -> "Victor Martins": o primeiro e o último nome.
+function nomeCurto(nomeCompleto) {
+  const partes = nomeCompleto.trim().split(/\s+/);
+  return partes.length > 1 ? `${partes[0]} ${partes.at(-1)}` : partes[0];
+}
+
+// Como o veterinário logado assina o que registra num animal (validações,
+// doações, observações): "Dr. Victor Martins", CRMV 78120-MG. Sai sempre da
+// conta, nunca do pedido: ninguém assina com o nome ou o CRMV de outra
+// pessoa. Os registros guardam uma cópia, para a assinatura continuar
+// legível mesmo que a conta mude ou seja encerrada.
+export function assinaturaDe(usuario) {
+  const { tratamento, crmv, ufCrmv } = usuario.veterinario;
+  return {
+    nome: `${tratamento === "DRA" ? "Dra." : "Dr."} ${nomeCurto(usuario.nomeCompleto)}`,
+    crmv,
+    ufCrmv,
+  };
+}

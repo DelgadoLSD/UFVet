@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Modal from "../../components/Modal";
 import Ajuda from "../../components/Ajuda";
+import AvisoErro from "../../components/AvisoErro";
 import Botao from "../../components/Botao";
 import PainelSecao from "./PainelSecao";
 import { formatarData, formatarHora } from "../../util/datas";
@@ -29,22 +30,38 @@ function ItemObservacao({ item }) {
   );
 }
 
-// `onAdicionar` recebe só o texto: quem assina e quando é decidido no cartão
-// do animal.
+// `onAdicionar` recebe só o texto e grava na API, que assina com a conta de
+// quem está logado e marca a hora. Se a gravação falhar, o texto fica e o
+// motivo aparece.
 function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
   const [adicionando, setAdicionando] = useState(false);
   const [texto, setTexto] = useState("");
   const [todasAbertas, setTodasAbertas] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
 
   const cancelar = () => {
     setAdicionando(false);
     setTexto("");
+    setErro("");
   };
 
-  const salvar = () => {
-    if (!texto.trim()) return;
-    onAdicionar(texto.trim());
-    cancelar();
+  const salvar = async () => {
+    // O botão fica ligado: salvar sem texto explica o que falta.
+    if (!texto.trim()) {
+      setErro("Escreva a observação antes de salvar.");
+      return;
+    }
+    setSalvando(true);
+    setErro("");
+    try {
+      await onAdicionar(texto.trim());
+      cancelar();
+    } catch (falha) {
+      setErro(falha.campos?.texto ?? falha.message);
+    } finally {
+      setSalvando(false);
+    }
   };
 
   return (
@@ -67,7 +84,7 @@ function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
         !adicionando && (
           <Botao
             variante="claro"
-            tamanho="sm"
+            tamanho="xs"
             icone="add"
             onClick={() => setAdicionando(true)}
           >
@@ -83,7 +100,10 @@ function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
             autoFocus
             aria-label="Nova observação"
             value={texto}
-            onChange={(e) => setTexto(e.target.value)}
+            onChange={(e) => {
+              setTexto(e.target.value);
+              setErro("");
+            }}
             rows={3}
             placeholder="Ex.: dócil, coleta tranquila sem necessidade de contenção."
             className="w-full bg-white text-gray-900 [color-scheme:light] text-sm resize-none focus:outline-none"
@@ -92,10 +112,15 @@ function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
             <Botao variante="fantasma" tamanho="sm" onClick={cancelar}>
               Cancelar
             </Botao>
-            <Botao tamanho="sm" onClick={salvar} disabled={!texto.trim()}>
-              Salvar
+            <Botao tamanho="sm" onClick={salvar} disabled={salvando}>
+              {salvando ? "Salvando…" : "Salvar"}
             </Botao>
           </div>
+          {erro && (
+            <div className="mt-2">
+              <AvisoErro>{erro}</AvisoErro>
+            </div>
+          )}
         </div>
       )}
 

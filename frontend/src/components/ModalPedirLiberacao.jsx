@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Modal from "./Modal";
+import AvisoErro from "./AvisoErro";
 import Botao from "./Botao";
 import Avatar from "./Avatar";
 import Selecao from "./Selecao";
@@ -84,13 +85,35 @@ function ModalPedirLiberacao({ onFechar }) {
   const [codigo, setCodigo] = useState("");
   const [hospital, setHospital] = useState("");
   const [caso, setCaso] = useState("");
+  const [erro, setErro] = useState("");
 
   const completo = codigo.length === TAMANHO_CODIGO;
   const veterinario = completo ? acharVeterinario(codigo) : null;
   const naoEncontrado = completo && !veterinario;
-  const podeEnviar = !!veterinario && caso.trim().length >= TAMANHO_MINIMO_CASO;
 
+  // Mudar qualquer campo tira o aviso, que era sobre o que estava antes.
+  const mudando = (definir) => (valor) => {
+    definir(valor);
+    setErro("");
+  };
+
+  // O botão fica ligado: enviar sem o veterinário ou sem contar o caso diz o
+  // que falta, acima dos botões.
   const enviar = () => {
+    if (!veterinario) {
+      setErro(
+        naoEncontrado
+          ? `Nenhum veterinário com o código #${codigo}. Confira o código ou procure pelo local do atendimento.`
+          : "Escolha o veterinário: digite o código dele ou procure pelo local do atendimento.",
+      );
+      return;
+    }
+    if (caso.trim().length < TAMANHO_MINIMO_CASO) {
+      setErro(
+        `Conte o que está acontecendo, com pelo menos ${TAMANHO_MINIMO_CASO} caracteres.`,
+      );
+      return;
+    }
     pedirLiberacao({ usuario, veterinario, caso: caso.trim() });
     onFechar();
   };
@@ -101,18 +124,19 @@ function ModalPedirLiberacao({ onFechar }) {
       subtitulo="O pedido vai para o veterinário que está acompanhando o seu caso"
       onFechar={onFechar}
       rodape={
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <p className="text-xs text-[#5f5e5e] leading-snug max-w-xs">
-            O pedido vai com o seu código #{usuario.codigo}, para o veterinário
-            saber de quem é.
-          </p>
-          <div className="flex gap-2">
-            <Botao variante="secundario" onClick={onFechar}>
-              Cancelar
-            </Botao>
-            <Botao disabled={!podeEnviar} onClick={enviar}>
-              Enviar pedido
-            </Botao>
+        <div className="flex flex-col gap-3">
+          <AvisoErro>{erro}</AvisoErro>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-xs text-[#5f5e5e] leading-snug max-w-xs">
+              O pedido vai com o seu código #{usuario.codigo}, para o
+              veterinário saber de quem é.
+            </p>
+            <div className="flex gap-2">
+              <Botao variante="secundario" onClick={onFechar}>
+                Cancelar
+              </Botao>
+              <Botao onClick={enviar}>Enviar pedido</Botao>
+            </div>
           </div>
         </div>
       }
@@ -124,7 +148,7 @@ function ModalPedirLiberacao({ onFechar }) {
           dica="Aparece no perfil dele, ao lado do nome"
           placeholder="V7H4M2"
           valor={codigo}
-          onMudar={setCodigo}
+          onMudar={mudando(setCodigo)}
         />
 
         {veterinario ? (
@@ -139,7 +163,7 @@ function ModalPedirLiberacao({ onFechar }) {
             <Selecao
               rotulo="Local do atendimento"
               valor={hospital}
-              onEscolher={setHospital}
+              onEscolher={mudando(setHospital)}
               placeholder="Selecione o hospital ou clínica"
               icone="local_hospital"
               opcoes={HOSPITAIS.map((h) => ({
@@ -152,7 +176,7 @@ function ModalPedirLiberacao({ onFechar }) {
             {hospital && (
               <ListaVeterinarios
                 veterinarios={veterinariosDe(hospital)}
-                onEscolher={setCodigo}
+                onEscolher={mudando(setCodigo)}
               />
             )}
           </div>
@@ -164,7 +188,7 @@ function ModalPedirLiberacao({ onFechar }) {
           dica="Quanto mais claro, mais rápido ele confirma e libera."
           placeholder="Ex.: Luna está internada no HV-UFV e precisa de transfusão hoje."
           value={caso}
-          onChange={(e) => setCaso(e.target.value)}
+          onChange={(e) => mudando(setCaso)(e.target.value)}
         />
 
         <ul className="flex flex-col gap-2 text-sm text-[#5b403f] bg-[#fafafa] border border-[#eadede] rounded-xl p-4">

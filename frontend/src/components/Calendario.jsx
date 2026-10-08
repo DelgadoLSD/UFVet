@@ -99,25 +99,37 @@ function Calendario({ valor, onEscolher, limite = new Date() }) {
           const ehHoje = mesmoDia(data, hoje);
           const futuro = data > limite;
 
+          // Hoje ganha só um ponto embaixo do número. Um contorno parecia o
+          // dia já escolhido, e o registro ficava sem data: escolhido é só o
+          // dia com fundo vermelho.
           return (
             <button
               key={dia}
               type="button"
               disabled={futuro}
               aria-pressed={selecionado}
+              aria-current={ehHoje ? "date" : undefined}
               aria-label={`${dia} de ${MESES[mes.getMonth()]} de ${mes.getFullYear()}`}
               onClick={() => onEscolher(data)}
-              className={`h-9 rounded-lg text-sm tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24] ${
+              className={`relative h-9 rounded-lg text-sm tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24] ${
                 selecionado
                   ? "bg-[#9e0a24] text-white font-bold"
                   : futuro
                     ? "text-[#d5cccc] cursor-not-allowed"
                     : ehHoje
-                      ? "text-[#9e0a24] font-bold ring-1 ring-inset ring-[#e4bebc] hover:bg-[#fdecee]"
+                      ? "text-[#9e0a24] font-bold hover:bg-[#fdecee]"
                       : "text-[#1a1c1c] hover:bg-[#faf6f6]"
               }`}
             >
               {dia}
+              {ehHoje && (
+                <span
+                  aria-hidden="true"
+                  className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${
+                    selecionado ? "bg-white" : "bg-[#9e0a24]"
+                  }`}
+                />
+              )}
             </button>
           );
         })}

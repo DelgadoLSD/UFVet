@@ -3,8 +3,11 @@ import Botao from "../../components/Botao";
 import BotaoAjuda from "../../components/BotaoAjuda";
 import ModalComoFuncionaValidacao from "../../components/ModalComoFuncionaValidacao";
 import PainelSecao from "./PainelSecao";
+import { ESTILO_CRITERIO } from "./estiloCriterio";
 import {
   CRITERIOS_DOACAO,
+  criteriosEmVigor,
+  pesoIdadeAlterados,
   statusValidacao,
   validaAte,
 } from "../../regras/doacao";
@@ -49,40 +52,47 @@ const ESTILO_VALIDACAO = {
 
 // Botão do veterinário em cada status, na faixa vermelha do painel: validar
 // o que nunca foi validado ou venceu fica em destaque (branco cheio); revisar
-// o que vale fica discreto (só o contorno).
+// o que vale fica discreto (branco translúcido, como editar e excluir no
+// cabeçalho do cartão). No celular, o texto curto cabe na mesma linha do
+// título; o leitor de tela ouve sempre o texto inteiro.
 const ACAO_VALIDACAO = {
-  pendente: { texto: "Validar doador", variante: "claro" },
-  vencida: { texto: "Renovar validação", variante: "claro" },
-  pendencias: { texto: "Revisar validação", variante: "contornoClaro" },
-  validado: { texto: "Revisar validação", variante: "contornoClaro" },
+  pendente: { texto: "Validar doador", curto: "Validar", variante: "claro" },
+  vencida: { texto: "Renovar validação", curto: "Renovar", variante: "claro" },
+  pendencias: {
+    texto: "Revisar validação",
+    curto: "Revisar",
+    variante: "sobreVermelho",
+  },
+  validado: {
+    texto: "Revisar validação",
+    curto: "Revisar",
+    variante: "sobreVermelho",
+  },
 };
 
-// Um critério do checklist. Sem validação, o círculo fica vazio; com ela,
-// verde quando atendido e vermelho quando não.
+// Um critério do checklist, numa caixa. Sem validação, só o nome; com ela,
+// caixa verde-clara com ✓ quando atendido e caixa vermelha cheia com ✕
+// quando não (ver estiloCriterio.js).
 function ItemCriterio({ criterio, validacao }) {
-  const atendido = validacao?.criterios[criterio.chave];
-  const icone = !validacao
-    ? "radio_button_unchecked"
-    : atendido
-      ? "check_circle"
-      : "remove_circle";
-  const cor = !validacao
-    ? "text-[#c9a5a5]"
-    : atendido
-      ? "text-emerald-600"
-      : "text-[#9e0a24]";
+  // O que vale hoje: o critério de peso e idade conferido sobre um valor
+  // que o tutor mudou depois não conta (F21).
+  const atendido = validacao && criteriosEmVigor(validacao)[criterio.chave];
+  const estilo =
+    ESTILO_CRITERIO[
+      !validacao ? "semValidacao" : atendido ? "atendido" : "naoAtendido"
+    ];
 
   return (
-    <li className="flex items-center gap-2 text-sm">
+    <li
+      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold ${estilo.caixa}`}
+    >
       <span
         aria-hidden="true"
-        className={`material-symbols-outlined text-[18px] ${cor}`}
+        className={`material-symbols-outlined text-[18px] shrink-0 ${estilo.corIcone}`}
       >
-        {icone}
+        {estilo.icone}
       </span>
-      <span
-        className={validacao && !atendido ? "text-[#9e0a24]" : "text-[#1a1c1c]"}
-      >
+      <span>
         {criterio.rotulo}
         {validacao && (
           <span className="sr-only">
@@ -122,11 +132,13 @@ function PainelValidacao({
         podeValidar && (
           <Botao
             variante={acao.variante}
-            tamanho="sm"
+            tamanho="xs"
             icone="fact_check"
+            aria-label={acao.texto}
             onClick={onValidar}
           >
-            {acao.texto}
+            <span className="sm:hidden">{acao.curto}</span>
+            <span className="hidden sm:inline">{acao.texto}</span>
           </Botao>
         )
       }
@@ -155,8 +167,20 @@ function PainelValidacao({
         {estilo.explicacao(nomeAnimal)}
       </p>
 
+      {/* F21: o peso ou o nascimento mudaram depois da validação. O registro
+          assinado continua igual; só o critério de peso e idade perde o
+          efeito, até um veterinário conferir de novo. */}
+      {status !== "vencida" && pesoIdadeAlterados(validacao) && (
+        <p className="text-xs font-semibold text-[#9e0a24] leading-relaxed">
+          {pesoIdadeAlterados(validacao) === "peso"
+            ? `O peso de ${nomeAnimal} mudou`
+            : `A data de nascimento de ${nomeAnimal} mudou`}{" "}
+          depois desta validação: peso e idade precisam ser conferidos de novo.
+        </p>
+      )}
+
       <ul
-        className={`grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 ${
+        className={`grid grid-cols-1 sm:grid-cols-2 gap-2 ${
           status === "vencida" ? "opacity-60" : ""
         }`}
       >

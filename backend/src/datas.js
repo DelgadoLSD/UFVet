@@ -36,3 +36,6 @@ export function subtrairAnos(dia, anos) {
   const doisDigitos = (n) => String(n).padStart(2, "0");
   return `${alvo}-${doisDigitos(mes)}-${doisDigitos(Math.min(diaDoMes, ultimoDiaDoMes))}`;
 }
+
+// "2025-08-10" mais 1 ano -> "2026-08-10" (o prazo de uma validação).
+export const somarAnos = (dia, anos) => subtrairAnos(dia, -anos);

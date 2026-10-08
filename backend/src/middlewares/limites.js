@@ -103,6 +103,19 @@ export function criarLimites() {
       },
     }),
 
+    // Validações, doações e observações, por conta de veterinário: folga
+    // para um plantão movimentado, e um teto para quem tentasse encher o
+    // histórico de um animal com registros em sequência.
+    registroClinico: rateLimit({
+      ...opcoesComuns,
+      windowMs: 60 * MINUTO,
+      limit: 60,
+      keyGenerator: (req) => req.usuario.id,
+      message: {
+        erro: "Muitos registros feitos em pouco tempo. Tente de novo mais tarde.",
+      },
+    }),
+
     // Conferência de e-mail e CPF durante o cadastro. Responde se um e-mail
     // tem conta, então o limite barra quem tentaria testar uma lista inteira.
     // Um cadastro normal faz poucas conferências.

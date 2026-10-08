@@ -63,7 +63,11 @@ function ModalEncerrarConta({ usuario, onFechar, onEncerrada }) {
 
   const encerrar = async (e) => {
     e.preventDefault();
-    if (!senha) return;
+    // O botão fica ligado: sem a senha, o campo diz o que falta.
+    if (!senha) {
+      setErro("Digite a sua senha para confirmar o encerramento.");
+      return;
+    }
     setEnviando(true);
     setErroGeral("");
     try {
@@ -88,19 +92,23 @@ function ModalEncerrarConta({ usuario, onFechar, onEncerrada }) {
       subtitulo={`${usuario.nomeCompleto} · #${usuario.codigo}`}
       onFechar={onFechar}
       rodape={
-        <div className="flex justify-end gap-2">
-          <Botao variante="secundario" onClick={onFechar} disabled={enviando}>
-            Cancelar
-          </Botao>
-          {/* Envia o formulário da senha, que fica no corpo da janela. */}
-          <Botao
-            type="submit"
-            form="form-encerrar-conta"
-            variante="perigoSolido"
-            disabled={!senha || enviando}
-          >
-            {enviando ? "Encerrando…" : "Encerrar conta"}
-          </Botao>
+        <div className="flex flex-col gap-3">
+          {/* Acima dos botões, sempre à vista. */}
+          <AvisoErro>{erroGeral}</AvisoErro>
+          <div className="flex justify-end gap-2">
+            <Botao variante="secundario" onClick={onFechar} disabled={enviando}>
+              Cancelar
+            </Botao>
+            {/* Envia o formulário da senha, que fica no corpo da janela. */}
+            <Botao
+              type="submit"
+              form="form-encerrar-conta"
+              variante="perigoSolido"
+              disabled={enviando}
+            >
+              {enviando ? "Encerrando…" : "Encerrar conta"}
+            </Botao>
+          </div>
         </div>
       }
     >
@@ -167,7 +175,6 @@ function ModalEncerrarConta({ usuario, onFechar, onEncerrada }) {
             }}
             erro={erro}
           />
-          <AvisoErro>{erroGeral}</AvisoErro>
         </form>
       </div>
     </Modal>

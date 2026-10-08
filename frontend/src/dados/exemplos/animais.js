@@ -177,8 +177,8 @@ const BELA = {
       "45210-MG",
       "Bastante tranquila; já doou três vezes sem intercorrências.",
     ),
-    doacao("2025-12-28", 440, "Dr. Victor Hugo", "78120-MG"),
-    doacao("2025-08-14", 430, "Dr. Victor Hugo", "78120-MG"),
+    doacao("2025-12-28", 440, "Dr. Victor Martins", "78120-MG"),
+    doacao("2025-08-14", 430, "Dr. Victor Martins", "78120-MG"),
   ],
   validacoes: [
     {

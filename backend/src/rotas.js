@@ -14,6 +14,12 @@ import {
 } from "./controladores/conta.js";
 import { consultarConvite } from "./controladores/convites.js";
 import {
+  listarEstabelecimentos,
+  registrarDoacao,
+  registrarObservacao,
+  validarAnimal,
+} from "./controladores/historico.js";
+import {
   entrar,
   sair,
   sairDeTodos,
@@ -24,7 +30,7 @@ import {
   conferirDisponibilidade,
 } from "./controladores/usuarios.js";
 import { receberFoto, receberFotos } from "./middlewares/envio.js";
-import { exigirLogin } from "./middlewares/sessao.js";
+import { exigirLogin, exigirPapel } from "./middlewares/sessao.js";
 
 // O cardápio da API: cada linha liga um endereço a quem o atende (o
 // controlador), passando antes pelos filtros que ele exige (limite de
@@ -90,6 +96,26 @@ export function criarRotas(limites) {
     editarAnimal,
   );
   rotas.delete("/animais/:codigo", exigirLogin, excluirAnimal);
+
+  // O histórico clínico de um animal, que só o veterinário escreve (F19 a
+  // F24): a validação dos critérios, com o tipo sanguíneo, as doações
+  // realizadas e as observações sobre a coleta. Ver vem junto com os animais,
+  // na rota acima. Nada disso tem rota de alterar ou apagar: o que foi
+  // assinado fica como foi feito (ver controladores/historico.js).
+  const soVeterinario = [
+    exigirLogin,
+    exigirPapel("VETERINARIO"),
+    limites.registroClinico,
+  ];
+  rotas.post("/animais/:codigo/validacoes", ...soVeterinario, validarAnimal);
+  rotas.post("/animais/:codigo/doacoes", ...soVeterinario, registrarDoacao);
+  rotas.post(
+    "/animais/:codigo/observacoes",
+    ...soVeterinario,
+    registrarObservacao,
+  );
+  // Os hospitais e clínicas, para escolher onde uma coleta foi feita.
+  rotas.get("/estabelecimentos", exigirLogin, listarEstabelecimentos);
 
   return rotas;
 }

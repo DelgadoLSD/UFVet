@@ -97,14 +97,35 @@ export const TIPOS_DOCUMENTO = {
 
 // A validação vale por um ano, porque os testes para doenças transmitidas
 // pelo sangue precisam ser refeitos anualmente. Devolve o último dia de
-// validade ("AAAA-MM-DD"), a mesma conta da coluna valida_ate do banco.
-export const validaAte = (validacao) => somarAnos(validacao.realizadaEm, 1);
+// validade ("AAAA-MM-DD"): o que a API manda (coluna valida_ate do banco) ou,
+// nos dados de exemplo, a mesma conta.
+export const validaAte = (validacao) =>
+  validacao.validaAte ?? somarAnos(validacao.realizadaEm, 1);
+
+// O tutor mudou o peso ou a data de nascimento depois da validação (F21): o
+// critério de peso e idade foi conferido sobre o valor antigo. Devolve o
+// dado que mudou ("peso" ou "nascimento"), ou null.
+export function pesoIdadeAlterados(validacao) {
+  const motivo = validacao?.invalidacao?.motivo;
+  if (motivo === "EDICAO_PESO") return "peso";
+  if (motivo === "EDICAO_NASCIMENTO") return "nascimento";
+  return null;
+}
+
+// Os critérios que valem hoje: os que o veterinário assinou, menos o de peso
+// e idade quando ele foi conferido sobre outro valor (F21). O registro
+// assinado não muda; só o efeito dele.
+export const criteriosEmVigor = (validacao) =>
+  pesoIdadeAlterados(validacao)
+    ? { ...validacao.criterios, PESO_IDADE: false }
+    : validacao.criterios;
 
 // "pendente" (nunca validado), "vencida", "validado" ou "pendencias".
 export function statusValidacao(validacao) {
   if (!validacao) return "pendente";
   if (hojeISO() > validaAte(validacao)) return "vencida";
-  const completa = CRITERIOS_DOACAO.every((c) => validacao.criterios[c.chave]);
+  const criterios = criteriosEmVigor(validacao);
+  const completa = CRITERIOS_DOACAO.every((c) => criterios[c.chave]);
   return completa ? "validado" : "pendencias";
 }
 

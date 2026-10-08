@@ -1,11 +1,11 @@
 # UFVet — front-end
 
 O site do UFVet, em React. O login, o cadastro, a página da conta (com a
-foto de perfil) e os animais do próprio perfil (com as fotos) já falam com a
-API (pasta `backend`). O resto (os perfis de outras pessoas, a busca, os
-exames, as validações, as doações e as liberações) ainda usa dados de
-exemplo no lugar da API: dá para navegar por tudo, mas o que muda nessas
-partes não é salvo, e recarregar a página volta ao começo.
+foto de perfil) e os animais dos perfis (com as fotos e o histórico clínico:
+validação, doações e observações) já falam com a API (pasta `backend`). O
+resto (a pessoa dos perfis visitados, a busca, os exames e as liberações)
+ainda usa dados de exemplo no lugar da API: dá para navegar por tudo, mas o
+que muda nessas partes não é salvo, e recarregar a página volta ao começo.
 
 ## Como rodar
 
@@ -44,9 +44,9 @@ Com as contas de exemplo do back-end (`npm run db:exemplos`):
 
 Elas têm os mesmos códigos públicos das pessoas dos dados de exemplo, então o
 site mostra os pedidos e as liberações de exemplo de cada uma. Os retratos,
-os animais e as fotos deles vêm do banco (o mesmo comando os cria); o
-histórico dos animais ainda sai dos dados de exemplo, até essas partes virem
-da API. Entrando com uma e com a
+os animais, as fotos e o histórico clínico deles vêm do banco (o mesmo
+comando os cria); os exames ainda saem dos dados de exemplo. Entrando com uma
+e com a
 outra, dá para ver o mesmo site pelos dois lados (por exemplo, o contato que o
 veterinário vê e a tutora não).
 
@@ -94,18 +94,18 @@ As telas não leem os dados de exemplo diretamente: elas sempre passam por
 `servicos/`.
 
 ```
-tela  →  servicos/  →  API               (sessão, login, cadastro, conta e animais)
+tela  →  servicos/  →  API               (sessão, login, cadastro, conta, animais e histórico)
 tela  →  servicos/  →  dados/exemplos/   (o resto, por enquanto)
 ```
 
-| Serviço                      | O que oferece                                                  |
-| ---------------------------- | -------------------------------------------------------------- |
-| `servicos/api.js`            | A conversa com a API, usada pelos outros serviços              |
-| `servicos/sessao.js`         | Quem está logado (`useSessao`); entrar, sair e a conta         |
-| `servicos/pessoas.js`        | Hospitais, tutores e veterinários pelo código, perfil visitado |
-| `servicos/animais.js`        | Animais do próprio perfil (API) e dos perfis visitados         |
-| `servicos/doadores.js`       | Doadores da busca                                              |
-| `servicos/acessoContatos.js` | Liberações e pedidos de acesso aos contatos, e quem pode ver   |
+| Serviço                      | O que oferece                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------------- |
+| `servicos/api.js`            | A conversa com a API, usada pelos outros serviços                                 |
+| `servicos/sessao.js`         | Quem está logado (`useSessao`); entrar, sair e a conta                            |
+| `servicos/pessoas.js`        | Hospitais, tutores e veterinários pelo código, perfil visitado                    |
+| `servicos/animais.js`        | Animais dos perfis, com o histórico clínico, e o que o veterinário registra (API) |
+| `servicos/doadores.js`       | Doadores da busca                                                                 |
+| `servicos/acessoContatos.js` | Liberações e pedidos de acesso aos contatos, e quem pode ver                      |
 
 Na integração com a API, o trabalho fica concentrado nesses arquivos: cada
 função passa a chamar a API, e as telas continuam chamando as mesmas funções
@@ -148,9 +148,13 @@ precisar mostrar um "carregando").
 chegar à API: as máscaras de CPF e telefone, a conferência dos dígitos do CPF
 e do telefone, as mensagens dos campos de cadastro e conta, o destino depois
 de entrar (que só aceita páginas do próprio site), a idade e o prazo de
-recuperação dos animais, o formulário do animal (o que ele confere e o que
-manda para a API) e as fotos (formatos aceitos, tamanho e a ordem que vai para
-a API). Os testes não abrem o
+recuperação dos animais, a situação da validação (vencida, com pendências e o
+critério de peso e idade que perde o efeito quando o peso ou o nascimento
+muda), o formulário do animal (o que ele confere e o que manda para a API), o
+registro de doação (o que falta antes de enviar) e as fotos (formatos aceitos,
+tamanho e a ordem que vai para a API). Também confere como os erros da API
+chegam aos formulários: o de um campo vai para embaixo dele, e o geral (sem
+conexão, limite de tentativas) para cima do botão. Os testes não abrem o
 navegador nem precisam da API ligada.
 
 Essas regras são cópias das que a API confere (`backend/src/validacao.js`), e

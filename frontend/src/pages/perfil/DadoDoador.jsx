@@ -15,11 +15,12 @@ import Ajuda from "../../components/Ajuda";
 // - `alerta` deixa o detalhe em vermelho, quando o valor está fora do
 //   critério;
 // - `ajuda` ({ titulo, texto }) põe um "?" no canto superior direito;
-// - `acao` ({ icone, rotulo, onClick }) ocupa o mesmo canto no lugar da ajuda:
-//   onde há um histórico para abrir, a explicação vai junto, dentro dele.
+// - `className` acerta o lugar da célula na grade (quantas colunas ocupa).
 //
 // O "?" fica no canto, fora da linha do rótulo: assim o texto não colide com
-// o botão, mesmo quando o rótulo é longo.
+// o botão, mesmo quando o rótulo é longo. Célula com algo para fazer (as
+// doações) não usa este componente: botão com nome escrito, não ícone no
+// canto, que parecia mais uma ajuda.
 function DadoDoador({
   rotulo,
   valor,
@@ -28,7 +29,7 @@ function DadoDoador({
   apagado,
   alerta,
   ajuda,
-  acao,
+  className = "",
 }) {
   const estiloValor = destaque
     ? "text-2xl leading-tight text-white"
@@ -45,35 +46,16 @@ function DadoDoador({
     <div
       className={`relative px-4 py-3.5 flex flex-col gap-0.5 min-w-0 ${
         destaque ? "bg-[#9e0a24]" : "bg-[#fdecee]"
-      }`}
+      } ${className}`}
     >
-      {acao ? (
-        <button
-          type="button"
-          onClick={acao.onClick}
-          aria-label={acao.rotulo}
-          title={acao.rotulo}
-          className="group absolute top-1.5 right-1.5 w-7 h-7 rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
+      {ajuda && (
+        <Ajuda
+          titulo={ajuda.titulo}
+          claro={destaque}
+          className="absolute top-2.5 right-2.5"
         >
-          <span
-            aria-hidden="true"
-            className="w-[19px] h-[19px] rounded-full bg-[#9e0a24]/10 text-[#9e0a24] flex items-center justify-center transition-colors group-hover:bg-[#7d0a1d] group-hover:text-white"
-          >
-            <span className="material-symbols-outlined text-[13px]">
-              {acao.icone}
-            </span>
-          </span>
-        </button>
-      ) : (
-        ajuda && (
-          <Ajuda
-            titulo={ajuda.titulo}
-            claro={destaque}
-            className="absolute top-2.5 right-2.5"
-          >
-            {ajuda.texto}
-          </Ajuda>
-        )
+          {ajuda.texto}
+        </Ajuda>
       )}
       <span
         className={`text-xs font-semibold pr-6 ${

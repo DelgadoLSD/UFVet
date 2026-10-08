@@ -4,8 +4,11 @@
 // observações, exames), em vez de deixá-las soltas no fundo branco.
 //
 // - `ajuda`: o "?" ao lado do título, na versão clara, para o vermelho;
-// - `acao`: um botão no canto direito da faixa, numa variante do Botao para
-//   fundo vermelho ("claro" ou "contornoClaro");
+// - `acao`: um botão no canto direito da faixa, no tamanho "xs" e numa
+//   variante do Botao para fundo vermelho: "claro" (branco cheio) para o que
+//   é a ação principal ali, "sobreVermelho" (branco translúcido) para uma
+//   ação secundária. A faixa tem sempre a mesma altura, com ou sem botão,
+//   para os painéis lado a lado ficarem alinhados;
 // - `subtitulo`: uma linha dizendo para que serve a seção;
 // - `nivel`: a tag do título. "h4" nos cartões dos animais (o nome do animal
 //   é o h3); "h2" no cartão da pessoa, cujo nome é o h1 da página.
@@ -22,10 +25,16 @@ function PainelSecao({
     <section
       className={`rounded-xl border border-[#eadede] bg-white overflow-hidden min-w-0 flex flex-col ${className}`}
     >
-      <div className="flex items-center justify-between gap-3 px-4 py-2 min-h-[2.75rem] bg-[#9e0a24]">
-        <Titulo className="flex items-center gap-1.5 text-sm font-bold text-white">
+      <div className="flex items-center justify-between gap-3 px-4 py-2 min-h-12 bg-[#9e0a24]">
+        {/* O "?" segue o texto: se o título quebrar a linha, ele fica
+            colado na última palavra, não solto entre as duas linhas. */}
+        <Titulo className="text-sm font-bold text-white leading-snug">
           {titulo}
-          {ajuda}
+          {ajuda && (
+            <span className="inline-flex align-middle ml-1.5 -mt-0.5">
+              {ajuda}
+            </span>
+          )}
         </Titulo>
         {acao}
       </div>

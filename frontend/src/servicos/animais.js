@@ -5,15 +5,14 @@ import { chamarComLogin } from "./sessao";
 
 // Animais dos perfis.
 //
-// Os do próprio perfil vêm da API, com as fotos: cadastrar, editar, excluir
-// e mudar a disponibilidade gravam de verdade (F8 a F11). O perfil de outra
-// pessoa (/tutor/:codigo) ainda mostra os animais de exemplo, até a busca e
-// os perfis visitados virem da API.
+// Vêm da API, com as fotos e o histórico clínico: validações, doações e
+// observações, que o veterinário registra (F19 a F24). Cadastrar, editar,
+// excluir e mudar a disponibilidade também gravam de verdade (F8 a F11).
 //
-// Doações, validações, observações e exames ainda não vêm da API. Os animais
-// de exemplo, que `npm run db:exemplos` cria no banco com os mesmos códigos,
-// mostram os dos dados de exemplo; os outros começam sem nada. O que muda
-// nessas partes do cartão vale só até recarregar a página.
+// Os exames ainda não vêm da API: os animais de exemplo, que
+// `npm run db:exemplos` cria no banco com os mesmos códigos, mostram os dos
+// dados de exemplo; os outros começam sem nenhum. O que muda nessa parte
+// vale só até recarregar a página.
 
 const EXEMPLOS = new Map(
   Object.values(ANIMAIS_POR_TUTOR)
@@ -27,14 +26,9 @@ function paraAnimal(animal) {
   const exemplo = EXEMPLOS.get(animal.codigo);
   return {
     ...animal,
-    doacoes: exemplo?.doacoes ?? [],
-    validacoes: exemplo?.validacoes ?? [],
-    observacoes: exemplo?.observacoes ?? [],
     documentos:
       exemplo?.documentos ??
       Object.keys(TIPOS_DOCUMENTO).map((tipo) => ({ tipo, versoes: [] })),
-    // O tipo confirmado também sai dos exemplos, até a validação vir da API.
-    tipoSanguineo: animal.tipoSanguineo ?? exemplo?.tipoSanguineo ?? null,
   };
 }
 
@@ -48,8 +42,8 @@ function corpoDoPedido(dados, arquivos = []) {
   return formulario;
 }
 
-// Animais de exemplo de um perfil visitado, com as fotos no mesmo formato
-// das que vêm da API.
+// Animais de exemplo de um perfil, com as fotos no mesmo formato das que vêm
+// da API.
 export const animaisDeExemplo = (codigoTutor) =>
   (ANIMAIS_POR_TUTOR[codigoTutor] ?? []).map((animal) => ({
     ...animal,
@@ -62,6 +56,20 @@ export async function listarAnimais(codigoTutor) {
     `/usuarios/${encodeURIComponent(codigoTutor)}/animais`,
   );
   return animais.map(paraAnimal);
+}
+
+// Os animais do perfil de outra pessoa. Enquanto os perfis visitados ainda
+// saem dos dados de exemplo, a pessoa pode não existir no banco (o tutor de
+// exemplo que um tutor visita): aí ficam os animais de exemplo dela.
+export async function animaisDoPerfil(codigoTutor) {
+  try {
+    return await listarAnimais(codigoTutor);
+  } catch (falha) {
+    if (falha.status === 404 && ANIMAIS_POR_TUTOR[codigoTutor]) {
+      return animaisDeExemplo(codigoTutor);
+    }
+    throw falha;
+  }
 }
 
 // Cadastra com as fotos escolhidas, na ordem (a primeira é a principal).
@@ -90,4 +98,34 @@ export async function excluirAnimal(codigo) {
   await chamarComLogin(`/animais/${encodeURIComponent(codigo)}`, {
     metodo: "DELETE",
   });
+}
+
+// ─── O que o veterinário registra ─────────────────────────────────────────────
+
+// Cada registro devolve o animal inteiro, já com o histórico novo. Quem
+// assina não vai no pedido: a API usa a conta de quem está logado.
+async function registrarNoAnimal(codigo, registro, corpo) {
+  const { animal } = await chamarComLogin(
+    `/animais/${encodeURIComponent(codigo)}/${registro}`,
+    { metodo: "POST", corpo },
+  );
+  return paraAnimal(animal);
+}
+
+// { criterios: { TIPAGEM: true, ... }, tipoSanguineo, nota } (F19 e F20).
+export const validarAnimal = (codigo, dados) =>
+  registrarNoAnimal(codigo, "validacoes", dados);
+
+// { dataColeta: "AAAA-MM-DD", volumeMl, estabelecimentoId, nota } (F24).
+export const registrarDoacao = (codigo, dados) =>
+  registrarNoAnimal(codigo, "doacoes", dados);
+
+// F23.
+export const registrarObservacao = (codigo, texto) =>
+  registrarNoAnimal(codigo, "observacoes", { texto });
+
+// Hospitais e clínicas cadastrados: { id, nome, cidade, uf }.
+export async function listarEstabelecimentos() {
+  const { estabelecimentos } = await chamarComLogin("/estabelecimentos");
+  return estabelecimentos;
 }

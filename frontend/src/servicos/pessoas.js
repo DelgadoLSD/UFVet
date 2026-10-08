@@ -16,16 +16,6 @@ import { ehVeterinario } from "../util/texto";
 // Hospitais e clínicas atendidos pelo site.
 export { HOSPITAIS };
 
-export const acharHospital = (id) => HOSPITAIS.find((h) => h.id === id);
-
-// O local onde um veterinário atua, na lista acima. A conta logada vem da API,
-// com o id do banco, e a lista ainda vem dos dados de exemplo, com outros ids:
-// por isso a ligação também vale pelo nome, até a lista vir da API.
-export const hospitalDe = (veterinario) =>
-  HOSPITAIS.find(
-    (h) => h.id === veterinario.hospitalId || h.nome === veterinario.hospital,
-  );
-
 // Tutor pelo código público, para o veterinário conferir quem vai liberar.
 export const acharTutor = (codigo) => TUTORES.find((t) => t.codigo === codigo);
 

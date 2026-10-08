@@ -3,8 +3,9 @@ import sharp from "sharp";
 import { guardarImagem } from "../src/armazenamento.js";
 import { banco } from "../src/banco.js";
 import { cifrar, indiceCpf, indiceEmail } from "../src/cifra.js";
-import { paraDataDoBanco } from "../src/datas.js";
+import { paraDataDoBanco, somarAnos } from "../src/datas.js";
 import { prepararFoto } from "../src/imagens.js";
+import { assinaturaDe } from "../src/modelos/usuario.js";
 import { gerarHashSenha } from "../src/senha.js";
 
 // Contas e animais de exemplo, para desenvolver e demonstrar o site. São as
@@ -58,10 +59,9 @@ const CONTAS = [
 ];
 
 // Os animais das contas acima, com os dados, os códigos e as fotos dos
-// animais de exemplo do site (frontend/src/dados/exemplos/animais.js).
-// Validações, doações e o resto do histórico continuam saindo dos exemplos do
-// site até cada parte ser ligada à API. O tipo sanguíneo fica vazio, porque
-// só uma validação assinada pode preenchê-lo (NF8.1).
+// animais de exemplo do site (frontend/src/dados/exemplos/animais.js). O tipo
+// sanguíneo não vem aqui: só uma validação assinada pode preenchê-lo (NF8.1),
+// e ele sai do histórico abaixo.
 const ANIMAIS = [
   {
     tutor: "T3M8P1",
@@ -120,6 +120,237 @@ const ANIMAIS = [
     fotos: ["cats/cat7_0-image.jpg"],
   },
 ];
+
+// ─── Histórico clínico de exemplo ──────────────────────────────────────────────
+
+// Os veterinários que assinam o histórico de exemplo. Paulo e Camila não têm
+// conta: como no banco de verdade, a assinatura fica copiada no registro e
+// continua legível sem a conta de quem assinou. Victor tem conta, então assina
+// como a API assina pela conta dele ("Dr. Victor Martins").
+const PAULO = { nome: "Dr. Paulo Rezende", crmv: "88214", ufCrmv: "MG" };
+const CAMILA = { nome: "Dra. Camila Duarte", crmv: "45210", ufCrmv: "MG" };
+const VICTOR = assinaturaDe(CONTAS.find((conta) => conta.codigo === "V7H4M2"));
+
+const TODOS_ATENDIDOS = {
+  TIPAGEM: true,
+  PESO_IDADE: true,
+  VACINACAO: true,
+  SOROLOGIAS: true,
+  SEM_TRANSFUSAO: true,
+};
+
+// O mesmo histórico dos animais de exemplo do site, pelo código do animal.
+// Validações da mais antiga para a mais recente: cada uma substitui a
+// anterior. Os casos cobrem o que as telas precisam mostrar: validação
+// vencida e substituída (Zeus), nunca validado (Luna), validado (Bela) e com
+// pendências (Nina).
+const HISTORICO = {
+  Z7R2K4: {
+    tipoSanguineo: "DEA 1.1+",
+    validacoes: [
+      {
+        realizadaEm: "2024-07-15",
+        veterinario: CAMILA,
+        criterios: { ...TODOS_ATENDIDOS, VACINACAO: false },
+        nota: "Vacina antirrábica vencida. Renovar antes da próxima coleta.",
+      },
+      {
+        realizadaEm: "2025-08-10",
+        veterinario: PAULO,
+        criterios: TODOS_ATENDIDOS,
+      },
+    ],
+    doacoes: [
+      {
+        dataColeta: "2026-09-05",
+        volumeMl: 450,
+        veterinario: PAULO,
+        nota: "Coleta tranquila, sem necessidade de sedação.",
+      },
+      { dataColeta: "2026-03-10", volumeMl: 450, veterinario: CAMILA },
+      { dataColeta: "2025-10-22", volumeMl: 420, veterinario: PAULO },
+      { dataColeta: "2025-06-18", volumeMl: 450, veterinario: PAULO },
+      { dataColeta: "2025-02-02", volumeMl: 430, veterinario: CAMILA },
+      {
+        dataColeta: "2023-10-15",
+        volumeMl: 400,
+        veterinario: PAULO,
+        nota: "Primeira doação. Agitado no início, depois se acalmou.",
+      },
+    ],
+    observacoes: [
+      {
+        criadoEm: "2023-10-15T09:30:00-03:00",
+        autor: PAULO,
+        texto:
+          "Primeira doação. Ficou um pouco agitado no início, mas logo se acalmou.",
+      },
+      {
+        criadoEm: "2025-10-22T16:40:00-03:00",
+        autor: PAULO,
+        texto: "Fica mais calmo com a presença da tutora durante a coleta.",
+      },
+      {
+        criadoEm: "2026-03-10T10:05:00-03:00",
+        autor: CAMILA,
+        texto:
+          "Acesso venoso fácil pela jugular; procedimento levou cerca de 10 minutos.",
+      },
+      {
+        criadoEm: "2026-09-05T14:20:00-03:00",
+        autor: PAULO,
+        texto:
+          "Dócil e muito colaborativo. Coleta tranquila, sem necessidade de sedação.",
+      },
+    ],
+  },
+  B3L6D9: {
+    tipoSanguineo: "DEA 1.1-",
+    validacoes: [
+      {
+        realizadaEm: "2026-08-20",
+        veterinario: CAMILA,
+        criterios: TODOS_ATENDIDOS,
+      },
+    ],
+    doacoes: [
+      {
+        dataColeta: "2026-06-10",
+        volumeMl: 440,
+        veterinario: CAMILA,
+        nota: "Bastante tranquila; já doou três vezes sem intercorrências.",
+      },
+      { dataColeta: "2025-12-28", volumeMl: 440, veterinario: VICTOR },
+      { dataColeta: "2025-08-14", volumeMl: 430, veterinario: VICTOR },
+    ],
+    observacoes: [
+      {
+        criadoEm: "2026-06-10T11:10:00-03:00",
+        autor: CAMILA,
+        texto:
+          "Bastante tranquila durante a coleta; já doou 3 vezes sem intercorrências.",
+      },
+    ],
+  },
+  N9P2F5: {
+    tipoSanguineo: "Tipo B",
+    validacoes: [
+      {
+        realizadaEm: "2026-09-05",
+        veterinario: CAMILA,
+        criterios: {
+          ...TODOS_ATENDIDOS,
+          PESO_IDADE: false,
+          SOROLOGIAS: false,
+        },
+        nota: "Peso abaixo do mínimo para gatas doadoras e sorologia de FeLV/FIV ainda não apresentada.",
+      },
+    ],
+    doacoes: [],
+    observacoes: [
+      {
+        criadoEm: "2026-09-05T15:40:00-03:00",
+        autor: CAMILA,
+        texto:
+          "Receosa no manuseio; recomenda-se ambiente silencioso e contenção leve.",
+      },
+    ],
+  },
+};
+
+// Grava o histórico de exemplo de um animal, parte por parte: só cria o que
+// ainda não existe, para poder rodar de novo sem duplicar.
+async function criarHistorico(animal, hospital) {
+  const historico = HISTORICO[animal.codigo];
+  if (!historico) return;
+  const contar = (tabela) =>
+    banco[tabela].count({ where: { animalId: animal.id } });
+
+  if (historico.validacoes.length && (await contar("validacao")) === 0) {
+    let anterior = null;
+    for (const v of historico.validacoes) {
+      // Cada validação nova tira o efeito da anterior (NOVA_VALIDACAO), na
+      // data em que foi feita.
+      if (anterior) {
+        await banco.validacao.update({
+          where: { id: anterior.id },
+          data: {
+            invalidadaEm: new Date(`${v.realizadaEm}T12:00:00-03:00`),
+            invalidadaMotivo: "NOVA_VALIDACAO",
+          },
+        });
+      }
+      anterior = await banco.validacao.create({
+        data: {
+          animalId: animal.id,
+          veterinarioNome: v.veterinario.nome,
+          crmv: v.veterinario.crmv,
+          ufCrmv: v.veterinario.ufCrmv,
+          realizadaEm: paraDataDoBanco(v.realizadaEm),
+          validaAte: paraDataDoBanco(somarAnos(v.realizadaEm, 1)),
+          tipoSanguineoConfirmado: v.criterios.TIPAGEM
+            ? historico.tipoSanguineo
+            : null,
+          nota: v.nota ?? null,
+          criadoEm: new Date(`${v.realizadaEm}T12:00:00-03:00`),
+          criterios: {
+            create: Object.entries(v.criterios).map(([criterio, atendido]) => ({
+              criterio,
+              atendido,
+            })),
+          },
+        },
+      });
+    }
+    // O tipo do animal é o da validação mais recente que conferiu a tipagem.
+    const tipagem = await banco.validacao.findFirst({
+      where: { animalId: animal.id, tipoSanguineoConfirmado: { not: null } },
+      orderBy: { criadoEm: "desc" },
+    });
+    if (tipagem) {
+      await banco.animal.update({
+        where: { id: animal.id },
+        data: {
+          tipoSanguineo: tipagem.tipoSanguineoConfirmado,
+          tipagemValidacaoId: tipagem.id,
+        },
+      });
+    }
+    console.log(`  com ${historico.validacoes.length} validação(ões)`);
+  }
+
+  if (historico.doacoes.length && (await contar("doacao")) === 0) {
+    for (const d of historico.doacoes) {
+      await banco.doacao.create({
+        data: {
+          animalId: animal.id,
+          estabelecimentoId: hospital.id,
+          veterinarioNome: d.veterinario.nome,
+          crmv: d.veterinario.crmv,
+          ufCrmv: d.veterinario.ufCrmv,
+          dataColeta: paraDataDoBanco(d.dataColeta),
+          volumeMl: d.volumeMl,
+          nota: d.nota ?? null,
+        },
+      });
+    }
+    console.log(`  com ${historico.doacoes.length} doação(ões)`);
+  }
+
+  if (historico.observacoes.length && (await contar("observacao")) === 0) {
+    for (const o of historico.observacoes) {
+      await banco.observacao.create({
+        data: {
+          animalId: animal.id,
+          autorNome: o.autor.nome,
+          texto: o.texto,
+          criadoEm: new Date(o.criadoEm),
+        },
+      });
+    }
+    console.log(`  com ${historico.observacoes.length} observação(ões)`);
+  }
+}
 
 // Um quadrado em volta do rosto, com a altura do rosto no quadro (de 0, o
 // topo, a 1, a base) e o quanto aproximar.
@@ -196,7 +427,7 @@ async function criarContas(hospital) {
   }
 }
 
-async function criarAnimais() {
+async function criarAnimais(hospital) {
   for (const { tutor, fotos, ...animal } of ANIMAIS) {
     let existente = await banco.animal.findUnique({
       where: { codigo: animal.codigo },
@@ -231,6 +462,8 @@ async function criarAnimais() {
       }
       console.log(`  com ${fotos.length} foto(s)`);
     }
+
+    await criarHistorico(existente, hospital);
   }
 }
 
@@ -246,7 +479,7 @@ async function main() {
   }
 
   await criarContas(hospital);
-  await criarAnimais();
+  await criarAnimais(hospital);
   console.log(`\nSenha das contas de exemplo: ${SENHA_DE_EXEMPLO}`);
 }
 

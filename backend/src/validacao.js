@@ -415,3 +415,103 @@ export const esquemaEdicaoAnimal = z
       path: ["dataNascimento"],
     },
   );
+
+// ─── O que o veterinário registra no animal ───────────────────────────────────
+
+// Os cinco critérios da validação (F19), com as mesmas chaves do banco.
+export const CRITERIOS_DOACAO = [
+  "TIPAGEM",
+  "PESO_IDADE",
+  "VACINACAO",
+  "SOROLOGIAS",
+  "SEM_TRANSFUSAO",
+];
+
+// Os tipos sanguíneos de cada espécie (NF20.2): cães na classificação DEA,
+// gatos em A, B e AB. São os mesmos valores que o site oferece.
+export const TIPOS_SANGUINEOS = {
+  CAO: ["DEA 1.1 Universal", "DEA 1.1+", "DEA 1.1-", "DEA 4", "DEA 7"],
+  GATO: ["Tipo A", "Tipo B", "Tipo AB"],
+};
+
+// O maior volume aceito numa coleta, em mL. Uma bolsa de cão grande fica em
+// torno de 450 mL; o teto deixa folga e barra um número digitado errado.
+export const VOLUME_MAXIMO_ML = 1000;
+
+const TAMANHO_MAXIMO_NOTA = 500;
+const TAMANHO_MAXIMO_OBSERVACAO = 1000;
+
+// Texto livre opcional (as notas): espaços das pontas saem, e vazio vira
+// "sem nota".
+const notaOpcional = z
+  .string({ error: "Valor inválido." })
+  .trim()
+  .max(
+    TAMANHO_MAXIMO_NOTA,
+    `Escreva no máximo ${TAMANHO_MAXIMO_NOTA} caracteres.`,
+  )
+  .optional();
+
+// Validação veterinária (F19 e F20). Cada critério vem marcado como atendido
+// ou não; a validação pode ficar com pendências (NF19.5). Quem assina não vem
+// no pedido: a assinatura sai da conta de quem está logado. O tipo
+// sanguíneo só vem com a tipagem conferida, e com ela é obrigatório (NF20.1).
+// Se o tipo existe para a espécie do animal (NF20.2), o controlador confere,
+// porque depende do animal.
+export const esquemaValidacao = z
+  .object({
+    criterios: z.object(
+      Object.fromEntries(
+        CRITERIOS_DOACAO.map((criterio) => [
+          criterio,
+          z.boolean({ error: "Marque se o critério foi atendido." }),
+        ]),
+      ),
+      { error: "Marque os critérios conferidos." },
+    ),
+    tipoSanguineo: z
+      .string({ error: "Valor inválido." })
+      .trim()
+      .max(20, "Tipo sanguíneo inválido.")
+      .nullish(),
+    nota: notaOpcional,
+  })
+  .refine((dados) => !dados.criterios.TIPAGEM || !!dados.tipoSanguineo, {
+    message: "Informe o tipo que o exame de tipagem mostrou.",
+    path: ["tipoSanguineo"],
+  })
+  .refine((dados) => dados.criterios.TIPAGEM || !dados.tipoSanguineo, {
+    message: "O tipo sanguíneo só vale com a tipagem conferida.",
+    path: ["tipoSanguineo"],
+  });
+
+// Doação realizada (F24). A data não pode ser depois de hoje (NF24.2); que
+// não seja antes do nascimento do animal o controlador confere. O local é um
+// estabelecimento cadastrado, escolhido pelo id.
+export const esquemaDoacao = z.object({
+  dataColeta: z
+    .string(obrigatorio)
+    .refine(dataExiste, "Informe uma data válida.")
+    .refine(
+      (dia) => dia <= hojeISO(),
+      "A data da coleta não pode ser depois de hoje.",
+    ),
+  volumeMl: z
+    .int({ error: "Informe o volume em mL, sem casas decimais." })
+    .min(1, "Informe o volume em mL.")
+    .max(VOLUME_MAXIMO_ML, `Confira o volume: mais de ${VOLUME_MAXIMO_ML} mL.`),
+  estabelecimentoId: z.uuid({ error: "Escolha onde a coleta foi feita." }),
+  nota: notaOpcional,
+});
+
+// Observação sobre a coleta (F23).
+export const esquemaObservacao = z.object({
+  texto: z
+    .string(obrigatorio)
+    .trim()
+    .min(1, "Escreva a observação.")
+    .max(
+      TAMANHO_MAXIMO_OBSERVACAO,
+      `Escreva no máximo ${TAMANHO_MAXIMO_OBSERVACAO} caracteres.`,
+    ),
+});

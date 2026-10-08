@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Modal from "../../components/Modal";
+import AvisoErro from "../../components/AvisoErro";
 import Botao from "../../components/Botao";
 import Campo from "../../components/Campo";
 import Avatar from "../../components/Avatar";
@@ -83,6 +84,7 @@ function ModalLiberarAcesso({ onFechar }) {
   const [codigo, setCodigo] = useState("");
   const [duracaoHoras, setDuracaoHoras] = useState(DURACAO_PADRAO_HORAS);
   const [caso, setCaso] = useState("");
+  const [erro, setErro] = useState("");
 
   const completo = codigo.length === TAMANHO_CODIGO;
   const tutor = completo ? acharTutor(codigo) : null;
@@ -92,7 +94,27 @@ function ModalLiberarAcesso({ onFechar }) {
     tutor &&
     liberacoesAtivas(liberacoes).find((l) => l.tutorCodigo === tutor.codigo);
 
+  // O botão fica ligado: clicar sem um tutor que possa receber o acesso diz
+  // o que falta, acima dos botões.
   const liberar = () => {
+    if (!completo) {
+      setErro(
+        `Digite os ${TAMANHO_CODIGO} caracteres do código do tutor para liberar o acesso.`,
+      );
+      return;
+    }
+    if (!tutor) {
+      setErro(
+        `Nenhum tutor com o código #${codigo}. Confira o código com a pessoa.`,
+      );
+      return;
+    }
+    if (liberacaoAtiva) {
+      setErro(
+        `${tutor.nomeCompleto} já tem o acesso liberado. Não é preciso liberar de novo.`,
+      );
+      return;
+    }
     liberarAcesso({
       tutorCodigo: tutor.codigo,
       tutorNome: tutor.nomeCompleto,
@@ -109,18 +131,19 @@ function ModalLiberarAcesso({ onFechar }) {
       subtitulo="Enquanto a liberação estiver ativa, o tutor vê telefone e e-mail dos doadores"
       onFechar={onFechar}
       rodape={
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <p className="text-xs text-[#5f5e5e] leading-snug max-w-xs">
-            A liberação fica no seu perfil, com o seu nome, até o prazo
-            terminar.
-          </p>
-          <div className="flex gap-2">
-            <Botao variante="secundario" onClick={onFechar}>
-              Cancelar
-            </Botao>
-            <Botao disabled={!tutor || !!liberacaoAtiva} onClick={liberar}>
-              Liberar acesso
-            </Botao>
+        <div className="flex flex-col gap-3">
+          <AvisoErro>{erro}</AvisoErro>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-xs text-[#5f5e5e] leading-snug max-w-xs">
+              A liberação fica no seu perfil, com o seu nome, até o prazo
+              terminar.
+            </p>
+            <div className="flex gap-2">
+              <Botao variante="secundario" onClick={onFechar}>
+                Cancelar
+              </Botao>
+              <Botao onClick={liberar}>Liberar acesso</Botao>
+            </div>
           </div>
         </div>
       }
@@ -132,7 +155,10 @@ function ModalLiberarAcesso({ onFechar }) {
           dica="Aparece ao lado do nome, no perfil"
           placeholder="T3M8P1"
           valor={codigo}
-          onMudar={setCodigo}
+          onMudar={(valor) => {
+            setCodigo(valor);
+            setErro("");
+          }}
         />
 
         {tutor ? (

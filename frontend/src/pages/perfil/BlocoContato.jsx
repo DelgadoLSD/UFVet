@@ -48,53 +48,23 @@ function ValorCopiavel({ valor, rotulo }) {
   );
 }
 
-// Caixa de aviso dos estados sem acesso, logo abaixo dos dados ocultos.
-function AvisoAcesso({ children, acao }) {
-  return (
-    <div className="rounded-xl bg-[#fdecee] px-3.5 py-3">
-      <p className="text-xs text-[#5b403f] leading-relaxed">{children}</p>
-      {acao}
-    </div>
-  );
-}
-
-// Para quem ainda não entrou: o primeiro passo é ter uma conta.
-function AvisoVisitante({ onComoFunciona }) {
-  const local = useLocation();
-  return (
-    <AvisoAcesso
-      acao={
-        <div className="mt-2.5 flex items-center gap-3 flex-wrap">
-          <Botao
-            as={Link}
-            to={`/login?voltar=${encodeURIComponent(local.pathname)}`}
-            tamanho="sm"
-          >
-            Entrar
-          </Botao>
-          <BotaoAjuda
-            rotulo="Como funciona o acesso aos contatos?"
-            onClick={onComoFunciona}
-          />
-        </div>
-      }
-    >
-      O contato aparece para quem tem conta e recebe a liberação de um
-      veterinário durante um atendimento.
-    </AvisoAcesso>
-  );
+// A linha de explicação embaixo dos dados, a mesma em todos os casos: curta,
+// para a caixa não crescer. O botão do que fazer (ver, pedir liberação,
+// entrar) fica na faixa vermelha, no mesmo lugar para todo mundo.
+function Nota({ children }) {
+  return <p className="text-xs text-[#5f5e5e] leading-relaxed">{children}</p>;
 }
 
 // Quem recebeu o pedido de liberação, para o aviso de "pedido enviado".
-function AvisoPedidoEnviado({ pedido }) {
+function NotaPedidoEnviado({ pedido }) {
   const veterinario = acharVeterinario(pedido.veterinarioCodigo);
   return (
-    <AvisoAcesso>
+    <Nota>
       Pedido enviado para{" "}
       {veterinario ? nomeProfissionalCurto(veterinario) : "um veterinário"}.
       Assim que {veterinario ? pronome(veterinario) : "ele"} liberar, o contato
       aparece aqui.
-    </AvisoAcesso>
+    </Nota>
   );
 }
 
@@ -111,24 +81,51 @@ function BlocoContato({
   const [revelado, setRevelado] = useState(false);
 
   const visivel = ehProprio || revelado;
+  const local = useLocation();
+  const semAcesso = !ehProprio && !acesso.pode;
+
+  // O que fazer fica sempre no mesmo lugar, na faixa vermelha: ver o
+  // contato, pedir a liberação ou entrar na conta.
+  let acao = null;
+  if (!ehProprio && acesso.pode && !revelado) {
+    acao = (
+      <Botao variante="claro" tamanho="xs" onClick={() => setRevelado(true)}>
+        Ver contato
+      </Botao>
+    );
+  } else if (acesso.motivo === "visitante") {
+    acao = (
+      <Botao
+        as={Link}
+        to={`/login?voltar=${encodeURIComponent(local.pathname)}`}
+        variante="claro"
+        tamanho="xs"
+      >
+        Entrar
+      </Botao>
+    );
+  } else if (semAcesso && acesso.motivo !== "pedido-enviado") {
+    acao = (
+      <Botao variante="claro" tamanho="xs" onClick={onPedirLiberacao}>
+        Pedir liberação
+      </Botao>
+    );
+  }
 
   return (
     <PainelSecao
       titulo="Contato"
       nivel="h2"
-      acao={
-        !ehProprio &&
-        acesso.pode &&
-        !revelado && (
-          <Botao
-            variante="claro"
-            tamanho="sm"
-            onClick={() => setRevelado(true)}
-          >
-            Ver contato
-          </Botao>
+      ajuda={
+        semAcesso && (
+          <BotaoAjuda
+            claro
+            rotulo="Como funciona o acesso aos contatos?"
+            onClick={onComoFunciona}
+          />
         )
       }
+      acao={acao}
     >
       <CampoPainel rotulo="E-mail">
         {visivel ? (
@@ -162,26 +159,14 @@ function BlocoContato({
               : "Seu acesso foi liberado por um veterinário e vale até o prazo terminar."}
         </p>
       ) : acesso.motivo === "pedido-enviado" ? (
-        <AvisoPedidoEnviado pedido={acesso.pedido} />
+        <NotaPedidoEnviado pedido={acesso.pedido} />
       ) : acesso.motivo === "visitante" ? (
-        <AvisoVisitante onComoFunciona={onComoFunciona} />
+        <Nota>Entre na sua conta para pedir a liberação a um veterinário.</Nota>
       ) : (
-        <AvisoAcesso
-          acao={
-            <div className="mt-2.5 flex items-center gap-3 flex-wrap">
-              <Botao tamanho="sm" onClick={onPedirLiberacao}>
-                Pedir liberação
-              </Botao>
-              <BotaoAjuda
-                rotulo="Como funciona o acesso aos contatos?"
-                onClick={onComoFunciona}
-              />
-            </div>
-          }
-        >
-          O contato aparece enquanto um veterinário estiver acompanhando seu
-          caso. Ele libera pelo seu código #{meuCodigo}.
-        </AvisoAcesso>
+        <Nota>
+          Um veterinário que acompanha seu caso libera o contato pelo seu código
+          #{meuCodigo}.
+        </Nota>
       )}
     </PainelSecao>
   );

@@ -13,7 +13,7 @@ import { useSessao } from "../servicos/sessao";
 import { perfilVisitado } from "../servicos/pessoas";
 import { confirmar } from "../hooks/confirmacoes";
 import { finalDoGenero } from "../regras/doacao";
-import { animaisDeExemplo, listarAnimais } from "../servicos/animais";
+import { animaisDoPerfil, listarAnimais } from "../servicos/animais";
 import { acessoDe, useAcessoContatos } from "../servicos/acessoContatos";
 import { ehVeterinario, nomeCurto, nomeProfissional } from "../util/texto";
 
@@ -24,14 +24,16 @@ import { ehVeterinario, nomeCurto, nomeProfissional } from "../util/texto";
 //
 // As partes da página ficam em pages/perfil/.
 //
-// Os animais do próprio perfil vêm da API. O perfil de outra pessoa ainda
-// mostra pessoa e animais de exemplo, até a busca e os perfis visitados virem
-// da API (ver servicos/pessoas.js e servicos/animais.js).
+// Os animais vêm da API nos dois casos, com o histórico clínico. A pessoa do
+// perfil visitado ainda sai dos dados de exemplo, até a busca e os perfis
+// visitados virem da API; quando ela não existe no banco, os animais também
+// (ver servicos/pessoas.js e servicos/animais.js).
 
-// Os animais de quem está logado, da API, e como a página atualiza a lista
-// depois de cadastrar, editar ou excluir. Sem `codigo` (perfil de outra
-// pessoa), não busca nada.
-function useMeusAnimais(codigo) {
+// Os animais de uma pessoa, buscados com `buscar` (listarAnimais, no próprio
+// perfil; animaisDoPerfil, no de outra pessoa), e como a página atualiza a
+// lista depois de cadastrar, editar, excluir ou de um registro do
+// veterinário.
+function useAnimais(codigo, buscar) {
   const [estado, setEstado] = useState({
     carregando: true,
     animais: [],
@@ -41,11 +43,10 @@ function useMeusAnimais(codigo) {
   const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
-    if (!codigo) return undefined;
     // A resposta de uma busca antiga (de outra conta, ou anterior a uma nova
     // tentativa) é ignorada.
     let valendo = true;
-    listarAnimais(codigo).then(
+    buscar(codigo).then(
       (animais) =>
         valendo && setEstado({ carregando: false, animais, erro: "" }),
       (falha) =>
@@ -55,7 +56,7 @@ function useMeusAnimais(codigo) {
     return () => {
       valendo = false;
     };
-  }, [codigo, tentativa]);
+  }, [codigo, buscar, tentativa]);
 
   const mudarLista = (mudar) =>
     setEstado((prev) => ({ ...prev, animais: mudar(prev.animais) }));
@@ -77,7 +78,7 @@ function useMeusAnimais(codigo) {
 }
 
 // Lugar dos cartões enquanto a lista não chega, ou quando ela não veio.
-function EstadoDaLista({ erro, onTentarDeNovo }) {
+function EstadoDaLista({ erro, ehProprio, onTentarDeNovo }) {
   if (erro) {
     return (
       <div className="flex flex-col items-start gap-3">
@@ -90,7 +91,7 @@ function EstadoDaLista({ erro, onTentarDeNovo }) {
   }
   return (
     <p role="status" className="text-sm text-[#5f5e5e] py-10 text-center">
-      Carregando seus animais…
+      {ehProprio ? "Carregando seus animais…" : "Carregando os animais…"}
     </p>
   );
 }
@@ -165,9 +166,12 @@ function PerfilPage() {
   const ehProprio = !codigo;
   const ehVet = ehVeterinario(usuario);
   const perfil = ehProprio ? usuario : perfilVisitado(usuario);
-  const meus = useMeusAnimais(ehProprio ? usuario.codigo : null);
-  const animais = ehProprio ? meus.animais : animaisDeExemplo(perfil.codigo);
-  const listaPronta = !ehProprio || (!meus.carregando && !meus.erro);
+  const lista = useAnimais(
+    ehProprio ? usuario.codigo : perfil.codigo,
+    ehProprio ? listarAnimais : animaisDoPerfil,
+  );
+  const animais = lista.animais;
+  const listaPronta = !lista.carregando && !lista.erro;
 
   return (
     <>
@@ -176,7 +180,7 @@ function PerfilPage() {
         <ModalAnimal
           onFechar={fecharModal}
           onSalvo={(animal) => {
-            meus.adicionar(animal);
+            lista.adicionar(animal);
             confirmar(`${animal.nome} cadastrad${finalDoGenero(animal)}`);
             fecharModal();
           }}
@@ -233,14 +237,15 @@ function PerfilPage() {
                 ehDono={ehProprio}
                 ehVet={ehVet}
                 nomeTutor={perfil.nomeCompleto}
-                onAlterado={meus.substituir}
-                onExcluido={meus.remover}
+                onAlterado={lista.substituir}
+                onExcluido={lista.remover}
               />
             ))
           ) : (
             <EstadoDaLista
-              erro={meus.erro}
-              onTentarDeNovo={meus.tentarDeNovo}
+              erro={lista.erro}
+              ehProprio={ehProprio}
+              onTentarDeNovo={lista.tentarDeNovo}
             />
           )}
           {ehProprio && listaPronta && (

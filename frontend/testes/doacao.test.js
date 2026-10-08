@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   REFERENCIA_DOADOR,
+  criteriosEmVigor,
   dataUltimaDoacao,
+  pesoIdadeAlterados,
   nomeRaca,
   situacaoRecuperacao,
   statusValidacao,
@@ -61,6 +63,44 @@ describe("situação da validação", () => {
     // Vale até o mesmo dia do ano seguinte, inclusive.
     expect(statusValidacao(validacao("2025-10-07"))).toBe("validado");
     expect(statusValidacao(validacao("2025-10-06"))).toBe("vencida");
+  });
+
+  test("a validade que vem da API é a que vale", () => {
+    expect(
+      statusValidacao({ ...validacao("2026-01-15"), validaAte: "2026-10-06" }),
+    ).toBe("vencida");
+  });
+
+  test("peso ou nascimento mudados depois: o critério de peso e idade perde o efeito (F21)", () => {
+    const assinada = validacao("2026-08-20");
+    const peso = {
+      ...assinada,
+      invalidacao: { em: "2026-09-01T12:00:00Z", motivo: "EDICAO_PESO" },
+    };
+    const nascimento = {
+      ...assinada,
+      invalidacao: { em: "2026-09-01T12:00:00Z", motivo: "EDICAO_NASCIMENTO" },
+    };
+
+    expect(pesoIdadeAlterados(peso)).toBe("peso");
+    expect(pesoIdadeAlterados(nascimento)).toBe("nascimento");
+    expect(statusValidacao(peso)).toBe("pendencias");
+    expect(criteriosEmVigor(peso)).toEqual({
+      ...todosCriterios(true),
+      PESO_IDADE: false,
+    });
+    // O registro assinado não muda.
+    expect(peso.criterios.PESO_IDADE).toBe(true);
+  });
+
+  test("substituída por uma validação nova não é F21: os critérios continuam", () => {
+    const substituida = {
+      ...validacao("2026-08-20"),
+      invalidacao: { em: "2026-09-01T12:00:00Z", motivo: "NOVA_VALIDACAO" },
+    };
+
+    expect(pesoIdadeAlterados(substituida)).toBeNull();
+    expect(criteriosEmVigor(substituida)).toEqual(todosCriterios(true));
   });
 });
 

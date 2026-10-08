@@ -1,3 +1,4 @@
+import Botao from "../../components/Botao";
 import DadoDoador from "./DadoDoador";
 import {
   ESPECIES,
@@ -7,9 +8,69 @@ import {
 import { formatarData, idadeEmAnos, textoIdade } from "../../util/datas";
 import { formatarPeso } from "../../util/texto";
 
-// A faixa de dados do cartão do animal: tipo sanguíneo, peso, idade e
-// doações, em células vermelho-claras com divisões brancas. Peso e idade são
-// comparados com os limites da espécie, e o detalhe avisa quando estão fora.
+// A faixa de dados do cartão do animal: tipo sanguíneo, peso e idade em
+// células vermelho-claras com divisões brancas, e as doações numa linha
+// inteira embaixo. Peso e idade são comparados com os limites da espécie, e o
+// detalhe avisa quando estão fora.
+
+// As doações ocupam uma linha própria porque têm o que fazer ali: ver o
+// histórico (todo mundo) e registrar uma coleta (o veterinário). Os botões
+// têm o nome escrito; antes, um ícone de relógio no canto parecia mais um
+// "?" de ajuda, e ninguém achava o histórico.
+function LinhaDoacoes({
+  animal,
+  total,
+  ultimaDoacao,
+  podeRegistrar,
+  onVerHistorico,
+  onRegistrar,
+}) {
+  return (
+    <div className="col-span-2 sm:col-span-3 bg-[#fdecee] px-4 py-3.5 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+      <div className="min-w-0 flex flex-col gap-0.5">
+        <span className="text-xs font-semibold text-[#5b403f]">Doações</span>
+        {total > 0 ? (
+          <p className="flex flex-wrap items-baseline gap-x-2">
+            <span className="text-2xl leading-tight font-extrabold tracking-tight tabular-nums text-[#1a1c1c]">
+              {total === 1 ? "1 coleta" : `${total} coletas`}
+            </span>
+            <span className="text-sm text-[#5b403f]">
+              a última em {formatarData(ultimaDoacao)}
+            </span>
+          </p>
+        ) : (
+          <p className="text-base leading-[1.875rem] font-extrabold text-[#5f5e5e]">
+            Nenhuma coleta ainda
+          </p>
+        )}
+      </div>
+
+      {(total > 0 || podeRegistrar) && (
+        <div className="flex flex-wrap gap-2">
+          {total > 0 && (
+            <Botao
+              variante="secundario"
+              icone="history"
+              aria-label={`Ver histórico de doações de ${animal.nome}`}
+              onClick={onVerHistorico}
+            >
+              Ver histórico
+            </Botao>
+          )}
+          {podeRegistrar && (
+            <Botao
+              icone="add"
+              aria-label={`Registrar doação de ${animal.nome}`}
+              onClick={onRegistrar}
+            >
+              Registrar doação
+            </Botao>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Explicação do "?" do tipo sanguíneo: sem tipo, diz de onde ele vem; com
 // tipo, explica a tipagem da espécie.
@@ -63,7 +124,9 @@ function DadosDoAnimal({
   tipoSanguineo,
   totalDoacoes,
   ultimaDoacao,
+  podeRegistrar,
   onVerDoacoes,
+  onRegistrarDoacao,
 }) {
   const ref = REFERENCIA_DOADOR[animal.especie];
   const anos = idadeEmAnos(animal.dataNascimento);
@@ -72,11 +135,13 @@ function DadosDoAnimal({
 
   return (
     // As divisões são o fundo branco aparecendo nos vãos de 2px entre as
-    // células. No celular, duas por linha.
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-[2px] bg-white rounded-xl overflow-hidden">
+    // células. No celular, o tipo sanguíneo ocupa a linha de cima sozinho, e
+    // peso e idade dividem a de baixo.
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-[2px] bg-white rounded-xl overflow-hidden">
       {/* O vermelho é do tipo confirmado em exame. Sem confirmação o valor
           fica cinza: assim ninguém lê um palpite como se fosse resultado. */}
       <DadoDoador
+        className="col-span-2 sm:col-span-1"
         destaque={!!tipoSanguineo}
         apagado={!tipoSanguineo}
         rotulo="Tipo sanguíneo"
@@ -134,19 +199,13 @@ function DadosDoAnimal({
           ),
         }}
       />
-      <DadoDoador
-        rotulo="Doações"
-        valor={totalDoacoes}
-        detalhe={
-          ultimaDoacao
-            ? `última em ${formatarData(ultimaDoacao)}`
-            : "ainda não doou"
-        }
-        acao={{
-          icone: "history",
-          rotulo: `Ver as doações de ${animal.nome}`,
-          onClick: onVerDoacoes,
-        }}
+      <LinhaDoacoes
+        animal={animal}
+        total={totalDoacoes}
+        ultimaDoacao={ultimaDoacao}
+        podeRegistrar={podeRegistrar}
+        onVerHistorico={onVerDoacoes}
+        onRegistrar={onRegistrarDoacao}
       />
     </div>
   );

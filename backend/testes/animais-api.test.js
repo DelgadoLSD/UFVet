@@ -91,6 +91,10 @@ describe("cadastrar um animal (F8)", () => {
       disponivel: true,
       // Sem fotos enviadas, a lista vem vazia.
       fotos: [],
+      // Animal novo: ainda sem histórico clínico.
+      validacoes: [],
+      doacoes: [],
+      observacoes: [],
       criadoEm: expect.any(String),
     });
     const dono = await banco.usuario.findFirstOrThrow();

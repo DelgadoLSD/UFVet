@@ -13,8 +13,12 @@ import ModalHistoricoValidacao from "./ModalHistoricoValidacao";
 import ModalDoacoes from "./ModalDoacoes";
 import ModalExcluirAnimal from "./ModalExcluirAnimal";
 import { confirmar } from "../../hooks/confirmacoes";
-import { salvarAnimal } from "../../servicos/animais";
-import { useSessao } from "../../servicos/sessao";
+import {
+  registrarDoacao,
+  registrarObservacao,
+  salvarAnimal,
+  validarAnimal,
+} from "../../servicos/animais";
 import {
   ESPECIES,
   REFERENCIA_DOADOR,
@@ -26,7 +30,6 @@ import {
   textoCastracao,
 } from "../../regras/doacao";
 import { formatarData } from "../../util/datas";
-import { nomeProfissional } from "../../util/texto";
 
 // Cartão de um animal no perfil. O cabeçalho é vermelho, com as letras em
 // branco: nome, espécie, raça, código e a situação para doar, que o dono liga
@@ -35,11 +38,10 @@ import { nomeProfissional } from "../../util/texto";
 // fim, as observações para a coleta e os exames, cada parte num painel com
 // faixa colorida no topo.
 //
-// Os dados do animal e a disponibilidade gravam na API, e o perfil recebe o
-// animal novo por `onAlterado` (ou o aviso de que ele saiu, por
-// `onExcluido`). O resto (validação, doação, observação, documento) ainda é
-// guardado só no cartão e vale até recarregar a página; cada parte passa a
-// chamar a API na etapa dela.
+// Os dados do animal, a disponibilidade e o histórico clínico (validação,
+// doação, observação) gravam na API, e o perfil recebe o animal novo por
+// `onAlterado` (ou o aviso de que ele saiu, por `onExcluido`). Os exames
+// ainda são guardados só no cartão e valem até recarregar a página.
 //
 // - `ehDono`: o perfil é de quem está logado; pode editar, excluir, mudar a
 //   disponibilidade e enviar documentos.
@@ -71,24 +73,20 @@ function CartaoAnimal({
   onAlterado,
   onExcluido,
 }) {
-  const usuario = useSessao();
   const disponivel = animal.disponivel;
   const [mudandoDisponibilidade, setMudandoDisponibilidade] = useState(false);
   const [erroDisponibilidade, setErroDisponibilidade] = useState("");
-  // O histórico é a fonte de verdade; "validacao" é sempre a mais recente
-  // dele. Uma validação assinada nunca é editada: revisar cria uma entrada
-  // nova, no começo da lista, e a anterior continua no histórico,
-  // substituída.
-  const [validacoes, setValidacoes] = useState(animal.validacoes);
+  // O histórico vem do animal, como a API manda, do mais recente para o mais
+  // antigo; "validacao" é a mais recente. Uma validação assinada nunca é
+  // editada: revisar cria uma nova, no começo da lista, e a anterior continua
+  // no histórico, substituída. O tipo sanguíneo é o que o veterinário
+  // confirmou ao assinar a tipagem.
+  const { validacoes, doacoes, observacoes, tipoSanguineo } = animal;
   const validacao = validacoes[0] ?? null;
-  // Quem confirma o tipo sanguíneo é o veterinário, ao assinar a tipagem; o
-  // valor do exame é o que vale daí em diante.
-  const [tipoSanguineo, setTipoSanguineo] = useState(animal.tipoSanguineo);
-  const [doacoes, setDoacoes] = useState(animal.doacoes);
-  const [observacoes, setObservacoes] = useState(animal.observacoes);
   const [documentos, setDocumentos] = useState(animal.documentos);
   // Modal aberto no momento: "editar", "excluir", "validar", "historico",
-  // "doacoes" ou null.
+  // "doacoes" (o histórico), "registrarDoacao" (a mesma janela, já no
+  // formulário) ou null.
   const [modal, setModal] = useState(null);
   const fecharModal = () => setModal(null);
 
@@ -96,8 +94,8 @@ function CartaoAnimal({
   // ele mesmo quem valida e quem acompanha a coleta.
   const podeAtuarComoVet = ehVet;
 
-  // O animal como está agora, com o que já mudou neste cartão.
-  const animalAtual = { ...animal, tipoSanguineo, validacao, doacoes };
+  // O animal com a validação que vale agora, para os modais.
+  const animalAtual = { ...animal, validacao };
   // A recuperação conta a partir da coleta mais recente registrada: registrar
   // uma doação nova já muda a etiqueta do animal.
   const ultimaDoacao = dataUltimaDoacao(doacoes);
@@ -129,15 +127,22 @@ function CartaoAnimal({
     }
   };
 
-  const adicionarObservacao = (texto) =>
-    setObservacoes((prev) => [
-      {
-        criadoEm: new Date().toISOString(),
-        autorNome: nomeProfissional(usuario),
-        texto,
-      },
-      ...prev,
-    ]);
+  // O que o veterinário registra vai para a API, assinado pela conta dele. A
+  // resposta traz o animal com o histórico novo, e o perfil troca o cartão.
+  // Se der errado, o erro sobe para o modal ou a seção que pediu, que o
+  // mostra sem fechar.
+  const validar = async (dados) => {
+    onAlterado(await validarAnimal(animal.codigo, dados));
+    confirmar("Validação registrada");
+  };
+  const registrarNovaDoacao = async (dados) => {
+    onAlterado(await registrarDoacao(animal.codigo, dados));
+    confirmar("Doação registrada");
+  };
+  const adicionarObservacao = async (texto) => {
+    onAlterado(await registrarObservacao(animal.codigo, texto));
+    confirmar("Observação registrada");
+  };
 
   // Sem API, o arquivo escolhido vira uma URL temporária do navegador.
   const enviarDocumento = (tipo, arquivo) => {
@@ -304,7 +309,9 @@ function CartaoAnimal({
               tipoSanguineo={tipoSanguineo}
               totalDoacoes={doacoes.length}
               ultimaDoacao={ultimaDoacao}
+              podeRegistrar={podeAtuarComoVet}
               onVerDoacoes={() => setModal("doacoes")}
+              onRegistrarDoacao={() => setModal("registrarDoacao")}
             />
 
             <PainelValidacao
@@ -338,11 +345,8 @@ function CartaoAnimal({
         <ModalValidacao
           animal={animalAtual}
           validacao={validacao}
-          onSalvar={(nova) => {
-            setValidacoes((prev) => [nova, ...prev]);
-            if (nova.tipoSanguineoConfirmado) {
-              setTipoSanguineo(nova.tipoSanguineoConfirmado);
-            }
+          onSalvar={async (dados) => {
+            await validar(dados);
             fecharModal();
           }}
           onFechar={fecharModal}
@@ -357,20 +361,15 @@ function CartaoAnimal({
         />
       )}
 
-      {modal === "doacoes" && (
+      {(modal === "doacoes" || modal === "registrarDoacao") && (
         <ModalDoacoes
           animal={animal}
           doacoes={doacoes}
+          ultimaDoacao={ultimaDoacao}
+          recuperacao={recuperacao}
           podeRegistrar={podeAtuarComoVet}
-          // A lista fica da coleta mais recente para a mais antiga, mesmo
-          // quando a registrada agora é de uma data passada.
-          onRegistrar={(nova) =>
-            setDoacoes((prev) =>
-              [nova, ...prev].sort((a, b) =>
-                b.dataColeta.localeCompare(a.dataColeta),
-              ),
-            )
-          }
+          iniciarRegistrando={modal === "registrarDoacao"}
+          onRegistrar={registrarNovaDoacao}
           onFechar={fecharModal}
         />
       )}

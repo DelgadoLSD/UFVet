@@ -21,13 +21,16 @@ const VARIANTES = {
 };
 
 const TAMANHOS = {
+  // Para a faixa vermelha dos painéis (PainelSecao): baixo o bastante para
+  // sobrar espaço em volta, em vez de parecer espremido na faixa.
+  xs: { classe: "h-7 px-2.5 text-xs gap-1 rounded-lg", icone: "text-[15px]" },
   sm: { classe: "h-8 px-3 text-xs gap-1.5 rounded-lg", icone: "text-[16px]" },
   md: { classe: "h-10 px-4 text-sm gap-2 rounded-xl", icone: "text-[18px]" },
   lg: { classe: "h-12 px-6 text-sm gap-2 rounded-xl", icone: "text-[20px]" },
 };
 
 // - `variante`: uma das chaves de VARIANTES (padrão: primario);
-// - `tamanho`: sm, md ou lg;
+// - `tamanho`: xs (só na faixa dos painéis), sm, md ou lg;
 // - `icone`: nome de um ícone do Material Symbols, antes do texto;
 // - `as`: desenha o botão como outro elemento, com a mesma cara (um Link do
 //   React Router, um <a> ou o <label> de um campo de arquivo).

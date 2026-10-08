@@ -1,111 +1,119 @@
 import Modal from "../../components/Modal";
-import MarcadorData from "./MarcadorData";
-import { CRITERIOS_DOACAO, statusValidacao } from "../../regras/doacao";
+import {
+  CRITERIOS_DOACAO,
+  criteriosEmVigor,
+  pesoIdadeAlterados,
+  statusValidacao,
+  validaAte,
+} from "../../regras/doacao";
+import { dataPorExtenso } from "../../util/datas";
+import { ESTILO_CRITERIO } from "./estiloCriterio";
 
 // Histórico de validações do animal. A mais recente é a que vale hoje; as
 // demais nunca foram apagadas nem alteradas: uma validação assinada não muda
 // depois. Quando o veterinário revisa, nasce uma validação nova, e a anterior
 // fica marcada como substituída. É essa lista que prova isso.
 
-const ESTILO_STATUS = {
-  validado: {
-    rotulo: "Vigente",
-    classe: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  },
+// O selo de cada validação, nas mesmas cores do painel do cartão: verde só
+// para a que vale sem pendências, vermelho para pendências, preto para
+// vencida e cinza para a substituída.
+const SELO = {
+  validado: { rotulo: "Vigente", classe: "bg-emerald-700 text-white" },
   pendencias: {
     rotulo: "Vigente, com pendências",
-    classe: "bg-amber-50 text-amber-800 border-amber-200",
+    classe: "bg-[#9e0a24] text-white",
   },
-  vencida: {
-    rotulo: "Vencida",
-    classe: "bg-orange-50 text-orange-800 border-orange-200",
-  },
-  substituida: {
-    rotulo: "Substituída",
-    classe: "bg-[#f3f3f3] text-[#5f5e5e] border-[#e6dcdc]",
-  },
+  vencida: { rotulo: "Vencida", classe: "bg-[#1a1c1c] text-white" },
+  substituida: { rotulo: "Substituída", classe: "bg-[#f1ecec] text-[#5f5e5e]" },
 };
 
-// Cabeçalho e linhas dividem a mesma grade, então cada círculo fica embaixo do
-// nome do seu critério. Lida de cima a baixo, uma coluna mostra como aquele
-// critério mudou de uma validação para outra.
-const GRADE = "sm:grid sm:grid-cols-5 sm:w-[22rem]";
-
-// Só a partir de sm: no celular não cabem cinco colunas com rótulo, e cada
-// círculo leva o próprio nome ao lado.
-function CabecalhoCriterios() {
+// Um critério, com o nome escrito: atendido numa caixa verde-clara com ✓; não
+// atendido numa caixa vermelha cheia com ✕ (ver estiloCriterio.js). Cada
+// etiqueta diz o próprio nome, sem depender de uma coluna de cabeçalho.
+function EtiquetaCriterio({ criterio, atendido }) {
+  const estilo = ESTILO_CRITERIO[atendido ? "atendido" : "naoAtendido"];
   return (
-    <div className="hidden sm:flex gap-4 mb-3" aria-hidden="true">
-      <div className="w-12 shrink-0" />
-      <div className="border-l border-transparent pl-4">
-        <div className={`${GRADE} items-end`}>
-          {CRITERIOS_DOACAO.map((c) => (
-            <span
-              key={c.chave}
-              className="text-[11px] leading-tight text-[#8f6f6e] text-center px-1"
-            >
-              {c.curto}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
+    <li
+      className={`inline-flex items-center gap-1.5 h-8 pl-2 pr-3 rounded-full border text-xs font-bold ${estilo.caixa}`}
+    >
+      <span
+        aria-hidden="true"
+        className={`material-symbols-outlined text-[17px] ${estilo.corIcone}`}
+      >
+        {estilo.icone}
+      </span>
+      {criterio.curto}
+      <span className="sr-only">
+        : {atendido ? "atendido" : "não atendido"}
+      </span>
+    </li>
   );
 }
 
 function ItemValidacao({ validacao, status }) {
-  const estilo = ESTILO_STATUS[status];
+  const selo = SELO[status];
+  // A mais recente mostra os critérios em vigor, como o painel do cartão: o
+  // de peso e idade perde o efeito quando o tutor muda o peso ou o nascimento
+  // depois (F21). As substituídas mostram o que foi assinado. Como no painel,
+  // o aviso não aparece na vencida, que já perdeu o efeito inteira.
+  const atual = status !== "substituida";
+  const criterios = atual ? criteriosEmVigor(validacao) : validacao.criterios;
+  const alterado =
+    atual && status !== "vencida" && pesoIdadeAlterados(validacao);
+  const prazo =
+    {
+      vencida: `Venceu em ${dataPorExtenso(validaAte(validacao))}.`,
+      substituida: "Substituída por uma validação mais nova.",
+    }[status] ?? `Vale até ${dataPorExtenso(validaAte(validacao))}.`;
 
   return (
-    <li className="flex gap-4 py-4 first:pt-0 last:pb-0">
-      <MarcadorData data={validacao.realizadaEm} />
-      <div className="min-w-0 flex-1 border-l border-[#f0e6e6] pl-4">
-        <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-semibold text-[#1a1c1c] text-sm">
-            {validacao.veterinarioNome}, CRMV {validacao.crmv}
-          </p>
-          <span
-            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${estilo.classe}`}
-          >
-            {estilo.rotulo}
-          </span>
-        </div>
-
-        <ul
-          className={`flex flex-wrap gap-x-3 gap-y-1.5 mt-2 sm:gap-0 ${GRADE}`}
+    <li className="py-6 first:pt-0 last:pb-0">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <p className="text-base font-bold text-[#1a1c1c]">
+          {dataPorExtenso(validacao.realizadaEm)}
+        </p>
+        <span
+          className={`inline-flex items-center h-7 px-3 rounded-full text-xs font-bold ${selo.classe}`}
         >
-          {CRITERIOS_DOACAO.map((c) => {
-            const atendido = validacao.criterios[c.chave];
-            return (
-              <li
-                key={c.chave}
-                className="flex items-center gap-1 sm:justify-center"
-              >
-                <span
-                  aria-hidden="true"
-                  className={`material-symbols-outlined text-[16px] ${
-                    atendido ? "text-emerald-600" : "text-amber-600"
-                  }`}
-                >
-                  {atendido ? "check_circle" : "remove_circle"}
-                </span>
-                <span className="text-[11px] text-[#5b403f] sm:sr-only">
-                  {c.curto}
-                  <span className="sr-only">
-                    : {atendido ? "atendido" : "não atendido"}
-                  </span>
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-
-        {validacao.nota && (
-          <p className="text-sm text-[#5b403f] mt-2 leading-relaxed">
-            {validacao.nota}
-          </p>
-        )}
+          {selo.rotulo}
+        </span>
       </div>
+      <p className="mt-1 text-sm text-[#5b403f] leading-relaxed">
+        Assinada por {validacao.veterinarioNome}, CRMV {validacao.crmv}. {prazo}
+      </p>
+
+      <ul className="mt-3 flex flex-wrap gap-2" aria-label="Critérios">
+        {CRITERIOS_DOACAO.map((c) => (
+          <EtiquetaCriterio
+            key={c.chave}
+            criterio={c}
+            atendido={criterios[c.chave]}
+          />
+        ))}
+      </ul>
+
+      {alterado && (
+        <p className="mt-3 text-xs font-semibold text-[#9e0a24] leading-relaxed">
+          Peso e idade foram conferidos, mas perderam o efeito:{" "}
+          {alterado === "peso" ? "o peso" : "a data de nascimento"} mudou depois
+          desta validação.
+        </p>
+      )}
+
+      {validacao.tipoSanguineoConfirmado && (
+        <p className="mt-3 text-sm text-[#5b403f]">
+          Tipo confirmado no exame:{" "}
+          <strong className="text-[#1a1c1c]">
+            {validacao.tipoSanguineoConfirmado}
+          </strong>
+        </p>
+      )}
+
+      {validacao.nota && (
+        <p className="mt-3 rounded-lg bg-[#faf6f6] px-3.5 py-2.5 text-sm text-[#5b403f] leading-relaxed">
+          {validacao.nota}
+        </p>
+      )}
     </li>
   );
 }
@@ -121,9 +129,9 @@ function ModalHistoricoValidacao({ animal, validacoes, onFechar }) {
           ? "1 validação registrada"
           : `${validacoes.length} validações registradas`
       }
+      largura="max-w-2xl"
       onFechar={onFechar}
     >
-      <CabecalhoCriterios />
       <ul className="divide-y divide-[#f0e6e6]">
         {validacoes.map((v, i) => (
           <ItemValidacao
@@ -134,10 +142,10 @@ function ModalHistoricoValidacao({ animal, validacoes, onFechar }) {
         ))}
       </ul>
 
-      <p className="text-xs text-[#5f5e5e] leading-relaxed mt-5 pt-4 border-t border-[#f0e6e6]">
+      <p className="text-xs text-[#5f5e5e] leading-relaxed mt-6 pt-4 border-t border-[#f0e6e6]">
         Uma validação assinada não é editada. Quando o veterinário revisa os
-        critérios, nasce uma validação nova, e a anterior permanece aqui,
-        substituída.
+        critérios, nasce uma validação nova, e a anterior fica aqui, marcada
+        como substituída.
       </p>
     </Modal>
   );

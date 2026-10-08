@@ -1,13 +1,21 @@
 import { apagarArquivos, guardarImagem } from "../armazenamento.js";
 import { banco } from "../banco.js";
-import { hojeISO, paraDataDoBanco, subtrairAnos } from "../datas.js";
+import {
+  deDataDoBanco,
+  hojeISO,
+  paraDataDoBanco,
+  subtrairAnos,
+} from "../datas.js";
 import { ErroApi } from "../erros.js";
 import { prepararFoto } from "../imagens.js";
 import { MAXIMO_FOTOS_POR_ANIMAL } from "../middlewares/envio.js";
 import {
   COM_FOTOS,
+  COM_HISTORICO,
+  buscarComHistorico,
   codigoAnimalLivre,
   dadosDoAnimal,
+  invalidarPesoIdade,
 } from "../modelos/animal.js";
 import { registrar } from "../registro.js";
 import { esquemaAnimal, esquemaEdicaoAnimal } from "../validacao.js";
@@ -99,7 +107,7 @@ export async function listarAnimais(req, res) {
   const animais = await banco.animal.findMany({
     where: { tutorId: tutor.id },
     orderBy: { criadoEm: "asc" },
-    include: COM_FOTOS,
+    include: COM_HISTORICO,
   });
   res.json({ animais: animais.map(dadosDoAnimal) });
 }
@@ -127,7 +135,7 @@ export async function cadastrarAnimal(req, res) {
           create: enderecos.map((url, ordem) => ({ url, ordem })),
         },
       },
-      include: COM_FOTOS,
+      select: { id: true, codigo: true },
     });
   } catch (erro) {
     // Sem o animal no banco, as fotos guardadas não servem para nada.
@@ -139,7 +147,11 @@ export async function cadastrarAnimal(req, res) {
     animal: animal.codigo,
     fotos: enderecos.length,
   });
-  res.status(201).json({ animal: dadosDoAnimal(animal) });
+  // Gravar as fotos junto faz o Prisma abrir uma transação, e buscar o
+  // histórico dentro dela mandaria várias consultas ao mesmo tempo pela mesma
+  // conexão. Por isso o animal completo é buscado depois, como na edição.
+  const cadastrado = await buscarComHistorico(animal.id);
+  res.status(201).json({ animal: dadosDoAnimal(cadastrado) });
 }
 
 // Confere a nova ordem das fotos (ver esquemaEdicaoAnimal) contra as fotos
@@ -205,14 +217,30 @@ async function gravarFotos(tx, animalId, depois) {
 // as fotos. Vem só o que mudou. Dados e fotos são gravados juntos: se uma
 // parte falha, nada muda.
 //
-// Quando a validação clínica estiver ligada à API, mudar o peso ou o
-// nascimento vai também invalidar o critério de peso e idade (F21).
+// Mudar de verdade o peso ou o nascimento também tira o efeito do critério
+// de peso e idade da validação em vigor (F21), na mesma transação: ele foi
+// conferido sobre o valor antigo.
 export async function editarAnimal(req, res) {
   // Primeiro o dono, depois os dados: sobre o animal alheio, nem as regras
   // de preenchimento respondem.
   const animal = await animalDoUsuario(req);
   const dados = esquemaEdicaoAnimal.parse(dadosDoPedido(req));
   const enviadas = req.files ?? [];
+
+  // F21: o que conta é o valor mudar, não o campo vir no pedido. O peso e o
+  // nascimento podem vir iguais aos de antes (o formulário manda tudo).
+  const nascimento = nascimentoInformado(dados);
+  const mudouPeso =
+    dados.pesoKg !== undefined && dados.pesoKg !== Number(animal.pesoKg);
+  const mudouNascimento =
+    nascimento.dataNascimento !== undefined &&
+    deDataDoBanco(nascimento.dataNascimento) !==
+      deDataDoBanco(animal.dataNascimento);
+  const motivoInvalidacao = mudouPeso
+    ? "EDICAO_PESO"
+    : mudouNascimento
+      ? "EDICAO_NASCIMENTO"
+      : null;
 
   // Os tipos sanguíneos são de cada espécie: confirmada a tipagem, trocar a
   // espécie deixaria o animal com um tipo que não existe para ela.
@@ -233,6 +261,7 @@ export async function editarAnimal(req, res) {
     (atual) => !depois.some((foto) => foto.id === atual.id),
   );
 
+  let invalidou = false;
   try {
     await banco.$transaction(async (tx) => {
       // Campo que não veio fica como estava (o Prisma ignora o que é
@@ -247,9 +276,12 @@ export async function editarAnimal(req, res) {
           castrado: dados.castrado,
           pesoKg: dados.pesoKg,
           disponivel: dados.disponivel,
-          ...nascimentoInformado(dados),
+          ...nascimento,
         },
       });
+      if (motivoInvalidacao) {
+        invalidou = await invalidarPesoIdade(tx, animal.id, motivoInvalidacao);
+      }
       if (mudaFotos) await gravarFotos(tx, animal.id, depois);
     });
   } catch (erro) {
@@ -259,10 +291,14 @@ export async function editarAnimal(req, res) {
   // Só depois de gravado: os arquivos das fotos que saíram.
   await apagarArquivos(removidas.map((foto) => foto.url));
 
-  const atualizado = await banco.animal.findUnique({
-    where: { id: animal.id },
-    include: COM_FOTOS,
-  });
+  const atualizado = await buscarComHistorico(animal.id);
+  if (invalidou) {
+    registrar("validacao_invalidada", {
+      usuarioId: req.usuario.id,
+      animal: animal.codigo,
+      motivo: motivoInvalidacao,
+    });
+  }
   registrar("animal_alterado", {
     usuarioId: req.usuario.id,
     animal: animal.codigo,

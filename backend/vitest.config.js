@@ -26,6 +26,9 @@ export default defineConfig({
     },
     // Cria o banco de testes, se faltar, e aplica as migrações.
     globalSetup: ["./testes/preparar-banco.js"],
+    // Falha o teste em que o driver do banco avisar de consultas ao mesmo
+    // tempo na mesma conexão.
+    setupFiles: ["./testes/avisos-do-banco.js"],
     // Todos os arquivos usam o mesmo banco: rodar um de cada vez evita que um
     // apague os dados que o outro acabou de criar.
     fileParallelism: false,

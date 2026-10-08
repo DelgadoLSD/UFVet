@@ -52,6 +52,14 @@ export function formatarData(valor) {
   return `${doisDigitos(data.getDate())}/${doisDigitos(data.getMonth() + 1)}/${data.getFullYear()}`;
 }
 
+// "5 de setembro de 2026", ou "5 de setembro" com `{ ano: false }` (numa
+// lista já separada por ano).
+export function dataPorExtenso(valor, { ano = true } = {}) {
+  const data = paraData(valor);
+  const diaEMes = `${data.getDate()} de ${MESES[data.getMonth()]}`;
+  return ano ? `${diaEMes} de ${data.getFullYear()}` : diaEMes;
+}
+
 // "14:20"
 export const formatarHora = (valor) =>
   paraData(valor).toLocaleTimeString("pt-BR", {
