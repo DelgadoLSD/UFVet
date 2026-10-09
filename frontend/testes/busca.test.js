@@ -65,3 +65,26 @@ describe("consulta da busca", () => {
     ).not.toContain("busca");
   });
 });
+
+import { partesDoTipo } from "../src/regras/doacao";
+
+// O tipo sanguíneo em duas partes, para a etiqueta do cartão e as casas do
+// filtro (regras/doacao.js).
+describe("partes do tipo sanguíneo", () => {
+  test("separa o sistema do tipo e troca o hífen pelo sinal de menos", () => {
+    expect(partesDoTipo("DEA 1.1-")).toEqual({
+      sistema: "DEA",
+      valor: "1.1−",
+      porExtenso: "DEA 1.1 negativo",
+    });
+    expect(partesDoTipo("DEA 1.1+").porExtenso).toBe("DEA 1.1 positivo");
+  });
+
+  test("tipo de nome longo e tipo de gato", () => {
+    expect(partesDoTipo("DEA 1.1 Universal")).toMatchObject({
+      sistema: "DEA 1.1",
+      valor: "Universal",
+    });
+    expect(partesDoTipo("Tipo AB")).toMatchObject({ sistema: "Tipo", valor: "AB" });
+  });
+});

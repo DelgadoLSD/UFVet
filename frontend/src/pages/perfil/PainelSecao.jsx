@@ -11,13 +11,17 @@
 //   para os painéis lado a lado ficarem alinhados;
 // - `subtitulo`: uma linha dizendo para que serve a seção;
 // - `nivel`: a tag do título. "h4" nos cartões dos animais (o nome do animal
-//   é o h3); "h2" no cartão da pessoa, cujo nome é o h1 da página.
+//   é o h3); "h2" no cartão da pessoa, cujo nome é o h1 da página;
+// - `corpo` ({ id, exibicao }): o id do conteúdo, para um botão da faixa
+//   abri-lo e fechá-lo (aria-controls), e a classe de exibição dele ("flex"
+//   por padrão; os filtros da busca usam "hidden lg:flex" quando fechados).
 function PainelSecao({
   titulo,
   ajuda,
   acao,
   subtitulo,
   nivel: Titulo = "h4",
+  corpo = {},
   children,
   className = "",
 }) {
@@ -38,7 +42,10 @@ function PainelSecao({
         </Titulo>
         {acao}
       </div>
-      <div className="p-4 flex-1 flex flex-col gap-3">
+      <div
+        id={corpo.id}
+        className={`p-4 flex-1 flex-col gap-3 ${corpo.exibicao ?? "flex"}`}
+      >
         {subtitulo && <p className="text-xs text-[#5f5e5e]">{subtitulo}</p>}
         {children}
       </div>

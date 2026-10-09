@@ -17,9 +17,17 @@ export const FILTROS_INICIAIS = {
 };
 
 export const ORDENACOES = [
-  { valor: "validados", rotulo: "Validados primeiro" },
-  { valor: "peso", rotulo: "Maior peso" },
-  { valor: "nome", rotulo: "Nome" },
+  {
+    valor: "validados",
+    rotulo: "Validados primeiro",
+    descricao: "Quem tem exames conferidos vem antes",
+  },
+  {
+    valor: "peso",
+    rotulo: "Maior peso",
+    descricao: "Os maiores doam mais sangue",
+  },
+  { valor: "nome", rotulo: "Nome", descricao: "Em ordem alfabética" },
 ];
 
 // Os filtros da tela -> o endereço da busca na API

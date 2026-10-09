@@ -8,6 +8,12 @@ import { nomeProfissionalCurto, pronome } from "../../util/texto";
 // perfil, se ele vai conseguir ver o contato. Evita a descoberta frustrante
 // só na hora de precisar.
 //
+// É um bloco preto, como o painel "Acesso aos contatos" do veterinário no
+// perfil: o mesmo assunto tem a mesma cara nas duas páginas. Um título curto
+// diz a situação de quem está vendo, uma linha explica, e o botão faz o que
+// falta (entrar ou pedir a liberação). O ícone fica num círculo vermelho
+// quando falta fazer algo, e num círculo apagado quando não.
+//
 // `acesso` é o resultado de acessoDe() (servicos/acessoContatos).
 
 function conteudoDaFaixa(acesso) {
@@ -15,16 +21,14 @@ function conteudoDaFaixa(acesso) {
     case "veterinario":
       return {
         icone: "verified_user",
-        texto:
-          "Você vê os contatos dos tutores por ser veterinário, sem precisar de liberação.",
-        destaque: false,
+        titulo: "Você vê todos os contatos",
+        texto: "Por ser veterinário, não precisa de liberação.",
       };
     case "liberacao":
       return {
         icone: "lock_open",
-        texto:
-          "Seu acesso aos contatos está liberado e vale até o prazo da liberação terminar.",
-        destaque: false,
+        titulo: "Contatos liberados",
+        texto: "Seu acesso vale até o prazo da liberação terminar.",
       };
     case "pedido-enviado": {
       const veterinario = acharVeterinario(acesso.pedido.veterinarioCodigo);
@@ -34,23 +38,25 @@ function conteudoDaFaixa(acesso) {
       const ele = veterinario ? pronome(veterinario) : "ele";
       return {
         icone: "hourglass_top",
-        texto: `Pedido de liberação enviado para ${nome}. Assim que ${ele} responder, os contatos aparecem nos perfis.`,
-        destaque: true,
+        titulo: `Pedido enviado para ${nome}`,
+        texto: `Assim que ${ele} responder, os contatos aparecem nos perfis.`,
       };
     }
     case "sem-liberacao":
       return {
         icone: "lock",
+        titulo: "Você ainda não vê os contatos",
         texto:
-          "Os contatos dos tutores aparecem quando um veterinário libera seu acesso durante um atendimento.",
-        destaque: true,
+          "Eles aparecem quando um veterinário libera seu acesso durante um atendimento.",
+        falta: true,
       };
     case "visitante":
       return {
         icone: "lock",
+        titulo: "Entre para ver os contatos",
         texto:
-          "Os contatos dos tutores aparecem para quem tem conta e recebe a liberação de um veterinário durante um atendimento.",
-        destaque: true,
+          "Eles aparecem para quem tem conta e recebe a liberação de um veterinário durante um atendimento.",
+        falta: true,
       };
     default:
       return null;
@@ -62,37 +68,60 @@ function FaixaAcessoContatos({ acesso, onPedirLiberacao, onComoFunciona }) {
   if (!conteudo) return null;
 
   return (
-    <div
-      className={`flex flex-col sm:flex-row sm:items-center gap-3 rounded-2xl px-4 py-3 ${
-        conteudo.destaque ? "bg-[#fdecee]" : "bg-white border border-[#eadede]"
-      }`}
+    <section
+      aria-label="Acesso aos contatos"
+      className="rounded-2xl bg-[#1a1c1c] text-white px-4 py-4 sm:px-5 flex items-start sm:items-center gap-4"
     >
       <span
         aria-hidden="true"
-        className="material-symbols-outlined text-[20px] text-[#9e0a24] shrink-0"
+        className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${
+          conteudo.falta ? "bg-[#9e0a24]" : "bg-white/10"
+        }`}
       >
-        {conteudo.icone}
+        <span className="material-symbols-outlined text-[20px]">
+          {conteudo.icone}
+        </span>
       </span>
-      <p className="flex-1 text-sm text-[#5b403f] leading-relaxed">
-        {conteudo.texto}
-      </p>
-      <div className="flex items-center gap-3 shrink-0">
+
+      {/* No celular, o botão vai para baixo do texto; a partir do tablet,
+          fica na mesma linha, à direita. */}
+      <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-x-5 gap-y-3">
+        <div className="flex-1 min-w-0">
+          <p className="flex items-center gap-1 text-[15px] font-bold leading-snug">
+            {conteudo.titulo}
+            <BotaoAjuda
+              claro
+              rotulo="Como funciona o acesso aos contatos?"
+              onClick={onComoFunciona}
+            />
+          </p>
+          <p className="mt-0.5 text-sm text-white/70 leading-snug text-pretty">
+            {conteudo.texto}
+          </p>
+        </div>
         {acesso.motivo === "sem-liberacao" && (
-          <Botao tamanho="sm" onClick={onPedirLiberacao}>
+          <Botao
+            variante="claro"
+            tamanho="sm"
+            className="self-start sm:self-auto shrink-0"
+            onClick={onPedirLiberacao}
+          >
             Pedir liberação
           </Botao>
         )}
         {acesso.motivo === "visitante" && (
-          <Botao as={Link} to="/login?voltar=/buscar" tamanho="sm">
+          <Botao
+            as={Link}
+            to="/login?voltar=/buscar"
+            variante="claro"
+            tamanho="sm"
+            className="self-start sm:self-auto shrink-0"
+          >
             Entrar
           </Botao>
         )}
-        <BotaoAjuda
-          rotulo="Como funciona o acesso aos contatos?"
-          onClick={onComoFunciona}
-        />
       </div>
-    </div>
+    </section>
   );
 }
 

@@ -89,6 +89,19 @@ export const TIPOS_SANGUINEOS = {
 // Cães DEA 1.1 negativo podem doar para a maioria dos cães.
 export const TIPOS_UNIVERSAIS = ["DEA 1.1-", "DEA 1.1 Universal"];
 
+// O tipo sanguíneo em duas partes, como na etiqueta de uma bolsa de sangue: o
+// sistema pequeno em cima ("DEA", "Tipo") e o tipo grande embaixo ("1.1−",
+// "AB"). O "-" vira o sinal de menos tipográfico, da largura do "+".
+// `porExtenso` é o que o leitor de tela fala: "DEA 1.1 negativo".
+export function partesDoTipo(tipo) {
+  const espaco = tipo.lastIndexOf(" ");
+  return {
+    sistema: tipo.slice(0, espaco),
+    valor: tipo.slice(espaco + 1).replace(/-$/, "−"),
+    porExtenso: tipo.replace(/\+$/, " positivo").replace(/-$/, " negativo"),
+  };
+}
+
 export const TIPOS_DOCUMENTO = {
   HEMOGRAMA: "Hemograma completo",
   SOROLOGIA: "Sorologias",

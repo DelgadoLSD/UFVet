@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
+import Selecao from "../components/Selecao";
 import ModalComoFuncionaValidacao from "../components/ModalComoFuncionaValidacao";
 import ModalComoFuncionaContato from "../components/ModalComoFuncionaContato";
 import ModalPedirLiberacao from "../components/ModalPedirLiberacao";
 import CartaoDoador from "./busca/CartaoDoador";
 import FaixaAcessoContatos from "./busca/FaixaAcessoContatos";
 import FiltrosBusca from "./busca/FiltrosBusca";
-import LegendaValidacao from "./busca/LegendaValidacao";
 import {
   FILTROS_INICIAIS,
   ORDENACOES,
@@ -20,8 +19,13 @@ import { useSessao } from "../servicos/sessao";
 import { buscarDoadores, listarLocais } from "../servicos/doadores";
 import { acessoDe, useAcessoContatos } from "../servicos/acessoContatos";
 
-// Busca de doadores: filtros à esquerda, resultados em grade à direita. As
-// partes da página ficam em pages/busca/.
+// Busca de doadores, na largura do cabeçalho do site (as bordas da página
+// alinham com o logo e o menu). No computador, uma grade de 3 colunas iguais:
+// os filtros na primeira, que acompanha a rolagem, e 2 cartões por linha nas
+// outras (uma página de 6 fecha em três linhas). O painel de filtros tem a
+// largura de um cartão, e o campo de busca, a das duas colunas dos cartões;
+// no celular, os filtros ficam recolhidos acima dos resultados. As partes da
+// página ficam em pages/busca/.
 //
 // A busca é feita pela API (F16 a F18): a página manda os filtros e recebe
 // uma página de 6 doadores de cada vez, com o total. Só aparece quem pode
@@ -46,7 +50,7 @@ function CampoBuscaTexto({ valor, onMudar }) {
         maxLength={TAMANHO_MAXIMO_BUSCA}
         onChange={(e) => onMudar(e.target.value)}
         placeholder="Buscar por nome, raça, bairro ou código (#)..."
-        className="w-full pl-12 pr-12 py-3.5 bg-white border border-[#dccfcf] rounded-2xl text-sm shadow-[0_1px_2px_rgba(26,28,28,0.04)] transition-colors hover:border-[#c9b6b6] focus:outline-none focus:border-[#9e0a24] focus:ring-4 focus:ring-[#9e0a24]/10"
+        className="w-full pl-12 pr-12 py-3 bg-white border border-[#dccfcf] rounded-xl text-sm shadow-[0_1px_2px_rgba(26,28,28,0.04)] transition-colors hover:border-[#c9b6b6] focus:outline-none focus:border-[#9e0a24] focus:ring-4 focus:ring-[#9e0a24]/10"
       />
       {valor && (
         <button
@@ -67,9 +71,26 @@ function CampoBuscaTexto({ valor, onMudar }) {
   );
 }
 
+// A ordem dos resultados, num menu do tamanho do texto ("Ordenar por
+// Validados primeiro"), como nas lojas: as três opções, cada uma com uma
+// linha dizendo o que faz, aparecem ao abrir.
+function OrdemDaBusca({ ordem, onOrdenar }) {
+  return (
+    <Selecao
+      compacto
+      prefixo="Ordenar por"
+      rotulo="Ordenar por"
+      opcoes={ORDENACOES}
+      valor={ordem}
+      onEscolher={onOrdenar}
+      limpavel={false}
+    />
+  );
+}
+
 function SemResultados({ onLimpar }) {
   return (
-    <div className="flex flex-col items-center justify-center py-24 text-center">
+    <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="w-24 h-24 rounded-full bg-[#fdecee] flex items-center justify-center mb-6">
         <span
           aria-hidden="true"
@@ -217,7 +238,6 @@ const comEscolhido = (lista, escolhido) =>
   escolhido && !lista.includes(escolhido) ? [escolhido, ...lista] : lista;
 
 function BuscaPage() {
-  const navegar = useNavigate();
   const usuario = useSessao();
   const acesso = acessoDe(usuario, useAcessoContatos());
 
@@ -228,8 +248,8 @@ function BuscaPage() {
   const fecharModal = () => setModal(null);
 
   // A busca espera a pessoa parar de mexer em qualquer filtro (digitar,
-  // arrastar o peso, marcar tipos) antes de ir à API: arrastar o controle de
-  // peso, por exemplo, não vira uma busca por quilo.
+  // marcar tipos) antes de ir à API: marcar três tipos seguidos, por
+  // exemplo, vira uma busca só.
   const filtrosAdiados = useAdiado(filtros, 400);
   const resultado = useBusca(filtrosAdiados, ordem);
   const locais = useLocais(filtros.especie);
@@ -266,127 +286,121 @@ function BuscaPage() {
       )}
       {modal === "pedido" && <ModalPedirLiberacao onFechar={fecharModal} />}
 
-      <main className="max-w-[1536px] mx-auto flex flex-col md:flex-row gap-6 px-5 md:px-16 py-12 pt-28">
-        <FiltrosBusca
-          filtros={filtros}
-          cidades={cidades}
-          bairros={bairros}
-          avisoLocais={locais.erro}
-          onFiltrar={filtrar}
-          onLimpar={limparFiltros}
-        />
-
-        <section className="flex-1 min-w-0 flex flex-col gap-5">
-          <CampoBuscaTexto
-            valor={filtros.busca}
-            onMudar={(texto) => filtrar({ busca: texto })}
-          />
-
-          <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold text-[#1a1c1c]">
-                Doadores encontrados
-              </h1>
-              {/* Anunciado ao leitor de tela a cada busca. */}
-              <p aria-live="polite" className="text-[#5f5e5e] text-sm mt-0.5">
-                {carregando
-                  ? "Buscando doadores…"
-                  : erro
-                    ? "A busca não foi concluída"
-                    : total > 0
-                      ? `${total} ${total === 1 ? "doador pode doar agora" : "doadores podem doar agora"} com esses filtros`
-                      : "Nenhum doador com esses filtros"}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-[#5f5e5e] font-semibold">
-                Ordenar por:
-              </span>
-              {ORDENACOES.map((o) => (
-                <button
-                  key={o.valor}
-                  type="button"
-                  onClick={() => setOrdem(o.valor)}
-                  aria-pressed={ordem === o.valor}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors border ${ordem === o.valor ? "bg-[#9e0a24] text-white border-[#9e0a24]" : "bg-white text-[#5f5e5e] border-[#e2d6d6] hover:border-[#7d0a1d] hover:text-[#7d0a1d]"}`}
-                >
-                  {o.rotulo}
-                </button>
-              ))}
-            </div>
+      <main className="max-w-[1200px] mx-auto flex flex-col gap-6 px-5 md:px-8 pt-28 pb-16">
+        {/* O título e a busca por texto abrem a página na largura toda; os
+            filtros e os resultados vêm embaixo, lado a lado no computador. */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h1 className="text-[1.75rem] md:text-3xl font-extrabold tracking-tight text-[#1a1c1c] leading-tight">
+            Buscar doadores
+          </h1>
+          <div className="w-full md:max-w-md lg:max-w-none lg:w-[calc((100%-3rem)*2/3+1.5rem)]">
+            <CampoBuscaTexto
+              valor={filtros.busca}
+              onMudar={(texto) => filtrar({ busca: texto })}
+            />
           </div>
+        </div>
 
-          <FaixaAcessoContatos
-            acesso={acesso}
-            onPedirLiberacao={() => setModal("pedido")}
-            onComoFunciona={() => setModal("contato")}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <FiltrosBusca
+            filtros={filtros}
+            cidades={cidades}
+            bairros={bairros}
+            avisoLocais={locais.erro}
+            onFiltrar={filtrar}
+            onLimpar={limparFiltros}
+            onEntenderValidacao={() => setModal("validacao")}
           />
 
-          <LegendaValidacao onEntender={() => setModal("validacao")} />
-
-          {erro && !carregando ? (
-            <div className="flex flex-col items-start gap-3 py-6">
-              <AvisoErro>{erro}</AvisoErro>
-              <Botao
-                variante="secundario"
-                icone="refresh"
-                onClick={resultado.tentarDeNovo}
-              >
-                Tentar de novo
-              </Botao>
+          <section className="lg:col-span-2 min-w-0 flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              {/* Anunciado ao leitor de tela a cada busca. */}
+              <p aria-live="polite" className="text-sm text-[#5b403f]">
+                {carregando ? (
+                  "Buscando doadores…"
+                ) : erro ? (
+                  "A busca não foi concluída"
+                ) : total > 0 ? (
+                  <>
+                    <strong className="font-bold text-[#1a1c1c]">
+                      {total} {total === 1 ? "doador" : "doadores"}
+                    </strong>{" "}
+                    {total === 1 ? "pode" : "podem"} doar agora com esses
+                    filtros
+                  </>
+                ) : (
+                  "Nenhum doador com esses filtros"
+                )}
+              </p>
+              <OrdemDaBusca ordem={ordem} onOrdenar={setOrdem} />
             </div>
-          ) : resultado.primeiraVez ? (
-            <p
-              role="status"
-              className="text-sm text-[#5f5e5e] py-16 text-center"
-            >
-              Buscando doadores…
-            </p>
-          ) : total === 0 && !carregando ? (
-            <SemResultados onLimpar={limparFiltros} />
-          ) : (
-            <>
-              {/* auto-fill: o número de colunas se ajusta à largura
-                  disponível sem que um cartão fique estreito demais. Enquanto
-                  uma busca nova carrega, os resultados anteriores ficam
-                  esmaecidos, em vez de a grade piscar. */}
-              <div
-                aria-busy={carregando}
-                className={`grid grid-cols-[repeat(auto-fill,minmax(270px,1fr))] gap-5 transition-opacity ${
-                  carregando ? "opacity-50" : ""
-                }`}
-              >
-                {doadores.map((doador) => (
-                  <CartaoDoador
-                    key={doador.codigo}
-                    doador={doador}
-                    onVerPerfil={() => navegar(`/tutor/${doador.tutorCodigo}`)}
-                  />
-                ))}
-              </div>
 
-              {restantes > 0 && !carregando && (
-                <div className="flex flex-col items-center gap-2 pt-2">
-                  <AvisoErro>{resultado.mais.erro}</AvisoErro>
-                  <Botao
-                    variante="secundario"
-                    icone="expand_more"
-                    disabled={resultado.mais.carregando}
-                    onClick={resultado.carregarMais}
-                    className="px-6"
-                  >
-                    {resultado.mais.carregando
-                      ? "Carregando…"
-                      : `Carregar mais ${Math.min(porPagina, restantes)}`}
-                  </Botao>
-                  <p className="text-xs text-[#5f5e5e]">
-                    Mostrando {doadores.length} de {total} doadores
-                  </p>
+            <FaixaAcessoContatos
+              acesso={acesso}
+              onPedirLiberacao={() => setModal("pedido")}
+              onComoFunciona={() => setModal("contato")}
+            />
+
+            {erro && !carregando ? (
+              <div className="flex flex-col items-start gap-3 py-6">
+                <AvisoErro>{erro}</AvisoErro>
+                <Botao
+                  variante="secundario"
+                  icone="refresh"
+                  onClick={resultado.tentarDeNovo}
+                >
+                  Tentar de novo
+                </Botao>
+              </div>
+            ) : resultado.primeiraVez ? (
+              <p
+                role="status"
+                className="text-sm text-[#5f5e5e] py-16 text-center"
+              >
+                Buscando doadores…
+              </p>
+            ) : total === 0 && !carregando ? (
+              <SemResultados onLimpar={limparFiltros} />
+            ) : (
+              <>
+                {/* As colunas dos cartões são as mesmas da grade da página
+                  (mesma largura, mesmo vão). Enquanto uma busca nova carrega,
+                  os resultados anteriores ficam esmaecidos, em vez de a
+                  grade piscar. */}
+                <div
+                  aria-busy={carregando}
+                  className={`grid grid-cols-1 sm:grid-cols-2 gap-6 transition-opacity ${
+                    carregando ? "opacity-50" : ""
+                  }`}
+                >
+                  {doadores.map((doador) => (
+                    <CartaoDoador key={doador.codigo} doador={doador} />
+                  ))}
                 </div>
-              )}
-            </>
-          )}
-        </section>
+
+                {restantes > 0 && !carregando && (
+                  <div className="flex flex-col items-center gap-2 pt-2">
+                    <AvisoErro>{resultado.mais.erro}</AvisoErro>
+                    <Botao
+                      variante="secundario"
+                      icone="expand_more"
+                      disabled={resultado.mais.carregando}
+                      onClick={resultado.carregarMais}
+                      className="px-6"
+                    >
+                      {resultado.mais.carregando
+                        ? "Carregando…"
+                        : `Carregar mais ${Math.min(porPagina, restantes)}`}
+                    </Botao>
+                    <p className="text-xs text-[#5f5e5e]">
+                      Mostrando {doadores.length} de {total} doadores
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        </div>
       </main>
     </>
   );
