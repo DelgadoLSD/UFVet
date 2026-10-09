@@ -1,4 +1,3 @@
-import Ajuda from "../../components/Ajuda";
 import Botao from "../../components/Botao";
 import { nomeRaca } from "../../regras/doacao";
 import { idadeEmAnos, textoIdade } from "../../util/datas";
@@ -9,16 +8,19 @@ import { formatarPeso } from "../../util/texto";
 // Vertical, com a foto em cima: é o formato que escaneia melhor em grade e dá
 // largura total ao texto, sem cortar raça, peso ou tipo sanguíneo. Mostra só
 // o que decide a escolha (tipo, porte, bairro, validação); os dados do tutor
-// ficam no perfil.
+// ficam no perfil. Todo doador da busca pode doar agora: o pausado pelo tutor
+// e o que está se recuperando de uma coleta nem aparecem.
 function CartaoDoador({ doador, onVerPerfil }) {
-  const { disponivel } = doador;
-  const idade = textoIdade(idadeEmAnos(doador.dataNascimento)).toLowerCase();
+  // Idade aproximada aparece como aproximada (NF12.1).
+  const idade = textoIdade(
+    idadeEmAnos(doador.dataNascimento),
+    doador.nascimentoAproximado,
+  ).toLowerCase();
 
   return (
     <article
-      className={`bg-white border border-[#eadede] rounded-2xl overflow-hidden flex flex-col transition-[border-color,box-shadow] duration-200 hover:border-[#dccaca] hover:shadow-[0_12px_28px_-16px_rgba(26,28,28,0.28)] ${
-        disponivel ? "" : "opacity-75"
-      }`}
+      aria-label={doador.nome}
+      className="bg-white border border-[#eadede] rounded-2xl overflow-hidden flex flex-col transition-[border-color,box-shadow] duration-200 hover:border-[#dccaca] hover:shadow-[0_12px_28px_-16px_rgba(26,28,28,0.28)]"
     >
       <div className="relative aspect-[4/3] bg-[#faf0f0]">
         {doador.foto ? (
@@ -105,34 +107,17 @@ function CartaoDoador({ doador, onVerPerfil }) {
       </div>
 
       <div className="px-4 py-3 border-t border-[#f0e6e6] flex items-center justify-between gap-3">
-        <span
-          className={`flex items-center gap-1.5 text-xs font-bold whitespace-nowrap ${
-            disponivel ? "text-emerald-700" : "text-[#5f5e5e]"
-          }`}
-        >
+        <span className="flex items-center gap-1.5 text-xs font-bold whitespace-nowrap text-emerald-700">
           <span
-            className={`w-2 h-2 rounded-full ${disponivel ? "bg-emerald-500" : "bg-gray-400"}`}
+            aria-hidden="true"
+            className="w-2 h-2 rounded-full bg-emerald-500"
           />
-          {disponivel ? "Disponível" : "Indisponível"}
-          {!disponivel && (
-            <Ajuda titulo="Por que está indisponível?">
-              <p>
-                O tutor pausou as doações por um tempo — por exemplo, durante
-                uma viagem, ou porque o animal doou há pouco e está se
-                recuperando.
-              </p>
-              <p>
-                Enquanto isso, o contato dele não aparece para pedidos de
-                doação. Vale conferir de novo mais tarde.
-              </p>
-            </Ajuda>
-          )}
+          Pode doar agora
         </span>
         <Botao
-          variante={disponivel ? "primario" : "secundario"}
           tamanho="sm"
-          disabled={!disponivel}
           onClick={onVerPerfil}
+          aria-label={`Ver perfil de ${doador.nome}`}
           className="shrink-0"
         >
           Ver perfil

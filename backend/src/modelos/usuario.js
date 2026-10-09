@@ -12,6 +12,10 @@ const COM_VETERINARIO = { veterinario: { include: { estabelecimento: true } } };
 export const buscarUsuarioPorId = (id) =>
   banco.usuario.findUnique({ where: { id }, include: COM_VETERINARIO });
 
+// Pelo código público (#T3M8P1), como o perfil aparece no endereço do site.
+export const buscarUsuarioPorCodigo = (codigo) =>
+  banco.usuario.findUnique({ where: { codigo }, include: COM_VETERINARIO });
+
 // O e-mail fica cifrado no banco; a busca é pela impressão digital dele.
 export const buscarUsuarioPorEmail = (email) =>
   banco.usuario.findUnique({
@@ -36,6 +40,57 @@ function mascararCpf(cpf) {
   const digitos = cpf.replace(/\D/g, "");
   return `•••.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-••`;
 }
+
+// Quantas validações um veterinário já assinou, o número do perfil dele.
+const validacoesAssinadas = (usuario) =>
+  banco.validacao.count({ where: { veterinarioId: usuario.id } });
+
+// O perfil de uma pessoa do jeito que qualquer um o vê, inclusive o visitante
+// sem conta, que chega pela busca (NF16.4). Não leva e-mail, telefone nem
+// CPF: o contato tem endereço próprio, só para quem pode ver (podeVerContato).
+// Do local do veterinário vai só o nome, sem o id interno.
+export async function dadosPublicos(usuario) {
+  const { veterinario } = usuario;
+  return {
+    codigo: usuario.codigo,
+    papel: usuario.papel,
+    nomeCompleto: usuario.nomeCompleto,
+    cidade: usuario.cidade,
+    bairro: usuario.bairro,
+    fotoUrl: usuario.fotoUrl,
+    membroDesde: usuario.criadoEm,
+    veterinario: veterinario && {
+      crmv: veterinario.crmv,
+      ufCrmv: veterinario.ufCrmv,
+      tratamento: veterinario.tratamento,
+      estabelecimento: { nome: veterinario.estabelecimento.nome },
+      validacoesRealizadas: await validacoesAssinadas(usuario),
+    },
+  };
+}
+
+// Quem vê o contato de outra pessoa (F33): a própria pessoa; o veterinário,
+// sempre; o tutor, só enquanto houver uma liberação dada a ele por um
+// veterinário, que não venceu nem foi encerrada. O visitante sem conta nunca
+// chega aqui (a rota exige login).
+export async function podeVerContato(quem, dono) {
+  if (quem.id === dono.id || quem.papel === "VETERINARIO") return true;
+  const liberacao = await banco.liberacaoContato.findFirst({
+    where: {
+      tutorId: quem.id,
+      encerradaEm: null,
+      expiraEm: { gt: new Date() },
+    },
+    select: { id: true },
+  });
+  return !!liberacao;
+}
+
+// O contato aberto, para quem passou por podeVerContato.
+export const contatoDe = (usuario) => ({
+  email: decifrar(usuario.emailCifrado),
+  telefone: decifrar(usuario.telefoneCifrado),
+});
 
 // A conta do jeito que a própria pessoa a recebe (topo do site, página da
 // conta). E-mail e telefone vão abertos, porque são dela; o CPF vai
@@ -62,9 +117,7 @@ export async function dadosDaConta(usuario) {
         id: veterinario.estabelecimento.id,
         nome: veterinario.estabelecimento.nome,
       },
-      validacoesRealizadas: await banco.validacao.count({
-        where: { veterinarioId: usuario.id },
-      }),
+      validacoesRealizadas: await validacoesAssinadas(usuario),
     },
   };
 }

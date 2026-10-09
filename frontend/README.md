@@ -1,11 +1,12 @@
 # UFVet — front-end
 
 O site do UFVet, em React. O login, o cadastro, a página da conta (com a
-foto de perfil) e os animais dos perfis (com as fotos e o histórico clínico:
-validação, doações e observações) já falam com a API (pasta `backend`). O
-resto (a pessoa dos perfis visitados, a busca, os exames e as liberações)
-ainda usa dados de exemplo no lugar da API: dá para navegar por tudo, mas o
-que muda nessas partes não é salvo, e recarregar a página volta ao começo.
+foto de perfil), os perfis (a pessoa, os animais, as fotos e o histórico
+clínico: validação, doações e observações) e a busca de doadores já falam
+com a API (pasta `backend`). O resto (os exames e os pedidos e liberações de
+contato) ainda usa dados de exemplo no lugar da API: dá para navegar por
+tudo, mas o que muda nessas partes não é salvo, e recarregar a página volta
+ao começo.
 
 ## Como rodar
 
@@ -37,18 +38,21 @@ Outros comandos:
 
 Com as contas de exemplo do back-end (`npm run db:exemplos`):
 
-| Conta                | E-mail                | Senha           |
-| -------------------- | --------------------- | --------------- |
-| Victor (veterinário) | `victor@example.com`  | `ufvet-exemplo` |
-| Beatriz (tutora)     | `beatriz@example.com` | `ufvet-exemplo` |
+| Conta                 | E-mail                     | Senha           |
+| --------------------- | -------------------------- | --------------- |
+| Victor (veterinário)  | `victor@example.com`       | `ufvet-exemplo` |
+| Beatriz (tutora)      | `beatriz@example.com`      | `ufvet-exemplo` |
+| Lucas (tutor)         | `lucas@example.com`        | `ufvet-exemplo` |
+| Pedro (tutor)         | `pedro@example.com`        | `ufvet-exemplo` |
+| Camila Nunes (tutora) | `camila.nunes@example.com` | `ufvet-exemplo` |
 
 Elas têm os mesmos códigos públicos das pessoas dos dados de exemplo, então o
 site mostra os pedidos e as liberações de exemplo de cada uma. Os retratos,
-os animais, as fotos e o histórico clínico deles vêm do banco (o mesmo
-comando os cria); os exames ainda saem dos dados de exemplo. Entrando com uma
-e com a
-outra, dá para ver o mesmo site pelos dois lados (por exemplo, o contato que o
-veterinário vê e a tutora não).
+os animais, as fotos, o histórico clínico e os doadores da busca vêm do
+banco (o mesmo comando os cria); os exames ainda saem dos dados de exemplo.
+Entrando com o Victor e com a Beatriz, dá para ver o mesmo site pelos dois
+lados: no perfil do Lucas, por exemplo, o veterinário vê o contato, e a
+tutora só pode pedir a liberação.
 
 Sem entrar, o site mostra o que o visitante vê: o início, a busca e os perfis,
 sem os contatos. O próprio perfil e a conta pedem login.
@@ -94,18 +98,18 @@ As telas não leem os dados de exemplo diretamente: elas sempre passam por
 `servicos/`.
 
 ```
-tela  →  servicos/  →  API               (sessão, login, cadastro, conta, animais e histórico)
+tela  →  servicos/  →  API               (sessão, conta, perfis, animais, histórico e busca)
 tela  →  servicos/  →  dados/exemplos/   (o resto, por enquanto)
 ```
 
-| Serviço                      | O que oferece                                                                     |
-| ---------------------------- | --------------------------------------------------------------------------------- |
-| `servicos/api.js`            | A conversa com a API, usada pelos outros serviços                                 |
-| `servicos/sessao.js`         | Quem está logado (`useSessao`); entrar, sair e a conta                            |
-| `servicos/pessoas.js`        | Hospitais, tutores e veterinários pelo código, perfil visitado                    |
-| `servicos/animais.js`        | Animais dos perfis, com o histórico clínico, e o que o veterinário registra (API) |
-| `servicos/doadores.js`       | Doadores da busca                                                                 |
-| `servicos/acessoContatos.js` | Liberações e pedidos de acesso aos contatos, e quem pode ver                      |
+| Serviço                      | O que oferece                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------- |
+| `servicos/api.js`            | A conversa com a API, usada pelos outros serviços                                     |
+| `servicos/sessao.js`         | Quem está logado (`useSessao`); entrar, sair e a conta                                |
+| `servicos/pessoas.js`        | O perfil de outra pessoa e o contato dela (API); hospitais e veterinários dos pedidos |
+| `servicos/animais.js`        | Animais dos perfis, com o histórico clínico, e o que o veterinário registra (API)     |
+| `servicos/doadores.js`       | A busca de doadores e os lugares dos filtros (API)                                    |
+| `servicos/acessoContatos.js` | Liberações e pedidos de acesso aos contatos, e quem pode ver                          |
 
 Na integração com a API, o trabalho fica concentrado nesses arquivos: cada
 função passa a chamar a API, e as telas continuam chamando as mesmas funções
@@ -151,11 +155,12 @@ de entrar (que só aceita páginas do próprio site), a idade e o prazo de
 recuperação dos animais, a situação da validação (vencida, com pendências e o
 critério de peso e idade que perde o efeito quando o peso ou o nascimento
 muda), o formulário do animal (o que ele confere e o que manda para a API), o
-registro de doação (o que falta antes de enviar) e as fotos (formatos aceitos,
-tamanho e a ordem que vai para a API). Também confere como os erros da API
-chegam aos formulários: o de um campo vai para embaixo dele, e o geral (sem
-conexão, limite de tentativas) para cima do botão. Os testes não abrem o
-navegador nem precisam da API ligada.
+registro de doação (o que falta antes de enviar), as fotos (formatos aceitos,
+tamanho e a ordem que vai para a API), a consulta da busca (o que vai para a
+API) e o perfil de outra pessoa (que chega sem contato). Também confere como
+os erros da API chegam aos formulários: o de um campo vai para embaixo dele,
+e o geral (sem conexão, limite de tentativas) para cima do botão. Os testes
+não abrem o navegador nem precisam da API ligada.
 
 Essas regras são cópias das que a API confere (`backend/src/validacao.js`), e
 os exemplos dos testes são os mesmos dos testes de lá. Mudou uma regra num

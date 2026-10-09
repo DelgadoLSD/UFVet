@@ -37,6 +37,15 @@ export async function exigirLogin(req, res, next) {
   next();
 }
 
+// Filtro das rotas públicas que contam com quem está logado, sem exigir
+// login (a busca e os perfis): a conta, quando há, fica em req.usuario, e o
+// visitante passa com req.usuario vazio. Serve aos limites de tentativas, que
+// contam por conta, e não pelo endereço de rede, quem está logado.
+export async function identificarSessao(req, res, next) {
+  req.usuario = await usuarioDaSessao(req);
+  next();
+}
+
 // Filtro das rotas de um papel só (por exemplo, as do veterinário). Vem
 // sempre depois de exigirLogin.
 export const exigirPapel = (papel) => (req, res, next) => {

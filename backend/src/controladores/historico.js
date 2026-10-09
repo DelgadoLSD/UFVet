@@ -1,4 +1,5 @@
 import { banco } from "../banco.js";
+import { codigoDoEndereco } from "../codigos.js";
 import {
   deDataDoBanco,
   hojeISO,
@@ -28,8 +29,6 @@ import {
 //
 // Nada disso é editado nem apagado depois: um registro assinado fica como
 // foi feito (NF19.4). Por isso não existem rotas de alteração aqui.
-
-const codigoDoEndereco = (valor) => valor.trim().toUpperCase();
 
 // Qualquer animal, pelo código do endereço.
 async function animalPeloCodigo(req) {

@@ -138,13 +138,6 @@ const MURILO_NOGUEIRA = veterinario(
 
 // ─── Listas usadas pelo site ──────────────────────────────────────────────────
 
-// Perfil que um veterinário abre pela busca.
-export const TUTORA_DE_EXEMPLO = BEATRIZ;
-
-// Perfil que um tutor (ou um visitante) abre pela busca: é onde o contato
-// bloqueado aparece.
-export const OUTRO_TUTOR = LUCAS;
-
 // Tutores que um veterinário pode encontrar pelo código para liberar acesso.
 export const TUTORES = [BEATRIZ, LUCAS, PEDRO, CAMILA_NUNES];
 

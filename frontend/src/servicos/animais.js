@@ -42,34 +42,13 @@ function corpoDoPedido(dados, arquivos = []) {
   return formulario;
 }
 
-// Animais de exemplo de um perfil, com as fotos no mesmo formato das que vêm
-// da API.
-export const animaisDeExemplo = (codigoTutor) =>
-  (ANIMAIS_POR_TUTOR[codigoTutor] ?? []).map((animal) => ({
-    ...animal,
-    fotos: animal.fotos.map((url) => ({ id: null, url })),
-  }));
-
-// Os animais de uma pessoa, do primeiro cadastrado ao último.
+// Os animais de uma pessoa, do primeiro cadastrado ao último: os do próprio
+// perfil e os do perfil de outra pessoa.
 export async function listarAnimais(codigoTutor) {
   const { animais } = await chamarApi(
     `/usuarios/${encodeURIComponent(codigoTutor)}/animais`,
   );
   return animais.map(paraAnimal);
-}
-
-// Os animais do perfil de outra pessoa. Enquanto os perfis visitados ainda
-// saem dos dados de exemplo, a pessoa pode não existir no banco (o tutor de
-// exemplo que um tutor visita): aí ficam os animais de exemplo dela.
-export async function animaisDoPerfil(codigoTutor) {
-  try {
-    return await listarAnimais(codigoTutor);
-  } catch (falha) {
-    if (falha.status === 404 && ANIMAIS_POR_TUTOR[codigoTutor]) {
-      return animaisDeExemplo(codigoTutor);
-    }
-    throw falha;
-  }
 }
 
 // Cadastra com as fotos escolhidas, na ordem (a primeira é a principal).

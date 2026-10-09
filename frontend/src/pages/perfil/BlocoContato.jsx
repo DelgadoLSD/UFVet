@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import AvisoErro from "../../components/AvisoErro";
 import Botao from "../../components/Botao";
 import BotaoAjuda from "../../components/BotaoAjuda";
 import { useCopiar } from "../../hooks/useCopiar";
 import PainelSecao, { CampoPainel } from "./PainelSecao";
-import { acharVeterinario } from "../../servicos/pessoas";
+import { acharVeterinario, buscarContato } from "../../servicos/pessoas";
 import { nomeProfissionalCurto, primeiroNome, pronome } from "../../util/texto";
 
 // Contato (e-mail e telefone) no cartão de um perfil. Só aparece inteiro para
@@ -13,16 +14,13 @@ import { nomeProfissionalCurto, primeiroNome, pronome } from "../../util/texto";
 // e um aviso diz o que fazer, em vez de só barrar (NF33.2).
 //
 // `acesso` é o resultado de acessoDe() (servicos/acessoContatos): se a pessoa
-// pode ver e por quê.
+// pode ver e por quê. No perfil de outra pessoa, o contato não vem com o
+// perfil: "Ver contato" o pede à API, que confere de novo quem pode ver.
 
+// Antes de revelar, nada do contato aparece: nem a primeira letra nem o
+// domínio do e-mail. Só a forma, para ficar claro que o dado existe.
+const EMAIL_OCULTO = "••••••••@••••••";
 const TELEFONE_OCULTO = "(••) •••••-••••";
-
-// Mantém o domínio à vista: dá para saber que o e-mail existe sem expor de
-// quem é.
-const ocultarEmail = (email) => {
-  const [usuario, dominio] = email.split("@");
-  return `${usuario.slice(0, 1)}${"•".repeat(Math.max(usuario.length - 1, 3))}@${dominio}`;
-};
 
 // O dado à mostra, com um botão ao lado para copiar.
 function ValorCopiavel({ valor, rotulo }) {
@@ -77,10 +75,24 @@ function BlocoContato({
   onComoFunciona,
 }) {
   // Mesmo com acesso, o contato só aparece depois de um clique: ninguém vê o
-  // telefone de outra pessoa sem ter pedido para ver.
-  const [revelado, setRevelado] = useState(false);
+  // telefone de outra pessoa sem ter pedido para ver. No próprio perfil, ele
+  // já vem com a conta.
+  const [revelado, setRevelado] = useState(null);
+  const [abrindo, setAbrindo] = useState(false);
+  const [erro, setErro] = useState("");
 
-  const visivel = ehProprio || revelado;
+  const contato = ehProprio ? perfil : revelado;
+  const verContato = async () => {
+    setAbrindo(true);
+    setErro("");
+    try {
+      setRevelado(await buscarContato(perfil.codigo));
+    } catch (falha) {
+      setErro(falha.message);
+    } finally {
+      setAbrindo(false);
+    }
+  };
   const local = useLocation();
   const semAcesso = !ehProprio && !acesso.pode;
 
@@ -89,8 +101,13 @@ function BlocoContato({
   let acao = null;
   if (!ehProprio && acesso.pode && !revelado) {
     acao = (
-      <Botao variante="claro" tamanho="xs" onClick={() => setRevelado(true)}>
-        Ver contato
+      <Botao
+        variante="claro"
+        tamanho="xs"
+        disabled={abrindo}
+        onClick={verContato}
+      >
+        {abrindo ? "Abrindo…" : "Ver contato"}
       </Botao>
     );
   } else if (acesso.motivo === "visitante") {
@@ -128,23 +145,25 @@ function BlocoContato({
       acao={acao}
     >
       <CampoPainel rotulo="E-mail">
-        {visivel ? (
-          <ValorCopiavel valor={perfil.email} rotulo="e-mail" />
+        {contato ? (
+          <ValorCopiavel valor={contato.email} rotulo="e-mail" />
         ) : (
-          <span className="truncate font-normal text-[#5f5e5e]">
-            {ocultarEmail(perfil.email)}
+          <span className="truncate font-normal tracking-wider text-[#5f5e5e]">
+            {EMAIL_OCULTO}
           </span>
         )}
       </CampoPainel>
       <CampoPainel rotulo="Telefone">
-        {visivel ? (
-          <ValorCopiavel valor={perfil.telefone} rotulo="telefone" />
+        {contato ? (
+          <ValorCopiavel valor={contato.telefone} rotulo="telefone" />
         ) : (
           <span className="tracking-wider font-normal text-[#5f5e5e]">
             {TELEFONE_OCULTO}
           </span>
         )}
       </CampoPainel>
+
+      <AvisoErro>{erro}</AvisoErro>
 
       {ehProprio ? (
         <p className="text-xs text-[#5f5e5e] leading-relaxed">

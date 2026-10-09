@@ -9,10 +9,11 @@ import { assinaturaDe } from "../src/modelos/usuario.js";
 import { gerarHashSenha } from "../src/senha.js";
 
 // Contas e animais de exemplo, para desenvolver e demonstrar o site. São as
-// mesmas pessoas e os mesmos animais dos dados de exemplo do front-end
-// (frontend/src/dados/exemplos), com os mesmos códigos públicos e as mesmas
-// fotos: entrando com essas contas, o site mostra os pedidos, as liberações e
-// o histórico dos animais que as telas já têm.
+// mesmas pessoas dos dados de exemplo do front-end (frontend/src/dados/
+// exemplos), com os mesmos códigos públicos, e os animais delas, com as
+// mesmas fotos: entrando com essas contas, o site mostra os pedidos, as
+// liberações e o histórico que as telas já têm, e a busca tem doadores de
+// verdade para mostrar.
 //
 // Roda com `npm run db:exemplos`, depois de `npm run db:seed`, e pode rodar
 // de novo sem duplicar: só cria o que falta (uma conta, um animal ou as fotos
@@ -55,6 +56,40 @@ const CONTAS = [
     cidade: "Viçosa - MG",
     bairro: "Ramos",
     retrato: { arquivo: "people/women1_0-image.jpg", alturaDoRosto: 0.55 },
+  },
+  // Os outros tutores dos dados de exemplo, donos dos doadores que a busca
+  // mostra. Pedro e Camila ficam sem foto, para a tela sem retrato também
+  // aparecer.
+  {
+    codigo: "T7X9K2",
+    papel: "TUTOR",
+    nomeCompleto: "Lucas Silva Delgado",
+    email: "lucas@example.com",
+    cpf: "31452087611",
+    telefone: "(31) 99715-2280",
+    cidade: "Viçosa - MG",
+    bairro: "Silvestre",
+    retrato: { arquivo: "people/man2_0-image.jpg", alturaDoRosto: 0.25 },
+  },
+  {
+    codigo: "T5K2W7",
+    papel: "TUTOR",
+    nomeCompleto: "Pedro Alves",
+    email: "pedro@example.com",
+    cpf: "27183918222",
+    telefone: "(31) 98123-4567",
+    cidade: "Viçosa - MG",
+    bairro: "Belvedere",
+  },
+  {
+    codigo: "T5W2K6",
+    papel: "TUTOR",
+    nomeCompleto: "Camila Nunes",
+    email: "camila.nunes@example.com",
+    cpf: "16180339833",
+    telefone: "(31) 99452-1873",
+    cidade: "Teixeiras - MG",
+    bairro: "Centro",
   },
 ];
 
@@ -119,6 +154,180 @@ const ANIMAIS = [
     disponivel: false,
     fotos: ["cats/cat7_0-image.jpg"],
   },
+  // Os doadores da busca de exemplo do site (dados/exemplos/doadores.js),
+  // com códigos novos, do alfabeto que a API usa. Max fica pausado, para a
+  // busca mostrar que ele sai dela; Bolt e Pipoca ficam sem foto.
+  ...[
+    [
+      "T7X9K2",
+      "H4R8T2",
+      "Thor",
+      "CAO",
+      "Golden Retriever",
+      "MACHO",
+      true,
+      "2022-04-12",
+      32,
+      true,
+      ["dogs/dog2_0-image.jpg"],
+    ],
+    [
+      "T7X9K2",
+      "F6J3R9",
+      "Frajola",
+      "GATO",
+      null,
+      "MACHO",
+      true,
+      "2021-11-03",
+      4.5,
+      true,
+      ["cats/cat5_0-image.jpg"],
+    ],
+    [
+      "T7X9K2",
+      "B7Q2M5",
+      "Bolt",
+      "CAO",
+      "Dálmata",
+      "MACHO",
+      false,
+      "2023-01-09",
+      30,
+      true,
+      [],
+    ],
+    [
+      "T5K2W7",
+      "M5X3B8",
+      "Max",
+      "CAO",
+      "Beagle",
+      "MACHO",
+      true,
+      "2020-06-21",
+      16,
+      false,
+      ["dogs/dog4_0-image.jpg"],
+    ],
+    [
+      "T5K2W7",
+      "B9R4N6",
+      "Barão",
+      "CAO",
+      "Bernese",
+      "MACHO",
+      true,
+      "2021-03-02",
+      45,
+      true,
+      ["dogs/dog5_0-image.jpg"],
+    ],
+    [
+      "T5K2W7",
+      "G3Z7M2",
+      "Gizmo",
+      "GATO",
+      null,
+      "MACHO",
+      true,
+      "2022-09-15",
+      5.3,
+      true,
+      ["cats/cat4_0-image.jpg"],
+    ],
+    [
+      "T5K2W7",
+      "D8Q4K7",
+      "Duque",
+      "CAO",
+      "Rottweiler",
+      "MACHO",
+      true,
+      "2020-11-20",
+      41,
+      true,
+      ["dogs/dog3_0-image.jpg"],
+    ],
+    [
+      "T5W2K6",
+      "R2X6P9",
+      "Rex",
+      "CAO",
+      "Pastor Alemão",
+      "MACHO",
+      true,
+      "2021-07-30",
+      38,
+      true,
+      ["dogs/dog6_0-image.jpg"],
+    ],
+    [
+      "T5W2K6",
+      "S6M9B3",
+      "Simba",
+      "GATO",
+      "Maine Coon",
+      "MACHO",
+      true,
+      "2022-05-05",
+      6.1,
+      true,
+      ["cats/cat2_0-image.jpg"],
+    ],
+    [
+      "T5W2K6",
+      "A4M7R2",
+      "Amora",
+      "GATO",
+      "Siamês",
+      "FEMEA",
+      true,
+      "2023-03-12",
+      3.9,
+      true,
+      ["cats/cat6_0-image.jpg"],
+    ],
+    [
+      "T5W2K6",
+      "P3C8K5",
+      "Pipoca",
+      "CAO",
+      null,
+      "FEMEA",
+      true,
+      "2022-08-08",
+      26,
+      true,
+      [],
+    ],
+  ].map(
+    ([
+      tutor,
+      codigo,
+      nome,
+      especie,
+      raca,
+      sexo,
+      castrado,
+      dataNascimento,
+      pesoKg,
+      disponivel,
+      fotos,
+    ]) => ({
+      tutor,
+      codigo,
+      nome,
+      especie,
+      raca,
+      sexo,
+      castrado,
+      dataNascimento,
+      pesoKg,
+      disponivel,
+      fotos,
+    }),
+  ),
 ];
 
 // ─── Histórico clínico de exemplo ──────────────────────────────────────────────
@@ -256,6 +465,36 @@ const HISTORICO = {
       },
     ],
   },
+  // Os doadores validados da busca: uma validação completa cada, dentro do
+  // prazo, e algumas doações antigas, de mais de 90 dias, para eles estarem
+  // fora da recuperação e aparecerem.
+  ...Object.fromEntries(
+    [
+      ["H4R8T2", "DEA 1.1+", "2026-07-22", CAMILA, ["2026-02-14", PAULO]],
+      ["F6J3R9", "Tipo A", "2026-08-30", PAULO],
+      [
+        "B9R4N6",
+        "DEA 1.1 Universal",
+        "2026-04-18",
+        CAMILA,
+        ["2026-05-02", CAMILA],
+      ],
+      ["G3Z7M2", "Tipo A", "2026-06-12", PAULO],
+      ["D8Q4K7", "DEA 4", "2026-03-05", CAMILA],
+      ["R2X6P9", "DEA 1.1-", "2026-09-01", CAMILA],
+      ["S6M9B3", "Tipo B", "2026-05-20", CAMILA],
+    ].map(([codigo, tipoSanguineo, realizadaEm, veterinario, doacao]) => [
+      codigo,
+      {
+        tipoSanguineo,
+        validacoes: [{ realizadaEm, veterinario, criterios: TODOS_ATENDIDOS }],
+        doacoes: doacao
+          ? [{ dataColeta: doacao[0], volumeMl: 450, veterinario: doacao[1] }]
+          : [],
+        observacoes: [],
+      },
+    ]),
+  ),
 };
 
 // Grava o histórico de exemplo de um animal, parte por parte: só cria o que
@@ -417,7 +656,7 @@ async function criarContas(hospital) {
       console.log(`Criada: ${conta.nomeCompleto} (${conta.email})`);
     }
 
-    if (!usuario.fotoUrl) {
+    if (!usuario.fotoUrl && retrato) {
       await banco.usuario.update({
         where: { id: usuario.id },
         data: { fotoUrl: await enviarImagem(retrato.arquivo, retrato) },
@@ -450,7 +689,7 @@ async function criarAnimais(hospital) {
       console.log(`Criado: ${animal.nome} (#${animal.codigo})`);
     }
 
-    if (existente.fotos.length === 0) {
+    if (existente.fotos.length === 0 && fotos.length > 0) {
       for (const [ordem, arquivo] of fotos.entries()) {
         await banco.animalFoto.create({
           data: {

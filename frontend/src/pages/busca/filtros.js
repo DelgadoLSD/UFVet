@@ -1,16 +1,9 @@
-import { nomeRaca } from "../../regras/doacao";
+// Filtros e ordenação da busca de doadores. A tela guarda os filtros que a
+// pessoa escolheu; consultaDaBusca os transforma no endereço que vai para a
+// API, que filtra, ordena e devolve uma página de cada vez.
 
-// Filtros e ordenação da busca de doadores.
-//
-// Enquanto o site não está ligado à API, a página recebe a lista inteira e
-// filtra aqui, na hora. Na integração, estes mesmos filtros passam a ir para a
-// API, que devolve só os doadores que interessam.
-
-// Faixa de peso do controle deslizante, por espécie.
-export const LIMITES_PESO = {
-  CAO: { min: 10, max: 60 },
-  GATO: { min: 2, max: 10 },
-};
+// O texto da busca vai até 60 caracteres, como a API aceita.
+export const TAMANHO_MAXIMO_BUSCA = 60;
 
 export const FILTROS_INICIAIS = {
   busca: "",
@@ -19,66 +12,33 @@ export const FILTROS_INICIAIS = {
   apenasValidados: false,
   especie: "CAO",
   tipos: [],
-  pesoMax: LIMITES_PESO.CAO.max,
   cidade: "",
   bairro: "",
 };
 
 export const ORDENACOES = [
-  {
-    valor: "validados",
-    rotulo: "Validados primeiro",
-    comparar: (a, b) => b.validado - a.validado,
-  },
-  {
-    valor: "peso",
-    rotulo: "Maior peso",
-    comparar: (a, b) => b.pesoKg - a.pesoKg,
-  },
-  {
-    valor: "nome",
-    rotulo: "Nome",
-    comparar: (a, b) => a.nome.localeCompare(b.nome, "pt-BR"),
-  },
+  { valor: "validados", rotulo: "Validados primeiro" },
+  { valor: "peso", rotulo: "Maior peso" },
+  { valor: "nome", rotulo: "Nome" },
 ];
 
-// O texto da busca procura no nome, na raça, no bairro e no código. O "#" é
-// ignorado, para quem cola o código como ele aparece no cartão.
-function casaComBusca(doador, busca) {
-  const termo = busca.trim().toLowerCase().replace("#", "");
-  if (!termo) return true;
-  return [doador.nome, nomeRaca(doador), doador.codigo, doador.bairro].some(
-    (campo) => campo.toLowerCase().includes(termo),
-  );
+// Os filtros da tela -> o endereço da busca na API
+// ("especie=CAO&tipos=DEA+4&ordem=validados"). Só vai o que filtra de fato:
+// a busca vazia não procura nada, e o bairro só vai junto com a cidade. A
+// primeira página não precisa ser dita. Não há filtro de peso: esconder os
+// maiores esconderia justamente quem pode doar mais; quem quer vê-los
+// primeiro usa a ordem "Maior peso".
+export function consultaDaBusca(filtros, ordem, pagina = 1) {
+  const consulta = new URLSearchParams({ especie: filtros.especie });
+  for (const tipo of filtros.tipos) consulta.append("tipos", tipo);
+  if (filtros.cidade) {
+    consulta.set("cidade", filtros.cidade);
+    if (filtros.bairro) consulta.set("bairro", filtros.bairro);
+  }
+  if (filtros.apenasValidados) consulta.set("apenasValidados", "true");
+  const busca = filtros.busca.trim();
+  if (busca) consulta.set("busca", busca);
+  consulta.set("ordem", ordem);
+  if (pagina > 1) consulta.set("pagina", String(pagina));
+  return consulta.toString();
 }
-
-// Doadores que passam por todos os filtros, já na ordem escolhida.
-export function filtrarDoadores(doadores, filtros, ordem) {
-  const { comparar } = ORDENACOES.find((o) => o.valor === ordem);
-  return doadores
-    .filter(
-      (d) =>
-        d.especie === filtros.especie &&
-        (!filtros.apenasValidados || d.validado) &&
-        (filtros.tipos.length === 0 ||
-          filtros.tipos.includes(d.tipoSanguineo)) &&
-        d.pesoKg <= filtros.pesoMax &&
-        casaComBusca(d, filtros.busca) &&
-        (!filtros.cidade || d.cidade === filtros.cidade) &&
-        (!filtros.bairro || d.bairro === filtros.bairro),
-    )
-    .sort(comparar);
-}
-
-const ordemAlfabetica = (lista) =>
-  [...new Set(lista)].sort((a, b) => a.localeCompare(b, "pt-BR"));
-
-// As cidades e os bairros dos filtros saem dos próprios doadores: a lista
-// acompanha os lugares onde o UFVet já tem gente cadastrada.
-export const cidadesDe = (doadores) =>
-  ordemAlfabetica(doadores.map((d) => d.cidade));
-
-export const bairrosDe = (doadores, cidade) =>
-  ordemAlfabetica(
-    doadores.filter((d) => d.cidade === cidade).map((d) => d.bairro),
-  );

@@ -12,6 +12,7 @@ import {
   trocarFoto,
   trocarSenha,
 } from "./controladores/conta.js";
+import { buscarDoadores, listarLocais } from "./controladores/busca.js";
 import { consultarConvite } from "./controladores/convites.js";
 import {
   listarEstabelecimentos,
@@ -19,6 +20,7 @@ import {
   registrarObservacao,
   validarAnimal,
 } from "./controladores/historico.js";
+import { contatoDoPerfil, perfilPublico } from "./controladores/perfis.js";
 import {
   entrar,
   sair,
@@ -30,7 +32,11 @@ import {
   conferirDisponibilidade,
 } from "./controladores/usuarios.js";
 import { receberFoto, receberFotos } from "./middlewares/envio.js";
-import { exigirLogin, exigirPapel } from "./middlewares/sessao.js";
+import {
+  exigirLogin,
+  exigirPapel,
+  identificarSessao,
+} from "./middlewares/sessao.js";
 
 // O cardápio da API: cada linha liga um endereço a quem o atende (o
 // controlador), passando antes pelos filtros que ele exige (limite de
@@ -75,6 +81,26 @@ export function criarRotas(limites) {
   rotas.delete("/conta/foto", exigirLogin, removerFoto);
   rotas.put("/conta/senha", exigirLogin, limites.senhaAtual, trocarSenha);
   rotas.delete("/conta", exigirLogin, limites.senhaAtual, encerrarConta);
+
+  // Busca de doadores (F16 a F18): pública, para quem procura doador numa
+  // emergência mesmo sem conta, e sem nenhum contato (NF16.4).
+  rotas.get("/doadores", identificarSessao, limites.busca, buscarDoadores);
+  rotas.get("/doadores/locais", identificarSessao, limites.busca, listarLocais);
+
+  // O perfil de outra pessoa, aberto pela busca: os dados públicos, para
+  // todos, e o contato, só para quem tem acesso (F33), em rota separada.
+  rotas.get(
+    "/usuarios/:codigo",
+    identificarSessao,
+    limites.perfis,
+    perfilPublico,
+  );
+  rotas.get(
+    "/usuarios/:codigo/contato",
+    exigirLogin,
+    limites.perfis,
+    contatoDoPerfil,
+  );
 
   // Animais (F8 a F11), com as fotos. Ver é público, como a busca;
   // cadastrar, editar e excluir exigem login, e só o dono mexe (ver

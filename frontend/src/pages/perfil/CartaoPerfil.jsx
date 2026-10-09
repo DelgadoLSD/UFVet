@@ -163,6 +163,7 @@ function CartaoPerfil({
             }`}
           >
             <BlocoContato
+              key={perfil.codigo}
               perfil={perfil}
               ehProprio={ehProprio}
               acesso={acesso}

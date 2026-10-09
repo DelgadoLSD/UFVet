@@ -311,8 +311,8 @@ disponível para o veterinário comparar a evolução.
 ### F16 — Buscar doadores · Evidente · Obrigatório
 
 **Descrição:** O sistema deve permitir localizar animais doadores por espécie,
-tipo sanguíneo, peso máximo, cidade, bairro e situação de validação, além de
-busca textual por nome, raça, bairro ou código.
+tipo sanguíneo, cidade, bairro e situação de validação, além de busca
+textual por nome, raça, bairro ou código.
 
 | Código | Nome | Restrição | Categoria | Desejável | Permanente |
 |---|---|---|---|---|---|

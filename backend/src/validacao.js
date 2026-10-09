@@ -515,3 +515,84 @@ export const esquemaObservacao = z.object({
       `Escreva no máximo ${TAMANHO_MAXIMO_OBSERVACAO} caracteres.`,
     ),
 });
+
+// ─── Busca de doadores (F16 a F18) ────────────────────────────────────────────
+
+// Depois de uma coleta, o animal descansa 90 dias, cão ou gato (NF13.1).
+export const INTERVALO_RECUPERACAO_DIAS = 90;
+
+// Quantos doadores vêm de cada vez; o site pede o próximo bloco quando a
+// pessoa clica em "Carregar mais" (NF16.3).
+export const DOADORES_POR_PAGINA = 6;
+
+// As ordens da busca (F17): validados primeiro, maior peso ou nome.
+export const ORDENS_DA_BUSCA = ["validados", "peso", "nome"];
+
+const especieDaBusca = z.enum(["CAO", "GATO"], {
+  error: "Escolha cão ou gato.",
+});
+
+// Um texto da busca: espaços das pontas saem, e vazio é o mesmo que não
+// filtrar.
+const textoDaBusca = (maximo, mensagem) =>
+  z
+    .string({ error: "Valor inválido." })
+    .trim()
+    .max(maximo, mensagem)
+    .optional()
+    .transform((valor) => valor || undefined);
+
+// Os filtros chegam pelo endereço (/doadores?especie=CAO&tipos=DEA%204...):
+// tudo vem como texto e é convertido aqui. O que não está na lista é
+// ignorado, e o que está fora do esperado é recusado com o motivo.
+export const esquemaBusca = z
+  .object({
+    especie: especieDaBusca,
+    // Um tipo só chega como texto; vários, como lista (tipos=A&tipos=B).
+    tipos: z.preprocess(
+      (valor) =>
+        valor === undefined ? [] : Array.isArray(valor) ? valor : [valor],
+      z.array(z.string()).max(5, "Escolha no máximo 5 tipos."),
+    ),
+    cidade: textoDaBusca(80, "Escolha a cidade na lista."),
+    bairro: textoDaBusca(80, "Escolha o bairro na lista."),
+    apenasValidados: z
+      .enum(["true", "false"], { error: "Valor inválido." })
+      .optional()
+      .transform((valor) => valor === "true"),
+    busca: textoDaBusca(60, "Busque com até 60 caracteres."),
+    ordem: z
+      .enum(ORDENS_DA_BUSCA, { error: "Escolha uma das ordens da lista." })
+      .default("validados"),
+    pagina: z.coerce
+      .number({ error: "Página inválida." })
+      .int("Página inválida.")
+      .min(1, "Página inválida.")
+      .max(500, "Página inválida.")
+      .default(1),
+  })
+  .superRefine((filtros, ctx) => {
+    // Os tipos são os da espécie escolhida (NF20.2).
+    const daEspecie = TIPOS_SANGUINEOS[filtros.especie];
+    if (filtros.tipos.some((tipo) => !daEspecie.includes(tipo))) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["tipos"],
+        message:
+          filtros.especie === "CAO"
+            ? "Escolha tipos da classificação DEA, a dos cães."
+            : "Escolha tipos A, B ou AB, os dos gatos.",
+      });
+    }
+    // O bairro só faz sentido dentro de uma cidade (NF16.2).
+    if (filtros.bairro && !filtros.cidade) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["bairro"],
+        message: "Escolha a cidade antes do bairro.",
+      });
+    }
+  });
+
+// Os lugares para os filtros de cidade e bairro, por espécie.
+export const esquemaLocais = z.object({ especie: especieDaBusca });

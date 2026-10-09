@@ -1,4 +1,4 @@
-import { rateLimit } from "express-rate-limit";
+import { ipKeyGenerator, rateLimit } from "express-rate-limit";
 import { registrar } from "../registro.js";
 
 // Limites de tentativas por endereço de rede (rate limit). Barram quem tenta
@@ -22,6 +22,13 @@ const opcoesComuns = {
     res.status(opcoes.statusCode).json(opcoes.message);
   },
 };
+
+// Quem está logado tem a própria cota, pela conta; o visitante, pelo
+// endereço de rede. Assim, várias pessoas no mesmo Wi-Fi (da UFV, de um
+// hospital) não gastam a cota umas das outras. O ipKeyGenerator agrupa os
+// endereços IPv6 de um mesmo aparelho, que mudam com frequência.
+const porContaOuEndereco = (req) =>
+  req.usuario ? `conta:${req.usuario.id}` : ipKeyGenerator(req.ip);
 
 export function criarLimites() {
   return {
@@ -113,6 +120,31 @@ export function criarLimites() {
       keyGenerator: (req) => req.usuario.id,
       message: {
         erro: "Muitos registros feitos em pouco tempo. Tente de novo mais tarde.",
+      },
+    }),
+
+    // Busca de doadores e perfis, abertos a quem não tem conta (NF16.4).
+    // Contam por conta, ou por endereço para o visitante. Quem procura doador
+    // de verdade faz algumas buscas por minuto (o site espera a pessoa parar
+    // de mexer nos filtros antes de buscar); o teto barra quem tentasse
+    // copiar a lista inteira de doadores, página por página, ou percorrer os
+    // perfis um a um.
+    busca: rateLimit({
+      ...opcoesComuns,
+      windowMs: MINUTO,
+      limit: 60,
+      keyGenerator: porContaOuEndereco,
+      message: {
+        erro: "Muitas buscas em pouco tempo. Espere um minuto e tente de novo.",
+      },
+    }),
+    perfis: rateLimit({
+      ...opcoesComuns,
+      windowMs: MINUTO,
+      limit: 60,
+      keyGenerator: porContaOuEndereco,
+      message: {
+        erro: "Muitos perfis abertos em pouco tempo. Espere um minuto e tente de novo.",
       },
     }),
 

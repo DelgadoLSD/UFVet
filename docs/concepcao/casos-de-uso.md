@@ -67,7 +67,7 @@ como operação de manutenção.
 
 | Nome | Filtros | Atores | Ref. cruzadas |
 |---|---|---|---|
-| **Doadores disponíveis** | Espécie, tipo sanguíneo, peso máximo, cidade, bairro, situação de validação, texto livre | Visitante, Tutor, Veterinário | F16, F17, F18 |
+| **Doadores disponíveis** | Espécie, tipo sanguíneo, cidade, bairro, situação de validação, texto livre | Visitante, Tutor, Veterinário | F16, F17, F18 |
 | **Histórico de doações do animal** | Animal | Tutor, Veterinário | F25, F26 |
 | **Exames do animal** | Animal, tipo de documento | Tutor, Veterinário | F14, F15 |
 | **Liberações ativas** | Veterinário responsável | Veterinário | F28, F32 |

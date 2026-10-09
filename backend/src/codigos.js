@@ -36,3 +36,7 @@ export async function sortearCodigoLivre(sortearCodigo, emUso) {
 // Código de convite: oito caracteres, em dois blocos para facilitar a cópia.
 // Com 31 opções por caractere, são cerca de 850 bilhões de combinações.
 export const sortearCodigoConvite = () => `${sortear(4)}-${sortear(4)}`;
+
+// O código que chega no endereço (/animais/z7r2k4, /usuarios/t3m8p1), sem
+// espaços e em maiúsculas, como é gravado.
+export const codigoDoEndereco = (valor) => valor.trim().toUpperCase();

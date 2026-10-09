@@ -1,5 +1,6 @@
 import { apagarArquivos, guardarImagem } from "../armazenamento.js";
 import { banco } from "../banco.js";
+import { codigoDoEndereco } from "../codigos.js";
 import {
   deDataDoBanco,
   hojeISO,
@@ -25,9 +26,6 @@ import { esquemaAnimal, esquemaEdicaoAnimal } from "../validacao.js";
 //
 // Ver é público, como a busca (NF16.4): os dados do animal não identificam
 // ninguém. Mudar exige ser o dono, que é sempre quem está logado.
-
-// Código público no endereço (/animais/Z7R2K4), em maiúsculas.
-const codigoDoEndereco = (valor) => valor.trim().toUpperCase();
 
 // Os dados de um pedido. Sem fotos, o corpo é JSON. Com fotos, é um
 // formulário com arquivos (multipart): os dados vêm num campo "dados", em

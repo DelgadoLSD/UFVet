@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
 import Header from "../components/Header";
@@ -10,10 +10,10 @@ import CartaoAnimal from "./perfil/CartaoAnimal";
 import ModalAnimal from "./perfil/ModalAnimal";
 import PainelAcessoContatos from "./perfil/PainelAcessoContatos";
 import { useSessao } from "../servicos/sessao";
-import { perfilVisitado } from "../servicos/pessoas";
+import { buscarPerfil } from "../servicos/pessoas";
 import { confirmar } from "../hooks/confirmacoes";
 import { finalDoGenero } from "../regras/doacao";
-import { animaisDoPerfil, listarAnimais } from "../servicos/animais";
+import { listarAnimais } from "../servicos/animais";
 import { acessoDe, useAcessoContatos } from "../servicos/acessoContatos";
 import { ehVeterinario, nomeCurto, nomeProfissional } from "../util/texto";
 
@@ -24,49 +24,44 @@ import { ehVeterinario, nomeCurto, nomeProfissional } from "../util/texto";
 //
 // As partes da página ficam em pages/perfil/.
 //
-// Os animais vêm da API nos dois casos, com o histórico clínico. A pessoa do
-// perfil visitado ainda sai dos dados de exemplo, até a busca e os perfis
-// visitados virem da API; quando ela não existe no banco, os animais também
-// (ver servicos/pessoas.js e servicos/animais.js).
+// A pessoa e os animais vêm da API nos dois casos, os animais com o
+// histórico clínico. No perfil de outra pessoa, o contato não vem junto: ele
+// é pedido à parte, por quem pode ver (ver perfil/BlocoContato.jsx).
 
-// Os animais de uma pessoa, buscados com `buscar` (listarAnimais, no próprio
-// perfil; animaisDoPerfil, no de outra pessoa), e como a página atualiza a
-// lista depois de cadastrar, editar, excluir ou de um registro do
-// veterinário.
-function useAnimais(codigo, buscar) {
-  const [estado, setEstado] = useState({
-    carregando: true,
-    animais: [],
-    erro: "",
-  });
+// Os animais de uma pessoa, e como a página atualiza a lista depois de
+// cadastrar, editar, excluir ou de um registro do veterinário. Cada resposta
+// é guardada com o código (e a tentativa) que a pediu: até chegar a de agora,
+// a lista está carregando, e nunca mostra os animais de outro perfil.
+function useAnimais(codigo) {
   // Mudar este número faz a lista ser buscada de novo ("Tentar de novo").
   const [tentativa, setTentativa] = useState(0);
+  const chave = `${codigo}#${tentativa}`;
+  const [estado, setEstado] = useState({ chave: null, animais: [], erro: "" });
 
   useEffect(() => {
-    // A resposta de uma busca antiga (de outra conta, ou anterior a uma nova
-    // tentativa) é ignorada.
+    if (!codigo) return;
+    // A resposta de uma busca antiga (de outro perfil, ou anterior a uma
+    // nova tentativa) é ignorada.
     let valendo = true;
-    buscar(codigo).then(
-      (animais) =>
-        valendo && setEstado({ carregando: false, animais, erro: "" }),
+    listarAnimais(codigo).then(
+      (animais) => valendo && setEstado({ chave, animais, erro: "" }),
       (falha) =>
-        valendo &&
-        setEstado({ carregando: false, animais: [], erro: falha.message }),
+        valendo && setEstado({ chave, animais: [], erro: falha.message }),
     );
     return () => {
       valendo = false;
     };
-  }, [codigo, buscar, tentativa]);
+  }, [codigo, chave]);
 
   const mudarLista = (mudar) =>
     setEstado((prev) => ({ ...prev, animais: mudar(prev.animais) }));
+  const pronto = estado.chave === chave;
 
   return {
-    ...estado,
-    tentarDeNovo: () => {
-      setEstado({ carregando: true, animais: [], erro: "" });
-      setTentativa((n) => n + 1);
-    },
+    animais: pronto ? estado.animais : [],
+    erro: pronto ? estado.erro : "",
+    carregando: !pronto,
+    tentarDeNovo: () => setTentativa((n) => n + 1),
     adicionar: (animal) => mudarLista((lista) => [...lista, animal]),
     substituir: (animal) =>
       mudarLista((lista) =>
@@ -93,6 +88,80 @@ function EstadoDaLista({ erro, ehProprio, onTentarDeNovo }) {
     <p role="status" className="text-sm text-[#5f5e5e] py-10 text-center">
       {ehProprio ? "Carregando seus animais…" : "Carregando os animais…"}
     </p>
+  );
+}
+
+// A pessoa do perfil de outra pessoa, pela API, do mesmo jeito que os
+// animais: até chegar a resposta do código de agora, nada aparece. Sem
+// código (o próprio perfil), não busca nada.
+function usePessoa(codigo) {
+  const [tentativa, setTentativa] = useState(0);
+  const chave = `${codigo}#${tentativa}`;
+  const [estado, setEstado] = useState({
+    chave: null,
+    perfil: null,
+    erro: null,
+  });
+
+  useEffect(() => {
+    if (!codigo) return;
+    let valendo = true;
+    buscarPerfil(codigo).then(
+      (perfil) => valendo && setEstado({ chave, perfil, erro: null }),
+      (falha) => valendo && setEstado({ chave, perfil: null, erro: falha }),
+    );
+    return () => {
+      valendo = false;
+    };
+  }, [codigo, chave]);
+
+  const pronto = estado.chave === chave;
+  return {
+    perfil: pronto ? estado.perfil : null,
+    erro: pronto ? estado.erro : null,
+    carregando: !pronto,
+    tentarDeNovo: () => setTentativa((n) => n + 1),
+  };
+}
+
+// O lugar do perfil de outra pessoa enquanto ele não chega, ou quando não
+// veio: o código que ninguém usa diz isso e leva à busca; uma falha diz o
+// motivo e deixa tentar de novo.
+function EstadoDoPerfil({ codigo, pessoa }) {
+  if (pessoa.carregando) {
+    return (
+      <p role="status" className="text-sm text-[#5f5e5e] py-16 text-center">
+        Carregando o perfil…
+      </p>
+    );
+  }
+  if (pessoa.erro?.status === 404) {
+    return (
+      <div className="flex flex-col items-start gap-4 py-10">
+        <h1 className="text-2xl font-bold text-[#1a1c1c]">
+          Perfil não encontrado
+        </h1>
+        <p className="text-sm text-[#5b403f] max-w-md leading-relaxed">
+          Ninguém no UFVet usa o código #{codigo}. Confira o código, ou procure
+          o doador pela busca.
+        </p>
+        <Botao as={Link} to="/buscar" icone="search">
+          Ir para a busca
+        </Botao>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col items-start gap-3 py-10">
+      <AvisoErro>{pessoa.erro.message}</AvisoErro>
+      <Botao
+        variante="secundario"
+        icone="refresh"
+        onClick={pessoa.tentarDeNovo}
+      >
+        Tentar de novo
+      </Botao>
+    </div>
   );
 }
 
@@ -164,14 +233,31 @@ function PerfilPage() {
   const fecharModal = () => setModal(null);
 
   const ehProprio = !codigo;
+  const codigoVisitado = codigo?.trim().toUpperCase();
+  // O próprio código aberto pela busca vira o próprio perfil, onde dá para
+  // editar.
+  const ehMeuCodigo = !ehProprio && codigoVisitado === usuario?.codigo;
   const ehVet = ehVeterinario(usuario);
-  const perfil = ehProprio ? usuario : perfilVisitado(usuario);
+  const pessoa = usePessoa(ehProprio || ehMeuCodigo ? null : codigoVisitado);
+  const perfil = ehProprio ? usuario : pessoa.perfil;
   const lista = useAnimais(
-    ehProprio ? usuario.codigo : perfil.codigo,
-    ehProprio ? listarAnimais : animaisDoPerfil,
+    ehProprio ? usuario.codigo : ehMeuCodigo ? null : codigoVisitado,
   );
   const animais = lista.animais;
   const listaPronta = !lista.carregando && !lista.erro;
+
+  if (ehMeuCodigo) return <Navigate to="/meu-perfil" replace />;
+
+  if (!perfil) {
+    return (
+      <>
+        <Header />
+        <main className="pb-20 px-5 md:px-16 max-w-[1200px] mx-auto pt-28">
+          <EstadoDoPerfil codigo={codigoVisitado} pessoa={pessoa} />
+        </main>
+      </>
+    );
+  }
 
   return (
     <>
