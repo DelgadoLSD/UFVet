@@ -8,12 +8,11 @@ import { prepararFoto } from "../src/imagens.js";
 import { assinaturaDe } from "../src/modelos/usuario.js";
 import { gerarHashSenha } from "../src/senha.js";
 
-// Contas e animais de exemplo, para desenvolver e demonstrar o site. São as
-// mesmas pessoas dos dados de exemplo do front-end (frontend/src/dados/
-// exemplos), com os mesmos códigos públicos, e os animais delas, com as
-// mesmas fotos: entrando com essas contas, o site mostra os pedidos, as
-// liberações e o histórico que as telas já têm, e a busca tem doadores de
-// verdade para mostrar.
+// Contas e animais de exemplo, para desenvolver e demonstrar o site: as
+// pessoas, os animais delas (com os mesmos códigos e fotos dos animais de
+// exemplo do front-end, frontend/src/dados/exemplos/animais.js), o histórico
+// clínico e os pedidos e liberações de contato. Entrando com essas contas, a
+// busca tem doadores de verdade para mostrar, e cada tela tem o que exibir.
 //
 // Roda com `npm run db:exemplos`, depois de `npm run db:seed`, e pode rodar
 // de novo sem duplicar: só cria o que falta (uma conta, um animal ou as fotos
@@ -45,6 +44,21 @@ const CONTAS = [
       alturaDoRosto: 0.28,
       zoom: 1.7,
     },
+  },
+  // O segundo veterinário, do mesmo hospital: foi ele quem liberou a
+  // Camila. Com duas contas de veterinário dá para ver que cada um cuida só
+  // das liberações que deu, e que quem já tem acesso não recebe outro. Fica
+  // sem foto, como o Pedro e a Camila.
+  {
+    codigo: "V9P3R7",
+    papel: "VETERINARIO",
+    nomeCompleto: "Paulo Rezende",
+    email: "paulo@example.com",
+    cpf: "50361284917",
+    telefone: "(31) 99630-2214",
+    cidade: "Viçosa - MG",
+    bairro: "Clélia Bernardes",
+    veterinario: { crmv: "88214", ufCrmv: "MG", tratamento: "DR" },
   },
   {
     codigo: "T3M8P1",
@@ -706,6 +720,95 @@ async function criarAnimais(hospital) {
   }
 }
 
+// Os pedidos e as liberações de contato de exemplo, os mesmos que o site
+// mostrava antes de estar ligado à API. Os prazos
+// contam a partir de quando o script roda, para os exemplos estarem sempre
+// "em andamento". A Beatriz fica de fora de propósito: é com ela que se testa
+// pedir uma liberação do zero.
+const HORA = 60 * 60 * 1000;
+const ACESSOS = [
+  // O Pedro, liberado pelo Victor há 18 horas, por 24: faltam 6.
+  {
+    tutor: "T5K2W7",
+    veterinario: "V7H4M2",
+    liberacao: { caso: "Max, cirurgia amanhã", horas: 24, haHoras: 18 },
+  },
+  // A Camila, liberada pelo Paulo, por 3 dias.
+  {
+    tutor: "T5W2K6",
+    veterinario: "V9P3R7",
+    liberacao: { caso: "Amora, transfusão", horas: 72, haHoras: 22 },
+  },
+  // O Lucas, esperando a resposta do Victor.
+  {
+    tutor: "T7X9K2",
+    veterinario: "V7H4M2",
+    pedido: {
+      caso: "Thor precisa de transfusão e o hospital pediu para achar um doador",
+      haHoras: 0.6,
+    },
+  },
+];
+
+// Cria o exemplo de cada tutor que não tem nem liberação ativa nem pedido
+// esperando: rodar de novo depois de testar (encerrar, recusar) devolve os
+// exemplos, sem duplicar os que ainda valem.
+async function criarAcessos() {
+  const agora = Date.now();
+  for (const exemplo of ACESSOS) {
+    const tutor = await banco.usuario.findUnique({
+      where: { codigo: exemplo.tutor },
+    });
+    const veterinario = await banco.usuario.findUnique({
+      where: { codigo: exemplo.veterinario },
+    });
+    const ativa = await banco.liberacaoContato.findFirst({
+      where: {
+        tutorId: tutor.id,
+        encerradaEm: null,
+        expiraEm: { gt: new Date() },
+      },
+    });
+    const pendente = await banco.pedidoLiberacao.findFirst({
+      where: { tutorId: tutor.id, status: "PENDENTE" },
+    });
+    if (ativa || pendente) {
+      console.log(`Já existia: o acesso de ${tutor.nomeCompleto}`);
+      continue;
+    }
+
+    if (exemplo.liberacao) {
+      const { caso, horas, haHoras } = exemplo.liberacao;
+      const concedidaEm = new Date(agora - haHoras * HORA);
+      await banco.liberacaoContato.create({
+        data: {
+          tutorId: tutor.id,
+          veterinarioId: veterinario.id,
+          caso,
+          concedidaEm,
+          duracaoHoras: horas,
+          expiraEm: new Date(concedidaEm.getTime() + horas * HORA),
+        },
+      });
+      console.log(
+        `Criada: a liberação de ${tutor.nomeCompleto}, por ${veterinario.nomeCompleto}`,
+      );
+    } else {
+      await banco.pedidoLiberacao.create({
+        data: {
+          tutorId: tutor.id,
+          veterinarioId: veterinario.id,
+          caso: exemplo.pedido.caso,
+          criadoEm: new Date(agora - exemplo.pedido.haHoras * HORA),
+        },
+      });
+      console.log(
+        `Criado: o pedido de ${tutor.nomeCompleto} para ${veterinario.nomeCompleto}`,
+      );
+    }
+  }
+}
+
 async function main() {
   if (process.env.NODE_ENV === "production") {
     throw new Error("As contas de exemplo não podem ser criadas em produção.");
@@ -719,6 +822,7 @@ async function main() {
 
   await criarContas(hospital);
   await criarAnimais(hospital);
+  await criarAcessos();
   console.log(`\nSenha das contas de exemplo: ${SENHA_DE_EXEMPLO}`);
 }
 

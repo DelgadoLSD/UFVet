@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import Botao from "../../components/Botao";
 import BotaoAjuda from "../../components/BotaoAjuda";
-import { acharVeterinario } from "../../servicos/pessoas";
 import { nomeProfissionalCurto, pronome } from "../../util/texto";
+import { tempoRestante } from "../../util/datas";
 
 // Faixa acima dos resultados da busca que diz, antes de o tutor abrir um
 // perfil, se ele vai conseguir ver o contato. Evita a descoberta frustrante
@@ -28,14 +28,12 @@ function conteudoDaFaixa(acesso) {
       return {
         icone: "lock_open",
         titulo: "Contatos liberados",
-        texto: "Seu acesso vale até o prazo da liberação terminar.",
+        texto: `Liberado por ${nomeProfissionalCurto(acesso.liberacao.veterinario)}; o acesso ${tempoRestante(acesso.liberacao.expiraEm)}.`,
       };
     case "pedido-enviado": {
-      const veterinario = acharVeterinario(acesso.pedido.veterinarioCodigo);
-      const nome = veterinario
-        ? nomeProfissionalCurto(veterinario)
-        : "um veterinário";
-      const ele = veterinario ? pronome(veterinario) : "ele";
+      const { veterinario } = acesso.pedido;
+      const nome = nomeProfissionalCurto(veterinario);
+      const ele = pronome(veterinario);
       return {
         icone: "hourglass_top",
         titulo: `Pedido enviado para ${nome}`,

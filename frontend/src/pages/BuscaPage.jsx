@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Header from "../components/Header";
+import { useModalDaConta } from "../hooks/useModalDaConta";
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
 import Selecao from "../components/Selecao";
@@ -15,9 +16,8 @@ import {
   TAMANHO_MAXIMO_BUSCA,
   consultaDaBusca,
 } from "./busca/filtros";
-import { useSessao } from "../servicos/sessao";
 import { buscarDoadores, listarLocais } from "../servicos/doadores";
-import { acessoDe, useAcessoContatos } from "../servicos/acessoContatos";
+import { useAcessoContatos } from "../servicos/acessoContatos";
 
 // Busca de doadores, na largura do cabeçalho do site (as bordas da página
 // alinham com o logo e o menu). No computador, uma grade de 3 colunas iguais:
@@ -238,13 +238,13 @@ const comEscolhido = (lista, escolhido) =>
   escolhido && !lista.includes(escolhido) ? [escolhido, ...lista] : lista;
 
 function BuscaPage() {
-  const usuario = useSessao();
-  const acesso = acessoDe(usuario, useAcessoContatos());
+  const acesso = useAcessoContatos();
 
   const [filtros, setFiltros] = useState(FILTROS_INICIAIS);
   const [ordem, setOrdem] = useState("validados");
   // Modal aberto: "validacao", "contato", "pedido" ou null.
-  const [modal, setModal] = useState(null);
+  // Fecha sozinho se a aba passar para outra conta.
+  const [modal, setModal] = useModalDaConta();
   const fecharModal = () => setModal(null);
 
   // A busca espera a pessoa parar de mexer em qualquer filtro (digitar,

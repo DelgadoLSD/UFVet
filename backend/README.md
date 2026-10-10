@@ -55,19 +55,25 @@ tudo o que começa com `/api`. Para conferir se está no ar, abra
 
 ## Contas de exemplo
 
-`npm run db:exemplos` cria cinco contas e os animais delas: Victor (Bela e
+`npm run db:exemplos` cria seis contas e os animais delas: Victor (Bela e
 Nina), Beatriz (Zeus e Luna), Lucas (Thor, Frajola e Bolt), Pedro (Max,
-Barão, Gizmo e Duque) e Camila Nunes (Rex, Simba, Amora e Pipoca). São as
-mesmas pessoas dos dados de exemplo do site, com os mesmos códigos públicos,
-e as fotos são enviadas de verdade, como pela tela. O mesmo comando grava o
+Barão, Gizmo e Duque) e Camila Nunes (Rex, Simba, Amora e Pipoca), mais o
+veterinário Paulo Rezende, sem animais. As fotos são enviadas de verdade,
+como pela tela. O mesmo comando grava o
 histórico clínico (validações, doações e observações), com os casos que as
 telas precisam mostrar: validação vencida (Zeus), nunca validado (Luna),
 validado (Bela) e com pendências (Nina).
 
 Na busca, aparecem os animais que podem doar agora: Zeus fica de fora
 enquanto se recupera da doação de setembro, e Max, Luna e Nina, porque os
-tutores os pausaram. Entrando com as contas, o site mostra também os pedidos
-e as liberações de exemplo.
+tutores os pausaram.
+
+O comando grava também o acesso aos contatos: o Pedro está liberado pelo
+Victor (faltam 6 horas), a Camila está liberada pelo Paulo (3 dias) e o Lucas
+tem um pedido esperando a resposta do Victor. A Beatriz fica sem nada, para
+testar o pedido do zero. Os prazos contam a partir de quando o comando roda;
+rodar de novo devolve os exemplos que foram encerrados, recusados ou que
+venceram.
 
 O comando só cria o que falta: rodar de novo num banco antigo acrescenta o
 que é novo (as fotos, por exemplo). Uma conta de exemplo que você alterou
@@ -81,6 +87,7 @@ rode o comando de novo.
 | Lucas Silva Delgado | Tutor       | `lucas@example.com`        | `ufvet-exemplo` |
 | Pedro Alves         | Tutor       | `pedro@example.com`        | `ufvet-exemplo` |
 | Camila Nunes        | Tutora      | `camila.nunes@example.com` | `ufvet-exemplo` |
+| Paulo Rezende       | Veterinário | `paulo@example.com`        | `ufvet-exemplo` |
 
 A senha é pública, por isso o comando se recusa a rodar em produção.
 
@@ -105,34 +112,44 @@ Para outra validade, use `--dias` (de 1 a 30).
 
 ## Endereços da API
 
-| Método e endereço                       | O que faz                                                                                        |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `GET /api/saude`                        | Responde se a API está no ar                                                                     |
-| `POST /api/usuarios`                    | Cria a conta (tutor, ou veterinário com convite) e já entra                                      |
-| `POST /api/usuarios/disponibilidade`    | Diz, durante o cadastro, se o e-mail ou o CPF já têm conta                                       |
-| `GET /api/convites/:codigo`             | Confere um convite antes do fim do cadastro                                                      |
-| `GET /api/sessao`                       | Diz quem está logado (`{ "usuario": null }` para o visitante)                                    |
-| `POST /api/sessao`                      | Entra com e-mail e senha                                                                         |
-| `DELETE /api/sessao`                    | Sai neste aparelho                                                                               |
-| `DELETE /api/sessoes`                   | Sai de todos os aparelhos (exige login)                                                          |
-| `PATCH /api/conta`                      | Muda os dados da própria conta (o e-mail, só com a senha)                                        |
-| `PUT /api/conta/senha`                  | Troca a senha, com a atual; os outros aparelhos saem                                             |
-| `DELETE /api/conta`                     | Encerra a própria conta, com a senha                                                             |
-| `PUT /api/conta/foto`                   | Troca a foto de perfil (formulário com o arquivo em "foto")                                      |
-| `DELETE /api/conta/foto`                | Remove a foto de perfil                                                                          |
-| `GET /api/doadores`                     | A busca de doadores: filtros, ordem e páginas de 6 (pública, sem contatos)                       |
-| `GET /api/doadores/locais`              | As cidades e os bairros onde há doadores, para os filtros (pública)                              |
-| `GET /api/usuarios/:codigo`             | O perfil público de uma pessoa, sem e-mail, telefone ou CPF                                      |
-| `GET /api/usuarios/:codigo/contato`     | O e-mail e o telefone, só para o veterinário, a própria pessoa ou o tutor com liberação em vigor |
-| `GET /api/usuarios/:codigo/animais`     | Os animais de uma pessoa, com o histórico clínico (público, como a busca)                        |
-| `POST /api/animais`                     | Cadastra um animal de quem está logado, com as fotos                                             |
-| `PATCH /api/animais/:codigo`            | Edita dados, disponibilidade ou fotos de um animal (só o dono)                                   |
-| `DELETE /api/animais/:codigo`           | Exclui um animal e as fotos dele (só o dono)                                                     |
-| `POST /api/animais/:codigo/validacoes`  | Valida os critérios de doação, com o tipo sanguíneo (só veterinário)                             |
-| `POST /api/animais/:codigo/doacoes`     | Registra uma doação realizada (só veterinário)                                                   |
-| `POST /api/animais/:codigo/observacoes` | Registra uma observação sobre a coleta (só veterinário)                                          |
-| `GET /api/estabelecimentos`             | Os hospitais e clínicas cadastrados (exige login)                                                |
-| `GET /api/arquivos/:nome`               | Uma foto guardada                                                                                |
+| Método e endereço                            | O que faz                                                                                                      |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `GET /api/saude`                             | Responde se a API está no ar                                                                                   |
+| `POST /api/usuarios`                         | Cria a conta (tutor, ou veterinário com convite) e já entra                                                    |
+| `POST /api/usuarios/disponibilidade`         | Diz, durante o cadastro, se o e-mail ou o CPF já têm conta                                                     |
+| `GET /api/convites/:codigo`                  | Confere um convite antes do fim do cadastro                                                                    |
+| `GET /api/sessao`                            | Diz quem está logado (`{ "usuario": null }` para o visitante)                                                  |
+| `POST /api/sessao`                           | Entra com e-mail e senha                                                                                       |
+| `DELETE /api/sessao`                         | Sai neste aparelho                                                                                             |
+| `DELETE /api/sessoes`                        | Sai de todos os aparelhos (exige login)                                                                        |
+| `PATCH /api/conta`                           | Muda os dados da própria conta (o e-mail, só com a senha)                                                      |
+| `PUT /api/conta/senha`                       | Troca a senha, com a atual; os outros aparelhos saem                                                           |
+| `DELETE /api/conta`                          | Encerra a própria conta, com a senha                                                                           |
+| `PUT /api/conta/foto`                        | Troca a foto de perfil (formulário com o arquivo em "foto")                                                    |
+| `DELETE /api/conta/foto`                     | Remove a foto de perfil                                                                                        |
+| `GET /api/doadores`                          | A busca de doadores: filtros, ordem e páginas de 6 (pública, sem contatos)                                     |
+| `GET /api/doadores/locais`                   | As cidades e os bairros onde há doadores, para os filtros (pública)                                            |
+| `GET /api/usuarios/:codigo`                  | O perfil público de uma pessoa, sem e-mail, telefone ou CPF                                                    |
+| `GET /api/usuarios/:codigo/contato`          | O e-mail e o telefone, só para o veterinário, a própria pessoa ou o tutor com liberação em vigor               |
+| `GET /api/usuarios/:codigo/animais`          | Os animais de uma pessoa, com o histórico clínico (público, como a busca)                                      |
+| `POST /api/animais`                          | Cadastra um animal de quem está logado, com as fotos                                                           |
+| `PATCH /api/animais/:codigo`                 | Edita dados, disponibilidade ou fotos de um animal (só o dono)                                                 |
+| `DELETE /api/animais/:codigo`                | Exclui um animal e as fotos dele (só o dono)                                                                   |
+| `POST /api/animais/:codigo/validacoes`       | Valida os critérios de doação, com o tipo sanguíneo (só veterinário)                                           |
+| `POST /api/animais/:codigo/doacoes`          | Registra uma doação realizada (só veterinário)                                                                 |
+| `POST /api/animais/:codigo/observacoes`      | Registra uma observação sobre a coleta (só veterinário)                                                        |
+| `GET /api/estabelecimentos`                  | Os hospitais e clínicas cadastrados (exige login)                                                              |
+| `GET /api/estabelecimentos/:id/veterinarios` | Os veterinários de um hospital, para o tutor escolher a quem pedir (exige login)                               |
+| `GET /api/acesso`                            | A situação de quem está logado: a liberação ativa e o pedido que espera resposta                               |
+| `POST /api/pedidos`                          | O tutor pede liberação a um veterinário, pelo código, com o caso                                               |
+| `GET /api/pedidos`                           | Os pedidos que esperam resposta do veterinário logado                                                          |
+| `POST /api/pedidos/:id/recusa`               | O veterinário recusa um pedido endereçado a ele                                                                |
+| `GET /api/liberacoes`                        | As liberações ativas que o veterinário logado concedeu                                                         |
+| `POST /api/liberacoes`                       | O veterinário libera um tutor (pelo código ou por um pedido) por 24 horas, 3 ou 7 dias                         |
+| `POST /api/liberacoes/:id/renovacao`         | Dá à liberação um prazo novo, contado de agora: 24 horas, 3 ou 7 dias, sem nunca encurtar (só quem a concedeu) |
+| `DELETE /api/liberacoes/:id`                 | Encerra uma liberação antes do prazo (só quem a concedeu)                                                      |
+| `GET /api/usuarios/:codigo/acesso`           | Antes de liberar, quem é o tutor do código e se ele já tem acesso (só veterinário)                             |
+| `GET /api/arquivos/:nome`                    | Uma foto guardada                                                                                              |
 
 Com fotos, o cadastro e a edição de animal vão como formulário com arquivos
 (multipart): os dados em JSON no campo `dados` e as fotos no campo `fotos`.
@@ -188,7 +205,8 @@ backend/
 │   ├── app.js              monta a API: os passos por que todo pedido passa
 │   ├── rotas.js            o cardápio: cada endereço e quem o atende
 │   ├── controladores/      as regras de cada pedido (Controller)
-│   ├── modelos/            contas, convites, animais e a busca de doadores (Model)
+│   ├── modelos/            contas, convites, animais, a busca de doadores e o
+│   │                       acesso aos contatos (Model)
 │   ├── middlewares/        filtros antes do controlador: login, limites, envio
 │   │                       de fotos
 │   ├── validacao.js        as regras dos dados que chegam (Zod)
@@ -221,6 +239,12 @@ O que a API já faz:
 - **Sessão:** um crachá (JWT) assinado, num cookie que o JavaScript da página
   não lê e que só volta para o próprio site. Vale 8 horas; "sair de todos os
   aparelhos" e a troca de senha invalidam os crachás antigos.
+- **A conta que a aba mostra:** o navegador guarda um login por site, o
+  mesmo para todas as abas. O site manda em cada pedido o código da conta
+  que a aba está mostrando (cabeçalho `X-Conta`), e as rotas com login
+  recusam a ação (409, `CONTA_TROCADA`) quando o cookie já é de outra conta,
+  porque alguém saiu e entrou com outra em outra aba. Nada é feito em nome de
+  uma pessoa diferente da que aparece na tela.
 - **A própria conta, e só ela:** os endereços de `/api/conta` agem sobre a
   conta do crachá, sem receber id de ninguém. CPF, CRMV, papel e código não
   mudam por eles, mesmo que o pedido traga. Trocar o e-mail ou a senha e
@@ -281,7 +305,7 @@ ele é esvaziado. Por segurança, os testes se recusam a rodar num banco cujo
 nome não termine em `_test`, e usam chaves próprias, nunca as do `.env`.
 
 Os testes da API (`cadastro-api`, `sessao-api`, `conta-api`, `animais-api`,
-`fotos-api`, `historico-api`, `busca-api` e `perfis-api`) chamam os endereços
+`fotos-api`, `historico-api`, `busca-api`, `perfis-api` e `acesso-api`) chamam os endereços
 como o site chamaria, sem ligar a API numa porta. As fotos dos testes vão para uma pasta temporária,
 nunca para `arquivos/`.
 
@@ -302,13 +326,18 @@ Uma migração já aplicada nunca é editada: cada mudança vira uma migração 
 ## Regras que ficam com a API
 
 Algumas regras não cabem na declaração das tabelas (seção 8 do modelo de
-dados) e são conferidas pela API. Já conferida: no máximo cinco fotos por
-animal. Nas próximas etapas:
+dados) e são conferidas pela API:
 
-- no máximo um pedido de liberação pendente por tutor (índice único parcial,
-  criado com SQL numa migração);
+- no máximo cinco fotos por animal;
 - `validacao.valida_ate` é sempre `realizada_em` mais um ano;
 - `tipo_sanguineo_confirmado` é obrigatório quando o critério `TIPAGEM` foi
   atendido;
 - os tipos sanguíneos aceitos dependem da espécie;
-- `liberacao_contato.duracao_horas` só pode ser 24, 72 ou 168.
+- `liberacao_contato.duracao_horas` só pode ser 24, 72 ou 168;
+- no máximo um pedido de liberação pendente por tutor, e no máximo uma
+  liberação ativa por tutor, de qualquer veterinário. A API confere e grava
+  sob uma trava do Postgres por tutor (`pg_advisory_xact_lock`): dois pedidos
+  ao mesmo tempo, ou dois veterinários liberando a mesma pessoa juntos, são
+  atendidos um depois do outro, e o segundo recebe a recusa. Um índice
+  único parcial no banco não serviria para a liberação, porque "ativa"
+  depende da hora (`expira_em > agora`).

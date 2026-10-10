@@ -132,6 +132,14 @@ export function tempoRestante(valor) {
   return `expira em ${dias} ${dias === 1 ? "dia" : "dias"}`;
 }
 
+// "sáb, 18/10 às 14:30": quando um prazo termina, com o dia da semana, que
+// ajuda a imaginar a data sem olhar o calendário.
+const DIAS_DA_SEMANA = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+export function diaEHora(valor) {
+  const data = paraData(valor);
+  return `${DIAS_DA_SEMANA[data.getDay()]}, ${doisDigitos(data.getDate())}/${doisDigitos(data.getMonth() + 1)} às ${formatarHora(data)}`;
+}
+
 // "hoje às 14:20" / "ontem às 09:05" / "12/09 às 16:40"
 export function quando(valor) {
   const data = paraData(valor);

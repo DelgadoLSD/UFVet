@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "./Modal";
 import AvisoErro from "./AvisoErro";
 import Botao from "./Botao";
@@ -9,18 +9,21 @@ import CampoCodigo from "./CampoCodigo";
 import EtiquetaCodigo from "./EtiquetaCodigo";
 import { useSessao } from "../servicos/sessao";
 import { pedirLiberacao } from "../servicos/acessoContatos";
-import {
-  HOSPITAIS,
-  acharVeterinario,
-  veterinariosDe,
-} from "../servicos/pessoas";
+import { listarEstabelecimentos } from "../servicos/animais";
+import { buscarPerfil, veterinariosDe } from "../servicos/pessoas";
+import { confirmar } from "../hooks/confirmacoes";
 import { TAMANHO_MINIMO_CASO } from "../regras/acessoContatos";
-import { TAMANHO_CODIGO, tratamento } from "../util/texto";
+import {
+  TAMANHO_CODIGO,
+  nomeProfissionalCurto,
+  tratamento,
+} from "../util/texto";
 
 // Pedido de um tutor para ver os contatos dos doadores. O pedido vai para um
 // veterinário específico, que assume a responsabilidade se liberar: o tutor
 // escolhe pelo código (do mesmo jeito que o veterinário libera pelo código do
-// tutor) ou procurando na lista do hospital.
+// tutor) ou procurando na lista do hospital. A API confere tudo de novo
+// (ver backend/src/controladores/acesso.js).
 //
 // Aberto pela busca e pelo perfil de outro tutor.
 
@@ -49,6 +52,14 @@ function CartaoVeterinario({ veterinario }) {
 
 // Lista dos veterinários de um hospital; escolher um preenche o código.
 function ListaVeterinarios({ veterinarios, onEscolher }) {
+  if (veterinarios.length === 0) {
+    return (
+      <p className="mt-3 text-sm text-[#5f5e5e]">
+        Nenhum veterinário deste local usa o UFVet ainda. Peça o código ao
+        veterinário que está acompanhando o caso.
+      </p>
+    );
+  }
   return (
     <ul className="mt-3 rounded-xl border border-[#eadede] divide-y divide-[#f0e6e6] overflow-hidden">
       {veterinarios.map((v) => (
@@ -80,16 +91,98 @@ function ListaVeterinarios({ veterinarios, onEscolher }) {
   );
 }
 
+// O veterinário do código digitado, pela API, quando o código fica
+// completo: { codigo, veterinario } quando ele existe, { codigo, motivo }
+// quando não. Uma resposta de um código que já foi apagado é descartada.
+function useVeterinarioDoCodigo(codigo) {
+  const [achado, setAchado] = useState({ codigo: null });
+  const completo = codigo.length === TAMANHO_CODIGO;
+
+  useEffect(() => {
+    if (!completo) return;
+    let valendo = true;
+    buscarPerfil(codigo).then(
+      (pessoa) =>
+        valendo &&
+        setAchado(
+          pessoa.papel === "VETERINARIO"
+            ? { codigo, veterinario: pessoa }
+            : {
+                codigo,
+                motivo: `O código #${codigo} é de um tutor. Peça o código do veterinário que está acompanhando o caso.`,
+              },
+        ),
+      (falha) =>
+        valendo &&
+        setAchado({
+          codigo,
+          motivo:
+            falha.status === 404
+              ? `Nenhum veterinário com o código #${codigo}. Confira o código ou procure pelo local do atendimento.`
+              : falha.message,
+        }),
+    );
+    return () => {
+      valendo = false;
+    };
+  }, [codigo, completo]);
+
+  if (!completo || achado.codigo !== codigo) {
+    return { procurando: completo, veterinario: null, motivo: "" };
+  }
+  return {
+    procurando: false,
+    veterinario: achado.veterinario ?? null,
+    motivo: achado.motivo ?? "",
+  };
+}
+
+// Os hospitais e clínicas, e os veterinários do escolhido (NF27.2).
+function useHospitais(hospital) {
+  const [hospitais, setHospitais] = useState({ lista: [], erro: "" });
+  const [equipe, setEquipe] = useState({ hospital: null, lista: [] });
+
+  useEffect(() => {
+    let valendo = true;
+    listarEstabelecimentos().then(
+      (lista) => valendo && setHospitais({ lista, erro: "" }),
+      (falha) => valendo && setHospitais({ lista: [], erro: falha.message }),
+    );
+    return () => {
+      valendo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hospital) return;
+    let valendo = true;
+    veterinariosDe(hospital).then(
+      (lista) => valendo && setEquipe({ hospital, lista }),
+      () => valendo && setEquipe({ hospital, lista: [] }),
+    );
+    return () => {
+      valendo = false;
+    };
+  }, [hospital]);
+
+  return {
+    hospitais: hospitais.lista,
+    erroHospitais: hospitais.erro,
+    // null enquanto a lista do hospital escolhido não chega.
+    veterinarios: equipe.hospital === hospital ? equipe.lista : null,
+  };
+}
+
 function ModalPedirLiberacao({ onFechar }) {
   const usuario = useSessao();
   const [codigo, setCodigo] = useState("");
   const [hospital, setHospital] = useState("");
   const [caso, setCaso] = useState("");
   const [erro, setErro] = useState("");
+  const [enviando, setEnviando] = useState(false);
 
-  const completo = codigo.length === TAMANHO_CODIGO;
-  const veterinario = completo ? acharVeterinario(codigo) : null;
-  const naoEncontrado = completo && !veterinario;
+  const { procurando, veterinario, motivo } = useVeterinarioDoCodigo(codigo);
+  const { hospitais, erroHospitais, veterinarios } = useHospitais(hospital);
 
   // Mudar qualquer campo tira o aviso, que era sobre o que estava antes.
   const mudando = (definir) => (valor) => {
@@ -98,13 +191,15 @@ function ModalPedirLiberacao({ onFechar }) {
   };
 
   // O botão fica ligado: enviar sem o veterinário ou sem contar o caso diz o
-  // que falta, acima dos botões.
-  const enviar = () => {
+  // que falta, acima dos botões. O que a API recusar (um pedido que já
+  // espera resposta, um acesso que já está liberado) aparece no mesmo lugar.
+  const enviar = async () => {
     if (!veterinario) {
       setErro(
-        naoEncontrado
-          ? `Nenhum veterinário com o código #${codigo}. Confira o código ou procure pelo local do atendimento.`
-          : "Escolha o veterinário: digite o código dele ou procure pelo local do atendimento.",
+        motivo ||
+          (procurando
+            ? "Espere um instante: conferindo o código do veterinário."
+            : "Escolha o veterinário: digite o código dele ou procure pelo local do atendimento."),
       );
       return;
     }
@@ -114,8 +209,20 @@ function ModalPedirLiberacao({ onFechar }) {
       );
       return;
     }
-    pedirLiberacao({ usuario, veterinario, caso: caso.trim() });
-    onFechar();
+    setEnviando(true);
+    setErro("");
+    try {
+      await pedirLiberacao({
+        usuario,
+        veterinario: veterinario.codigo,
+        caso: caso.trim(),
+      });
+      confirmar(`Pedido enviado para ${nomeProfissionalCurto(veterinario)}`);
+      onFechar();
+    } catch (falha) {
+      setErro(falha.campos?.veterinario ?? falha.campos?.caso ?? falha.message);
+      setEnviando(false);
+    }
   };
 
   return (
@@ -135,7 +242,9 @@ function ModalPedirLiberacao({ onFechar }) {
               <Botao variante="secundario" onClick={onFechar}>
                 Cancelar
               </Botao>
-              <Botao onClick={enviar}>Enviar pedido</Botao>
+              <Botao onClick={enviar} disabled={enviando}>
+                {enviando ? "Enviando…" : "Enviar pedido"}
+              </Botao>
             </div>
           </div>
         </div>
@@ -153,11 +262,20 @@ function ModalPedirLiberacao({ onFechar }) {
 
         {veterinario ? (
           <CartaoVeterinario veterinario={veterinario} />
+        ) : procurando ? (
+          <p role="status" className="text-sm text-[#5f5e5e]">
+            Conferindo o código…
+          </p>
         ) : (
           <div>
+            {motivo && (
+              <p className="mb-3 text-sm font-semibold text-[#9e0a24]">
+                {motivo}
+              </p>
+            )}
             <p className="text-sm font-semibold text-[#1a1c1c] mb-2">
-              {naoEncontrado
-                ? `Nenhum veterinário com o código #${codigo}. Procure pelo local:`
+              {motivo
+                ? "Ou procure pelo local do atendimento:"
                 : "Ou procure pelo local do atendimento"}
             </p>
             <Selecao
@@ -166,19 +284,25 @@ function ModalPedirLiberacao({ onFechar }) {
               onEscolher={mudando(setHospital)}
               placeholder="Selecione o hospital ou clínica"
               icone="local_hospital"
-              opcoes={HOSPITAIS.map((h) => ({
+              opcoes={hospitais.map((h) => ({
                 valor: h.id,
                 rotulo: h.nome,
-                descricao: h.cidade,
+                descricao: `${h.cidade} - ${h.uf}`,
                 icone: "local_hospital",
               }))}
             />
-            {hospital && (
-              <ListaVeterinarios
-                veterinarios={veterinariosDe(hospital)}
-                onEscolher={mudando(setCodigo)}
-              />
-            )}
+            <AvisoErro>{erroHospitais}</AvisoErro>
+            {hospital &&
+              (veterinarios ? (
+                <ListaVeterinarios
+                  veterinarios={veterinarios}
+                  onEscolher={mudando(setCodigo)}
+                />
+              ) : (
+                <p role="status" className="mt-3 text-sm text-[#5f5e5e]">
+                  Carregando os veterinários…
+                </p>
+              ))}
           </div>
         )}
 

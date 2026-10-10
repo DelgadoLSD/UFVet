@@ -16,3 +16,27 @@ export const enderecoDoAnimal = (tutorCodigo, animalCodigo) =>
 // mesmo animal (o painel), para o leitor de tela saber o que cada um abre.
 export const idDaAba = (codigo) => `aba-${codigo}`;
 export const idDoPainel = (codigo) => `painel-${codigo}`;
+
+// O cartão de cadastrar um animal novo, no carrossel do próprio perfil. Ele
+// é o primeiro da fila, logo à esquerda do primeiro animal, que é o que a
+// página abre no centro: assim o "+" aparece à vista, sem ninguém precisar
+// procurar (no fim da fila, sumia para quem tinha muitos animais).
+export const NOVO_ANIMAL = "novo";
+
+// A fila do carrossel: o cartão de cadastrar (quando `comCadastro`) e os
+// códigos dos animais.
+export const itensDoCarrossel = (animais, comCadastro) => [
+  ...(comCadastro ? [NOVO_ANIMAL] : []),
+  ...animais.map((animal) => animal.codigo),
+];
+
+// O que fica no centro do carrossel: o cartão de cadastrar, se foi ele o
+// escolhido (e ele existe), ou o animal escolhido (ver animalEscolhido). Sem
+// animais, o cartão de cadastrar, se houver; senão, nada.
+export function itemDoCentro(animais, codigo, comCadastro) {
+  if (comCadastro && codigo === NOVO_ANIMAL) return NOVO_ANIMAL;
+  return (
+    animalEscolhido(animais, codigo)?.codigo ??
+    (comCadastro ? NOVO_ANIMAL : null)
+  );
+}

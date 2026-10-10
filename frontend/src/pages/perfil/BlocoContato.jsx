@@ -5,7 +5,7 @@ import Botao from "../../components/Botao";
 import BotaoAjuda from "../../components/BotaoAjuda";
 import { useCopiar } from "../../hooks/useCopiar";
 import PainelSecao, { CampoPainel } from "./PainelSecao";
-import { acharVeterinario, buscarContato } from "../../servicos/pessoas";
+import { buscarContato } from "../../servicos/pessoas";
 import { nomeProfissionalCurto, primeiroNome, pronome } from "../../util/texto";
 
 // Contato (e-mail e telefone) no cartão de um perfil. Só aparece inteiro para
@@ -55,13 +55,11 @@ function Nota({ children }) {
 
 // Quem recebeu o pedido de liberação, para o aviso de "pedido enviado".
 function NotaPedidoEnviado({ pedido }) {
-  const veterinario = acharVeterinario(pedido.veterinarioCodigo);
+  const { veterinario } = pedido;
   return (
     <Nota>
-      Pedido enviado para{" "}
-      {veterinario ? nomeProfissionalCurto(veterinario) : "um veterinário"}.
-      Assim que {veterinario ? pronome(veterinario) : "ele"} liberar, o contato
-      aparece aqui.
+      Pedido enviado para {nomeProfissionalCurto(veterinario)}. Assim que{" "}
+      {pronome(veterinario)} liberar, o contato aparece aqui.
     </Nota>
   );
 }
@@ -121,7 +119,11 @@ function BlocoContato({
         Entrar
       </Botao>
     );
-  } else if (semAcesso && acesso.motivo !== "pedido-enviado") {
+  } else if (
+    semAcesso &&
+    acesso.motivo !== "pedido-enviado" &&
+    acesso.motivo !== "carregando"
+  ) {
     acao = (
       <Botao variante="claro" tamanho="xs" onClick={onPedirLiberacao}>
         Pedir liberação

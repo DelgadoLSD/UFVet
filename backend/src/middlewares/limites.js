@@ -123,6 +123,32 @@ export function criarLimites() {
       },
     }),
 
+    // Pedidos de liberação de contato, por conta de tutor. Quem precisa
+    // pede uma vez e espera a resposta (só um pedido pendente por vez); o
+    // teto barra quem pedisse e cancelasse em sequência para incomodar
+    // veterinários.
+    pedidosLiberacao: rateLimit({
+      ...opcoesComuns,
+      windowMs: 60 * MINUTO,
+      limit: 10,
+      keyGenerator: (req) => req.usuario.id,
+      message: {
+        erro: "Muitos pedidos de liberação em pouco tempo. Tente de novo mais tarde.",
+      },
+    }),
+
+    // Liberar, recusar, renovar e encerrar, por conta de veterinário: folga
+    // para um plantão movimentado.
+    liberacoes: rateLimit({
+      ...opcoesComuns,
+      windowMs: 60 * MINUTO,
+      limit: 60,
+      keyGenerator: (req) => req.usuario.id,
+      message: {
+        erro: "Muitas liberações feitas em pouco tempo. Tente de novo mais tarde.",
+      },
+    }),
+
     // Busca de doadores e perfis, abertos a quem não tem conta (NF16.4).
     // Contam por conta, ou por endereço para o visitante. Quem procura doador
     // de verdade faz algumas buscas por minuto (o site espera a pessoa parar

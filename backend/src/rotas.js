@@ -12,6 +12,18 @@ import {
   trocarFoto,
   trocarSenha,
 } from "./controladores/conta.js";
+import {
+  conferirTutor,
+  encerrarLiberacao,
+  liberarAcesso,
+  listarLiberacoes,
+  listarPedidos,
+  meuAcesso,
+  pedirLiberacao,
+  recusarPedido,
+  renovarLiberacao,
+  veterinariosDoEstabelecimento,
+} from "./controladores/acesso.js";
 import { buscarDoadores, listarLocais } from "./controladores/busca.js";
 import { consultarConvite } from "./controladores/convites.js";
 import {
@@ -140,8 +152,48 @@ export function criarRotas(limites) {
     ...soVeterinario,
     registrarObservacao,
   );
-  // Os hospitais e clínicas, para escolher onde uma coleta foi feita.
+  // Os hospitais e clínicas, para escolher onde uma coleta foi feita e a
+  // que veterinário pedir liberação de contato.
   rotas.get("/estabelecimentos", exigirLogin, listarEstabelecimentos);
+  rotas.get(
+    "/estabelecimentos/:id/veterinarios",
+    exigirLogin,
+    veterinariosDoEstabelecimento,
+  );
+
+  // Acesso aos contatos dos doadores (F27 a F34). O tutor pede a liberação
+  // a um veterinário; o veterinário libera, recusa, renova e encerra, e só
+  // mexe no que é dele (ver controladores/acesso.js).
+  rotas.get("/acesso", exigirLogin, meuAcesso);
+  rotas.post("/pedidos", exigirLogin, limites.pedidosLiberacao, pedirLiberacao);
+  const veterinarioDoAcesso = [
+    exigirLogin,
+    exigirPapel("VETERINARIO"),
+    limites.liberacoes,
+  ];
+  rotas.get("/pedidos", exigirLogin, exigirPapel("VETERINARIO"), listarPedidos);
+  rotas.post("/pedidos/:id/recusa", ...veterinarioDoAcesso, recusarPedido);
+  rotas.get(
+    "/liberacoes",
+    exigirLogin,
+    exigirPapel("VETERINARIO"),
+    listarLiberacoes,
+  );
+  rotas.post("/liberacoes", ...veterinarioDoAcesso, liberarAcesso);
+  rotas.post(
+    "/liberacoes/:id/renovacao",
+    ...veterinarioDoAcesso,
+    renovarLiberacao,
+  );
+  rotas.delete("/liberacoes/:id", ...veterinarioDoAcesso, encerrarLiberacao);
+  // A conferência do tutor antes de liberar (NF28.3).
+  rotas.get(
+    "/usuarios/:codigo/acesso",
+    exigirLogin,
+    exigirPapel("VETERINARIO"),
+    limites.perfis,
+    conferirTutor,
+  );
 
   return rotas;
 }

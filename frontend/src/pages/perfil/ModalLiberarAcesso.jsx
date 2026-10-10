@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "../../components/Modal";
 import AvisoErro from "../../components/AvisoErro";
 import Botao from "../../components/Botao";
@@ -7,24 +7,25 @@ import Avatar from "../../components/Avatar";
 import CampoCodigo from "../../components/CampoCodigo";
 import EtiquetaCodigo from "../../components/EtiquetaCodigo";
 import Segmentado from "../../components/Segmentado";
-import { useSessao } from "../../servicos/sessao";
-import { acharTutor } from "../../servicos/pessoas";
-import {
-  liberacoesAtivas,
-  liberarAcesso,
-  useAcessoContatos,
-} from "../../servicos/acessoContatos";
+import { conferirTutor } from "../../servicos/pessoas";
+import { liberarAcesso } from "../../servicos/acessoContatos";
+import { confirmar } from "../../hooks/confirmacoes";
 import {
   DURACAO_PADRAO_HORAS,
   DURACOES_LIBERACAO,
 } from "../../regras/acessoContatos";
 import { mesAno, tempoRestante } from "../../util/datas";
 import { LIMITES } from "../../regras/limites";
-import { TAMANHO_CODIGO } from "../../util/texto";
+import {
+  TAMANHO_CODIGO,
+  nomeProfissionalCurto,
+  primeiroNome,
+} from "../../util/texto";
 
 // O veterinário libera um tutor pelo código dele: nomes se repetem, códigos
 // não. A foto e os dados do tutor aparecem antes de confirmar, para quem
-// libera ver se digitou o código errado.
+// libera ver se digitou o código errado (NF28.3). Tudo vem da API, que
+// confere de novo ao liberar.
 
 // Dados do tutor encontrado. Se ele já tem acesso (liberado por este ou por
 // outro veterinário), o cartão avisa, e o botão de liberar fica desligado.
@@ -53,7 +54,8 @@ function CartaoTutor({ tutor, liberacaoAtiva }) {
         )}
         {liberacaoAtiva && (
           <p className="mt-2 text-sm font-semibold text-[#9e0a24]">
-            Já está com acesso liberado,{" "}
+            Já está com acesso liberado por{" "}
+            {nomeProfissionalCurto(liberacaoAtiva.veterinario)}; o acesso{" "}
             {tempoRestante(liberacaoAtiva.expiraEm)}.
           </p>
         )}
@@ -78,35 +80,64 @@ function Vazio({ children, alerta = false }) {
   );
 }
 
-function ModalLiberarAcesso({ onFechar }) {
-  const usuario = useSessao();
-  const { liberacoes } = useAcessoContatos();
+// O tutor do código digitado, pela API, quando o código fica completo:
+// { codigo, tutor, liberacao } quando ele existe (a liberação que ele já
+// tem, de qualquer veterinário, ou null), { codigo, motivo } quando não.
+function useTutorDoCodigo(codigo) {
+  const [achado, setAchado] = useState({ codigo: null });
+  const completo = codigo.length === TAMANHO_CODIGO;
+
+  useEffect(() => {
+    if (!completo) return;
+    let valendo = true;
+    conferirTutor(codigo).then(
+      ({ tutor, liberacao }) =>
+        valendo && setAchado({ codigo, tutor, liberacao }),
+      (falha) => valendo && setAchado({ codigo, motivo: falha.message }),
+    );
+    return () => {
+      valendo = false;
+    };
+  }, [codigo, completo]);
+
+  if (!completo || achado.codigo !== codigo) {
+    return { completo, procurando: completo, tutor: null, motivo: "" };
+  }
+  return {
+    completo,
+    procurando: false,
+    tutor: achado.tutor ?? null,
+    liberacaoAtiva: achado.liberacao ?? null,
+    motivo: achado.motivo ?? "",
+  };
+}
+
+function ModalLiberarAcesso({ onFechar, onLiberado }) {
   const [codigo, setCodigo] = useState("");
   const [duracaoHoras, setDuracaoHoras] = useState(DURACAO_PADRAO_HORAS);
   const [caso, setCaso] = useState("");
   const [erro, setErro] = useState("");
+  const [liberando, setLiberando] = useState(false);
 
-  const completo = codigo.length === TAMANHO_CODIGO;
-  const tutor = completo ? acharTutor(codigo) : null;
-  // Confere entre todas as liberações ativas, não só as deste veterinário: o
-  // tutor que já tem acesso dado por um colega não precisa de outro.
-  const liberacaoAtiva =
-    tutor &&
-    liberacoesAtivas(liberacoes).find((l) => l.tutorCodigo === tutor.codigo);
+  const { completo, procurando, tutor, liberacaoAtiva, motivo } =
+    useTutorDoCodigo(codigo);
 
   // O botão fica ligado: clicar sem um tutor que possa receber o acesso diz
-  // o que falta, acima dos botões.
-  const liberar = () => {
+  // o que falta, acima dos botões. O que a API recusar aparece no mesmo
+  // lugar.
+  const liberar = async () => {
     if (!completo) {
       setErro(
         `Digite os ${TAMANHO_CODIGO} caracteres do código do tutor para liberar o acesso.`,
       );
       return;
     }
+    if (procurando) {
+      setErro("Espere um instante: conferindo o código do tutor.");
+      return;
+    }
     if (!tutor) {
-      setErro(
-        `Nenhum tutor com o código #${codigo}. Confira o código com a pessoa.`,
-      );
+      setErro(motivo);
       return;
     }
     if (liberacaoAtiva) {
@@ -115,14 +146,21 @@ function ModalLiberarAcesso({ onFechar }) {
       );
       return;
     }
-    liberarAcesso({
-      tutorCodigo: tutor.codigo,
-      tutorNome: tutor.nomeCompleto,
-      veterinarioCodigo: usuario.codigo,
-      duracaoHoras,
-      caso: caso.trim(),
-    });
-    onFechar();
+    setLiberando(true);
+    setErro("");
+    try {
+      await liberarAcesso({
+        tutor: tutor.codigo,
+        duracaoHoras,
+        caso: caso.trim(),
+      });
+      await onLiberado();
+      confirmar(`Acesso liberado para ${primeiroNome(tutor.nomeCompleto)}`);
+      onFechar();
+    } catch (falha) {
+      setErro(falha.campos?.tutor ?? falha.message);
+      setLiberando(false);
+    }
   };
 
   return (
@@ -142,7 +180,9 @@ function ModalLiberarAcesso({ onFechar }) {
               <Botao variante="secundario" onClick={onFechar}>
                 Cancelar
               </Botao>
-              <Botao onClick={liberar}>Liberar acesso</Botao>
+              <Botao onClick={liberar} disabled={liberando}>
+                {liberando ? "Liberando…" : "Liberar acesso"}
+              </Botao>
             </div>
           </div>
         </div>
@@ -163,11 +203,10 @@ function ModalLiberarAcesso({ onFechar }) {
 
         {tutor ? (
           <CartaoTutor tutor={tutor} liberacaoAtiva={liberacaoAtiva} />
+        ) : procurando ? (
+          <Vazio>Conferindo o código…</Vazio>
         ) : completo ? (
-          <Vazio alerta>
-            Nenhum tutor com o código #{codigo}. Confira com a pessoa que está
-            no atendimento.
-          </Vazio>
+          <Vazio alerta>{motivo}</Vazio>
         ) : (
           <Vazio>
             Digite os {TAMANHO_CODIGO} caracteres do código para ver de quem é.

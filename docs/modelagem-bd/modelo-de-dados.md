@@ -328,8 +328,12 @@ Algumas regras não são expressáveis em declaração de tabela e ficam na cama
 da aplicação ou em migração com SQL puro:
 
 - No máximo cinco fotos por animal.
-- No máximo um pedido com status `PENDENTE` por tutor (índice único parcial:
-  `CREATE UNIQUE INDEX ... ON pedido_liberacao (tutor_id) WHERE status = 'PENDENTE'`).
+- No máximo um pedido com status `PENDENTE` por tutor, e no máximo uma
+  liberação ativa por tutor. A aplicação confere e grava sob uma trava por
+  tutor (`pg_advisory_xact_lock`), que faz pedidos simultâneos para a mesma
+  pessoa serem atendidos um de cada vez. A liberação ativa não cabe num
+  índice único parcial, porque depende da hora (`expira_em > agora`).
+- `liberacao_contato.duracao_horas` só aceita 24, 72 ou 168.
 - `validacao.valida_ate` é sempre `realizada_em` mais um ano.
 - `tipo_sanguineo_confirmado` é obrigatório quando o critério `TIPAGEM` está
   atendido.

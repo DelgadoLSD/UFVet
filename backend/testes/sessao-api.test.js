@@ -178,6 +178,50 @@ describe("sessão", () => {
   });
 });
 
+describe("a conta da aba (cabeçalho X-Conta)", () => {
+  // Um navegador com a sessão da Beatriz, e o código dela.
+  async function comBeatriz() {
+    const navegador = await navegadorComConta();
+    navegador.codigo = (await quemEstaLogado(navegador)).codigo;
+    return navegador;
+  }
+
+  test("a aba que mostra a mesma conta do cookie age normalmente", async () => {
+    const navegador = await comBeatriz();
+    await navegador
+      .patch("/api/conta")
+      .set("X-Conta", navegador.codigo.toLowerCase())
+      .send({ bairro: "Centro" })
+      .expect(200);
+  });
+
+  test("a aba que mostra outra conta é recusada, e nada muda", async () => {
+    const navegador = await comBeatriz();
+    const { body } = await navegador
+      .patch("/api/conta")
+      .set("X-Conta", "V7H4M2")
+      .send({ bairro: "Centro" })
+      .expect(409);
+    expect(body.codigo).toBe("CONTA_TROCADA");
+    expect(body.erro).toMatch(/A conta deste navegador mudou/);
+    expect((await quemEstaLogado(navegador)).bairro).toBe("Ramos");
+  });
+
+  test("sem o cabeçalho, vale só o cookie (testes, programas)", async () => {
+    const navegador = await comBeatriz();
+    await navegador.patch("/api/conta").send({ bairro: "Centro" }).expect(200);
+  });
+
+  test("ver quem está logado não depende da aba: é como ela descobre a conta certa", async () => {
+    const navegador = await comBeatriz();
+    const { body } = await navegador
+      .get("/api/sessao")
+      .set("X-Conta", "V7H4M2")
+      .expect(200);
+    expect(body.usuario.codigo).toBe(navegador.codigo);
+  });
+});
+
 describe("a API em geral", () => {
   test("responde que está no ar", async () => {
     const resposta = await request(app).get("/api/saude");

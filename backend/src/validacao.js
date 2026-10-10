@@ -596,3 +596,81 @@ export const esquemaBusca = z
 
 // Os lugares para os filtros de cidade e bairro, por espécie.
 export const esquemaLocais = z.object({ especie: especieDaBusca });
+
+// ─── Acesso aos contatos (F27 a F34) ──────────────────────────────────────────
+
+// Prazos que o veterinário pode escolher ao liberar (NF28.2): 24 horas, 3
+// dias ou 7 dias. O banco aceita qualquer número; quem barra é a API.
+export const DURACOES_LIBERACAO_HORAS = [24, 72, 168];
+
+// O caso do pedido é obrigatório (NF27.4): é o que o veterinário lê para
+// decidir. Na liberação, é opcional e curto (coluna liberacao_contato.caso).
+export const TAMANHO_MINIMO_CASO = 5;
+const TAMANHO_MAXIMO_CASO_PEDIDO = 500;
+const TAMANHO_MAXIMO_CASO_LIBERACAO = 160;
+
+// Um código público digitado por alguém (#T3M8P1, t3m8p1): sem o "#", sem
+// espaços e em maiúsculas. `mensagem` diz o que fazer quando falta ou vem
+// errado.
+const codigoDigitado = (mensagem) =>
+  z.preprocess(
+    (valor) =>
+      typeof valor === "string"
+        ? valor.trim().replace(/^#/, "").toUpperCase()
+        : valor,
+    z.string({ error: mensagem }).regex(/^[A-Z0-9]{6}$/, mensagem),
+  );
+
+// Pedido de liberação de um tutor (F27): para um veterinário determinado,
+// pelo código (NF27.1), com o caso contado.
+export const esquemaPedido = z.object({
+  veterinario: codigoDigitado(
+    "Escolha o veterinário: digite o código dele ou procure pelo local do atendimento.",
+  ),
+  caso: z
+    .string({ error: "Conte o que está acontecendo." })
+    .trim()
+    .min(
+      TAMANHO_MINIMO_CASO,
+      `Conte o que está acontecendo, com pelo menos ${TAMANHO_MINIMO_CASO} caracteres.`,
+    )
+    .max(
+      TAMANHO_MAXIMO_CASO_PEDIDO,
+      `Escreva no máximo ${TAMANHO_MAXIMO_CASO_PEDIDO} caracteres.`,
+    ),
+});
+
+// O prazo escolhido: 24 horas, 3 dias ou 7 dias (NF28.2).
+const duracaoLiberacao = z.union(
+  DURACOES_LIBERACAO_HORAS.map((horas) => z.literal(horas)),
+  { error: "Escolha por quanto tempo: 24 horas, 3 dias ou 7 dias." },
+);
+
+// Liberação dada por um veterinário (F28): a um tutor, pelo código, ou
+// aceitando um pedido que chegou para ele. Um dos dois, nunca os dois.
+export const esquemaLiberacao = z
+  .object({
+    tutor: codigoDigitado(
+      "Digite os 6 caracteres do código do tutor.",
+    ).optional(),
+    pedido: z.uuid({ error: "Pedido inválido." }).optional(),
+    duracaoHoras: duracaoLiberacao,
+    caso: z
+      .string({ error: "Valor inválido." })
+      .trim()
+      .max(
+        TAMANHO_MAXIMO_CASO_LIBERACAO,
+        `Escreva no máximo ${TAMANHO_MAXIMO_CASO_LIBERACAO} caracteres.`,
+      )
+      .optional(),
+  })
+  .refine((dados) => !!dados.tutor !== !!dados.pedido, {
+    message: "Digite os 6 caracteres do código do tutor.",
+    path: ["tutor"],
+  });
+
+// Renovação (F30): o novo prazo, contado de agora. Sem ele, vale o prazo da
+// própria liberação (o "prazo integral").
+export const esquemaRenovacao = z.object({
+  duracaoHoras: duracaoLiberacao.optional(),
+});

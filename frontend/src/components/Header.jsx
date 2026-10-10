@@ -32,7 +32,10 @@ function ItemMenu({ as: Componente = Link, icone, children, ...props }) {
   );
 }
 
-// Menu da conta logada: leva ao perfil e à conta, e sai.
+// A conta logada, no canto do topo, em duas partes, como nos aplicativos:
+// a foto e o nome levam direto ao próprio perfil; a setinha ao lado abre as
+// outras opções (a conta e sair). O perfil não se repete no menu: a foto já
+// leva até ele.
 function MenuConta({ conta, noPerfil }) {
   const [aberto, setAberto] = useState(false);
   const raizRef = useRef(null);
@@ -62,36 +65,48 @@ function MenuConta({ conta, noPerfil }) {
 
   return (
     <div ref={raizRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setAberto((v) => !v)}
-        aria-expanded={aberto}
-        aria-haspopup="menu"
-        aria-label={`Menu da conta de ${nomeCurto(conta)}`}
-        className={`flex items-center gap-3 rounded-full p-1 sm:pr-3 border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24] ${
+      <div
+        className={`flex items-center rounded-full border transition-colors ${
           noPerfil
             ? "border-[#9e0a24] bg-white/[0.08]"
-            : "border-white/10 bg-white/[0.04] hover:bg-white/[0.09]"
+            : "border-white/10 bg-white/[0.04]"
         }`}
       >
-        <Avatar pessoa={conta} />
-        <span className="hidden sm:flex flex-col leading-tight text-left">
-          <span className="text-sm font-bold text-white">
-            {nomeCurto(conta)}
-          </span>
-          <span className="text-[11px] text-white/55">
-            {rotuloPapel(conta)}
-          </span>
-        </span>
-        <span
-          aria-hidden="true"
-          className={`material-symbols-outlined text-[20px] text-white/50 transition-transform ${
-            aberto ? "rotate-180" : ""
-          }`}
+        <Link
+          to="/meu-perfil"
+          aria-label={`Meu perfil (${nomeCurto(conta)})`}
+          aria-current={noPerfil ? "page" : undefined}
+          className="flex items-center gap-3 rounded-full p-1 sm:pr-2 transition-colors hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
         >
-          expand_more
-        </span>
-      </button>
+          <Avatar pessoa={conta} />
+          <span className="hidden sm:flex flex-col leading-tight text-left">
+            <span className="text-sm font-bold text-white">
+              {nomeCurto(conta)}
+            </span>
+            <span className="text-[11px] text-white/55">
+              {rotuloPapel(conta)}
+            </span>
+          </span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setAberto((v) => !v)}
+          aria-expanded={aberto}
+          aria-haspopup="menu"
+          aria-label="Mais opções da conta"
+          title="Mais opções da conta"
+          className="w-9 h-9 mr-0.5 rounded-full flex items-center justify-center text-white/55 transition-colors hover:bg-white/[0.09] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
+        >
+          <span
+            aria-hidden="true"
+            className={`material-symbols-outlined text-[20px] transition-transform ${
+              aberto ? "rotate-180" : ""
+            }`}
+          >
+            expand_more
+          </span>
+        </button>
+      </div>
 
       {aberto && (
         <div
@@ -109,9 +124,6 @@ function MenuConta({ conta, noPerfil }) {
           </div>
 
           <div className="py-1.5">
-            <ItemMenu to="/meu-perfil" icone="person" onClick={fechar}>
-              Meu perfil
-            </ItemMenu>
             <ItemMenu to="/conta" icone="manage_accounts" onClick={fechar}>
               Minha conta
             </ItemMenu>

@@ -1,4 +1,5 @@
 import { ErroApi } from "../erros.js";
+import { registrar } from "../registro.js";
 import { buscarUsuarioPorId } from "../modelos/usuario.js";
 import { NOME_COOKIE, lerToken } from "../token.js";
 
@@ -28,10 +29,29 @@ export async function usuarioDaSessao(req) {
 // Filtro das rotas que exigem login: sem uma sessão válida, o pedido para
 // aqui com 401. Com ela, a conta fica disponível em req.usuario para o
 // controlador.
+//
+// O navegador guarda um login só por site, o mesmo para todas as abas: quem
+// sai numa aba e entra com outra conta muda o login de todas. Uma aba aberta
+// antes continuaria mostrando a conta antiga, mas agindo com a nova (um
+// pedido de liberação saindo como veterinário, uma liberação assinada por
+// outro veterinário). Por isso o site diz, em cada pedido, qual conta a aba
+// está mostrando (cabeçalho X-Conta, com o código público), e a API recusa a
+// ação quando não é a do cookie: nada é feito em nome de uma pessoa
+// diferente da que aparece na tela. Sem o cabeçalho (um teste, um programa
+// que chama a API direto), vale só o cookie.
 export async function exigirLogin(req, res, next) {
   const usuario = await usuarioDaSessao(req);
   if (!usuario) {
     throw new ErroApi(401, "Entre na sua conta para continuar.");
+  }
+  const contaDaAba = req.get("X-Conta")?.trim().toUpperCase();
+  if (contaDaAba && contaDaAba !== usuario.codigo) {
+    registrar("conta_trocada", { caminho: req.path });
+    throw new ErroApi(
+      409,
+      "A conta deste navegador mudou depois que esta página foi aberta. Confira a conta no topo da página antes de continuar.",
+      { codigo: "CONTA_TROCADA" },
+    );
   }
   req.usuario = usuario;
   next();

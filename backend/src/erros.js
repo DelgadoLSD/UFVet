@@ -30,19 +30,22 @@ function mensagemDeEnvio({ code, field }) {
 // Respostas de erro da API, todas no mesmo formato:
 //
 //   { "erro": "Mensagem para a pessoa ler",
-//     "campos": { "email": "Mensagem sobre este campo" } }
+//     "campos": { "email": "Mensagem sobre este campo" },
+//     "codigo": "CONTA_TROCADA" }
 //
 // `campos` só aparece quando o problema é num dado enviado, para o site
-// mostrar a mensagem embaixo do campo certo.
+// mostrar a mensagem embaixo do campo certo. `codigo` só aparece nos erros
+// que o site trata de um jeito próprio (ver middlewares/sessao.js).
 
 // Erro previsto pelas regras (dado inválido, sem permissão, não encontrado).
 // Os controladores lançam este erro, e o tratador abaixo o transforma em
 // resposta.
 export class ErroApi extends Error {
-  constructor(status, mensagem, { campos } = {}) {
+  constructor(status, mensagem, { campos, codigo } = {}) {
     super(mensagem);
     this.status = status;
     this.campos = campos;
+    this.codigo = codigo;
   }
 }
 
@@ -69,7 +72,7 @@ export function tratarErros(erro, req, res, next) {
   if (erro instanceof ErroApi) {
     return res
       .status(erro.status)
-      .json({ erro: erro.message, campos: erro.campos });
+      .json({ erro: erro.message, campos: erro.campos, codigo: erro.codigo });
   }
   if (erro instanceof ZodError) {
     return res.status(400).json({

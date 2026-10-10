@@ -76,9 +76,9 @@ src/
 │   ├── perfil/             partes usadas só no perfil
 │   └── conta/              partes usadas só na conta
 ├── components/         peças de interface usadas em mais de uma página
-├── servicos/           de onde as telas tiram os dados (hoje simulados)
+├── servicos/           de onde as telas tiram os dados (a API)
 ├── dados/              listas fixas e dados de exemplo
-│   └── exemplos/           pessoas, animais e doadores de mentira
+│   └── exemplos/           os exames de exemplo dos animais
 ├── regras/             regras do negócio (doação, acesso aos contatos, conta,
 │                       fotos)
 ├── util/               funções pequenas de datas, textos e localidades
@@ -98,18 +98,32 @@ As telas não leem os dados de exemplo diretamente: elas sempre passam por
 `servicos/`.
 
 ```
-tela  →  servicos/  →  API               (sessão, conta, perfis, animais, histórico e busca)
-tela  →  servicos/  →  dados/exemplos/   (o resto, por enquanto)
+tela  →  servicos/  →  API               (sessão, conta, perfis, animais, histórico, busca
+                                          e acesso aos contatos)
+tela  →  servicos/  →  dados/exemplos/   (os exames, por enquanto)
 ```
 
-| Serviço                      | O que oferece                                                                         |
-| ---------------------------- | ------------------------------------------------------------------------------------- |
-| `servicos/api.js`            | A conversa com a API, usada pelos outros serviços                                     |
-| `servicos/sessao.js`         | Quem está logado (`useSessao`); entrar, sair e a conta                                |
-| `servicos/pessoas.js`        | O perfil de outra pessoa e o contato dela (API); hospitais e veterinários dos pedidos |
-| `servicos/animais.js`        | Animais dos perfis, com o histórico clínico, e o que o veterinário registra (API)     |
-| `servicos/doadores.js`       | A busca de doadores e os lugares dos filtros (API)                                    |
-| `servicos/acessoContatos.js` | Liberações e pedidos de acesso aos contatos, e quem pode ver                          |
+| Serviço                      | O que oferece                                                                                                               |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `servicos/api.js`            | A conversa com a API, usada pelos outros serviços                                                                           |
+| `servicos/sessao.js`         | Quem está logado (`useSessao`); entrar, sair e a conta                                                                      |
+| `servicos/pessoas.js`        | O perfil de outra pessoa e o contato dela, os veterinários de cada hospital e a conferência do tutor antes de liberar (API) |
+| `servicos/animais.js`        | Animais dos perfis, com o histórico clínico, e o que o veterinário registra (API)                                           |
+| `servicos/doadores.js`       | A busca de doadores e os lugares dos filtros (API)                                                                          |
+| `servicos/acessoContatos.js` | Quem pode ver os contatos; os pedidos e as liberações de acesso (API)                                                       |
+
+O que muda por ação de outra pessoa (o veterinário que libera ou recusa um
+pedido, um pedido novo que chega ao painel dele) aparece sem recarregar a
+página: o site pergunta de novo à API quando a pessoa volta para a aba e,
+com a aba à vista, de tempos em tempos (`hooks/useAtualizacaoPeriodica.js`).
+Com a aba escondida, não pergunta nada.
+
+O navegador guarda um login por site, o mesmo para todas as abas. Quem
+entra, sai ou cria a conta numa aba avisa as outras (`servicos/sessao.js`),
+que passam para a conta nova com um aviso; voltar para uma aba também
+confere a conta. Cada pedido diz à API a conta que a aba mostra, e a API
+recusa a ação se já for outra. Os modais abertos de uma página fecham quando
+a conta muda (`hooks/useModalDaConta.js`).
 
 Na integração com a API, o trabalho fica concentrado nesses arquivos: cada
 função passa a chamar a API, e as telas continuam chamando as mesmas funções
@@ -157,8 +171,10 @@ critério de peso e idade que perde o efeito quando o peso ou o nascimento
 muda), o formulário do animal (o que ele confere e o que manda para a API), o
 registro de doação (o que falta antes de enviar), as fotos (formatos aceitos,
 tamanho e a ordem que vai para a API), a consulta da busca (o que vai para a
-API), o perfil de outra pessoa (que chega sem contato) e qual animal o perfil
-abre no carrossel (o do endereço, vindo da busca, ou o primeiro). Também confere como
+API), o perfil de outra pessoa (que chega sem contato), qual animal o perfil
+abre no carrossel (o do endereço, vindo da busca, ou o primeiro), quem vê o
+contato dos tutores e por quê (com a liberação que vence com a página
+aberta) e a conferência do tutor antes de liberar. Também confere como
 os erros da API chegam aos formulários: o de um campo vai para embaixo dele,
 e o geral (sem conexão, limite de tentativas) para cima do botão. Os testes
 não abrem o navegador nem precisam da API ligada.
@@ -177,12 +193,7 @@ banco não guarda gênero de tutores, então eles aparecem como "Tutor(a)".
 
 ## O que falta para a integração com a API
 
-- O acesso aos contatos (pedidos e liberações) e as listas de hospitais e
-  veterinários ainda vêm dos dados de exemplo (`servicos/acessoContatos.js`
-  e `servicos/pessoas.js`).
 - Os exames dos animais ainda ficam só no navegador, até recarregar a
   página.
-- `animaisResumo` ("Zeus (cão) e Luna (gato)") vai sair das tabelas de
-  animais.
 - Publicado o site, a hospedagem precisa repassar `/api` para a API, como o
   Vite faz no computador.

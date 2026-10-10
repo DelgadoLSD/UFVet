@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from "react";
-import { chamarApi } from "./api";
+import { ErroApi, chamarApi, definirContaDaAba } from "./api";
+import { confirmar } from "../hooks/confirmacoes";
+import { nomeCurto } from "../util/texto";
 
 // Quem está usando o site: a conta logada, ou ninguém (o visitante). Também
 // as ações sobre a própria conta: entrar, criar, mudar os dados, trocar a
@@ -12,6 +14,11 @@ import { chamarApi } from "./api";
 // que exigem login esperam. `aviso` diz, na página de entrar, por que a
 // pessoa saiu da conta sem ter clicado em "Sair" (a sessão venceu, por
 // exemplo).
+//
+// O navegador guarda um login só por site, o mesmo para todas as abas: sair
+// numa aba e entrar com outra conta muda o login de todas. Por isso cada aba
+// acompanha a conta do navegador (ver "Várias abas", abaixo), e cada pedido
+// diz à API qual conta a aba está mostrando (servicos/api.js).
 
 let estado = { usuario: null, carregando: true, aviso: "" };
 const ouvintes = new Set();
@@ -52,8 +59,73 @@ function paraUsuario(conta) {
   };
 }
 
-const logar = (conta, aviso = "") =>
+const logar = (conta, aviso = "") => {
+  definirContaDaAba(conta?.codigo ?? null);
   definir({ usuario: paraUsuario(conta), carregando: false, aviso });
+};
+
+// ─── Várias abas ──────────────────────────────────────────────────────────────
+//
+// Quem entra, sai ou cria a conta numa aba avisa as outras abas abertas do
+// site, pelo canal do navegador (BroadcastChannel). Cada uma pergunta de novo
+// à API quem está logado e, se a conta mudou, passa para a nova, com um aviso
+// embaixo da tela. A mesma conferência acontece quando a pessoa volta para
+// uma aba (uma rede de segurança, para o que o canal não pegou). Fora do
+// navegador (nos testes), não há canal nem abas.
+
+const noNavegador = typeof window !== "undefined";
+const canal =
+  noNavegador && "BroadcastChannel" in window
+    ? new BroadcastChannel("ufvet-sessao")
+    : null;
+
+const avisarOutrasAbas = () => canal?.postMessage("conta-mudou");
+
+// Pergunta à API quem está logado e, se não é a conta que esta aba mostra,
+// passa para a conta certa, com um aviso embaixo da tela. `acaoRecusada`:
+// a conferência veio de uma ação que a API recusou por isso, e o aviso diz
+// que ela não foi feita. Uma falha de rede não muda nada: a próxima
+// conferência tenta de novo.
+let conferindo = null;
+export function conferirSessao({ acaoRecusada = false } = {}) {
+  conferindo ??= (async () => {
+    if (estado.carregando) return null;
+    let conta;
+    try {
+      ({ usuario: conta } = await chamarApi("/sessao"));
+    } catch {
+      return null;
+    }
+    const antes = estado.usuario;
+    if ((conta?.codigo ?? null) === (antes?.codigo ?? null)) return null;
+    if (conta) {
+      logar(conta);
+      confirmar(
+        `Esta aba passou para a conta de ${nomeCurto(estado.usuario)}`,
+        acaoRecusada
+          ? "Você entrou com ela em outra aba, e a última ação não foi feita. Confira a conta antes de continuar."
+          : "Você entrou com ela em outra aba. O navegador guarda um login por vez.",
+      );
+    } else {
+      logar(null, "Você saiu da conta em outra aba.");
+      confirmar(
+        "Você saiu da conta em outra aba",
+        acaoRecusada ? "A última ação não foi feita." : undefined,
+      );
+    }
+  })().finally(() => {
+    conferindo = null;
+  });
+  return conferindo;
+}
+
+if (noNavegador) {
+  canal?.addEventListener("message", () => conferirSessao());
+  window.addEventListener("focus", () => conferirSessao());
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") conferirSessao();
+  });
+}
 
 // ─── Leitura, para as telas ───────────────────────────────────────────────────
 
@@ -89,6 +161,7 @@ export async function entrar(email, senha) {
     corpo: { email, senha },
   });
   logar(usuario);
+  avisarOutrasAbas();
 }
 
 // Cria a conta; a API já deixa a pessoa logada.
@@ -98,6 +171,7 @@ export async function cadastrar(dados) {
     corpo: dados,
   });
   logar(usuario);
+  avisarOutrasAbas();
 }
 
 export async function sair() {
@@ -105,6 +179,7 @@ export async function sair() {
     await chamarApi("/sessao", { metodo: "DELETE" });
   } finally {
     logar(null);
+    avisarOutrasAbas();
   }
 }
 
@@ -137,13 +212,29 @@ export function apagarAviso() {
 // Pedido que só vale com login. Se a sessão venceu (8 horas) ou foi
 // derrubada em outro aparelho, a API responde 401: o site passa a tratar a
 // pessoa como visitante, e a página protegida a leva para "Entrar", com o
-// aviso do porquê. Os outros serviços (animais) também passam por aqui.
+// aviso do porquê. Se o login do navegador já é de outra conta (alguém saiu
+// e entrou com outra em outra aba), a API não faz nada e responde
+// CONTA_TROCADA: a aba passa para a conta certa, e a mensagem diz o que
+// aconteceu. Os outros serviços (animais, acesso aos contatos) também passam
+// por aqui.
 export async function chamarComLogin(caminho, opcoes) {
   try {
     return await chamarApi(caminho, opcoes);
   } catch (falha) {
     if (falha.status === 401) {
       logar(null, "Sua sessão terminou. Entre de novo para continuar.");
+    }
+    if (falha.codigo === "CONTA_TROCADA") {
+      await conferirSessao({ acaoRecusada: true });
+      const agora = estado.usuario;
+      throw new ErroApi(
+        falha.status,
+        agora
+          ? `Nada foi feito: este navegador agora está na conta de ${nomeCurto(agora)}, que entrou em outra aba. A página passou para essa conta; confira antes de continuar.`
+          : "Nada foi feito: você saiu da conta em outra aba. Entre de novo para continuar.",
+        null,
+        falha.codigo,
+      );
     }
     throw falha;
   }
@@ -192,10 +283,12 @@ export async function trocarSenha(senhaAtual, senhaNova) {
 export async function sairDeTodosOsAparelhos() {
   await chamarComLogin("/sessoes", { metodo: "DELETE" });
   logar(null, "Você saiu da conta em todos os aparelhos, inclusive neste.");
+  avisarOutrasAbas();
 }
 
 // Não tem volta: a API apaga a conta e o que é só dela.
 export async function encerrarConta(senhaAtual) {
   await chamarComLogin("/conta", { metodo: "DELETE", corpo: { senhaAtual } });
   logar(null);
+  avisarOutrasAbas();
 }

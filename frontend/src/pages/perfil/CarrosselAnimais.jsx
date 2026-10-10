@@ -1,60 +1,41 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { idDaAba, idDoPainel } from "./animalEscolhido";
-import { movimentoReduzido } from "../../util/movimento";
+import { NOVO_ANIMAL, idDaAba, idDoPainel } from "./animalEscolhido";
+import {
+  DURACAO_DESLIZE_MS,
+  curvaDeslize,
+  movimentoReduzido,
+} from "../../util/movimento";
 import { nomeRaca, partesDoTipo, statusValidacao } from "../../regras/doacao";
 
-// Os animais de um perfil num carrossel: uma faixa de cartões, um por
-// animal, para escolher qual aparece aberto embaixo (o cartão completo,
-// CartaoAnimal). Funciona como abas, no padrão de escolha do site: o
-// escolhido fica vermelho, os outros brancos. O vermelho é uma placa só, que
-// desliza de um cartão para o outro na troca, junto com o cartão completo
-// embaixo (no mesmo ritmo; ver util/movimento.js).
+// Os animais de um perfil num carrossel centralizado: o escolhido fica no
+// meio, um pouco maior e vermelho, e o cartão completo dele aparece embaixo
+// (CartaoAnimal); os vizinhos, dos lados, são os que dá para escolher em
+// seguida. Na troca, a faixa inteira desliza até o cartão novo chegar ao
+// centro, no mesmo ritmo do cartão completo embaixo (util/movimento.js).
 //
-// Os cartões têm a largura medida pela da faixa (a da página): no
-// computador, 4 preenchem a largura toda, e o último termina na mesma linha
-// em que termina o cartão completo embaixo; no tablet, 3. Com mais animais do
-// que cabem, a faixa segue até a borda e o próximo cartão aparece cortado
-// ali. No celular, cabe um e um pedaço do seguinte.
+// Para escolher outro: as setas nas laterais, um clique num vizinho, as
+// setas do teclado (como nas abas) ou, no celular, arrastar a faixa com o
+// dedo: o cartão que para no centro vira o escolhido. Os pontinhos embaixo
+// mostram quantos são e qual está no centro.
 //
-// Para ficar claro que a faixa anda para o lado: o cartão seguinte aparece
-// cortado e a borda esmaece do lado em que há mais animais; as setas ao lado
-// do título passam para o animal anterior ou o próximo, com o contador ("2 de
-// 5"); e, no celular, uma linha avisa que dá para deslizar.
-//
-// - `escolhido`: o animal aberto; `onEscolher(animal)` troca;
-// - `fim`: o que vem depois do último cartão, dentro da faixa (o cartão de
-//   cadastrar, no próprio perfil).
+// - `itens`: a fila, com os códigos (ver itensDoCarrossel): no próprio
+//   perfil, o cartão de cadastrar vem primeiro (NOVO_ANIMAL);
+// - `centro`: o código do que está no centro; `onEscolher(codigo)` troca;
+// - `onCadastrar`: abre o cadastro (o cartão de cadastrar, ao ser clicado).
 
 // O cartão de um animal na faixa: a foto emoldurada, o nome, a raça e uma
-// faixa com o tipo sanguíneo e a validação, como no cartão da busca. O
-// cartão não tem fundo: o branco é o da página, e o vermelho, a placa que
-// desliza por baixo. Escolhido, as letras ficam brancas e a célula do tipo se
-// inverte (branca, com o tipo em vermelho), no mesmo ritmo da placa. A
-// geometria é sempre a mesma, para os nomes e as fotos dos cartões lado a
-// lado ficarem na mesma altura.
-function AbaAnimal({ animal, escolhido, largura, onEscolher, onTeclar }) {
+// faixa com o tipo sanguíneo e a validação, como no cartão da busca. No
+// centro, fica vermelho, com as letras brancas e a célula do tipo invertida
+// (branca, com o tipo em vermelho). A geometria é sempre a mesma, para os
+// nomes e as fotos dos cartões lado a lado ficarem na mesma altura.
+function CartaoAnimalDaFila({ animal, noCentro }) {
   const foto = animal.fotos[0]?.url;
   const tipo = animal.tipoSanguineo && partesDoTipo(animal.tipoSanguineo);
   const validado = statusValidacao(animal.validacoes[0] ?? null) === "validado";
+  const cor = "transition-colors duration-deslize ease-deslize";
 
   return (
-    <button
-      type="button"
-      role="tab"
-      id={idDaAba(animal.codigo)}
-      data-codigo={animal.codigo}
-      data-parada
-      aria-selected={escolhido}
-      aria-controls={idDoPainel(animal.codigo)}
-      tabIndex={escolhido ? 0 : -1}
-      onClick={() => onEscolher(animal)}
-      onKeyDown={onTeclar}
-      className={`group snap-start shrink-0 ${largura} flex flex-col p-2 text-left rounded-2xl border transition-colors duration-deslize ease-deslize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1c1c] focus-visible:ring-offset-2 ${
-        escolhido
-          ? "border-transparent text-white"
-          : "border-[#eadede] text-[#1a1c1c] hover:border-[#cfa9a7]"
-      }`}
-    >
+    <>
       <span className="relative block aspect-[4/3] rounded-xl overflow-hidden bg-[#fdecee]">
         {foto ? (
           <img
@@ -71,15 +52,15 @@ function AbaAnimal({ animal, escolhido, largura, onEscolher, onTeclar }) {
 
       <span className="block px-1.5 pt-3 pb-2.5">
         <span
-          className={`block text-[1.0625rem] font-extrabold leading-tight tracking-tight truncate transition-colors duration-deslize ease-deslize ${
-            escolhido ? "" : "group-hover:text-[#9e0a24]"
+          className={`block text-[1.0625rem] font-extrabold leading-tight tracking-tight truncate ${cor} ${
+            noCentro ? "" : "group-hover:text-[#9e0a24]"
           }`}
         >
           {animal.nome}
         </span>
         <span
-          className={`block text-xs truncate transition-colors duration-deslize ease-deslize ${
-            escolhido ? "text-white/80" : "text-[#5f5e5e]"
+          className={`block text-xs truncate ${cor} ${
+            noCentro ? "text-white/80" : "text-[#5f5e5e]"
           }`}
         >
           {nomeRaca(animal)}
@@ -88,27 +69,24 @@ function AbaAnimal({ animal, escolhido, largura, onEscolher, onTeclar }) {
 
       {/* Os vãos de 2px entre as células, como na faixa de dados. Cada
           célula tem uma linha só, centralizada, e a mesma altura, com ou sem
-          tipagem: o sistema e o tipo lado a lado ("DEA 1.1+"), e a
-          validação com o ícone. As duas têm a mesma largura, para a divisão
-          entre elas ficar alinhada de um cartão para o outro; o tipo de nome
-          longo ("Universal") usa uma letra um pouco menor, para caber. */}
+          tipagem; as duas têm a mesma largura, para a divisão ficar alinhada
+          de um cartão para o outro. O tipo de nome longo ("Universal") usa
+          uma letra um pouco menor, para caber. */}
       <span className="grid grid-cols-2 gap-[2px] rounded-lg overflow-hidden text-[11px]">
         {tipo ? (
           <span
-            className={`h-9 px-1.5 min-w-0 flex items-center justify-center transition-colors duration-deslize ease-deslize ${
-              escolhido ? "bg-white text-[#9e0a24]" : "bg-[#9e0a24] text-white"
+            className={`h-9 px-1.5 min-w-0 flex items-center justify-center ${cor} ${
+              noCentro ? "bg-white text-[#9e0a24]" : "bg-[#9e0a24] text-white"
             }`}
           >
             <span className="sr-only">Tipo sanguíneo {tipo.porExtenso}</span>
-            {/* O sistema e o tipo na mesma linha, alinhados pela base das
-                letras. */}
             <span
               aria-hidden="true"
               className="min-w-0 flex items-baseline gap-1"
             >
               <span
-                className={`shrink-0 font-semibold transition-colors duration-deslize ease-deslize ${
-                  escolhido ? "text-[#9e0a24]/80" : "text-white/80"
+                className={`shrink-0 font-semibold ${cor} ${
+                  noCentro ? "text-[#9e0a24]/80" : "text-white/80"
                 }`}
               >
                 {tipo.sistema}
@@ -146,11 +124,47 @@ function AbaAnimal({ animal, escolhido, largura, onEscolher, onTeclar }) {
           </span>
         </span>
       </span>
-    </button>
+    </>
   );
 }
 
-function Seta({ rotulo, icone, desativada, onClick }) {
+// O cartão de cadastrar, na fila como os outros: tracejado, com o "+"
+// vermelho e o convite. No centro, fica vermelho como o animal escolhido,
+// com o "+" em branco.
+function CartaoCadastrarDaFila({ noCentro }) {
+  const cor = "transition-colors duration-deslize ease-deslize";
+  return (
+    <span className="flex-1 flex flex-col items-center justify-center gap-3 px-5 text-center">
+      <span
+        aria-hidden="true"
+        className={`w-14 h-14 rounded-full flex items-center justify-center transition-transform group-hover:scale-110 motion-reduce:group-hover:scale-100 ${cor} ${
+          noCentro ? "bg-white text-[#9e0a24]" : "bg-[#9e0a24] text-white"
+        }`}
+      >
+        <span className="material-symbols-outlined text-[32px]">add</span>
+      </span>
+      <span
+        className={`text-[1.0625rem] font-extrabold tracking-tight ${cor} ${
+          noCentro ? "" : "text-[#1a1c1c]"
+        }`}
+      >
+        Cadastrar animal
+      </span>
+      <span
+        className={`text-xs leading-relaxed ${cor} ${
+          noCentro ? "text-white/80" : "text-[#5f5e5e]"
+        }`}
+      >
+        Cada doador cadastrado pode ajudar a salvar uma vida
+      </span>
+    </span>
+  );
+}
+
+// A seta de uma lateral, na altura dos cartões: no computador e no tablet,
+// na margem da página, do lado de fora dos cartões (sem cobrir nenhum); no
+// celular, onde não há margem, por cima da borda da faixa.
+function Seta({ lado, rotulo, desativada, onClick }) {
   return (
     <button
       type="button"
@@ -158,82 +172,22 @@ function Seta({ rotulo, icone, desativada, onClick }) {
       title={rotulo}
       disabled={desativada}
       onClick={onClick}
-      className="w-10 h-10 shrink-0 rounded-full bg-white border border-[#eadede] text-[#1a1c1c] flex items-center justify-center transition-colors hover:bg-[#9e0a24] hover:border-[#9e0a24] hover:text-white disabled:opacity-35 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24] focus-visible:ring-offset-2"
+      className={`absolute top-1/2 -translate-y-1/2 z-10 ${
+        lado === "esquerda" ? "left-0 md:-left-14" : "right-0 md:-right-14"
+      } w-10 h-10 md:w-11 md:h-11 rounded-full bg-white border border-[#eadede] text-[#1a1c1c] shadow-[0_6px_18px_-6px_rgba(26,28,28,0.35)] flex items-center justify-center transition-[background-color,border-color,color,opacity] hover:bg-[#9e0a24] hover:border-[#9e0a24] hover:text-white disabled:opacity-0 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24] focus-visible:ring-offset-2`}
     >
       <span
         aria-hidden="true"
-        className="material-symbols-outlined text-[22px]"
+        className="material-symbols-outlined text-[24px]"
       >
-        {icone}
+        {lado === "esquerda" ? "chevron_left" : "chevron_right"}
       </span>
     </button>
   );
 }
 
-// A folga entre a borda da faixa e o primeiro cartão (o px-1 da faixa), para
-// o contorno de foco do cartão não ser cortado.
-const FOLGA = 4;
 // A largura do esmaecimento nas bordas da faixa, do lado em que há mais.
-const ESMAECER = "48px";
-
-// A largura de cada cartão, a partir da largura da faixa (100cqw, sem as
-// folgas), com os vãos de 16px entre eles: 4 por vez nos computadores (a
-// partir de 1280 px), 3 nos notebooks menores, 2,5 no tablet e 1,4 no
-// celular, para a faixa de tipo e validação caber sempre inteira. Quando há mais
-// cartões do que cabem, cada um estreita um pouco, para o seguinte aparecer
-// cortado na borda.
-function larguraDosCartoes(itens) {
-  const tablet =
-    itens > 2
-      ? "md:w-[calc((100cqw-32px)/2.5)]"
-      : "md:w-[calc((100cqw-16px)/2)]";
-  const notebook =
-    itens > 3
-      ? "lg:w-[calc((100cqw-48px)/3.25)]"
-      : "lg:w-[calc((100cqw-32px)/3)]";
-  const computador =
-    itens > 4
-      ? "xl:w-[calc((100cqw-64px)/4.2)]"
-      : "xl:w-[calc((100cqw-48px)/4)]";
-  return `w-[calc((100cqw-16px)/1.4)] ${tablet} ${notebook} ${computador}`;
-}
-
-// Põe a placa vermelha exatamente atrás do cartão: mede os dois na tela, em
-// frações de pixel, e soma o quanto a faixa já rolou. `imediato` pula o
-// deslize (na primeira vez, quando a janela muda de tamanho ou com
-// movimento reduzido).
-function posicionarPlaca(faixa, placa, aba, imediato) {
-  const f = faixa.getBoundingClientRect();
-  const r = aba.getBoundingClientRect();
-  if (imediato) placa.style.transition = "none";
-  placa.style.width = `${r.width}px`;
-  placa.style.height = `${r.height}px`;
-  placa.style.transform = `translate(${r.left - f.left + faixa.scrollLeft}px, ${r.top - f.top + faixa.scrollTop}px)`;
-  if (imediato) {
-    // Lê a posição para o navegador aplicar o lugar novo sem transição,
-    // antes de devolvê-la.
-    void placa.offsetWidth;
-    placa.style.transition = "";
-  }
-}
-
-// Para onde a faixa rola para o cartão `aba` ficar inteiro à vista, ou null
-// se ele já está. A faixa para sempre no começo de um cartão (como o dedo a
-// deixa, no celular): à direita, escolhe a primeira parada em que o cartão
-// cabe inteiro.
-function rolagemPara(faixa, aba) {
-  const inicio = aba.offsetLeft - FOLGA;
-  const fim = aba.offsetLeft + aba.offsetWidth + FOLGA;
-  if (inicio < faixa.scrollLeft) return inicio;
-  if (fim <= faixa.scrollLeft + faixa.clientWidth) return null;
-  const paradas = [...faixa.querySelectorAll("[data-parada]")].map(
-    (cartao) => cartao.offsetLeft - FOLGA,
-  );
-  return (
-    paradas.find((parada) => parada + faixa.clientWidth >= fim) ??
-    faixa.scrollWidth
-  );
-}
+const ESMAECER = "40px";
 
 // A máscara que esmaece as bordas da faixa onde ainda há cartões escondidos.
 function mascara({ antes, depois }) {
@@ -246,26 +200,67 @@ function mascara({ antes, depois }) {
   return { maskImage: gradiente, WebkitMaskImage: gradiente };
 }
 
-function CarrosselAnimais({ titulo, animais, escolhido, onEscolher, fim }) {
+// Quanto a faixa precisa rolar para o cartão ficar no centro dela.
+const rolagemDoCentro = (faixa, cartao) =>
+  cartao.offsetLeft + cartao.offsetWidth / 2 - faixa.clientWidth / 2;
+
+// O cartão mais perto do centro da faixa, agora.
+function cartaoNoCentro(faixa) {
+  const meio = faixa.scrollLeft + faixa.clientWidth / 2;
+  let maisPerto = null;
+  let menorDistancia = Infinity;
+  for (const cartao of faixa.querySelectorAll("[data-codigo]")) {
+    const distancia = Math.abs(
+      cartao.offsetLeft + cartao.offsetWidth / 2 - meio,
+    );
+    if (distancia < menorDistancia) {
+      menorDistancia = distancia;
+      maisPerto = cartao;
+    }
+  }
+  return maisPerto;
+}
+
+function CarrosselAnimais({
+  titulo,
+  resumo,
+  animais,
+  itens,
+  centro,
+  onEscolher,
+  onCadastrar,
+}) {
   const faixaRef = useRef(null);
-  const placaRef = useRef(null);
   const primeiraVez = useRef(true);
+  // A animação da rolagem em andamento (o pedido de quadro), para uma troca
+  // nova interromper a anterior; e se a faixa está andando sozinha (aí o
+  // centro ainda não é escolha de ninguém).
+  const quadro = useRef(null);
+  const andandoSozinha = useRef(false);
+  // O escolhido e a função de escolher mais recentes, para quem escuta a
+  // rolagem (que não é recriado a cada troca).
+  const atual = useRef({ centro, onEscolher });
+  useEffect(() => {
+    atual.current = { centro, onEscolher };
+  });
   // Há cartões escondidos antes ou depois do trecho à vista? (Decide o
-  // esmaecimento das bordas e o aviso de deslizar.)
+  // esmaecimento das bordas.)
   const [escondidos, setEscondidos] = useState({
     antes: false,
     depois: false,
   });
-  const posicao = animais.findIndex((a) => a.codigo === escolhido.codigo);
-  const varios = animais.length > 1;
-  const largura = larguraDosCartoes(animais.length + (fim ? 1 : 0));
+
+  const porCodigo = new Map(animais.map((animal) => [animal.codigo, animal]));
+  const posicao = itens.indexOf(centro);
+  const nomeDe = (codigo) =>
+    codigo === NOVO_ANIMAL ? "Cadastrar animal" : porCodigo.get(codigo)?.nome;
 
   const irPara = (indice, focar = false) => {
-    const animal = animais[Math.max(0, Math.min(indice, animais.length - 1))];
-    onEscolher(animal);
+    const codigo = itens[Math.max(0, Math.min(indice, itens.length - 1))];
+    onEscolher(codigo);
     if (focar) {
       faixaRef.current
-        ?.querySelector(`[data-codigo="${animal.codigo}"]`)
+        ?.querySelector(`[data-codigo="${codigo}"]`)
         ?.focus({ preventScroll: true });
     }
   };
@@ -276,136 +271,243 @@ function CarrosselAnimais({ titulo, animais, escolhido, onEscolher, fim }) {
       ArrowRight: posicao + 1,
       ArrowLeft: posicao - 1,
       Home: 0,
-      End: animais.length - 1,
+      End: itens.length - 1,
     }[e.key];
     if (destino === undefined) return;
     e.preventDefault();
     irPara(destino, true);
   };
 
-  // A cada troca: a placa vermelha desliza até o cartão escolhido, e a faixa
-  // rola para ele ficar inteiro à vista (um animal vindo da busca pode ser o
-  // quinto). Só a faixa anda, para os lados; a página não rola. Na primeira
-  // vez, tudo já começa no lugar, sem deslizar.
+  // A cada troca, a faixa desliza até o escolhido chegar ao centro: na
+  // mesma duração e curva do cartão completo embaixo. O encaixe da rolagem
+  // (que segura a faixa parada no centro de um cartão) fica desligado
+  // enquanto ela anda, para não brigar com o deslize. Na primeira vez, e com
+  // movimento reduzido, a faixa já vai direto ao lugar.
   useLayoutEffect(() => {
     const faixa = faixaRef.current;
-    const aba = faixa?.querySelector(`[data-codigo="${escolhido.codigo}"]`);
-    if (!aba) return;
+    const cartao = faixa?.querySelector(`[data-codigo="${centro}"]`);
+    if (!cartao) return;
+    cancelAnimationFrame(quadro.current);
+    const destino = rolagemDoCentro(faixa, cartao);
     const imediato = primeiraVez.current || movimentoReduzido();
     primeiraVez.current = false;
-    posicionarPlaca(faixa, placaRef.current, aba, imediato);
-    const destino = rolagemPara(faixa, aba);
-    if (destino !== null) {
-      faixa.scrollTo({
-        left: Math.max(0, destino),
-        behavior: imediato ? "auto" : "smooth",
-      });
+    if (imediato || Math.abs(destino - faixa.scrollLeft) < 1) {
+      faixa.scrollLeft = destino;
+      return;
     }
-  }, [escolhido.codigo]);
+    const inicio = faixa.scrollLeft;
+    const comeco = performance.now();
+    andandoSozinha.current = true;
+    faixa.style.scrollSnapType = "none";
+    const passo = (agora) => {
+      const tempo = Math.min(1, (agora - comeco) / DURACAO_DESLIZE_MS);
+      faixa.scrollLeft = inicio + (destino - inicio) * curvaDeslize(tempo);
+      if (tempo < 1) {
+        quadro.current = requestAnimationFrame(passo);
+      } else {
+        faixa.style.scrollSnapType = "";
+        andandoSozinha.current = false;
+      }
+    };
+    quadro.current = requestAnimationFrame(passo);
+  }, [centro]);
 
-  // Mede o que está escondido nas bordas ao rolar e ao mudar de tamanho; e,
-  // se o cartão mudar de tamanho (a janela, a fonte), põe a placa no lugar.
+  useEffect(() => () => cancelAnimationFrame(quadro.current), []);
+
+  // Escuta a faixa: mede o que está escondido nas bordas e, quando a pessoa
+  // arrasta a faixa (o dedo, o trackpad), o cartão que para no centro vira
+  // o escolhido, um instante depois de ela parar. Ao mudar de tamanho (a
+  // janela), o escolhido volta para o centro.
   useEffect(() => {
     const faixa = faixaRef.current;
+    let espera;
     const medir = () =>
       setEscondidos({
         antes: faixa.scrollLeft > 2,
         depois: faixa.scrollLeft + faixa.clientWidth < faixa.scrollWidth - 2,
       });
-    const reposicionar = () => {
-      const aba = faixa.querySelector('[role="tab"][aria-selected="true"]');
-      if (aba) posicionarPlaca(faixa, placaRef.current, aba, true);
+    const aoRolar = () => {
+      medir();
+      if (andandoSozinha.current) return;
+      clearTimeout(espera);
+      espera = setTimeout(() => {
+        const codigo = cartaoNoCentro(faixa)?.dataset.codigo;
+        if (codigo && codigo !== atual.current.centro) {
+          atual.current.onEscolher(codigo);
+        }
+      }, 140);
+    };
+    const recentralizar = () => {
+      const cartao = faixa.querySelector(
+        `[data-codigo="${atual.current.centro}"]`,
+      );
+      if (cartao && !andandoSozinha.current) {
+        faixa.scrollLeft = rolagemDoCentro(faixa, cartao);
+      }
+      medir();
     };
     medir();
-    faixa.addEventListener("scroll", medir, { passive: true });
-    const observador = new ResizeObserver(() => {
-      medir();
-      reposicionar();
-    });
+    faixa.addEventListener("scroll", aoRolar, { passive: true });
+    const observador = new ResizeObserver(recentralizar);
     observador.observe(faixa);
     return () => {
-      faixa.removeEventListener("scroll", medir);
+      clearTimeout(espera);
+      faixa.removeEventListener("scroll", aoRolar);
       observador.disconnect();
     };
-  }, [animais.length]);
+  }, [itens.length]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 className="text-2xl font-bold text-[#1a1c1c]">{titulo}</h2>
-        {/* Com um animal só (no próprio perfil, ao lado do cartão de
-            cadastrar), não há para onde passar. */}
-        {varios && (
-          <div className="flex items-center gap-3">
-            <p className="text-sm font-semibold text-[#5f5e5e] tabular-nums whitespace-nowrap">
-              <span className="text-[#1a1c1c]">{posicao + 1}</span> de{" "}
-              {animais.length}
-            </p>
-            <div className="flex items-center gap-2">
-              <Seta
-                rotulo="Animal anterior"
-                icone="chevron_left"
-                desativada={posicao <= 0}
-                onClick={() => irPara(posicao - 1)}
-              />
-              <Seta
-                rotulo="Próximo animal"
-                icone="chevron_right"
-                desativada={posicao >= animais.length - 1}
-                onClick={() => irPara(posicao + 1)}
-              />
+        {resumo && (
+          <span className="text-sm text-[#5f5e5e] whitespace-nowrap">
+            {resumo}
+          </span>
+        )}
+      </div>
+
+      {/* A largura dos cartões sai da largura deste bloco (a da página):
+          cabem o do centro, os dois vizinhos e um pedaço dos seguintes. */}
+      <div className="[container-type:inline-size]">
+        <div
+          className="relative"
+          style={{ "--largura": "clamp(236px, 70cqw, 288px)" }}
+        >
+          {/* A faixa rola para os lados, parando com um cartão no centro.
+              Os espaços nas pontas deixam o primeiro e o último chegarem ao
+              meio. A barra de rolagem fica escondida: os vizinhos à vista,
+              as setas e os pontinhos mostram que há mais. */}
+          <div
+            ref={faixaRef}
+            style={{
+              ...mascara(escondidos),
+              paddingInline: "calc(50% - var(--largura) / 2)",
+            }}
+            className="relative flex overflow-x-auto snap-x snap-mandatory py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            <div
+              role="tablist"
+              aria-label={titulo}
+              className="flex gap-3 md:gap-6"
+            >
+              {itens.map((codigo) => {
+                const noCentro = codigo === centro;
+                const novo = codigo === NOVO_ANIMAL;
+                return (
+                  <button
+                    key={codigo}
+                    type="button"
+                    role="tab"
+                    id={idDaAba(codigo)}
+                    data-codigo={codigo}
+                    aria-selected={noCentro}
+                    aria-controls={idDoPainel(codigo)}
+                    aria-label={novo ? "Cadastrar animal" : undefined}
+                    tabIndex={noCentro ? 0 : -1}
+                    onClick={() => {
+                      onEscolher(codigo);
+                      // O cartão de cadastrar já abre o cadastro.
+                      if (novo) onCadastrar?.();
+                    }}
+                    onKeyDown={aoTeclar}
+                    style={{ width: "var(--largura)" }}
+                    className={`group snap-center shrink-0 flex flex-col p-2 text-left rounded-2xl border transition-[transform,background-color,border-color,color,box-shadow] duration-deslize ease-deslize motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1c1c] focus-visible:ring-offset-2 ${
+                      noCentro
+                        ? "scale-[1.06] bg-[#9e0a24] border-[#9e0a24] text-white shadow-[0_22px_44px_-22px_rgba(158,10,36,0.7)]"
+                        : `bg-white text-[#1a1c1c] hover:border-[#cfa9a7] ${
+                            novo
+                              ? "border-2 border-dashed border-[#e2cfcf] hover:bg-[#fffafa]"
+                              : "border-[#eadede]"
+                          }`
+                    }`}
+                  >
+                    {novo ? (
+                      <CartaoCadastrarDaFila noCentro={noCentro} />
+                    ) : (
+                      <CartaoAnimalDaFila
+                        animal={porCodigo.get(codigo)}
+                        noCentro={noCentro}
+                      />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
-        )}
-      </div>
 
-      {/* A faixa rola para os lados (no celular, com o dedo), parando no
-          começo de cada cartão. A barra de rolagem fica escondida: o cartão
-          cortado, a borda esmaecida, as setas e o contador mostram que há
-          mais. */}
-      <div
-        ref={faixaRef}
-        style={mascara(escondidos)}
-        className="relative isolate [container-type:inline-size] -mx-1 px-1 py-1 flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {/* A placa vermelha do escolhido, atrás dos cartões (a faixa isola
-            as camadas: a placa fica abaixo do conteúdo dela, e não da
-            página). */}
-        <span
-          ref={placaRef}
-          aria-hidden="true"
-          className="absolute left-0 top-0 -z-10 rounded-2xl bg-[#9e0a24] transition-transform duration-deslize ease-deslize motion-reduce:transition-none"
-        />
-        <div role="tablist" aria-label={titulo} className="flex gap-4">
-          {animais.map((animal) => (
-            <AbaAnimal
-              key={animal.codigo}
-              animal={animal}
-              escolhido={animal.codigo === escolhido.codigo}
-              largura={largura}
-              onEscolher={onEscolher}
-              onTeclar={aoTeclar}
-            />
-          ))}
+          <Seta
+            lado="esquerda"
+            rotulo={
+              posicao > 0
+                ? `Anterior: ${nomeDe(itens[posicao - 1])}`
+                : "Anterior"
+            }
+            desativada={posicao <= 0}
+            onClick={() => irPara(posicao - 1)}
+          />
+          <Seta
+            lado="direita"
+            rotulo={
+              posicao < itens.length - 1
+                ? `Próximo: ${nomeDe(itens[posicao + 1])}`
+                : "Próximo"
+            }
+            desativada={posicao >= itens.length - 1}
+            onClick={() => irPara(posicao + 1)}
+          />
         </div>
-        {fim && (
-          <div data-parada className={`snap-start shrink-0 flex ${largura}`}>
-            {fim}
-          </div>
-        )}
       </div>
 
-      {(escondidos.antes || escondidos.depois) && (
-        <p className="md:hidden -mt-1 flex items-center gap-1.5 text-xs text-[#5f5e5e]">
-          <span
-            aria-hidden="true"
-            className="material-symbols-outlined text-[18px] text-[#9e0a24]"
-          >
-            swipe
-          </span>
-          Deslize para o lado para ver os outros animais
-        </p>
-      )}
+      {/* Os pontinhos: quantos são e qual está no centro. Para quem usa o
+          mouse; o leitor de tela e o teclado já têm as abas. O cartão de
+          cadastrar aparece como um "+". */}
+      <div
+        aria-hidden="true"
+        className="flex items-center justify-center gap-2"
+      >
+        {itens.map((codigo) => {
+          const noCentro = codigo === centro;
+          return codigo === NOVO_ANIMAL ? (
+            <button
+              key={codigo}
+              type="button"
+              tabIndex={-1}
+              onClick={() => onEscolher(codigo)}
+              className={`material-symbols-outlined text-[16px] leading-none transition-colors ${
+                noCentro
+                  ? "text-[#9e0a24]"
+                  : "text-[#c9b6b6] hover:text-[#7d0a1d]"
+              }`}
+            >
+              add
+            </button>
+          ) : (
+            <button
+              key={codigo}
+              type="button"
+              tabIndex={-1}
+              onClick={() => onEscolher(codigo)}
+              className={`h-2 rounded-full transition-all duration-deslize ease-deslize ${
+                noCentro
+                  ? "w-6 bg-[#9e0a24]"
+                  : "w-2 bg-[#e2cfcf] hover:bg-[#cfa9a7]"
+              }`}
+            />
+          );
+        })}
+      </div>
+
+      <p className="md:hidden flex items-center justify-center gap-1.5 text-xs text-[#5f5e5e]">
+        <span
+          aria-hidden="true"
+          className="material-symbols-outlined text-[18px] text-[#9e0a24]"
+        >
+          swipe
+        </span>
+        Deslize para o lado para ver os outros
+      </p>
     </div>
   );
 }

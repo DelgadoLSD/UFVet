@@ -1,6 +1,7 @@
 import { banco } from "../banco.js";
 import { decifrar, indiceEmail } from "../cifra.js";
 import { sortearCodigoLivre, sortearCodigoPublico } from "../codigos.js";
+import { LIBERACAO_ATIVA } from "./acesso.js";
 
 // Model (do MVC) das contas: como achar uma conta no banco e o que dela pode
 // sair da API. As tabelas em si estão em prisma/schema.prisma.
@@ -76,11 +77,7 @@ export async function dadosPublicos(usuario) {
 export async function podeVerContato(quem, dono) {
   if (quem.id === dono.id || quem.papel === "VETERINARIO") return true;
   const liberacao = await banco.liberacaoContato.findFirst({
-    where: {
-      tutorId: quem.id,
-      encerradaEm: null,
-      expiraEm: { gt: new Date() },
-    },
+    where: { tutorId: quem.id, ...LIBERACAO_ATIVA() },
     select: { id: true },
   });
   return !!liberacao;

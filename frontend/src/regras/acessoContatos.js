@@ -26,3 +26,15 @@ export const rotuloDuracao = (horas) =>
 // Tamanho mínimo da descrição do caso num pedido de liberação: o veterinário
 // precisa entender do que se trata antes de liberar.
 export const TAMANHO_MINIMO_CASO = 5;
+
+// As opções de renovação de uma liberação (F30): cada prazo, contado de
+// agora, com o momento em que terminaria. Renovar só estende o acesso: a
+// opção que terminaria antes do prazo atual vem marcada como `encurta`, para
+// a tela desligá-la (para tirar o acesso antes, existe o encerramento).
+export function opcoesDeRenovacao(expiraEm, agora = Date.now()) {
+  const atual = new Date(expiraEm).getTime();
+  return DURACOES_LIBERACAO.map((duracao) => {
+    const terminaEm = new Date(agora + duracao.valor * 60 * 60 * 1000);
+    return { ...duracao, terminaEm, encurta: terminaEm.getTime() <= atual };
+  });
+}
