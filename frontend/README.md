@@ -157,7 +157,8 @@ critério de peso e idade que perde o efeito quando o peso ou o nascimento
 muda), o formulário do animal (o que ele confere e o que manda para a API), o
 registro de doação (o que falta antes de enviar), as fotos (formatos aceitos,
 tamanho e a ordem que vai para a API), a consulta da busca (o que vai para a
-API) e o perfil de outra pessoa (que chega sem contato). Também confere como
+API), o perfil de outra pessoa (que chega sem contato) e qual animal o perfil
+abre no carrossel (o do endereço, vindo da busca, ou o primeiro). Também confere como
 os erros da API chegam aos formulários: o de um campo vai para embaixo dele,
 e o geral (sem conexão, limite de tentativas) para cima do botão. Os testes
 não abrem o navegador nem precisam da API ligada.
@@ -176,11 +177,11 @@ banco não guarda gênero de tutores, então eles aparecem como "Tutor(a)".
 
 ## O que falta para a integração com a API
 
-- Trocar os dados de exemplo pelas chamadas à API, dentro de `servicos/`,
-  uma funcionalidade por vez (busca, perfis visitados, validações, doações,
-  liberações...).
-- Nos cartões dos animais, validações, doações, observações e exames ainda
-  ficam só no navegador, até recarregar a página.
+- O acesso aos contatos (pedidos e liberações) e as listas de hospitais e
+  veterinários ainda vêm dos dados de exemplo (`servicos/acessoContatos.js`
+  e `servicos/pessoas.js`).
+- Os exames dos animais ainda ficam só no navegador, até recarregar a
+  página.
 - `animaisResumo` ("Zeus (cão) e Luna (gato)") vai sair das tabelas de
   animais.
 - Publicado o site, a hospedagem precisa repassar `/api` para a API, como o

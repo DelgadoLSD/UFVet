@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Ajuda from "../../components/Ajuda";
+import { enderecoDoAnimal } from "../perfil/animalEscolhido";
 import { nomeRaca, partesDoTipo } from "../../regras/doacao";
 import { idadeEmAnos } from "../../util/datas";
 import { formatarPeso } from "../../util/texto";
@@ -8,7 +9,8 @@ import { formatarPeso } from "../../util/texto";
 // no perfil, em tamanho menor: o cabeçalho vermelho com o nome e a raça, a
 // foto emoldurada, sem nada por cima, e a faixa de dados em células
 // encostadas: tipo sanguíneo, peso e idade, e embaixo, numa linha inteira, a
-// validação. O cartão inteiro leva ao perfil do tutor. Cada parte tem altura
+// validação. O cartão inteiro leva ao perfil do tutor, já aberto neste
+// animal. Cada parte tem altura
 // fixa (o texto longo é cortado), para as linhas dos cartões lado a lado
 // ficarem alinhadas. Todo doador da busca pode doar agora: o pausado pelo
 // tutor e o que está se recuperando de uma coleta nem aparecem.
@@ -61,7 +63,11 @@ function LinhaValidacao({ validado }) {
       >
         {situacao.titulo}
       </p>
-      <Ajuda titulo={situacao.titulo} claro={validado} className="relative z-10">
+      <Ajuda
+        titulo={situacao.titulo}
+        claro={validado}
+        className="relative z-10"
+      >
         <p>{situacao.explicacao}</p>
       </Ajuda>
     </div>
@@ -130,7 +136,7 @@ function CartaoDoador({ doador }) {
             foto), para qualquer ponto dele abrir o perfil. */}
         <h3 className="text-xl xl:text-[1.375rem] font-extrabold leading-tight tracking-tight truncate">
           <Link
-            to={`/tutor/${doador.tutorCodigo}`}
+            to={enderecoDoAnimal(doador.tutorCodigo, doador.codigo)}
             className="focus-visible:outline-none after:absolute after:inset-0 after:z-[1]"
           >
             <span className="sr-only">Ver perfil de </span>

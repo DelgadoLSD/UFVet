@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import {
+  Link,
+  Navigate,
+  useLocation,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
 import Header from "../components/Header";
@@ -7,6 +13,9 @@ import ModalComoFuncionaContato from "../components/ModalComoFuncionaContato";
 import ModalPedirLiberacao from "../components/ModalPedirLiberacao";
 import CartaoPerfil from "./perfil/CartaoPerfil";
 import CartaoAnimal from "./perfil/CartaoAnimal";
+import CarrosselAnimais from "./perfil/CarrosselAnimais";
+import { animalEscolhido, idDaAba, idDoPainel } from "./perfil/animalEscolhido";
+import { movimentoReduzido } from "../util/movimento";
 import ModalAnimal from "./perfil/ModalAnimal";
 import PainelAcessoContatos from "./perfil/PainelAcessoContatos";
 import { useSessao } from "../servicos/sessao";
@@ -23,6 +32,11 @@ import { ehVeterinario, nomeCurto, nomeProfissional } from "../util/texto";
 // - /tutor/:codigo: o perfil de outra pessoa, aberto pela busca.
 //
 // As partes da página ficam em pages/perfil/.
+//
+// Os animais aparecem num carrossel de cartões compactos e, embaixo, o cartão
+// completo do animal escolhido. A escolha fica no endereço (?animal=H4R8T2):
+// o cartão da busca já abre o perfil no animal clicado, e recarregar a
+// página mantém o mesmo animal aberto.
 //
 // A pessoa e os animais vêm da API nos dois casos, os animais com o
 // histórico clínico. No perfil de outra pessoa, o contato não vem junto: ele
@@ -184,33 +198,47 @@ function AvisoVeterinario({ usuario }) {
   );
 }
 
-// Fim da lista dos próprios animais: o lugar do próximo cartão, tracejado,
-// com as fotos dos animais já cadastrados em fila e o "+" vermelho como o
-// próximo da fila. Sem nenhum animal ainda, fica só o "+".
-function BotaoCadastrarAnimal({ animais, onClick }) {
-  const fotos = animais
-    .filter((animal) => animal.fotos.length > 0)
-    .slice(0, 3)
-    .map((animal) => ({ url: animal.fotos[0].url, nome: animal.nome }));
+// O cadastro de um animal novo no fim do carrossel dos próprios animais:
+// o lugar do próximo cartão, tracejado, do tamanho dos outros.
+function CartaoCadastrarNoCarrossel({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group w-full rounded-2xl border-2 border-dashed border-[#e2cfcf] bg-white px-6 flex flex-col items-center justify-center gap-3 text-center transition-colors hover:border-[#9e0a24]/60 hover:bg-[#fffafa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
+    >
+      <span className="w-12 h-12 rounded-full bg-[#9e0a24] text-white flex items-center justify-center transition-transform group-hover:scale-110 motion-reduce:group-hover:scale-100">
+        <span
+          aria-hidden="true"
+          className="material-symbols-outlined text-[28px]"
+        >
+          add
+        </span>
+      </span>
+      <span className="text-base font-extrabold tracking-tight text-[#1a1c1c]">
+        Cadastrar animal
+      </span>
+      <span className="text-xs text-[#5f5e5e] leading-relaxed">
+        Cada doador cadastrado pode ajudar a salvar uma vida
+      </span>
+    </button>
+  );
+}
 
+// Sem nenhum animal ainda, o cadastro ocupa a largura toda: o lugar do
+// primeiro cartão, tracejado, com o "+" vermelho.
+function BotaoCadastrarAnimal({ onClick }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className="group w-full py-9 px-6 flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[#e2cfcf] bg-white hover:border-[#9e0a24]/60 hover:bg-[#fffafa] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
     >
-      <span aria-hidden="true" className="flex items-center -space-x-3">
-        {fotos.map((foto) => (
-          <img
-            key={foto.url}
-            src={foto.url}
-            alt=""
-            className="w-12 h-12 rounded-full object-cover ring-4 ring-white"
-          />
-        ))}
-        <span className="w-12 h-12 rounded-full bg-[#9e0a24] ring-4 ring-white flex items-center justify-center text-white transition-transform group-hover:scale-110 motion-reduce:group-hover:scale-100">
-          <span className="material-symbols-outlined text-[28px]">add</span>
-        </span>
+      <span
+        aria-hidden="true"
+        className="w-12 h-12 rounded-full bg-[#9e0a24] flex items-center justify-center text-white transition-transform group-hover:scale-110 motion-reduce:group-hover:scale-100"
+      >
+        <span className="material-symbols-outlined text-[28px]">add</span>
       </span>
       <span className="text-lg font-extrabold tracking-tight text-[#1a1c1c]">
         Cadastrar novo animal
@@ -225,6 +253,8 @@ function BotaoCadastrarAnimal({ animais, onClick }) {
 function PerfilPage() {
   // Sem :codigo na rota, é o próprio perfil de quem está logado.
   const { codigo } = useParams();
+  const local = useLocation();
+  const [parametros, setParametros] = useSearchParams();
   const usuario = useSessao();
   const acesso = acessoDe(usuario, useAcessoContatos());
   // Modal aberto no nível da página: "cadastrar", "pedido", "comoFunciona"
@@ -246,7 +276,59 @@ function PerfilPage() {
   const animais = lista.animais;
   const listaPronta = !lista.carregando && !lista.erro;
 
-  if (ehMeuCodigo) return <Navigate to="/meu-perfil" replace />;
+  // O animal aberto embaixo do carrossel. A escolha começa pelo endereço
+  // (?animal=...) e é guardada na própria página: o roteador só atualiza o
+  // endereço um instante depois, e dois cliques seguidos na seta precisam
+  // contar a partir do último. O endereço acompanha, para recarregar e
+  // compartilhar o link no mesmo animal; trocar o substitui, sem criar um
+  // passo novo no "voltar" do navegador a cada clique.
+  const [codigoEscolhido, setCodigoEscolhido] = useState(() =>
+    parametros.get("animal"),
+  );
+  const escolhido = animalEscolhido(animais, codigoEscolhido);
+  // O cartão que está saindo na troca, e para que lado o carrossel andou
+  // (1, para a direita; -1, para a esquerda): ele desliza para fora por um
+  // lado enquanto o novo entra pelo outro, como duas páginas lado a lado.
+  const [saida, setSaida] = useState(null);
+  // O cartão que sai some no fim da animação (onAnimationEnd); se ela não
+  // rodar por algum motivo, some mesmo assim, logo depois do tempo dela,
+  // para nunca ficar preso na tela.
+  useEffect(() => {
+    if (!saida) return;
+    const espera = setTimeout(() => setSaida(null), 700);
+    return () => clearTimeout(espera);
+  }, [saida]);
+  const escolher = (animal) => {
+    if (escolhido && animal.codigo !== escolhido.codigo) {
+      const de = animais.findIndex((a) => a.codigo === escolhido.codigo);
+      const para = animais.findIndex((a) => a.codigo === animal.codigo);
+      // Um animal recém-cadastrado ainda não está na lista: entra pela
+      // direita, como o último dela.
+      const lado = para === -1 || para > de ? 1 : -1;
+      setSaida(movimentoReduzido() ? null : { codigo: escolhido.codigo, lado });
+    }
+    setCodigoEscolhido(animal.codigo);
+    setParametros({ animal: animal.codigo }, { replace: true });
+  };
+  // O carrossel aparece quando há o que escolher: dois animais ou mais, ou,
+  // no próprio perfil, um animal e o cartão de cadastrar ao lado.
+  const comCarrossel =
+    listaPronta && (animais.length > 1 || (ehProprio && animais.length > 0));
+  const tituloAnimais = ehProprio
+    ? "Meus animais"
+    : perfil
+      ? `Animais de ${nomeCurto(perfil)}`
+      : "";
+
+  // Mantém o animal pedido (?animal=...) ao trocar para o próprio perfil.
+  if (ehMeuCodigo) {
+    return (
+      <Navigate
+        to={{ pathname: "/meu-perfil", search: local.search }}
+        replace
+      />
+    );
+  }
 
   if (!perfil) {
     return (
@@ -267,6 +349,7 @@ function PerfilPage() {
           onFechar={fecharModal}
           onSalvo={(animal) => {
             lista.adicionar(animal);
+            escolher(animal);
             confirmar(`${animal.nome} cadastrad${finalDoGenero(animal)}`);
             fecharModal();
           }}
@@ -300,45 +383,98 @@ function PerfilPage() {
 
         {ehVet && !ehProprio && <AvisoVeterinario usuario={usuario} />}
 
-        <div className="flex flex-wrap justify-between items-end gap-x-4 gap-y-1 mb-6">
-          <h2 className="text-2xl font-bold text-[#1a1c1c]">
-            {ehProprio ? "Meus animais" : `Animais de ${nomeCurto(perfil)}`}
-          </h2>
-          {listaPronta && (
-            <span className="text-sm text-[#5f5e5e] whitespace-nowrap">
-              {animais.length}{" "}
-              {animais.length === 1
-                ? "animal cadastrado"
-                : "animais cadastrados"}
-            </span>
-          )}
-        </div>
+        {comCarrossel ? (
+          <CarrosselAnimais
+            titulo={tituloAnimais}
+            animais={animais}
+            escolhido={escolhido}
+            onEscolher={escolher}
+            fim={
+              ehProprio && (
+                <CartaoCadastrarNoCarrossel
+                  onClick={() => setModal("cadastrar")}
+                />
+              )
+            }
+          />
+        ) : (
+          <div className="flex flex-wrap justify-between items-end gap-x-4 gap-y-1">
+            <h2 className="text-2xl font-bold text-[#1a1c1c]">
+              {tituloAnimais}
+            </h2>
+            {listaPronta && (
+              <span className="text-sm text-[#5f5e5e] whitespace-nowrap">
+                {animais.length}{" "}
+                {animais.length === 1
+                  ? "animal cadastrado"
+                  : "animais cadastrados"}
+              </span>
+            )}
+          </div>
+        )}
 
-        <section className="space-y-6">
-          {listaPronta ? (
-            animais.map((animal) => (
-              <CartaoAnimal
-                key={animal.codigo}
-                animal={animal}
-                ehDono={ehProprio}
-                ehVet={ehVet}
-                nomeTutor={perfil.nomeCompleto}
-                onAlterado={lista.substituir}
-                onExcluido={lista.remover}
-              />
-            ))
-          ) : (
+        {/* O corte nas laterais esconde os cartões enquanto deslizam, sem
+            a página ganhar rolagem para o lado. */}
+        <section className="relative mt-6 overflow-x-clip">
+          {!listaPronta ? (
             <EstadoDaLista
               erro={lista.erro}
               ehProprio={ehProprio}
               onTentarDeNovo={lista.tentarDeNovo}
             />
-          )}
-          {ehProprio && listaPronta && (
-            <BotaoCadastrarAnimal
-              animais={animais}
-              onClick={() => setModal("cadastrar")}
-            />
+          ) : escolhido ? (
+            // Todos os cartões ficam montados e só o escolhido aparece: o
+            // que cada um guarda enquanto a página está aberta (os exames
+            // enviados, por exemplo) não se perde ao trocar de animal. Na
+            // troca, o que sai fica por cima, solto, deslizando para fora,
+            // até a animação acabar.
+            animais.map((animal) => {
+              const aberto = animal.codigo === escolhido.codigo;
+              const saindo = !aberto && saida?.codigo === animal.codigo;
+              const movimento = saindo
+                ? `absolute inset-x-0 top-0 ${
+                    saida.lado > 0
+                      ? "animate-sair-para-esquerda"
+                      : "animate-sair-para-direita"
+                  }`
+                : aberto && saida
+                  ? saida.lado > 0
+                    ? "animate-entrar-pela-direita"
+                    : "animate-entrar-pela-esquerda"
+                  : "";
+              return (
+                <div
+                  key={animal.codigo}
+                  id={idDoPainel(animal.codigo)}
+                  role={comCarrossel ? "tabpanel" : undefined}
+                  aria-labelledby={
+                    comCarrossel ? idDaAba(animal.codigo) : undefined
+                  }
+                  hidden={!aberto && !saindo}
+                  // O que sai não recebe mais cliques nem foco.
+                  inert={saindo || undefined}
+                  onAnimationEnd={(e) => {
+                    if (saindo && e.target === e.currentTarget) setSaida(null);
+                  }}
+                  className={movimento}
+                >
+                  <CartaoAnimal
+                    animal={animal}
+                    ehDono={ehProprio}
+                    ehVet={ehVet}
+                    nomeTutor={perfil.nomeCompleto}
+                    onAlterado={lista.substituir}
+                    onExcluido={lista.remover}
+                  />
+                </div>
+              );
+            })
+          ) : ehProprio ? (
+            <BotaoCadastrarAnimal onClick={() => setModal("cadastrar")} />
+          ) : (
+            <p className="text-sm text-[#5f5e5e] py-6">
+              Nenhum animal cadastrado ainda.
+            </p>
           )}
         </section>
       </main>
