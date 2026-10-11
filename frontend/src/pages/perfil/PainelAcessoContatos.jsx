@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import AvisoErro from "../../components/AvisoErro";
 import Botao from "../../components/Botao";
 import BotaoAjuda from "../../components/BotaoAjuda";
 import EtiquetaCodigo from "../../components/EtiquetaCodigo";
 import ModalLiberarAcesso from "./ModalLiberarAcesso";
+import { BotaoQueAbre, MostrarOcultar, TituloComAjuda } from "./PainelSecao";
 import { confirmar } from "../../hooks/confirmacoes";
+import { useCelular } from "../../hooks/useCelular";
 import {
   encerrarAcesso,
   liberarAcesso,
@@ -74,14 +76,16 @@ function Pedido({ pedido, ocupado, onLiberar, onRecusar }) {
         <Botao
           variante="contornoClaro"
           tamanho="sm"
+          className="!rounded-full"
           disabled={ocupado}
           onClick={onRecusar}
         >
           Recusar
         </Botao>
         <Botao
-          variante="claro"
+          variante="tonal"
           tamanho="sm"
+          icone="check"
           disabled={ocupado}
           onClick={onLiberar}
         >
@@ -234,6 +238,10 @@ function PainelAcessoContatos({ onComoFunciona }) {
   const painel = usePainelAcesso();
   const { pedidos, liberacoes } = painel;
   const [liberando, setLiberando] = useState(false);
+  const celular = useCelular();
+  const [aberto, setAberto] = useState(false);
+  const fechado = celular && !aberto;
+  const idCorpo = useId();
   // A linha (o id) cuja ação está a caminho da API, e o erro da última ação.
   const [ocupado, setOcupado] = useState(null);
   const [erro, setErro] = useState("");
@@ -291,101 +299,163 @@ function PainelAcessoContatos({ onComoFunciona }) {
       `Acesso de ${primeiroNome(liberacao.tutorNome)} encerrado`,
     );
 
+  // No celular, o painel começa fechado, como os painéis do cartão (ver
+  // PainelSecao): o topo inteiro abre e fecha, e, fechado, diz numa linha o
+  // que tem dentro. Pedido esperando resposta vem numa etiqueta vermelha,
+  // para saltar mesmo com o painel fechado.
+  let resumo;
+  if (!painel.pronto) resumo = "Carregando…";
+  else if (painel.erro && pedidos.length === 0 && liberacoes.length === 0) {
+    resumo = "Não deu para carregar. Abra para tentar de novo.";
+  } else {
+    resumo = (
+      <>
+        {pedidos.length > 0 && (
+          <span className="inline-flex items-center rounded-full bg-[#9e0a24] px-2.5 py-0.5 text-xs font-bold text-white">
+            {pedidos.length === 1
+              ? "1 pedido esperando"
+              : `${pedidos.length} pedidos esperando`}
+          </span>
+        )}
+        {liberacoes.length === 0
+          ? "Ninguém liberado agora"
+          : liberacoes.length === 1
+            ? "1 acesso liberado"
+            : `${liberacoes.length} acessos liberados`}
+      </>
+    );
+  }
+
   return (
-    <section className="bg-[#1a1a1a] rounded-2xl p-5 md:p-6 flex flex-col gap-4">
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+    <section className="bg-[#1a1a1a] rounded-2xl flex flex-col">
+      <div
+        className={`relative px-5 pt-5 md:px-6 md:pt-6 flex flex-col sm:flex-row sm:items-start justify-between gap-4 ${
+          fechado ? "pb-5" : "pb-4"
+        }`}
+      >
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-white">
-              Acesso aos contatos
+          <div className="flex items-start gap-3">
+            <h2 className="text-lg sm:text-xl font-bold text-white">
+              {celular && (
+                <BotaoQueAbre
+                  titulo="Acesso aos contatos"
+                  aberto={aberto}
+                  controla={idCorpo}
+                  onAlternar={() => setAberto((agora) => !agora)}
+                  className={fechado ? "rounded-2xl" : "rounded-t-2xl"}
+                />
+              )}
+              <TituloComAjuda
+                titulo="Acesso aos contatos"
+                oculto={celular}
+                margem="ml-2"
+                ajuda={
+                  <BotaoAjuda
+                    claro
+                    rotulo="Como funciona o acesso aos contatos?"
+                    onClick={onComoFunciona}
+                  />
+                }
+              />
             </h2>
-            <BotaoAjuda
-              claro
-              rotulo="Como funciona o acesso aos contatos?"
-              onClick={onComoFunciona}
-            />
+            {celular && (
+              <span className="ml-auto mt-1">
+                <MostrarOcultar aberto={aberto} />
+              </span>
+            )}
           </div>
-          <p className="text-sm text-white/60 mt-1 leading-relaxed max-w-xl">
-            Tutores em atendimento com você podem ver o contato dos doadores
-            enquanto a liberação estiver ativa. Aqui aparecem só as que você
-            liberou.
-          </p>
+          {fechado ? (
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-white/60">
+              {resumo}
+            </p>
+          ) : (
+            <p className="relative z-[1] text-sm text-white/60 mt-1 leading-relaxed max-w-xl">
+              Tutores em atendimento com você podem ver o contato dos doadores
+              enquanto a liberação estiver ativa. Aqui aparecem só as que você
+              liberou.
+            </p>
+          )}
         </div>
-        <Botao
-          icone="add"
-          onClick={() => setLiberando(true)}
-          className="shrink-0 self-start max-sm:self-stretch max-sm:h-11"
-        >
-          Liberar acesso
-        </Botao>
+        {!fechado && (
+          <Botao
+            icone="add"
+            onClick={() => setLiberando(true)}
+            className="relative z-[1] shrink-0 self-start max-sm:self-stretch max-sm:h-11"
+          >
+            Liberar acesso
+          </Botao>
+        )}
       </div>
 
-      <AvisoErro>{erro}</AvisoErro>
+      <div
+        id={idCorpo}
+        className={`px-5 pb-5 md:px-6 md:pb-6 flex-col gap-4 ${
+          fechado ? "hidden" : "flex"
+        }`}
+      >
+        <AvisoErro>{erro}</AvisoErro>
 
-      {!painel.pronto ? (
-        <p role="status" className="py-6 text-center text-sm text-white/60">
-          Carregando os pedidos e as liberações…
-        </p>
-      ) : painel.erro && pedidos.length === 0 && liberacoes.length === 0 ? (
-        <div className="flex flex-col items-start gap-3">
-          <AvisoErro>{painel.erro}</AvisoErro>
-          <Botao
-            variante="claro"
-            tamanho="sm"
-            icone="refresh"
-            onClick={painel.recarregar}
-          >
-            Tentar de novo
-          </Botao>
-        </div>
-      ) : (
-        <>
-          {pedidos.length > 0 && (
-            <div className="rounded-xl bg-[#9e0a24] overflow-hidden">
-              <p className="px-5 pt-4 text-sm font-semibold text-white">
-                {pedidos.length === 1
-                  ? "1 tutor esperando liberação"
-                  : `${pedidos.length} tutores esperando liberação`}
-              </p>
-              <ul className="divide-y divide-white/15">
-                {pedidos.map((p) => (
-                  <Pedido
-                    key={p.id}
-                    pedido={p}
-                    ocupado={ocupado === p.id}
-                    onLiberar={() => liberarPedido(p)}
-                    onRecusar={() => recusar(p)}
+        {!painel.pronto ? (
+          <p role="status" className="py-6 text-center text-sm text-white/60">
+            Carregando os pedidos e as liberações…
+          </p>
+        ) : painel.erro && pedidos.length === 0 && liberacoes.length === 0 ? (
+          <div className="flex flex-col items-start gap-3">
+            <AvisoErro>{painel.erro}</AvisoErro>
+            <Botao tamanho="sm" icone="refresh" onClick={painel.recarregar}>
+              Tentar de novo
+            </Botao>
+          </div>
+        ) : (
+          <>
+            {pedidos.length > 0 && (
+              <div className="rounded-xl bg-[#9e0a24] overflow-hidden">
+                <p className="px-5 pt-4 text-sm font-semibold text-white">
+                  {pedidos.length === 1
+                    ? "1 tutor esperando liberação"
+                    : `${pedidos.length} tutores esperando liberação`}
+                </p>
+                <ul className="divide-y divide-white/15">
+                  {pedidos.map((p) => (
+                    <Pedido
+                      key={p.id}
+                      pedido={p}
+                      ocupado={ocupado === p.id}
+                      onLiberar={() => liberarPedido(p)}
+                      onRecusar={() => recusar(p)}
+                    />
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {liberacoes.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-white/20 px-6 py-10 text-center">
+                <p className="font-semibold text-white">
+                  Você não liberou ninguém agora.
+                </p>
+                <p className="text-sm text-white/60 mt-1 max-w-md mx-auto leading-relaxed">
+                  Libere quando um tutor precisar falar com doadores durante um
+                  atendimento. O acesso expira sozinho no prazo que você
+                  escolher.
+                </p>
+              </div>
+            ) : (
+              <ul className="rounded-xl bg-white divide-y divide-[#f0e6e6]">
+                {liberacoes.map((l) => (
+                  <Liberacao
+                    key={l.id}
+                    liberacao={l}
+                    ocupado={ocupado === l.id}
+                    onRenovar={(horas) => renovar(l, horas)}
+                    onEncerrar={() => encerrar(l)}
                   />
                 ))}
               </ul>
-            </div>
-          )}
-
-          {liberacoes.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-white/20 px-6 py-10 text-center">
-              <p className="font-semibold text-white">
-                Você não liberou ninguém agora.
-              </p>
-              <p className="text-sm text-white/60 mt-1 max-w-md mx-auto leading-relaxed">
-                Libere quando um tutor precisar falar com doadores durante um
-                atendimento. O acesso expira sozinho no prazo que você escolher.
-              </p>
-            </div>
-          ) : (
-            <ul className="rounded-xl bg-white divide-y divide-[#f0e6e6]">
-              {liberacoes.map((l) => (
-                <Liberacao
-                  key={l.id}
-                  liberacao={l}
-                  ocupado={ocupado === l.id}
-                  onRenovar={(horas) => renovar(l, horas)}
-                  onEncerrar={() => encerrar(l)}
-                />
-              ))}
-            </ul>
-          )}
-        </>
-      )}
+            )}
+          </>
+        )}
+      </div>
 
       {liberando && (
         <ModalLiberarAcesso

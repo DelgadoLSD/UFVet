@@ -185,19 +185,32 @@ function FiltrosBusca({
         acao={
           <div className="flex items-center gap-2">
             {ligados > 0 && (
-              <Botao variante="sobreVermelho" tamanho="xs" onClick={onLimpar}>
+              <Botao
+                variante="textoClaro"
+                tamanho="sm"
+                icone="close"
+                onClick={onLimpar}
+              >
                 Limpar
               </Botao>
             )}
             <Botao
-              variante="claro"
-              tamanho="xs"
+              variante="textoClaro"
+              tamanho="sm"
               className="lg:hidden"
               aria-expanded={aberto}
               aria-controls="filtros-da-busca"
               onClick={() => setAberto((agora) => !agora)}
             >
-              {aberto ? "Esconder" : "Mostrar"}
+              {aberto ? "Ocultar" : "Mostrar"}
+              <span
+                aria-hidden="true"
+                className={`material-symbols-outlined text-[18px] -mr-1 transition-transform motion-reduce:transition-none ${
+                  aberto ? "rotate-180" : ""
+                }`}
+              >
+                expand_more
+              </span>
             </Botao>
           </div>
         }
@@ -236,7 +249,7 @@ function FiltrosBusca({
                   </p>
                 )}
                 <p>
-                  Dá para escolher mais de um tipo. Filtrar por tipo esconde os
+                  Dá para escolher mais de um tipo. Filtrar por tipo oculta os
                   doadores sem tipagem confirmada: o tipo deles só é conhecido
                   depois do exame, feito no hospital.
                 </p>
@@ -258,9 +271,7 @@ function FiltrosBusca({
               <Selecao
                 rotulo="Cidade"
                 valor={cidade}
-                onEscolher={(valor) =>
-                  onFiltrar({ cidade: valor, bairro: "" })
-                }
+                onEscolher={(valor) => onFiltrar({ cidade: valor, bairro: "" })}
                 placeholder="Todas as cidades"
                 opcoes={cidades.map((c) => ({ valor: c, rotulo: c }))}
               />
@@ -271,9 +282,7 @@ function FiltrosBusca({
                 valor={bairro}
                 onEscolher={(valor) => onFiltrar({ bairro: valor })}
                 desabilitado={!cidade}
-                placeholder={
-                  cidade ? "Todos os bairros" : "Escolha a cidade"
-                }
+                placeholder={cidade ? "Todos os bairros" : "Escolha a cidade"}
                 opcoes={bairros.map((b) => ({ valor: b, rotulo: b }))}
               />
             </Campo>

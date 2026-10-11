@@ -46,7 +46,7 @@ function PainelNovoAnimal({ onCadastrar }) {
             doador.
           </p>
         </div>
-        <Botao variante="claro" icone="add" onClick={onCadastrar}>
+        <Botao variante="tonal" icone="add" onClick={onCadastrar}>
           Cadastrar animal
         </Botao>
       </header>

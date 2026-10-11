@@ -6,8 +6,9 @@ import { nomeCurto, rotuloPapel } from "../util/texto";
 
 // Barra do topo, presente em todas as páginas: logo, navegação principal e,
 // à direita, o menu da conta (ou "Entrar" e "Criar conta", para o visitante).
-// No celular, há um menu só, que abre por baixo: a navegação e, para quem
-// está logado, a conta e o sair. A foto, ao lado, continua levando ao perfil.
+// No celular, como nos aplicativos de busca: a marca (que leva ao início),
+// um campo de busca em pílula, que leva à busca de doadores (o motivo de o
+// site existir), e o círculo da foto. Nada fica escondido num menu.
 
 const LINKS = [
   { to: "/", rotulo: "Início" },
@@ -36,8 +37,7 @@ function ItemMenu({ as: Componente = Link, icone, children, ...props }) {
 // A conta logada, no canto do topo, em duas partes, como nos aplicativos:
 // a foto e o nome levam direto ao próprio perfil; a setinha ao lado abre as
 // outras opções (a conta e sair). O perfil não se repete no menu: a foto já
-// leva até ele. No celular, a setinha some: as opções ficam no menu do
-// topo, para não haver dois menus lado a lado.
+// leva até ele.
 function MenuConta({ conta, noPerfil }) {
   const [aberto, setAberto] = useState(false);
   const raizRef = useRef(null);
@@ -97,7 +97,7 @@ function MenuConta({ conta, noPerfil }) {
           aria-haspopup="menu"
           aria-label="Mais opções da conta"
           title="Mais opções da conta"
-          className="w-9 h-9 mr-0.5 rounded-full hidden md:flex items-center justify-center text-white/55 transition-colors hover:bg-white/[0.09] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
+          className="w-9 h-9 mr-0.5 rounded-full flex items-center justify-center text-white/55 transition-colors hover:bg-white/[0.09] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
         >
           <span
             aria-hidden="true"
@@ -144,43 +144,17 @@ function MenuConta({ conta, noPerfil }) {
   );
 }
 
-// Uma linha do menu do celular: a mesma letra da navegação, com a barrinha
-// vermelha na página atual.
-const classeItemCelular = (ativo) =>
-  `w-full flex items-center gap-3 py-3 text-[13px] font-semibold uppercase tracking-wider text-left ${
-    ativo ? "text-white" : "text-white/60"
-  }`;
-
-function MarcaAtual({ ativo }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`w-[3px] h-5 rounded-full ${ativo ? "bg-[#9e0a24]" : "bg-transparent"}`}
-    />
-  );
-}
-
 function Header() {
   const [escondido, setEscondido] = useState(false);
-  const [menuAberto, setMenuAberto] = useState(false);
   const location = useLocation();
-  const navegar = useNavigate();
   const { usuario, carregando } = useEstadoSessao();
 
-  const sairDaConta = async () => {
-    setMenuAberto(false);
-    await sair();
-    navegar("/");
-  };
-
   // Zera o estado ao trocar de rota (ajuste durante a renderização, não em
-  // efeito) — evita chegar numa página nova com o header escondido ou o menu
-  // aberto.
+  // efeito) — evita chegar numa página nova com o header escondido.
   const [rotaAnterior, setRotaAnterior] = useState(location.pathname);
   if (rotaAnterior !== location.pathname) {
     setRotaAnterior(location.pathname);
     setEscondido(false);
-    setMenuAberto(false);
   }
 
   // Em todas as páginas o header some ao rolar para baixo e reaparece ao
@@ -189,9 +163,7 @@ function Header() {
     let ultimoY = window.scrollY;
     const aoRolar = () => {
       const y = window.scrollY;
-      const descendo = y > ultimoY && y > 120;
-      setEscondido(descendo);
-      if (descendo) setMenuAberto(false);
+      setEscondido(y > ultimoY && y > 120);
       ultimoY = y;
     };
     window.addEventListener("scroll", aoRolar, { passive: true });
@@ -199,6 +171,7 @@ function Header() {
   }, []);
 
   const noPerfil = location.pathname === "/meu-perfil";
+  const naBusca = location.pathname === "/buscar";
 
   return (
     <header
@@ -206,10 +179,10 @@ function Header() {
         escondido ? "-translate-y-full" : "translate-y-0"
       }`}
     >
-      <div className="h-20 px-5 md:px-8 max-w-[1200px] mx-auto flex items-center gap-7">
+      <div className="h-16 md:h-20 px-5 md:px-8 max-w-[1200px] mx-auto flex items-center gap-3 md:gap-7">
         <Link
           to="/"
-          className="font-extrabold text-3xl tracking-tighter shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
+          className="font-extrabold text-[1.75rem] md:text-3xl tracking-tighter shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
         >
           <span className="text-white">UF</span>
           <span className="text-[#9e0a24]">Vet</span>
@@ -233,8 +206,8 @@ function Header() {
                 key={link.to}
                 to={link.to}
                 aria-current={ativo ? "page" : undefined}
-                className={`relative flex items-center text-[13px] font-semibold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:text-white ${
-                  ativo ? "text-white" : "text-white/55 hover:text-white"
+                className={`relative flex items-center text-[15px] font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:text-white ${
+                  ativo ? "text-white" : "text-white/60 hover:text-white"
                 }`}
               >
                 {link.rotulo}
@@ -249,7 +222,31 @@ function Header() {
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        {/* A busca, no celular: uma pílula com cara de campo, como nos
+            aplicativos; tocar leva à página de busca. Na própria busca, a
+            borda fica vermelha, como a do círculo da foto no perfil. */}
+        <Link
+          to="/buscar"
+          aria-label="Buscar doadores"
+          aria-current={naBusca ? "page" : undefined}
+          className={`md:hidden flex-1 min-w-0 h-11 flex items-center gap-2 px-3.5 rounded-full border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24] ${
+            naBusca
+              ? "border-[#9e0a24] bg-white/[0.08] text-white"
+              : "border-white/10 bg-white/[0.05] text-white/60 active:bg-white/10"
+          }`}
+        >
+          <span
+            aria-hidden="true"
+            className="material-symbols-outlined text-[20px] shrink-0"
+          >
+            search
+          </span>
+          <span className="truncate">
+            Buscar<span className="max-[379px]:hidden"> doador</span>
+          </span>
+        </Link>
+
+        <div className="md:ml-auto flex items-center gap-2 shrink-0">
           {/* Enquanto o site pergunta à API quem está logado, o canto fica
               vazio, para não piscar "Entrar" antes do menu da conta. */}
           {carregando ? null : usuario ? (
@@ -258,103 +255,22 @@ function Header() {
             <>
               <Link
                 to="/login"
-                className="px-3 py-2 text-[13px] font-semibold uppercase tracking-wider whitespace-nowrap text-white/70 hover:text-white transition-colors"
+                className="px-2 md:px-3 py-2 text-sm md:text-[15px] font-semibold whitespace-nowrap text-white/80 hover:text-white transition-colors"
               >
                 Entrar
               </Link>
-              {/* Em telas estreitas, "Criar conta" vai para o menu, para o
-                  topo não quebrar em duas linhas. */}
+              {/* No celular, "Criar conta" fica no "Entrar" e no início, para
+                  o topo não apertar. */}
               <Link
                 to="/cadastrar"
-                className="hidden sm:inline-block bg-[#9e0a24] text-white px-5 py-2.5 rounded-full font-bold text-[13px] uppercase tracking-wider whitespace-nowrap hover:bg-[#7d0a1d] transition-colors"
+                className="hidden sm:inline-block bg-[#9e0a24] text-white px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap hover:bg-[#7d0a1d] transition-colors"
               >
                 Criar conta
               </Link>
             </>
           )}
-
-          <button
-            type="button"
-            onClick={() => setMenuAberto((v) => !v)}
-            aria-expanded={menuAberto}
-            aria-controls="menu-celular"
-            aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
-            className="md:hidden w-11 h-11 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
-          >
-            <span aria-hidden="true" className="material-symbols-outlined">
-              {menuAberto ? "close" : "menu"}
-            </span>
-          </button>
         </div>
       </div>
-
-      {menuAberto && (
-        <div
-          id="menu-celular"
-          className="md:hidden border-t border-white/[0.07] px-5 py-3 animate-aparecer"
-        >
-          <nav aria-label="Principal">
-            {LINKS.map((link) => {
-              const ativo = location.pathname === link.to;
-              return (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  aria-current={ativo ? "page" : undefined}
-                  className={classeItemCelular(ativo)}
-                >
-                  <MarcaAtual ativo={ativo} />
-                  {link.rotulo}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* A conta, no mesmo menu: quem está logado, a página da conta e o
-              sair (o perfil fica na foto, ao lado do menu). */}
-          {usuario && (
-            <div className="mt-2 pt-4 border-t border-white/[0.07]">
-              <p className="text-sm font-bold text-white truncate">
-                {usuario.nomeCompleto}
-              </p>
-              <p className="text-xs text-white/55 mt-0.5">
-                {rotuloPapel(usuario)}, código #{usuario.codigo}
-              </p>
-              <div className="mt-1">
-                <Link
-                  to="/conta"
-                  aria-current={
-                    location.pathname === "/conta" ? "page" : undefined
-                  }
-                  className={classeItemCelular(location.pathname === "/conta")}
-                >
-                  <MarcaAtual ativo={location.pathname === "/conta"} />
-                  Minha conta
-                </Link>
-                <button
-                  type="button"
-                  onClick={sairDaConta}
-                  className={classeItemCelular(false)}
-                >
-                  <MarcaAtual ativo={false} />
-                  Sair
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Para o visitante em tela estreita, o "Criar conta" que saiu do
-              topo, com o mesmo desenho de lá: o botão vermelho. */}
-          {!carregando && !usuario && (
-            <Link
-              to="/cadastrar"
-              className="sm:hidden mt-3 mb-1 flex items-center justify-center h-12 rounded-full bg-[#9e0a24] text-white font-bold text-[13px] uppercase tracking-wider hover:bg-[#7d0a1d] transition-colors"
-            >
-              Criar conta
-            </Link>
-          )}
-        </div>
-      )}
     </header>
   );
 }

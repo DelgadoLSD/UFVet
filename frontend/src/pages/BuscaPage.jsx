@@ -286,7 +286,7 @@ function BuscaPage() {
       )}
       {modal === "pedido" && <ModalPedirLiberacao onFechar={fecharModal} />}
 
-      <main className="max-w-[1200px] mx-auto flex flex-col gap-6 px-5 md:px-8 pt-28 pb-16">
+      <main className="max-w-[1200px] mx-auto flex flex-col gap-6 px-5 md:px-8 pt-28 max-md:pt-24 pb-16">
         {/* O título e a busca por texto abrem a página na largura toda; os
             filtros e os resultados vêm embaixo, lado a lado no computador. */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

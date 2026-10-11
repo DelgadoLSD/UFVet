@@ -229,7 +229,7 @@ function ContaPage() {
         />
       )}
 
-      <main className="pb-20 px-5 md:px-16 max-w-[820px] mx-auto pt-28">
+      <main className="pb-20 px-5 md:px-16 max-w-[820px] mx-auto pt-28 max-md:pt-24">
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold tracking-tight text-[#1a1c1c]">
             Minha conta
@@ -243,7 +243,7 @@ function ContaPage() {
           <form onSubmit={salvar} noValidate>
             <Secao
               titulo="Seus dados"
-              texto="É por aqui que um veterinário ou um tutor com liberação entra em contato quando precisa de um doador."
+              texto="Aparecem no seu perfil. O e-mail e o telefone, só para veterinários e tutores liberados."
               rodape={
                 <div className="flex items-center gap-4 flex-wrap">
                   <Botao

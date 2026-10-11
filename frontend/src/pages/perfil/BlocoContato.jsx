@@ -48,7 +48,7 @@ function ValorCopiavel({ valor, rotulo }) {
 
 // A linha de explicação embaixo dos dados, a mesma em todos os casos: curta,
 // para a caixa não crescer. O botão do que fazer (ver, pedir liberação,
-// entrar) fica na faixa vermelha, no mesmo lugar para todo mundo.
+// entrar) fica no fim do bloco, no mesmo lugar para todo mundo.
 function Nota({ children }) {
   return <p className="text-xs text-[#5f5e5e] leading-relaxed">{children}</p>;
 }
@@ -94,14 +94,15 @@ function BlocoContato({
   const local = useLocation();
   const semAcesso = !ehProprio && !acesso.pode;
 
-  // O que fazer fica sempre no mesmo lugar, na faixa vermelha: ver o
-  // contato, pedir a liberação ou entrar na conta.
+  // O que fazer fica sempre no mesmo lugar, no fim do bloco, no botão
+  // vermelho principal: ver o contato, pedir a liberação ou entrar na
+  // conta. Na largura do bloco, ele conversa com os dados acima.
   let acao = null;
   if (!ehProprio && acesso.pode && !revelado) {
     acao = (
       <Botao
-        variante="claro"
-        tamanho="xs"
+        icone="visibility"
+        className="w-full"
         disabled={abrindo}
         onClick={verContato}
       >
@@ -113,8 +114,8 @@ function BlocoContato({
       <Botao
         as={Link}
         to={`/login?voltar=${encodeURIComponent(local.pathname)}`}
-        variante="claro"
-        tamanho="xs"
+        icone="login"
+        className="w-full"
       >
         Entrar
       </Botao>
@@ -125,16 +126,33 @@ function BlocoContato({
     acesso.motivo !== "carregando"
   ) {
     acao = (
-      <Botao variante="claro" tamanho="xs" onClick={onPedirLiberacao}>
+      <Botao icone="lock_open" className="w-full" onClick={onPedirLiberacao}>
         Pedir liberação
       </Botao>
     );
+  }
+
+  // No celular, o painel abre e fecha (ver PainelSecao). Fechado, diz numa
+  // linha o que tem dentro: o telefone, para quem já vê o contato, ou o que
+  // falta para ver. No perfil de outra pessoa, ele começa aberto: o contato
+  // é o motivo da visita.
+  let resumo = null;
+  if (contato) resumo = contato.telefone;
+  else if (acesso.pode) resumo = "Liberado para você";
+  else if (acesso.motivo === "visitante") resumo = "Entre para pedir acesso";
+  else if (acesso.motivo === "pedido-enviado") {
+    resumo = "Pedido de liberação enviado";
+  } else if (acesso.motivo !== "carregando") {
+    resumo = "Só com a liberação de um veterinário";
   }
 
   return (
     <PainelSecao
       titulo="Contato"
       nivel="h2"
+      recolhivel
+      abertoNoInicio={!ehProprio}
+      resumo={resumo}
       ajuda={
         semAcesso && (
           <BotaoAjuda
@@ -144,7 +162,6 @@ function BlocoContato({
           />
         )
       }
-      acao={acao}
     >
       <CampoPainel rotulo="E-mail">
         {contato ? (
@@ -189,6 +206,8 @@ function BlocoContato({
           #{meuCodigo}.
         </Nota>
       )}
+
+      {acao && <div className="mt-auto pt-1">{acao}</div>}
     </PainelSecao>
   );
 }

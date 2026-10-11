@@ -64,9 +64,19 @@ function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
     }
   };
 
+  // Fechado, no celular, o painel diz quantas observações há.
+  const resumo =
+    observacoes.length === 0
+      ? "Nenhuma registrada ainda"
+      : observacoes.length === 1
+        ? "1 observação"
+        : `${observacoes.length} observações`;
+
   return (
     <PainelSecao
       titulo="Observações para a coleta"
+      recolhivel
+      resumo={resumo}
       ajuda={
         <Ajuda titulo="Observações para a coleta" claro>
           <p>
@@ -83,12 +93,25 @@ function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
         podeAdicionar &&
         !adicionando && (
           <Botao
-            variante="claro"
+            variante="tonal"
             tamanho="xs"
             icone="add"
             onClick={() => setAdicionando(true)}
           >
             Adicionar
+          </Botao>
+        )
+      }
+      acaoNoCelular={
+        podeAdicionar &&
+        !adicionando && (
+          <Botao
+            variante="secundario"
+            icone="add"
+            className="w-full h-11"
+            onClick={() => setAdicionando(true)}
+          >
+            Adicionar observação
           </Botao>
         )
       }

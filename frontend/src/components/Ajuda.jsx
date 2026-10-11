@@ -8,13 +8,17 @@ import { useBalao } from "../hooks/useBalao";
 // Para um "?" que abre um modal com a explicação completa, use BotaoAjuda.
 function Ajuda({ titulo, children, claro = false, className = "" }) {
   const { botao, balao } = useBalao();
+  // A área de toque é posicionada pelo próprio botão. Quem já o posiciona
+  // (como o canto das células de dados, com absolute) não pode perder essa
+  // posição.
+  const posicao = className.split(" ").includes("absolute") ? "" : "relative";
 
   return (
     <>
       <button
         {...botao}
         aria-label={`Entenda: ${titulo}`}
-        className={`relative toque:before:absolute toque:before:-inset-3 inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold leading-none normal-case tracking-normal cursor-help transition-colors shrink-0 ${
+        className={`${posicao} toque:before:absolute toque:before:-inset-3 inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold leading-none normal-case tracking-normal cursor-help transition-colors shrink-0 ${
           claro
             ? "bg-white/25 text-white hover:bg-white hover:text-[#7d0a1d]"
             : "bg-[#9e0a24]/10 text-[#9e0a24] hover:bg-[#7d0a1d] hover:text-white"

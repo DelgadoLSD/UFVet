@@ -81,8 +81,9 @@ function FaixaAcessoContatos({ acesso, onPedirLiberacao, onComoFunciona }) {
         </span>
       </span>
 
-      {/* No celular, o botão vai para baixo do texto; a partir do tablet,
-          fica na mesma linha, à direita. */}
+      {/* No celular, o botão vai para baixo do texto, na largura toda; a
+          partir do tablet, fica na mesma linha, à direita. É o botão
+          vermelho principal do site, e não uma caixa branca sobre o preto. */}
       <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-x-5 gap-y-3">
         <div className="flex-1 min-w-0">
           <p className="flex items-center gap-1 text-[15px] font-bold leading-snug">
@@ -99,9 +100,8 @@ function FaixaAcessoContatos({ acesso, onPedirLiberacao, onComoFunciona }) {
         </div>
         {acesso.motivo === "sem-liberacao" && (
           <Botao
-            variante="claro"
-            tamanho="sm"
-            className="self-start sm:self-auto shrink-0"
+            icone="lock_open"
+            className="self-stretch sm:self-auto shrink-0 max-sm:h-11"
             onClick={onPedirLiberacao}
           >
             Pedir liberação
@@ -111,9 +111,8 @@ function FaixaAcessoContatos({ acesso, onPedirLiberacao, onComoFunciona }) {
           <Botao
             as={Link}
             to="/login?voltar=/buscar"
-            variante="claro"
-            tamanho="sm"
-            className="self-start sm:self-auto shrink-0"
+            icone="login"
+            className="self-stretch sm:self-auto shrink-0 max-sm:h-11"
           >
             Entrar
           </Botao>

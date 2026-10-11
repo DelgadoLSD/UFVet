@@ -50,24 +50,17 @@ const ESTILO_VALIDACAO = {
   },
 };
 
-// Botão do veterinário em cada status, na faixa vermelha do painel: validar
-// o que nunca foi validado ou venceu fica em destaque (branco cheio); revisar
-// o que vale fica discreto (branco translúcido, como editar e excluir no
-// cabeçalho do cartão). No celular, o texto curto cabe na mesma linha do
-// título; o leitor de tela ouve sempre o texto inteiro.
+// Botão do veterinário em cada status: validar o que nunca foi validado ou
+// venceu fica em `destaque`; revisar o que vale fica discreto. Na faixa
+// vermelha do painel, o destaque é a pílula translúcida (o material de
+// editar e excluir do cabeçalho do cartão), e o discreto, só o texto. No
+// celular, o botão fica no topo do painel aberto, na largura toda: vermelho
+// no destaque, branco no discreto.
 const ACAO_VALIDACAO = {
-  pendente: { texto: "Validar doador", curto: "Validar", variante: "claro" },
-  vencida: { texto: "Renovar validação", curto: "Renovar", variante: "claro" },
-  pendencias: {
-    texto: "Revisar validação",
-    curto: "Revisar",
-    variante: "sobreVermelho",
-  },
-  validado: {
-    texto: "Revisar validação",
-    curto: "Revisar",
-    variante: "sobreVermelho",
-  },
+  pendente: { texto: "Validar doador", destaque: true },
+  vencida: { texto: "Renovar validação", destaque: true },
+  pendencias: { texto: "Revisar validação", destaque: false },
+  validado: { texto: "Revisar validação", destaque: false },
 };
 
 // Um critério do checklist, numa caixa. Sem validação, só o nome; com ela,
@@ -121,6 +114,8 @@ function PainelValidacao({
   return (
     <PainelSecao
       titulo="Validação veterinária"
+      recolhivel
+      resumo={estilo.titulo}
       ajuda={
         <BotaoAjuda
           rotulo="Como funciona a validação?"
@@ -131,14 +126,24 @@ function PainelValidacao({
       acao={
         podeValidar && (
           <Botao
-            variante={acao.variante}
+            variante={acao.destaque ? "tonal" : "textoClaro"}
             tamanho="xs"
             icone="fact_check"
-            aria-label={acao.texto}
             onClick={onValidar}
           >
-            <span className="sm:hidden">{acao.curto}</span>
-            <span className="hidden sm:inline">{acao.texto}</span>
+            {acao.texto}
+          </Botao>
+        )
+      }
+      acaoNoCelular={
+        podeValidar && (
+          <Botao
+            variante={acao.destaque ? "primario" : "secundario"}
+            icone="fact_check"
+            className="w-full h-11"
+            onClick={onValidar}
+          >
+            {acao.texto}
           </Botao>
         )
       }

@@ -74,7 +74,7 @@ function LayoutAutenticacao({
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-20 grid md:grid-cols-2 bg-white">
+      <main className="min-h-screen pt-20 max-md:pt-16 grid md:grid-cols-2 bg-white">
         {fotoAEsquerda && painelFoto}
         <section className="flex items-start md:items-center justify-center px-5 py-10 md:py-12 md:px-12">
           <div className="w-full max-w-[420px]">{children}</div>

@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import Avatar from "../../components/Avatar";
 import AvisoErro from "../../components/AvisoErro";
-import Botao from "../../components/Botao";
 import { confirmar } from "../../hooks/confirmacoes";
 import { TIPOS_ACEITOS, erroDoArquivo } from "../../regras/fotos";
 import { removerFotoDePerfil, trocarFotoDePerfil } from "../../servicos/sessao";
@@ -10,8 +9,14 @@ import { removerFotoDePerfil, trocarFotoDePerfil } from "../../servicos/sessao";
 // sem esperar o "Salvar alterações": a foto não depende dos outros campos. A
 // API confere a imagem, reduz e apaga a localização guardada pelo celular.
 //
-// Os botões são os mesmos dos cartões dos animais: o neutro, com ícone, para
-// mudar, e o quadrado da lixeira para remover.
+// A foto vem grande, num cartão com os botões presos embaixo dela, como uma
+// peça só: fica claro que "Trocar" e "Remover" mexem na foto, e em nada mais.
+// No celular, o cartão fica no meio; na tela larga, à esquerda, alinhado
+// com os campos.
+
+const CLASSE_BOTAO =
+  "flex-1 h-11 flex items-center justify-center gap-1.5 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#9e0a24] disabled:opacity-50 disabled:pointer-events-none";
+
 function FotoDePerfil({ usuario }) {
   const entrada = useRef(null);
   const [enviando, setEnviando] = useState(false);
@@ -42,69 +47,78 @@ function FotoDePerfil({ usuario }) {
   };
 
   return (
-    <div className="flex items-start gap-5 pb-6 mb-6 border-b border-[#f0e6e6]">
-      <div className="relative shrink-0">
-        <Avatar
-          pessoa={usuario}
-          tamanho="w-20 h-20 sm:w-24 sm:h-24"
-          fundo="bg-[#9e0a24]"
-          formato="rounded-2xl"
-          textoIniciais="text-2xl"
-        />
-        {/* Enquanto envia, a própria foto mostra que está carregando. */}
-        {enviando && (
-          <span
-            aria-hidden="true"
-            className="absolute inset-0 rounded-2xl bg-[#1a1a1a]/75 flex items-center justify-center"
-          >
-            <span className="w-7 h-7 rounded-full border-[3px] border-white border-t-transparent animate-spin motion-reduce:animate-none" />
-          </span>
-        )}
-      </div>
+    <div className="flex flex-col items-center sm:items-start gap-3 pb-6 mb-6 border-b border-[#f0e6e6]">
+      <div className="w-48 rounded-2xl border border-[#eadede] bg-white overflow-hidden">
+        <div className="relative">
+          <Avatar
+            pessoa={usuario}
+            tamanho="w-full aspect-square"
+            fundo="bg-[#9e0a24]"
+            formato="rounded-none"
+            textoIniciais="text-5xl"
+          />
+          {/* Enquanto envia, a própria foto mostra que está carregando. */}
+          {enviando && (
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 bg-[#1a1a1a]/75 flex items-center justify-center"
+            >
+              <span className="w-8 h-8 rounded-full border-[3px] border-white border-t-transparent animate-spin motion-reduce:animate-none" />
+            </span>
+          )}
+        </div>
 
-      <div className="min-w-0">
-        <p className="font-semibold text-[#1a1c1c]">Foto de perfil</p>
-        <p className="text-sm text-[#5f5e5e] mt-0.5 leading-relaxed">
-          Quem recebe seu contato vê essa foto.
-        </p>
-        <div className="flex items-center gap-2 mt-3">
-          <Botao
-            variante="editar"
-            icone="photo_camera"
+        <div className="flex border-t border-[#eadede] divide-x divide-[#eadede]">
+          <button
+            type="button"
             disabled={enviando}
             onClick={() => entrada.current.click()}
+            aria-label={
+              temFoto && !enviando ? "Trocar foto de perfil" : undefined
+            }
+            className={`${CLASSE_BOTAO} text-[#1a1c1c] hover:bg-[#faf6f6]`}
           >
-            {enviando
-              ? "Enviando…"
-              : temFoto
-                ? "Trocar foto"
-                : "Adicionar foto"}
-          </Botao>
+            <span
+              aria-hidden="true"
+              className="material-symbols-outlined text-[18px] text-[#9e0a24]"
+            >
+              photo_camera
+            </span>
+            {enviando ? "Enviando…" : temFoto ? "Trocar" : "Adicionar foto"}
+          </button>
           {temFoto && (
-            <Botao
-              variante="perigo"
-              icone="delete"
-              aria-label="Remover foto de perfil"
-              title="Remover foto"
+            <button
+              type="button"
               disabled={enviando}
               onClick={() => executar(removerFotoDePerfil, "Foto removida")}
-            />
+              aria-label="Remover foto de perfil"
+              className={`${CLASSE_BOTAO} text-[#5f5e5e] hover:bg-[#fdecee] hover:text-[#9e0a24]`}
+            >
+              <span
+                aria-hidden="true"
+                className="material-symbols-outlined text-[18px]"
+              >
+                delete
+              </span>
+              Remover
+            </button>
           )}
-          <input
-            ref={entrada}
-            type="file"
-            accept={TIPOS_ACEITOS.join(",")}
-            aria-label="Foto de perfil"
-            className="hidden"
-            onChange={escolher}
-          />
         </div>
-        {erro && (
-          <div className="mt-3">
-            <AvisoErro>{erro}</AvisoErro>
-          </div>
-        )}
       </div>
+
+      <input
+        ref={entrada}
+        type="file"
+        accept={TIPOS_ACEITOS.join(",")}
+        aria-label="Foto de perfil"
+        className="hidden"
+        onChange={escolher}
+      />
+      {erro && (
+        <div className="w-full">
+          <AvisoErro>{erro}</AvisoErro>
+        </div>
+      )}
     </div>
   );
 }

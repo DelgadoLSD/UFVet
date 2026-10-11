@@ -513,10 +513,18 @@ function SecaoDocumentos({
   const fechados = documentos.some(
     (d) => d.versoes.length > 0 && !d.versoes.at(-1).arquivoUrl,
   );
+  // Fechado, no celular, o painel diz quantos exames já foram enviados.
+  const enviados = documentos.filter((d) => d.versoes.length > 0).length;
 
   return (
     <PainelSecao
       titulo="Exames e documentos"
+      recolhivel
+      resumo={
+        enviados === 0
+          ? "Nenhum enviado ainda"
+          : `${enviados} de ${documentos.length} enviados`
+      }
       ajuda={
         <Ajuda titulo="Por que enviar documentos?" claro>
           <p>

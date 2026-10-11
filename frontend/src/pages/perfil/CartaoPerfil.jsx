@@ -105,14 +105,37 @@ function CartaoPerfil({
   onComoFuncionaContato,
 }) {
   const ehVet = ehVeterinario(perfil);
+  // O enquadramento de cada retrato (ver Avatar), igual nos dois tamanhos.
+  const enquadramento = {
+    objectPosition: perfil.fotoPosicao || "center top",
+    transform: `scale(${perfil.fotoZoom || 1})`,
+    transformOrigin: perfil.fotoPosicao || "center top",
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-[#eadede] overflow-hidden">
       <div className="p-5 md:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8">
         <div className="flex-1 min-w-0 flex flex-col gap-6">
+          {/* No celular, a foto vem grande, no topo do cartão: é ela que dá
+              rosto ao perfil, como a foto à direita no computador. Sem foto,
+              fica o quadrado com as iniciais, ao lado do nome. */}
+          {perfil.foto && (
+            <div className="sm:hidden aspect-square rounded-xl overflow-hidden bg-[#fdecee]">
+              <img
+                src={perfil.foto}
+                alt={perfil.nomeCompleto}
+                style={enquadramento}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
           <div className="flex flex-col gap-2.5">
-            <div className="flex items-center gap-4">
-              <div className="lg:hidden shrink-0">
+            {/* No celular, tudo alinha pelo topo: o nome com a foto (ou com
+                as iniciais) e com o botão de editar. */}
+            <div className="flex items-center max-sm:items-start gap-4">
+              <div
+                className={`lg:hidden shrink-0 ${perfil.foto ? "max-sm:hidden" : ""}`}
+              >
                 <Avatar
                   pessoa={perfil}
                   tamanho="w-20 h-20"
@@ -127,7 +150,9 @@ function CartaoPerfil({
                   celular, o código também fica aqui, junto do nome, e não
                   solto embaixo da foto. */}
               <div className="flex-1 min-w-0 flex items-center gap-x-3 gap-y-2 flex-wrap">
-                <h1 className="text-2xl sm:text-[1.75rem] md:text-4xl font-extrabold tracking-tight leading-[1.08] text-[#1a1c1c] [text-wrap:balance]">
+                <h1
+                  className={`${perfil.foto ? "text-[1.75rem]" : "text-2xl sm:text-[1.75rem]"} md:text-4xl font-extrabold tracking-tight leading-[1.08] text-[#1a1c1c] [text-wrap:balance]`}
+                >
                   {perfil.nomeCompleto}
                 </h1>
                 <span className="text-xs font-bold text-white bg-[#9e0a24] px-2.5 py-1 rounded-md">
@@ -177,13 +202,25 @@ function CartaoPerfil({
               onComoFunciona={onComoFuncionaContato}
             />
 
-            <PainelSecao titulo="Localização" nivel="h2">
+            {/* No celular, os painéis abrem e fecham, e fechados dizem o
+                essencial numa linha (ver PainelSecao). */}
+            <PainelSecao
+              titulo="Localização"
+              nivel="h2"
+              recolhivel
+              resumo={`${perfil.bairro}, ${perfil.cidade}`}
+            >
               <CampoPainel rotulo="Bairro">{perfil.bairro}</CampoPainel>
               <CampoPainel rotulo="Cidade">{perfil.cidade}</CampoPainel>
             </PainelSecao>
 
             {ehVet && (
-              <PainelSecao titulo="Registro profissional" nivel="h2">
+              <PainelSecao
+                titulo="Registro profissional"
+                nivel="h2"
+                recolhivel
+                resumo={`CRMV ${perfil.crmv}, ${perfil.hospital}`}
+              >
                 <CampoPainel rotulo="CRMV">{perfil.crmv}</CampoPainel>
                 <CampoPainel rotulo="Hospital">{perfil.hospital}</CampoPainel>
               </PainelSecao>
@@ -199,11 +236,7 @@ function CartaoPerfil({
             <img
               src={perfil.foto}
               alt={perfil.nomeCompleto}
-              style={{
-                objectPosition: perfil.fotoPosicao || "center top",
-                transform: `scale(${perfil.fotoZoom || 1})`,
-                transformOrigin: perfil.fotoPosicao || "center top",
-              }}
+              style={enquadramento}
               className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (

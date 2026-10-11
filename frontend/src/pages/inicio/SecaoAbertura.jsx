@@ -6,7 +6,7 @@ import fotoAbertura from "../../assets/inicio/abertura-cao.jpg";
 // site, para quem precisa de um doador e para quem quer cadastrar o seu.
 function SecaoAbertura() {
   return (
-    <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-black">
+    <section className="relative min-h-screen flex items-center pt-20 max-md:pt-16 overflow-hidden bg-black">
       <img
         src={fotoAbertura}
         className="absolute right-0 top-0 h-full w-2/3 object-contain object-right"

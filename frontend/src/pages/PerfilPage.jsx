@@ -332,7 +332,7 @@ function PerfilPage() {
     return (
       <>
         <Header />
-        <main className="pb-20 px-5 md:px-16 max-w-[1200px] mx-auto pt-28">
+        <main className="pb-20 px-5 md:px-16 max-w-[1200px] mx-auto pt-28 max-md:pt-24">
           <EstadoDoPerfil codigo={codigoVisitado} pessoa={pessoa} />
         </main>
       </>
@@ -358,7 +358,7 @@ function PerfilPage() {
         <ModalComoFuncionaContato onFechar={fecharModal} />
       )}
 
-      <main className="pb-20 px-5 md:px-16 max-w-[1200px] mx-auto pt-28 selection:bg-[#fdecee] selection:text-[#9e0a24]">
+      <main className="pb-20 px-5 md:px-16 max-w-[1200px] mx-auto pt-28 max-md:pt-24 selection:bg-[#fdecee] selection:text-[#9e0a24]">
         <section className="mb-10">
           <CartaoPerfil
             perfil={perfil}

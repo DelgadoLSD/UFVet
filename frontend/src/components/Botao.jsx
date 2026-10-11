@@ -12,12 +12,19 @@ const VARIANTES = {
   perigo: "text-[#5f5e5e] bg-[#f4efef] hover:text-[#9e0a24] hover:bg-[#fdecee]",
   perigoSolido: "text-white bg-[#9e0a24] hover:bg-[#7d0a1d]",
   fantasma: "text-[#9e0a24] hover:bg-[#7d0a1d]/[0.06]",
-  // Para blocos escuros ou vermelhos, onde o vermelho sólido sumiria.
-  claro: "text-[#9e0a24] bg-white hover:bg-white/90",
+  // Para blocos escuros ou vermelhos, em contorno.
   contornoClaro: "text-white border border-white/40 hover:bg-white/10",
   // Editar e excluir no cabeçalho vermelho dos cartões dos animais: o mesmo
   // botão quadrado neutro, em branco translúcido.
   sobreVermelho: "text-white bg-white/15 hover:bg-white hover:text-[#7d0a1d]",
+  // Ações sobre as faixas vermelhas e pretas, no mesmo material translúcido
+  // de editar e excluir, em pílula, como os botões sobre cor dos
+  // aplicativos: `tonal` para a ação principal ali, `textoClaro` para a
+  // secundária, só o texto. Caixa branca cheia sobre cor não se usa mais. O
+  // "!" faz a pílula valer sobre o canto de cada tamanho (no CSS gerado,
+  // rounded-full vem antes de rounded-lg e rounded-xl, e perderia).
+  tonal: "text-white bg-white/20 hover:bg-white/30 !rounded-full",
+  textoClaro: "text-white/90 hover:text-white hover:bg-white/10 !rounded-full",
 };
 
 const TAMANHOS = {
