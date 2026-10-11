@@ -11,6 +11,7 @@
     "dev": "node --watch src/servidor.js",
     "start": "node src/servidor.js",
     "convite": "node scripts/convite.js",
+    "convite:producao": "node --env-file=.env.producao scripts/convite.js",
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

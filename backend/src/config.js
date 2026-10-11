@@ -29,7 +29,9 @@ verificarChaves();
 export const config = Object.freeze({
   ambiente,
   producao: ambiente === "production",
-  porta: Number(process.env.PORTA ?? 3000),
+  // A porta: publicada, a hospedagem diz qual usar (o Render avisa pela
+  // variável PORT); no computador, 3000, a que o Vite espera.
+  porta: Number(process.env.PORTA ?? process.env.PORT ?? 3000),
 
   // Assina os crachás de sessão. Trocar este segredo desconecta todo mundo
   // de uma vez (útil se ele vazar).
@@ -55,4 +57,16 @@ export const config = Object.freeze({
     process.env.PASTA_EXAMES ??
       fileURLToPath(new URL("../exames", import.meta.url)),
   ),
+
+  // O site já montado (npm run build, no frontend), que a API entrega no
+  // mesmo endereço quando publicada: um serviço só, e o cookie de sessão é do
+  // próprio site. No computador, quem entrega o site é o Vite, e isto fica
+  // desligado (ver app.js).
+  pastaSite:
+    ambiente === "production"
+      ? path.resolve(
+          process.env.PASTA_SITE ??
+            fileURLToPath(new URL("../../frontend/dist", import.meta.url)),
+        )
+      : null,
 });

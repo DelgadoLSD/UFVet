@@ -30,15 +30,17 @@ Portal web para conexão de doadores de sangue animal sob demanda, desenvolvido 
 
 ## Status
 
-- **Front-end:** todas as telas prontas. Login, cadastro, a página da conta,
-  os perfis (com os animais, as fotos e o histórico clínico) e a busca de
-  doadores já falam com a API; os exames e os pedidos e liberações de contato
-  ainda usam dados de exemplo.
+- **Front-end:** todas as telas prontas e ligadas à API: login, cadastro, a
+  página da conta, os perfis (com os animais, as fotos, os exames e o
+  histórico clínico), a busca de doadores e o acesso aos contatos.
 - **Back-end:** banco criado e testado, com os dados pessoais cifrados. A API
   já faz cadastro (veterinário só com convite), login, sessão, a própria
   conta (dados, foto, senha e encerramento) e os animais (cadastro, edição,
   exclusão, disponibilidade e fotos, sem a localização guardada pelo
   celular), o histórico clínico (validação veterinária com o tipo
-  sanguíneo, doações e observações, só pelo veterinário) e a busca de
-  doadores, pública e sem contatos, com o perfil de cada pessoa.
-- **Próxima etapa:** ligar as outras funcionalidades à API, uma por vez.
+  sanguíneo, doações e observações, só pelo veterinário), os exames (só o
+  dono e os veterinários abrem os arquivos), a busca de doadores, pública e
+  sem contatos, com o perfil de cada pessoa, e o acesso aos contatos
+  (pedidos e liberações por veterinário).
+- **Publicação:** no Render, com o banco no Neon
+  ([passo a passo](backend/README.md#publicação-render--neon)).

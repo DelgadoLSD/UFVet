@@ -113,7 +113,71 @@ convite. O código não fica guardado no banco (só a impressão digital dele),
 então quem perder o código precisa de um convite novo.
 
 Com mais de um hospital cadastrado, diga qual com `--local "Nome do local"`.
-Para outra validade, use `--dias` (de 1 a 30).
+Para outra validade, use `--dias` (de 1 a 30). Para o site publicado, veja
+"Convidar um veterinário no site publicado", abaixo.
+
+## Publicação (Render + Neon)
+
+Publicado, o UFVet roda num serviço só do Render, que monta o site e entrega
+o site e a API no mesmo endereço (algo como `https://ufvet.onrender.com`). O
+banco fica no Neon. Os dois têm plano grátis. A receita do Render está em
+[`render.yaml`](../render.yaml), na raiz do repositório.
+
+### Uma vez só
+
+1. **Banco no Neon.** Crie a conta em [neon.com](https://neon.com) (dá para
+   entrar com o GitHub) e um projeto `ufvet` na região **AWS US East 1 (N.
+   Virginia)**, perto do Render. Em "Connect", desligue "Connection pooling"
+   e copie o endereço, que começa com `postgresql://`: é o `DATABASE_URL` de
+   produção. Sem o pooling, porque a API ajusta o fuso de cada conexão para
+   UTC (ver `src/banco.js`), e o pooling não guarda esse ajuste.
+2. **Chaves novas.** Gere duas, uma para `CHAVE_CIFRAGEM` e outra para
+   `CHAVE_INDICE`, com o comando do `.env.example`. Nunca use as do seu
+   `.env`. Guarde as duas num gerenciador de senhas: sem elas, o CPF, o e-mail
+   e o telefone cifrados no banco não voltam.
+3. **Serviço no Render.** Crie a conta em [render.com](https://render.com)
+   (entrando com o GitHub), vá em **New → Blueprint**, escolha o repositório
+   do UFVet e confirme. O Render lê o `render.yaml` e pede três valores:
+   `DATABASE_URL`, `CHAVE_CIFRAGEM` e `CHAVE_INDICE`. O `JWT_SEGREDO` ele
+   mesmo sorteia.
+4. **Espere a montagem**, alguns minutos na primeira vez: ela monta o site,
+   prepara a API, aplica as migrações no banco do Neon e cadastra o hospital.
+   O endereço do site aparece no topo da página do serviço.
+
+Depois disso, cada `git push` na branch principal publica de novo sozinho.
+
+### O que saber do plano grátis
+
+- **O site dorme.** Depois de 15 minutos sem visitas, o Render desliga o
+  serviço, e a próxima visita espera cerca de 1 minuto. Em dias de teste com
+  pessoas, um serviço grátis de monitoramento (UptimeRobot, cron-job.org) que
+  abra `/api/saude` a cada 10 minutos mantém o site acordado; as 750 horas
+  grátis do mês dão para isso.
+- **5 GB de tráfego por mês.** Passou disso, o Render suspende o serviço até
+  o mês seguinte.
+- **Fotos e exames ainda não ficam guardados.** O disco do serviço é apagado
+  a cada reinício, inclusive quando ele dorme. Até os arquivos irem para o
+  banco, uma foto enviada no site publicado some depois de algumas horas.
+- **Começa vazio**, só com o hospital. As contas de exemplo nunca vão para
+  produção: a senha delas é pública, e o veterinário de exemplo veria os
+  contatos de pessoas reais.
+
+### Convidar um veterinário no site publicado
+
+O convite é gravado no banco do Neon, com a chave de produção. Crie nesta
+pasta um arquivo `.env.producao` (o git o ignora, como o `.env`; não o mande
+para ninguém) com:
+
+```
+DATABASE_URL="o endereço do Neon"
+CHAVE_INDICE="a mesma chave colada no Render"
+```
+
+E rode:
+
+```bash
+npm run convite:producao -- --nome "Ana Souza" --crmv 12345 --uf MG
+```
 
 ## Endereços da API
 
@@ -190,6 +254,7 @@ Os erros vêm sempre no mesmo formato: `{ "erro": "mensagem" }`, com
 | `npm run dev`          | Liga a API e a reinicia a cada arquivo salvo                 |
 | `npm start`            | Liga a API (é o que a hospedagem roda)                       |
 | `npm run convite`      | Cria um convite de veterinário (ver acima)                   |
+| `npm run convite:producao` | O mesmo, no banco do site publicado (ver "Publicação")   |
 | `npm run db:validate`  | Confere se o `schema.prisma` está correto                    |
 | `npm run db:migrate`   | Cria uma migração a partir do esquema e aplica no banco      |
 | `npm run db:generate`  | Gera de novo o cliente do Prisma (depois de mudar o esquema) |
@@ -325,10 +390,11 @@ O que a API já faz:
   pessoais.
 - **Veterinário só com convite** da instituição.
 
-O que entra quando a API for publicada: HTTPS (a hospedagem dá), backup
-automático do banco (com cópia das chaves guardada à parte), um usuário de
-banco que só mexe nas tabelas do UFVet, o aviso de dependências do GitHub
-(Dependabot), um monitor que avisa se a API cair e o plano de recuperação.
+Publicada, a API tem HTTPS (o Render dá) e cookie só por HTTPS. Ainda
+faltam: backup automático do banco (com cópia das chaves guardada à parte),
+um usuário de banco que só mexe nas tabelas do UFVet, o aviso de
+dependências do GitHub (Dependabot), um monitor que avisa se a API cair e o
+plano de recuperação.
 
 ## Testes
 

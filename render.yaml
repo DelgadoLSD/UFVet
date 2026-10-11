@@ -1,0 +1,43 @@
+# A receita de publicação do UFVet no Render (Blueprint): um serviço só, que
+# monta o site e entrega o site e a API no mesmo endereço. O banco fica no
+# Neon. O passo a passo está em backend/README.md, na seção "Publicação".
+services:
+  - type: web
+    name: ufvet
+    runtime: node
+    plan: free
+    # Perto do banco (Neon, AWS US East 1): cada página faz várias consultas,
+    # e a distância entre a API e o banco pesa em todas.
+    region: virginia
+    # Monta o site, prepara a API e atualiza o banco. As migrações rodam aqui
+    # porque, no plano grátis, o Render não tem o passo "antes de ligar"; a
+    # carga inicial (o hospital) pode rodar sempre, sem duplicar nada. O
+    # --include=dev é preciso porque, com NODE_ENV=production, o npm pularia
+    # as ferramentas de montagem (Vite, Prisma).
+    buildCommand: >-
+      cd frontend && npm ci --include=dev && npm run build &&
+      cd ../backend && npm ci --include=dev && npm run db:generate &&
+      npx prisma migrate deploy && npm run db:seed
+    startCommand: cd backend && npm start
+    healthCheckPath: /api/saude
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 24.21.0
+      # O Render põe um intermediário (proxy) na frente da API; sem isto, o
+      # limite de tentativas veria todo mundo com o endereço dele.
+      - key: PROXIES_CONFIAVEIS
+        value: "1"
+      # Os segredos são colados no painel do Render ao criar o serviço, nunca
+      # aqui: o repositório é público.
+      - key: DATABASE_URL
+        sync: false
+      - key: CHAVE_CIFRAGEM
+        sync: false
+      - key: CHAVE_INDICE
+        sync: false
+      # Esta o próprio Render sorteia: trocá-la só desconecta todo mundo.
+      - key: JWT_SEGREDO
+        generateValue: true
