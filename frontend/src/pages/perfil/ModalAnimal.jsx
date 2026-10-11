@@ -521,8 +521,9 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
               Peso (kg) *
             </label>
             {/* Espaço do tamanho do seletor ao lado, para os dois campos
-                ficarem na mesma linha. */}
-            <div className="h-11 mb-2" aria-hidden="true" />
+                ficarem na mesma linha. Com uma coluna só (no celular), não há
+                o que alinhar. */}
+            <div className="hidden sm:block h-11 mb-2" aria-hidden="true" />
             <input
               id="animal-peso"
               type="number"

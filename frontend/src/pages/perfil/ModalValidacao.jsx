@@ -184,7 +184,7 @@ function ModalValidacao({ animal, validacao, onSalvar, onFechar }) {
               setCriterios(todosCriterios(!completa));
               setErro("");
             }}
-            className="text-xs font-semibold text-[#9e0a24] hover:underline underline-offset-2"
+            className="relative toque:before:absolute toque:before:-inset-3 shrink-0 whitespace-nowrap text-xs font-semibold text-[#9e0a24] hover:underline underline-offset-2"
           >
             {completa ? "Desmarcar todos" : "Marcar todos"}
           </button>

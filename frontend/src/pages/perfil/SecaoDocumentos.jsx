@@ -250,21 +250,23 @@ function ModalDocumento({
       onFechar={onFechar}
     >
       <div className="flex flex-col gap-5">
+        {/* No celular, quem enviou vai para a linha de baixo, e os botões
+            ocupam a largura toda. */}
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 max-sm:flex-wrap max-sm:gap-y-1">
             <span className="text-sm font-bold text-[#1a1c1c]">
               {formatarData(versao.enviadoEm)}
             </span>
             {temVarias && indice === ultima && (
-              <span className="text-[11px] font-semibold text-[#9e0a24] bg-[#faf0f0] px-2 py-0.5 rounded-full">
+              <span className="whitespace-nowrap text-[11px] font-semibold text-[#9e0a24] bg-[#faf0f0] px-2 py-0.5 rounded-full">
                 Mais recente
               </span>
             )}
-            <span className="text-xs text-[#5f5e5e]">
+            <span className="text-xs text-[#5f5e5e] max-sm:basis-full">
               Enviado por {versao.enviadoPorNome}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 max-sm:w-full">
             {/* O PDF já tem o próprio botão, no lugar do arquivo. */}
             {versao.formato === "imagem" && (
               <Botao
@@ -275,6 +277,7 @@ function ModalDocumento({
                 variante="secundario"
                 tamanho="sm"
                 icone="open_in_new"
+                className="max-sm:flex-1 max-sm:h-10"
               >
                 Abrir em nova aba
               </Botao>
@@ -285,6 +288,7 @@ function ModalDocumento({
                 variante="perigo"
                 tamanho="sm"
                 icone="delete"
+                className="max-sm:h-10"
                 aria-label="Apagar esta versão"
                 title="Apagar esta versão"
                 aria-expanded={confirmando}
@@ -324,7 +328,7 @@ function ModalDocumento({
                     type="button"
                     onClick={() => abrirVersao(v.id)}
                     aria-pressed={v.i === indice}
-                    className={`w-full flex items-center justify-between gap-3 text-left px-4 py-2.5 rounded-xl border transition-colors ${
+                    className={`w-full flex items-center justify-between gap-3 max-sm:flex-col max-sm:items-start max-sm:gap-0.5 text-left px-4 py-2.5 rounded-xl border transition-colors ${
                       v.i === indice
                         ? "border-[#9e0a24] bg-[#faf0f0]"
                         : "border-[#e4bebc] hover:border-[#7d0a1d]/50"
@@ -363,6 +367,7 @@ function LinhaDocumento({
   const { tipo, versoes } = documento;
   const nome = TIPOS_DOCUMENTO[tipo];
   const ultima = versoes.at(-1);
+  const podeAbrir = !!ultima?.arquivoUrl;
   const acao = enviando ? "Enviando" : ultima ? "Atualizar" : "Enviar";
 
   const enviar = async (arquivo) => {
@@ -396,13 +401,24 @@ function LinhaDocumento({
       </div>
 
       {/* Colunas de ação com largura fixa: cada botão cai sempre no mesmo
-          lugar, tenha o documento sido enviado ou não. */}
-      <div className="flex items-center gap-2 ml-auto">
-        <div className="w-[4.5rem] flex justify-end">
-          {ultima?.arquivoUrl && (
+          lugar, tenha o documento sido enviado ou não. No celular, os botões
+          ganham uma linha própria, dividida em partes iguais na largura da
+          linha; o que não existe não ocupa lugar. */}
+      <div
+        className={`flex items-center gap-2 ml-auto max-sm:ml-0 max-sm:basis-full max-sm:grid max-sm:grid-cols-2 ${
+          podeAbrir || podeEnviar ? "" : "max-sm:hidden"
+        }`}
+      >
+        <div
+          className={`w-[4.5rem] flex justify-end max-sm:w-auto ${
+            !podeAbrir ? "max-sm:hidden" : podeEnviar ? "" : "max-sm:col-span-2"
+          }`}
+        >
+          {podeAbrir && (
             <Botao
               variante="fantasma"
               tamanho="sm"
+              className="max-sm:w-full max-sm:h-10 max-sm:border max-sm:border-[#e6dcdc] max-sm:bg-white"
               aria-label={`Abrir ${nome.toLowerCase()}`}
               onClick={onAbrir}
             >
@@ -412,11 +428,16 @@ function LinhaDocumento({
         </div>
 
         {podeEnviar && (
-          <div className="w-[6.75rem] flex justify-end">
+          <div
+            className={`w-[6.75rem] flex justify-end max-sm:w-auto ${
+              podeAbrir ? "" : "max-sm:col-span-2"
+            }`}
+          >
             <Botao
               ref={refEnviar}
               variante={ultima ? "secundario" : "primario"}
               tamanho="sm"
+              className="max-sm:w-full max-sm:h-10"
               icone={enviando ? undefined : "upload"}
               disabled={enviando}
               aria-label={`${acao} ${nome.toLowerCase()}`}

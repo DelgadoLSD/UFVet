@@ -249,6 +249,7 @@ function ContaPage() {
                   <Botao
                     type="submit"
                     disabled={!alterado || !localizacaoCompleta || salvando}
+                    className="max-sm:w-full max-sm:h-11"
                   >
                     {salvando ? "Salvando…" : "Salvar alterações"}
                   </Botao>
@@ -408,6 +409,7 @@ function ContaPage() {
                 variante="secundario"
                 icone="key"
                 onClick={() => setTrocandoSenha(true)}
+                className="max-sm:w-full max-sm:h-11"
               >
                 Alterar senha
               </Botao>
@@ -418,10 +420,11 @@ function ContaPage() {
             titulo="Esqueceu a conta aberta em outro aparelho?"
             texto="Saia da conta em todos os aparelhos de uma vez, inclusive neste. Depois, é só entrar de novo."
           >
-            <div className="flex flex-col gap-4 items-start">
+            <div className="flex flex-col gap-4 items-start max-sm:items-stretch">
               <Botao
                 variante="secundario"
                 icone="logout"
+                className="max-sm:h-11"
                 onClick={sairDeTodos}
                 disabled={saindo}
               >
@@ -440,7 +443,7 @@ function ContaPage() {
             </p>
             <Botao
               variante="contornoClaro"
-              className="mt-5"
+              className="mt-5 max-sm:w-full max-sm:h-11"
               onClick={() => setEncerrando(true)}
             >
               Encerrar minha conta

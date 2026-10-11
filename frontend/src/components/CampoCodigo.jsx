@@ -6,7 +6,7 @@ import { limparCodigo } from "../util/texto";
 function CampoCodigo({ id, rotulo, dica, placeholder, valor, onMudar }) {
   return (
     <div>
-      <div className="flex items-baseline justify-between gap-3 mb-2">
+      <div className="flex items-baseline justify-between gap-3 mb-2 max-sm:flex-col max-sm:gap-0.5">
         <label htmlFor={id} className="text-sm font-semibold text-[#1a1c1c]">
           {rotulo}
         </label>

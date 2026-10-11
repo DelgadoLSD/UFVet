@@ -2,7 +2,8 @@
 // animais, sozinho. O texto ao lado era redundante — o símbolo já diz que ali
 // se tira uma dúvida, e o rótulo vive no aria-label e na dica do mouse.
 // O círculo é pequeno para acompanhar o texto, mas o botão ocupa 24px, que é
-// o mínimo confortável para clicar e tocar.
+// o mínimo confortável para clicar; no toque, uma área invisível em volta
+// chega a 40px.
 function BotaoAjuda({ rotulo, onClick, claro = false, className = "" }) {
   return (
     <button
@@ -10,7 +11,7 @@ function BotaoAjuda({ rotulo, onClick, claro = false, className = "" }) {
       onClick={onClick}
       aria-label={rotulo}
       title={rotulo}
-      className={`group inline-flex items-center justify-center w-6 h-6 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+      className={`group relative toque:before:absolute toque:before:-inset-2 inline-flex items-center justify-center w-6 h-6 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
         claro ? "focus-visible:ring-white" : "focus-visible:ring-[#9e0a24]"
       } ${className}`}
     >

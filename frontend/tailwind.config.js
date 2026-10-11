@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+import plugin from "tailwindcss/plugin";
 
 // A troca de animal no carrossel do perfil: 420 ms, numa curva que sai rápida
 // e assenta suave, sem quicar (a das trocas de tela do iPhone). A placa
@@ -46,5 +47,10 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // `toque:` vale só em telas de toque (celular, tablet). O dedo cobre mais
+    // que a seta do mouse: os alvos pequenos (o "?", copiar o código) ganham
+    // uma área invisível maior, sem mudar o desenho no computador.
+    plugin(({ addVariant }) => addVariant("toque", "@media (pointer: coarse)")),
+  ],
 };

@@ -12,7 +12,7 @@ function CodigoCopiavel({ codigo, rotulo = "Código", claro = false }) {
       onClick={() => copiar(`#${codigo}`)}
       title={copiado ? "Copiado!" : `Copiar ${rotulo.toLowerCase()}`}
       aria-label={`Copiar ${rotulo.toLowerCase()} ${codigo}`}
-      className={`inline-flex items-center gap-1 h-6 px-2 rounded-md border text-[11px] font-bold tracking-wide transition-colors ${
+      className={`relative toque:before:absolute toque:before:-inset-y-2.5 toque:before:-inset-x-1 inline-flex items-center gap-1 h-6 px-2 rounded-md border text-[11px] font-bold tracking-wide transition-colors ${
         copiado
           ? "bg-emerald-50 border-emerald-200 text-emerald-700"
           : claro

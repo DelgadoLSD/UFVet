@@ -123,13 +123,18 @@ function CartaoPerfil({
               </div>
               {/* O papel fica numa etiqueta ao lado do nome, como a espécie
                   ao lado do nome dos animais. A cidade está em Localização;
-                  o hospital do veterinário, em Registro profissional. */}
+                  o hospital do veterinário, em Registro profissional. No
+                  celular, o código também fica aqui, junto do nome, e não
+                  solto embaixo da foto. */}
               <div className="flex-1 min-w-0 flex items-center gap-x-3 gap-y-2 flex-wrap">
-                <h1 className="text-[1.75rem] md:text-4xl font-extrabold tracking-tight leading-[1.08] text-[#1a1c1c] [text-wrap:balance]">
+                <h1 className="text-2xl sm:text-[1.75rem] md:text-4xl font-extrabold tracking-tight leading-[1.08] text-[#1a1c1c] [text-wrap:balance]">
                   {perfil.nomeCompleto}
                 </h1>
                 <span className="text-xs font-bold text-white bg-[#9e0a24] px-2.5 py-1 rounded-md">
                   {rotuloPapel(perfil)}
+                </span>
+                <span className="sm:hidden">
+                  <CodigoCopiavel codigo={perfil.codigo} />
                 </span>
               </div>
               {ehProprio && (
@@ -144,7 +149,7 @@ function CartaoPerfil({
                 />
               )}
             </div>
-            <div>
+            <div className="hidden sm:block">
               <CodigoCopiavel codigo={perfil.codigo} />
             </div>
           </div>

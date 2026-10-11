@@ -7,6 +7,11 @@ import { useEffect, useId, useRef } from "react";
 // Fecha pelo X, por um clique fora da janela ou pela tecla Esc. Ao abrir, o
 // foco do teclado entra na janela; ao fechar, volta para onde estava (em
 // geral, o botão que abriu o modal).
+//
+// No celular, a janela sobe da borda de baixo e ocupa a largura toda, como
+// nos aplicativos: sobra mais espaço para o formulário, e os botões ficam
+// perto do polegar. Os botões do rodapé dividem a linha em partes iguais,
+// na mesma largura dos campos; o principal fica à direita.
 function Modal({
   titulo,
   subtitulo,
@@ -36,7 +41,7 @@ function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 max-sm:items-end max-sm:p-0"
       onClick={(e) => e.target === e.currentTarget && onFechar()}
     >
       <div
@@ -46,9 +51,9 @@ function Modal({
         aria-labelledby={tituloId}
         tabIndex={-1}
         onKeyDown={aoTeclar}
-        className={`bg-white rounded-2xl shadow-2xl w-full ${largura} ${altura} flex flex-col focus:outline-none`}
+        className={`bg-white rounded-2xl shadow-2xl w-full ${largura} ${altura} flex flex-col focus:outline-none max-sm:rounded-b-none max-sm:max-h-[92dvh]`}
       >
-        <div className="border-b border-[#e4bebc] px-8 py-5 flex items-center justify-between gap-4 shrink-0">
+        <div className="border-b border-[#e4bebc] px-8 py-5 max-sm:px-5 max-sm:py-4 flex items-center justify-between gap-4 shrink-0">
           <div className="min-w-0">
             <h2 id={tituloId} className="text-xl font-bold text-[#1a1c1c]">
               {titulo}
@@ -72,12 +77,12 @@ function Modal({
           </button>
         </div>
 
-        <div className="px-8 py-6 overflow-y-auto flex-1 min-h-0">
+        <div className="px-8 py-6 max-sm:px-5 max-sm:py-5 overflow-y-auto flex-1 min-h-0">
           {children}
         </div>
 
         {rodape && (
-          <div className="border-t border-[#e4bebc] px-8 py-4 shrink-0">
+          <div className="border-t border-[#e4bebc] px-8 py-4 shrink-0 max-sm:px-5 max-sm:[&_div:has(>button)]:w-full max-sm:[&_button]:flex-1 max-sm:[&_button]:h-11">
             {rodape}
           </div>
         )}

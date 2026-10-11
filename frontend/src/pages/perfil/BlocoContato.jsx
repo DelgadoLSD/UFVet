@@ -33,7 +33,7 @@ function ValorCopiavel({ valor, rotulo }) {
         type="button"
         onClick={() => copiar(valor)}
         aria-label={`Copiar ${rotulo}`}
-        className="w-6 h-6 rounded-md flex items-center justify-center text-[#8f6f6e] hover:text-[#7d0a1d] hover:bg-[#fdecee] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
+        className="relative toque:before:absolute toque:before:-inset-2 w-6 h-6 rounded-md flex items-center justify-center text-[#8f6f6e] hover:text-[#7d0a1d] hover:bg-[#fdecee] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]"
       >
         <span
           aria-hidden="true"

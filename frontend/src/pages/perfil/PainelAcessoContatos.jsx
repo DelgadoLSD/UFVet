@@ -69,7 +69,8 @@ function Pedido({ pedido, ocupado, onLiberar, onRecusar }) {
         </div>
         <p className="text-sm text-white/80 mt-1 leading-snug">{pedido.caso}</p>
       </div>
-      <div className="flex flex-wrap items-center gap-2 shrink-0">
+      {/* No celular, os dois botões dividem a linha, na altura do toque. */}
+      <div className="flex flex-wrap items-center gap-2 shrink-0 max-sm:grid max-sm:grid-cols-2 max-sm:[&>*]:h-10">
         <Botao
           variante="contornoClaro"
           tamanho="sm"
@@ -124,6 +125,7 @@ function MenuRenovar({ liberacao, ocupado, onRenovar }) {
       <Botao
         variante="secundario"
         tamanho="sm"
+        className="max-sm:w-full max-sm:h-10"
         disabled={ocupado}
         aria-expanded={aberto}
         aria-haspopup="menu"
@@ -145,7 +147,7 @@ function MenuRenovar({ liberacao, ocupado, onRenovar }) {
           ref={listaRef}
           role="menu"
           aria-label={`Renovar o acesso de ${liberacao.tutorNome}`}
-          className="absolute right-0 top-full mt-2 z-30 w-72 p-1.5 bg-white border border-[#eadede] rounded-xl shadow-[0_12px_32px_-8px_rgba(26,28,28,0.25)] animate-aparecer"
+          className="absolute right-0 max-sm:left-0 max-sm:right-auto top-full mt-2 z-30 w-72 p-1.5 bg-white border border-[#eadede] rounded-xl shadow-[0_12px_32px_-8px_rgba(26,28,28,0.25)] animate-aparecer"
         >
           <p className="px-2.5 pt-2 pb-2.5 text-xs text-[#5f5e5e] leading-relaxed">
             Hoje o acesso termina{" "}
@@ -203,21 +205,26 @@ function Liberacao({ liberacao, ocupado, onRenovar, onEncerrar }) {
         </p>
       </div>
 
+      {/* No celular, o prazo fica numa linha e "Renovar" e "Encerrar"
+          dividem a de baixo, na altura do toque. */}
       <div className="flex flex-wrap items-center gap-2 shrink-0">
         <Prazo expiraEm={liberacao.expiraEm} />
-        <MenuRenovar
-          liberacao={liberacao}
-          ocupado={ocupado}
-          onRenovar={onRenovar}
-        />
-        <Botao
-          variante="perigo"
-          tamanho="sm"
-          disabled={ocupado}
-          onClick={onEncerrar}
-        >
-          Encerrar
-        </Botao>
+        <div className="flex items-center gap-2 max-sm:basis-full max-sm:[&>*]:flex-1">
+          <MenuRenovar
+            liberacao={liberacao}
+            ocupado={ocupado}
+            onRenovar={onRenovar}
+          />
+          <Botao
+            variante="perigo"
+            tamanho="sm"
+            className="max-sm:h-10"
+            disabled={ocupado}
+            onClick={onEncerrar}
+          >
+            Encerrar
+          </Botao>
+        </div>
       </div>
     </li>
   );
@@ -307,7 +314,7 @@ function PainelAcessoContatos({ onComoFunciona }) {
         <Botao
           icone="add"
           onClick={() => setLiberando(true)}
-          className="shrink-0 self-start"
+          className="shrink-0 self-start max-sm:self-stretch max-sm:h-11"
         >
           Liberar acesso
         </Botao>
