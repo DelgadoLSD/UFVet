@@ -304,7 +304,9 @@ veterinário.
 
 **Descrição:** O envio de um exame do mesmo tipo não substitui o anterior:
 entra como nova versão, guardando quem enviou e quando. O histórico permanece
-disponível para o veterinário comparar a evolução.
+disponível para o veterinário comparar a evolução. O tutor pode apagar uma
+versão que enviou, como um arquivo mandado por engano; apagar um exame que a
+validação vigente conferiu tem o efeito descrito em F21.
 
 ---
 
@@ -375,8 +377,12 @@ sanguíneo exibido no perfil e considerado na busca.
 
 **Descrição:** Quando o tutor altera o peso ou a data de nascimento do animal,
 o critério de peso e idade da validação vigente perde efeito, por ter sido
-conferido sobre outro valor. O sistema registra a invalidação e seu motivo, sem
-alterar o registro assinado.
+conferido sobre outro valor. Da mesma forma, quando o tutor apaga uma
+sorologia ou uma carteira de vacinação que já estava no sistema quando a
+validação vigente foi assinada, o critério que aquele exame comprova
+(sorologias ou vacinação) perde efeito, porque não há mais como conferi-lo. O
+sistema registra a invalidação e seu motivo, sem alterar o registro assinado.
+Apagar um exame enviado depois da validação não a afeta.
 
 ---
 

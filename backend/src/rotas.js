@@ -27,6 +27,11 @@ import {
 import { buscarDoadores, listarLocais } from "./controladores/busca.js";
 import { consultarConvite } from "./controladores/convites.js";
 import {
+  abrirDocumento,
+  apagarVersao,
+  enviarDocumento,
+} from "./controladores/documentos.js";
+import {
   listarEstabelecimentos,
   registrarDoacao,
   registrarObservacao,
@@ -43,7 +48,11 @@ import {
   cadastrar,
   conferirDisponibilidade,
 } from "./controladores/usuarios.js";
-import { receberFoto, receberFotos } from "./middlewares/envio.js";
+import {
+  receberExame,
+  receberFoto,
+  receberFotos,
+} from "./middlewares/envio.js";
 import {
   exigirLogin,
   exigirPapel,
@@ -114,10 +123,10 @@ export function criarRotas(limites) {
     contatoDoPerfil,
   );
 
-  // Animais (F8 a F11), com as fotos. Ver é público, como a busca;
-  // cadastrar, editar e excluir exigem login, e só o dono mexe (ver
-  // controladores/animais.js).
-  rotas.get("/usuarios/:codigo/animais", listarAnimais);
+  // Animais (F8 a F11), com as fotos. Ver é público, como a busca (só os
+  // arquivos dos exames dependem de quem pede); cadastrar, editar e excluir
+  // exigem login, e só o dono mexe (ver controladores/animais.js).
+  rotas.get("/usuarios/:codigo/animais", identificarSessao, listarAnimais);
   rotas.post(
     "/animais",
     exigirLogin,
@@ -134,6 +143,20 @@ export function criarRotas(limites) {
     editarAnimal,
   );
   rotas.delete("/animais/:codigo", exigirLogin, excluirAnimal);
+
+  // Exames e documentos dos animais (F14 e F15): o dono envia, e cada envio
+  // vira uma versão nova; o dono também apaga uma versão que mandou. O
+  // arquivo só abre para o dono e para os veterinários (ver
+  // controladores/documentos.js).
+  rotas.post(
+    "/animais/:codigo/documentos/:tipo",
+    exigirLogin,
+    limites.envioExames,
+    receberExame,
+    enviarDocumento,
+  );
+  rotas.get("/documentos/versoes/:id", exigirLogin, abrirDocumento);
+  rotas.delete("/documentos/versoes/:id", exigirLogin, apagarVersao);
 
   // O histórico clínico de um animal, que só o veterinário escreve (F19 a
   // F24): a validação dos critérios, com o tipo sanguíneo, as doações

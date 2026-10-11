@@ -1,4 +1,8 @@
-import { apagarArquivos, guardarImagem } from "../armazenamento.js";
+import {
+  apagarArquivos,
+  apagarExames,
+  guardarImagem,
+} from "../armazenamento.js";
 import { banco } from "../banco.js";
 import { cifrar, decifrar, indiceEmail } from "../cifra.js";
 import { ErroApi } from "../erros.js";
@@ -170,9 +174,8 @@ export async function trocarSenha(req, res) {
 // regra de cada tabela está no schema.prisma (onDelete) e é testada em
 // exclusao-conta.test.js.
 //
-// Depois do banco, saem os arquivos: a foto de perfil e as fotos dos
-// animais. Quando os exames forem enviados de verdade, os arquivos deles
-// também precisam sair aqui.
+// Depois do banco, saem os arquivos: a foto de perfil, as fotos dos animais
+// e os exames deles.
 export async function encerrarConta(req, res) {
   const { senhaAtual } = esquemaEncerramento.parse(req.body ?? {});
   await conferirSenhaAtual(req, res, senhaAtual);
@@ -181,11 +184,16 @@ export async function encerrarConta(req, res) {
     where: { animal: { tutorId: req.usuario.id } },
     select: { url: true },
   });
+  const examesDosAnimais = await banco.documentoVersao.findMany({
+    where: { documento: { animal: { tutorId: req.usuario.id } } },
+    select: { arquivoUrl: true },
+  });
   await banco.usuario.delete({ where: { id: req.usuario.id } });
   await apagarArquivos([
     req.usuario.fotoUrl,
     ...fotosDosAnimais.map((foto) => foto.url),
   ]);
+  await apagarExames(examesDosAnimais.map((exame) => exame.arquivoUrl));
   registrar("conta_encerrada", {
     usuarioId: req.usuario.id,
     papel: req.usuario.papel,

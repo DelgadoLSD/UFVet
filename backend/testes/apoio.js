@@ -111,6 +111,21 @@ export async function limparArquivos() {
 export const arquivosGuardados = () =>
   readdir(config.pastaArquivos).catch(() => []);
 
+// O mesmo para a pasta dos exames.
+export async function limparExames() {
+  await rm(config.pastaExames, { recursive: true, force: true });
+}
+export const examesGuardados = () =>
+  readdir(config.pastaExames).catch(() => []);
+
+// Um PDF pequeno, como o laudo que um laboratório manda. Para a API, o que
+// conta é a assinatura do formato no começo ("%PDF-").
+export const pdfDeExame = (texto = "Hemograma completo") =>
+  Buffer.from(
+    `%PDF-1.4\n1 0 obj << /Title (${texto}) >> endobj\ntrailer << /Root 1 0 R >>\n%%EOF\n`,
+    "latin1",
+  );
+
 // Uma foto JPEG como as de celular: com os dados da câmera e a localização
 // GPS de onde foi tirada (no bloco EXIF, que vai dentro do arquivo).
 export const fotoDeCelular = ({ largura = 400, altura = 300 } = {}) =>

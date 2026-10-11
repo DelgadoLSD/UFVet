@@ -460,7 +460,6 @@ function PerfilPage() {
                       animal={animal}
                       ehDono={ehProprio}
                       ehVet={ehVet}
-                      nomeTutor={perfil.nomeCompleto}
                       onAlterado={lista.substituir}
                       onExcluido={lista.remover}
                     />

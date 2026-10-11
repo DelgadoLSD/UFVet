@@ -3,7 +3,7 @@
 Documento de apoio ao TCC "Doação de Sangue Animal". Descreve o modelo de
 dados do portal UFVet, as decisões que o sustentam e o dicionário de dados.
 
-Atualizado em 06/10/2026. Banco: PostgreSQL. ORM: Prisma.
+Atualizado em 10/10/2026. Banco: PostgreSQL. ORM: Prisma.
 
 Arquivos que acompanham este documento:
 
@@ -74,7 +74,9 @@ sanguíneo e disponibilidade.
 **`documento`** e **`documento_versao`** — os exames. O documento é a
 identidade ("hemograma deste animal"); as versões são os arquivos. Um exame
 refeito não substitui o anterior: entra como versão nova, e o histórico fica
-disponível para o veterinário comparar a evolução.
+disponível para o veterinário comparar a evolução. O arquivo em si fica fora
+do banco, numa pasta que nenhum endereço público serve; a versão guarda onde
+ele está.
 
 ### Validação clínica
 
@@ -140,8 +142,10 @@ veterinário a considerar a tipagem já validada.
 **Registro assinado nunca é editado.** Uma validação não muda depois de
 assinada. Ela perde efeito de três formas: vence (um ano), é invalidada (o
 tutor alterou peso ou data de nascimento, dados que o veterinário havia
-conferido) ou é substituída por uma validação mais recente. As colunas
-`invalidada_em` e `invalidada_motivo` registram a segunda hipótese.
+conferido, ou apagou uma sorologia ou carteira de vacinação que já estava no
+sistema quando a validação foi assinada) ou é substituída por uma validação
+mais recente. As colunas `invalidada_em` e `invalidada_motivo` registram a
+segunda hipótese; o motivo diz qual critério deixou de valer.
 
 **Total de doações e data da última não são colunas.** Saem de `COUNT` e
 `MAX` sobre `doacao`. Não existe contador guardado que possa discordar do
@@ -339,6 +343,16 @@ da aplicação ou em migração com SQL puro:
   atendido.
 - Os valores de tipo sanguíneo aceitos dependem da espécie (DEA para cães,
   A/B/AB para gatos).
+- Só o dono do animal envia e apaga exames. O arquivo é imagem (JPG, PNG ou
+  WebP, regravada sem a localização GPS) ou PDF, com até 10 MB.
+- Apagar uma versão que já estava no sistema quando a validação vigente foi
+  assinada invalida a validação, se o critério que o exame comprova estava
+  atendido: a sorologia comprova `SOROLOGIAS` e a carteira de vacinação,
+  `VACINACAO`. O hemograma não comprova nenhum dos cinco critérios.
+- O arquivo de um exame só abre para o dono do animal e para os
+  veterinários: um laudo costuma trazer, no cabeçalho do laboratório, o nome,
+  o telefone e o endereço do tutor. Quem visita o perfil vê só que o exame
+  existe e quando foi enviado.
 
 ---
 
@@ -461,7 +475,7 @@ UQ = restrição de unicidade.
 |---|---|---|---|
 | id | uuid | PK | Identificador |
 | documento_id | uuid | FK → documento | Documento |
-| arquivo_url | varchar(255) | NOT NULL | Endereço do arquivo enviado |
+| arquivo_url | varchar(255) | NOT NULL | Onde o arquivo está guardado: o nome dele na pasta dos exames, que não é pública (o arquivo sai só pela API, para o dono do animal e veterinários) |
 | enviado_por_id | uuid | FK → usuario, NULL | Quem enviou |
 | enviado_por_nome | varchar(120) | NOT NULL | Nome copiado no envio |
 | enviado_em | timestamptz | NOT NULL | Momento do envio |
@@ -481,7 +495,7 @@ UQ = restrição de unicidade.
 | tipo_sanguineo_confirmado | varchar(20) | NULL | Resultado da tipagem, quando conferida |
 | nota | text | NULL | Observação do veterinário sobre pendências |
 | invalidada_em | timestamptz | NULL | Preenchido quando perde efeito antes do vencimento |
-| invalidada_motivo | enum | NULL | EDICAO_PESO, EDICAO_NASCIMENTO ou NOVA_VALIDACAO |
+| invalidada_motivo | enum | NULL | EDICAO_PESO, EDICAO_NASCIMENTO, EXCLUSAO_SOROLOGIA, EXCLUSAO_VACINACAO ou NOVA_VALIDACAO |
 | criado_em | timestamptz | NOT NULL | Criação do registro |
 
 ### `validacao_criterio`

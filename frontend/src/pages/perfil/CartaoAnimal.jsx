@@ -14,6 +14,8 @@ import ModalDoacoes from "./ModalDoacoes";
 import ModalExcluirAnimal from "./ModalExcluirAnimal";
 import { confirmar } from "../../hooks/confirmacoes";
 import {
+  apagarVersaoDoExame,
+  enviarDocumento,
   registrarDoacao,
   registrarObservacao,
   salvarAnimal,
@@ -38,10 +40,9 @@ import { formatarData } from "../../util/datas";
 // fim, as observações para a coleta e os exames, cada parte num painel com
 // faixa colorida no topo.
 //
-// Os dados do animal, a disponibilidade e o histórico clínico (validação,
-// doação, observação) gravam na API, e o perfil recebe o animal novo por
-// `onAlterado` (ou o aviso de que ele saiu, por `onExcluido`). Os exames
-// ainda são guardados só no cartão e valem até recarregar a página.
+// Os dados do animal, a disponibilidade, o histórico clínico (validação,
+// doação, observação) e os exames gravam na API, e o perfil recebe o animal
+// novo por `onAlterado` (ou o aviso de que ele saiu, por `onExcluido`).
 //
 // - `ehDono`: o perfil é de quem está logado; pode editar, excluir, mudar a
 //   disponibilidade e enviar documentos.
@@ -65,14 +66,7 @@ function situacaoParaDoar(disponivel, recuperacao) {
   return { texto: "Disponível para doação", tom: "disponivel" };
 }
 
-function CartaoAnimal({
-  animal,
-  ehDono,
-  ehVet,
-  nomeTutor,
-  onAlterado,
-  onExcluido,
-}) {
+function CartaoAnimal({ animal, ehDono, ehVet, onAlterado, onExcluido }) {
   const disponivel = animal.disponivel;
   const [mudandoDisponibilidade, setMudandoDisponibilidade] = useState(false);
   const [erroDisponibilidade, setErroDisponibilidade] = useState("");
@@ -83,7 +77,6 @@ function CartaoAnimal({
   // confirmou ao assinar a tipagem.
   const { validacoes, doacoes, observacoes, tipoSanguineo } = animal;
   const validacao = validacoes[0] ?? null;
-  const [documentos, setDocumentos] = useState(animal.documentos);
   // Modal aberto no momento: "editar", "excluir", "validar", "historico",
   // "doacoes" (o histórico), "registrarDoacao" (a mesma janela, já no
   // formulário) ou null.
@@ -144,19 +137,17 @@ function CartaoAnimal({
     confirmar("Observação registrada");
   };
 
-  // Sem API, o arquivo escolhido vira uma URL temporária do navegador.
-  const enviarDocumento = (tipo, arquivo) => {
-    if (!arquivo) return;
-    const versao = {
-      arquivoUrl: URL.createObjectURL(arquivo),
-      enviadoEm: new Date().toISOString(),
-      enviadoPorNome: nomeTutor,
-    };
-    setDocumentos((prev) =>
-      prev.map((d) =>
-        d.tipo === tipo ? { ...d, versoes: [...d.versoes, versao] } : d,
-      ),
-    );
+  // Os exames também vão para a API (F14): a resposta traz o animal com a
+  // versão nova, ou sem a versão apagada (e, se a validação tinha conferido
+  // aquele arquivo, com o critério sem efeito, F21). O erro sobe para quem
+  // pediu: a linha do exame, ou a janela dele.
+  const enviarNovoDocumento = async (tipo, arquivo) => {
+    onAlterado(await enviarDocumento(animal.codigo, tipo, arquivo));
+  };
+  const apagarVersao = async (versao) => {
+    const { animal: atualizado } = await apagarVersaoDoExame(versao);
+    onAlterado(atualizado);
+    return atualizado;
   };
 
   // A disponibilidade, logo abaixo da foto do animal e na largura dela: é
@@ -334,9 +325,11 @@ function CartaoAnimal({
             onAdicionar={adicionarObservacao}
           />
           <SecaoDocumentos
-            documentos={documentos}
-            podeEnviar={ehDono}
-            onEnviar={enviarDocumento}
+            documentos={animal.documentos}
+            validacao={validacao}
+            ehDono={ehDono}
+            onEnviar={enviarNovoDocumento}
+            onApagar={apagarVersao}
           />
         </div>
       </div>

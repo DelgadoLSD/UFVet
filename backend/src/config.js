@@ -47,4 +47,12 @@ export const config = Object.freeze({
     process.env.PASTA_ARQUIVOS ??
       fileURLToPath(new URL("../arquivos", import.meta.url)),
   ),
+
+  // A pasta dos exames dos animais. Fica fora da pasta das fotos, que é
+  // pública: um exame só sai pela API, para quem pode abri-lo (ver
+  // controladores/documentos.js). Os testes também usam uma temporária.
+  pastaExames: path.resolve(
+    process.env.PASTA_EXAMES ??
+      fileURLToPath(new URL("../exames", import.meta.url)),
+  ),
 });

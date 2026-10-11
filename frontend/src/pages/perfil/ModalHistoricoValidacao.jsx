@@ -2,7 +2,7 @@ import Modal from "../../components/Modal";
 import {
   CRITERIOS_DOACAO,
   criteriosEmVigor,
-  pesoIdadeAlterados,
+  avisoSemEfeito,
   statusValidacao,
   validaAte,
 } from "../../regras/doacao";
@@ -50,16 +50,17 @@ function EtiquetaCriterio({ criterio, atendido }) {
   );
 }
 
-function ItemValidacao({ validacao, status }) {
+function ItemValidacao({ validacao, status, nomeAnimal }) {
   const selo = SELO[status];
-  // A mais recente mostra os critérios em vigor, como o painel do cartão: o
-  // de peso e idade perde o efeito quando o tutor muda o peso ou o nascimento
-  // depois (F21). As substituídas mostram o que foi assinado. Como no painel,
-  // o aviso não aparece na vencida, que já perdeu o efeito inteira.
+  // A mais recente mostra os critérios em vigor, como o painel do cartão: um
+  // critério perde o efeito quando o tutor muda o peso ou o nascimento, ou
+  // apaga um exame conferido, depois da assinatura (F21). As substituídas
+  // mostram o que foi assinado. Como no painel, o aviso não aparece na
+  // vencida, que já perdeu o efeito inteira.
   const atual = status !== "substituida";
   const criterios = atual ? criteriosEmVigor(validacao) : validacao.criterios;
-  const alterado =
-    atual && status !== "vencida" && pesoIdadeAlterados(validacao);
+  const aviso =
+    atual && status !== "vencida" && avisoSemEfeito(validacao, nomeAnimal);
   const prazo =
     {
       vencida: `Venceu em ${dataPorExtenso(validaAte(validacao))}.`,
@@ -92,11 +93,9 @@ function ItemValidacao({ validacao, status }) {
         ))}
       </ul>
 
-      {alterado && (
+      {aviso && (
         <p className="mt-3 text-xs font-semibold text-[#9e0a24] leading-relaxed">
-          Peso e idade foram conferidos, mas perderam o efeito:{" "}
-          {alterado === "peso" ? "o peso" : "a data de nascimento"} mudou depois
-          desta validação.
+          {aviso}
         </p>
       )}
 
@@ -138,6 +137,7 @@ function ModalHistoricoValidacao({ animal, validacoes, onFechar }) {
             key={i}
             validacao={v}
             status={i === 0 ? statusValidacao(v) : "substituida"}
+            nomeAnimal={animal.nome}
           />
         ))}
       </ul>

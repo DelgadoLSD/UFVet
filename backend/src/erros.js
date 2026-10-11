@@ -6,11 +6,17 @@ import {
 } from "./middlewares/envio.js";
 import { registrar } from "./registro.js";
 
-// O que dizer quando um envio de fotos passa dos limites, ou null quando o
-// formulário veio fora do combinado (um campo de arquivo que não existe).
+// O que dizer quando um envio de fotos ou de exame passa dos limites, ou null
+// quando o formulário veio fora do combinado (um campo de arquivo que não
+// existe).
 function mensagemDeEnvio({ code, field }) {
   if (code === "LIMIT_FILE_SIZE") {
-    return `Cada foto pode ter no máximo ${TAMANHO_MAXIMO_MB} MB.`;
+    return field === "arquivo"
+      ? `O arquivo pode ter no máximo ${TAMANHO_MAXIMO_MB} MB.`
+      : `Cada foto pode ter no máximo ${TAMANHO_MAXIMO_MB} MB.`;
+  }
+  if (code === "LIMIT_UNEXPECTED_FILE" && field === "arquivo") {
+    return "Envie um arquivo só.";
   }
   // Passar do total de arquivos só acontece com as fotos de um animal (a de
   // perfil é uma só, e a segunda já é barrada como inesperada); esse aviso
@@ -91,7 +97,7 @@ export function tratarErros(erro, req, res, next) {
       .status(413)
       .json({ erro: "Os dados enviados são grandes demais." });
   }
-  // Limites do envio de fotos (middlewares/envio.js).
+  // Limites do envio de fotos e de exames (middlewares/envio.js).
   if (erro instanceof multer.MulterError) {
     const mensagem = mensagemDeEnvio(erro);
     if (!mensagem) {

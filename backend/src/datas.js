@@ -5,12 +5,15 @@
 // no site, elas viajam como texto "AAAA-MM-DD", sem fuso: o dia 20/08 é o dia
 // 20/08 em qualquer lugar.
 
-// O dia de hoje no horário de Brasília, mesmo com o servidor em outro fuso:
-// às 22h em Viçosa, em UTC já é o dia seguinte.
-export const hojeISO = () =>
+// O dia de um instante no horário de Brasília, mesmo com o servidor em outro
+// fuso: às 22h em Viçosa, em UTC já é o dia seguinte.
+export const diaEmBrasilia = (instante) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(
-    new Date(),
+    instante,
   );
+
+// O dia de hoje no horário de Brasília.
+export const hojeISO = () => diaEmBrasilia(new Date());
 
 // "2021-08-20" -> Date, para gravar numa coluna date.
 export const paraDataDoBanco = (dia) => new Date(`${dia}T00:00:00.000Z`);

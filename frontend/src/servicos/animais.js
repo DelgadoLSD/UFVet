@@ -1,36 +1,13 @@
-import { ANIMAIS_POR_TUTOR } from "../dados/exemplos/animais";
-import { TIPOS_DOCUMENTO } from "../regras/doacao";
 import { chamarApi } from "./api";
 import { chamarComLogin } from "./sessao";
 
 // Animais dos perfis.
 //
-// Vêm da API, com as fotos e o histórico clínico: validações, doações e
-// observações, que o veterinário registra (F19 a F24). Cadastrar, editar,
-// excluir e mudar a disponibilidade também gravam de verdade (F8 a F11).
-//
-// Os exames ainda não vêm da API: os animais de exemplo, que
-// `npm run db:exemplos` cria no banco com os mesmos códigos, mostram os dos
-// dados de exemplo; os outros começam sem nenhum. O que muda nessa parte
-// vale só até recarregar a página.
-
-const EXEMPLOS = new Map(
-  Object.values(ANIMAIS_POR_TUTOR)
-    .flat()
-    .map((animal) => [animal.codigo, animal]),
-);
-
-// O animal como a API manda -> o animal como os cartões usam. As fotos vêm
-// como { id, url }, da principal em diante.
-function paraAnimal(animal) {
-  const exemplo = EXEMPLOS.get(animal.codigo);
-  return {
-    ...animal,
-    documentos:
-      exemplo?.documentos ??
-      Object.keys(TIPOS_DOCUMENTO).map((tipo) => ({ tipo, versoes: [] })),
-  };
-}
+// Vêm da API como os cartões usam: as fotos ({ id, url }, da principal em
+// diante), os exames (os três tipos, cada um com as versões enviadas) e o
+// histórico clínico: validações, doações e observações, que o veterinário
+// registra (F19 a F24). Cadastrar, editar, excluir, mudar a disponibilidade e
+// enviar exames também gravam de verdade (F8 a F11, F14).
 
 // O corpo do pedido: JSON, ou, com fotos novas, um formulário com arquivos,
 // com os dados no campo "dados" e as fotos no campo "fotos", na ordem.
@@ -48,7 +25,7 @@ export async function listarAnimais(codigoTutor) {
   const { animais } = await chamarApi(
     `/usuarios/${encodeURIComponent(codigoTutor)}/animais`,
   );
-  return animais.map(paraAnimal);
+  return animais;
 }
 
 // Cadastra com as fotos escolhidas, na ordem (a primeira é a principal).
@@ -59,7 +36,7 @@ export async function cadastrarAnimal(dados, arquivos) {
     metodo: "POST",
     corpo: corpoDoPedido(dados, arquivos),
   });
-  return paraAnimal(animal);
+  return animal;
 }
 
 // Vai só o que mudou: dados, disponibilidade ou fotos. A nova ordem das fotos
@@ -70,7 +47,7 @@ export async function salvarAnimal(codigo, dados, arquivos) {
     `/animais/${encodeURIComponent(codigo)}`,
     { metodo: "PATCH", corpo: corpoDoPedido(dados, arquivos) },
   );
-  return paraAnimal(animal);
+  return animal;
 }
 
 export async function excluirAnimal(codigo) {
@@ -88,7 +65,7 @@ async function registrarNoAnimal(codigo, registro, corpo) {
     `/animais/${encodeURIComponent(codigo)}/${registro}`,
     { metodo: "POST", corpo },
   );
-  return paraAnimal(animal);
+  return animal;
 }
 
 // { criterios: { TIPAGEM: true, ... }, tipoSanguineo, nota } (F19 e F20).
@@ -102,6 +79,39 @@ export const registrarDoacao = (codigo, dados) =>
 // F23.
 export const registrarObservacao = (codigo, texto) =>
   registrarNoAnimal(codigo, "observacoes", { texto });
+
+// ─── Exames ───────────────────────────────────────────────────────────────────
+
+// Envia o arquivo de um exame do animal (F14): `tipo` é HEMOGRAMA, SOROLOGIA
+// ou VACINACAO. Cada envio vira uma versão nova, e as anteriores continuam
+// guardadas (F15). Devolve o animal com a lista nova; um arquivo recusado
+// chega como ErroApi, com a mensagem no campo "arquivo".
+export async function enviarDocumento(codigo, tipo, arquivo) {
+  const formulario = new FormData();
+  formulario.append("arquivo", arquivo);
+  const { animal } = await chamarComLogin(
+    `/animais/${encodeURIComponent(codigo)}/documentos/${tipo}`,
+    { metodo: "POST", corpo: formulario },
+  );
+  return animal;
+}
+
+// O arquivo de uma versão de exame (Blob), para a janela do exame. A API só
+// manda o endereço (arquivoUrl) para quem pode abrir, o dono do animal e os
+// veterinários, e confere de novo a cada pedido.
+export const baixarExame = (versao) =>
+  chamarComLogin(versao.arquivoUrl.replace(/^\/api/, ""), {
+    comoArquivo: true,
+  });
+
+// Apaga uma versão de exame que o próprio tutor enviou (o arquivo errado,
+// por exemplo). Devolve { animal, criterioInvalidado }: o animal atualizado
+// e o critério da validação que perdeu o efeito (F21), quando a validação em
+// vigor tinha conferido aquele arquivo, ou null.
+export const apagarVersaoDoExame = (versao) =>
+  chamarComLogin(`/documentos/versoes/${encodeURIComponent(versao.id)}`, {
+    metodo: "DELETE",
+  });
 
 // Hospitais e clínicas cadastrados: { id, nome, cidade, uf }.
 export async function listarEstabelecimentos() {

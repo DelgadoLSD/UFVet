@@ -1,7 +1,7 @@
 import { banco } from "../banco.js";
 import { sortearCodigoAnimal, sortearCodigoLivre } from "../codigos.js";
 import { deDataDoBanco, hojeISO, paraDataDoBanco } from "../datas.js";
-import { CRITERIOS_DOACAO } from "../validacao.js";
+import { CRITERIOS_DOACAO, TIPOS_DOCUMENTO } from "../validacao.js";
 
 // Model (do MVC) dos animais: como achar um animal no banco e o que dele pode
 // sair da API. A tabela em si está em prisma/schema.prisma.
@@ -21,9 +21,10 @@ export const codigoAnimalLivre = () =>
 // conferências dos controladores.
 export const COM_FOTOS = { fotos: { orderBy: { ordem: "asc" } } };
 
-// Tudo o que o perfil mostra de um animal: as fotos e o histórico que os
-// veterinários registram. Validações e observações vêm da mais recente para
-// a mais antiga; doações, da coleta mais recente para a mais antiga.
+// Tudo o que o perfil mostra de um animal: as fotos, os exames e o histórico
+// que os veterinários registram. Validações e observações vêm da mais
+// recente para a mais antiga; doações, da coleta mais recente para a mais
+// antiga; as versões de cada exame, da primeira enviada à última (F15).
 export const COM_HISTORICO = {
   ...COM_FOTOS,
   validacoes: {
@@ -35,6 +36,7 @@ export const COM_HISTORICO = {
     orderBy: [{ dataColeta: "desc" }, { criadoEm: "desc" }],
   },
   observacoes: { orderBy: { criadoEm: "desc" } },
+  documentos: { include: { versoes: { orderBy: { enviadoEm: "asc" } } } },
 };
 
 // O animal com o histórico, pelo id interno.
@@ -84,6 +86,81 @@ function dadosDaDoacao(doacao) {
   };
 }
 
+// Quem abre os arquivos dos exames de um animal: o dono e os veterinários,
+// que validam o doador com eles (F14). Um exame costuma trazer, no cabeçalho
+// do laboratório, o nome, o telefone e o endereço do tutor, que não saem
+// para qualquer pessoa que visite o perfil.
+export const podeAbrirExames = (usuario, tutorId) =>
+  !!usuario && (usuario.id === tutorId || usuario.papel === "VETERINARIO");
+
+// Onde o site abre o arquivo de uma versão de exame (rota protegida, ver
+// controladores/documentos.js).
+export const enderecoDoExame = (versao) =>
+  `/api/documentos/versoes/${versao.id}`;
+
+// ─── Exame apagado depois da validação (F21) ──────────────────────────────────
+
+// O critério da validação que cada documento comprova, e o motivo gravado
+// quando o tutor apaga um exame que a validação conferiu. O hemograma não
+// entra: ele não comprova nenhum dos cinco critérios (é conferido antes de
+// cada coleta), então apagá-lo não muda a validação.
+const CRITERIO_DO_DOCUMENTO = {
+  SOROLOGIA: "SOROLOGIAS",
+  VACINACAO: "VACINACAO",
+};
+export const MOTIVO_DA_EXCLUSAO = {
+  SOROLOGIA: "EXCLUSAO_SOROLOGIA",
+  VACINACAO: "EXCLUSAO_VACINACAO",
+};
+
+// A validação que vale agora, entre as do animal (da mais recente para a mais
+// antiga, cada uma com os critérios): a mais recente, se não venceu nem
+// perdeu o efeito. As anteriores já foram substituídas.
+export function validacaoEmVigor(validacoes) {
+  const [maisRecente] = validacoes;
+  if (!maisRecente || maisRecente.invalidadaEm) return null;
+  if (deDataDoBanco(maisRecente.validaAte) < hojeISO()) return null;
+  return maisRecente;
+}
+
+// O critério da validação em vigor que perde o efeito se esta versão de exame
+// for apagada, ou null. Perde quando a versão já estava no site quando o
+// veterinário validou (ele pode ter conferido com ela) e o critério que o
+// documento comprova foi marcado como atendido. Uma versão enviada depois da
+// validação, como o arquivo errado que o tutor acabou de mandar, sai sem
+// mexer em nada.
+export function criterioQueDependeDe(versao, tipo, vigente) {
+  const criterio = CRITERIO_DO_DOCUMENTO[tipo];
+  if (!criterio || !vigente) return null;
+  if (versao.enviadoEm > vigente.criadoEm) return null;
+  const atendido = vigente.criterios.some(
+    (c) => c.criterio === criterio && c.atendido,
+  );
+  return atendido ? criterio : null;
+}
+
+// Os três documentos do animal (NF14.1), sempre todos e na mesma ordem, com
+// as versões enviadas (F15). Todos veem que exames existem e quando foram
+// enviados; o endereço do arquivo só vai para quem pode abri-lo. Cada versão
+// diz também que critério perde o efeito se ela for apagada
+// (`criterioAfetado`), para o site avisar antes.
+function dadosDosDocumentos(documentos, vigente, podeAbrir) {
+  return TIPOS_DOCUMENTO.map((tipo) => {
+    const documento = documentos.find((d) => d.tipo === tipo);
+    return {
+      tipo,
+      versoes: (documento?.versoes ?? []).map((versao) => ({
+        id: versao.id,
+        enviadoEm: versao.enviadoEm,
+        enviadoPorNome: versao.enviadoPorNome,
+        formato: versao.arquivoUrl.endsWith(".pdf") ? "pdf" : "imagem",
+        arquivoUrl: podeAbrir ? enderecoDoExame(versao) : null,
+        criterioAfetado: criterioQueDependeDe(versao, tipo, vigente),
+      })),
+    };
+  });
+}
+
 // Uma observação sobre a coleta (F23), com autor e data.
 const dadosDaObservacao = (observacao) => ({
   criadoEm: observacao.criadoEm,
@@ -100,7 +177,10 @@ const dadosDaObservacao = (observacao) => ({
 //
 // O total de doações e a data da última não são campos: saem da lista de
 // doações (F26), e assim nunca discordam dela.
-export function dadosDoAnimal(animal) {
+//
+// `abreExames` diz se quem pediu abre os arquivos dos exames (ver
+// podeAbrirExames acima). Sem ele, os exames vão sem os endereços.
+export function dadosDoAnimal(animal, { abreExames = false } = {}) {
   return {
     codigo: animal.codigo,
     nome: animal.nome,
@@ -118,6 +198,11 @@ export function dadosDoAnimal(animal) {
     validacoes: animal.validacoes.map(dadosDaValidacao),
     doacoes: animal.doacoes.map(dadosDaDoacao),
     observacoes: animal.observacoes.map(dadosDaObservacao),
+    documentos: dadosDosDocumentos(
+      animal.documentos,
+      validacaoEmVigor(animal.validacoes),
+      abreExames,
+    ),
     criadoEm: animal.criadoEm,
   };
 }

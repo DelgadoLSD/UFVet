@@ -1,29 +1,28 @@
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
-import { guardarImagem } from "../src/armazenamento.js";
+import { guardarExame, guardarImagem } from "../src/armazenamento.js";
 import { banco } from "../src/banco.js";
 import { cifrar, indiceCpf, indiceEmail } from "../src/cifra.js";
 import { paraDataDoBanco, somarAnos } from "../src/datas.js";
-import { prepararFoto } from "../src/imagens.js";
+import { prepararFoto, prepararImagemDeExame } from "../src/imagens.js";
 import { assinaturaDe } from "../src/modelos/usuario.js";
 import { gerarHashSenha } from "../src/senha.js";
 
 // Contas e animais de exemplo, para desenvolver e demonstrar o site: as
-// pessoas, os animais delas (com os mesmos códigos e fotos dos animais de
-// exemplo do front-end, frontend/src/dados/exemplos/animais.js), o histórico
-// clínico e os pedidos e liberações de contato. Entrando com essas contas, a
-// busca tem doadores de verdade para mostrar, e cada tela tem o que exibir.
+// pessoas, os animais delas (com fotos e exames), o histórico clínico e os
+// pedidos e liberações de contato. Entrando com essas contas, a busca tem
+// doadores de verdade para mostrar, e cada tela tem o que exibir.
 //
 // Roda com `npm run db:exemplos`, depois de `npm run db:seed`, e pode rodar
-// de novo sem duplicar: só cria o que falta (uma conta, um animal ou as fotos
-// deles). Nunca roda em produção: a senha está escrita aqui e é pública. Os
+// de novo sem duplicar: só cria o que falta (uma conta, um animal, as fotos
+// ou os exames deles). Nunca roda em produção: a senha está escrita aqui e é pública. Os
 // CPFs são os dos dados de exemplo, que de propósito não passam na conta dos
 // dígitos verificadores; assim não pertencem a ninguém.
 
 const SENHA_DE_EXEMPLO = "ufvet-exemplo";
 const VERSAO_DOS_TERMOS = "1";
 
-// As fotos de exemplo são as imagens do próprio site.
+// As fotos e os exames de exemplo são imagens do próprio site.
 const PASTA_IMAGENS = new URL("../../frontend/src/assets/", import.meta.url);
 
 const CONTAS = [
@@ -107,8 +106,7 @@ const CONTAS = [
   },
 ];
 
-// Os animais das contas acima, com os dados, os códigos e as fotos dos
-// animais de exemplo do site (frontend/src/dados/exemplos/animais.js). O tipo
+// Os animais das contas acima, com os dados, os códigos e as fotos. O tipo
 // sanguíneo não vem aqui: só uma validação assinada pode preenchê-lo (NF8.1),
 // e ele sai do histórico abaixo.
 const ANIMAIS = [
@@ -168,8 +166,7 @@ const ANIMAIS = [
     disponivel: false,
     fotos: ["cats/cat7_0-image.jpg"],
   },
-  // Os doadores da busca de exemplo do site (dados/exemplos/doadores.js),
-  // com códigos novos, do alfabeto que a API usa. Max fica pausado, para a
+  // Mais doadores, para a busca ter o que mostrar. Max fica pausado, para a
   // busca mostrar que ele sai dela; Bolt e Pipoca ficam sem foto.
   ...[
     [
@@ -362,7 +359,7 @@ const TODOS_ATENDIDOS = {
   SEM_TRANSFUSAO: true,
 };
 
-// O mesmo histórico dos animais de exemplo do site, pelo código do animal.
+// O histórico de exemplo, pelo código do animal.
 // Validações da mais antiga para a mais recente: cada uma substitui a
 // anterior. Os casos cobrem o que as telas precisam mostrar: validação
 // vencida e substituída (Zeus), nunca validado (Luna), validado (Bela) e com
@@ -605,6 +602,71 @@ async function criarHistorico(animal, hospital) {
   }
 }
 
+// ─── Exames de exemplo ─────────────────────────────────────────────────────────
+
+// Os exames de exemplo, pelo código do animal: de cada tipo, os dias em que
+// cada versão foi enviada, da primeira à última. Quem envia é o dono do
+// animal, como na tela. O Zeus tem um hemograma refeito, para a janela do
+// exame mostrar as duas versões.
+const DOCUMENTOS = {
+  Z7R2K4: {
+    HEMOGRAMA: ["2025-10-10", "2026-03-02"],
+    VACINACAO: ["2025-10-10"],
+  },
+  L4N8C1: { SOROLOGIA: ["2026-03-01"] },
+  B3L6D9: {
+    HEMOGRAMA: ["2026-08-20"],
+    SOROLOGIA: ["2026-08-20"],
+    VACINACAO: ["2026-08-20"],
+  },
+  N9P2F5: { HEMOGRAMA: ["2026-08-28"], VACINACAO: ["2026-09-05"] },
+};
+
+// A imagem de cada tipo de exame.
+const IMAGEM_DO_DOCUMENTO = {
+  HEMOGRAMA: "documents/hemograma.png",
+  SOROLOGIA: "documents/sorologia.png",
+  VACINACAO: "documents/carteira_vacinacao.jpg",
+};
+
+// Grava os exames de exemplo de um animal, se ele ainda não tem nenhum. Cada
+// imagem passa pelo mesmo tratamento de um exame enviado pela tela, e cada
+// versão ganha o próprio arquivo.
+async function criarDocumentos(animal) {
+  const documentos = DOCUMENTOS[animal.codigo];
+  if (!documentos) return;
+  const enviados = await banco.documentoVersao.count({
+    where: { documento: { animalId: animal.id } },
+  });
+  if (enviados > 0) return;
+
+  const dono = await banco.usuario.findUnique({
+    where: { id: animal.tutorId },
+    select: { id: true, nomeCompleto: true },
+  });
+  let total = 0;
+  for (const [tipo, dias] of Object.entries(documentos)) {
+    const imagem = await prepararImagemDeExame(
+      await readFile(new URL(IMAGEM_DO_DOCUMENTO[tipo], PASTA_IMAGENS)),
+      "arquivo",
+    );
+    const versoes = [];
+    for (const dia of dias) {
+      versoes.push({
+        arquivoUrl: await guardarExame(imagem, "webp"),
+        enviadoPorId: dono.id,
+        enviadoPorNome: dono.nomeCompleto,
+        enviadoEm: new Date(`${dia}T10:00:00-03:00`),
+      });
+    }
+    await banco.documento.create({
+      data: { animalId: animal.id, tipo, versoes: { create: versoes } },
+    });
+    total += dias.length;
+  }
+  console.log(`  com ${total} exame(s)`);
+}
+
 // Um quadrado em volta do rosto, com a altura do rosto no quadro (de 0, o
 // topo, a 1, a base) e o quanto aproximar.
 async function recortarRetrato(conteudo, { alturaDoRosto, zoom = 1 }) {
@@ -717,6 +779,7 @@ async function criarAnimais(hospital) {
     }
 
     await criarHistorico(existente, hospital);
+    await criarDocumentos(existente);
   }
 }
 

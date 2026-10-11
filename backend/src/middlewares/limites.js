@@ -110,6 +110,19 @@ export function criarLimites() {
       },
     }),
 
+    // Envios de exames, por conta: como nas fotos, tratar um arquivo custa
+    // processamento. Folga para quem cuida de vários animais, cada um com
+    // três documentos.
+    envioExames: rateLimit({
+      ...opcoesComuns,
+      windowMs: 60 * MINUTO,
+      limit: 30,
+      keyGenerator: (req) => req.usuario.id,
+      message: {
+        erro: "Muitos exames enviados em pouco tempo. Tente de novo mais tarde.",
+      },
+    }),
+
     // Validações, doações e observações, por conta de veterinário: folga
     // para um plantão movimentado, e um teto para quem tentasse encher o
     // histórico de um animal com registros em sequência.

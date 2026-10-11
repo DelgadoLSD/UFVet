@@ -78,3 +78,38 @@ describe("os erros da API chegam aos formulários", () => {
     expect(new ErroApi(400, "Confira os dados.", {}).campos).toBeNull();
   });
 });
+
+describe("arquivos da API (o exame de um animal)", () => {
+  test("com comoArquivo, a resposta volta como arquivo, com o tipo dela", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(new Uint8Array([37, 80, 68, 70, 45]), {
+            status: 200,
+            headers: { "Content-Type": "application/pdf" },
+          }),
+      ),
+    );
+    const arquivo = await chamarApi("/documentos/versoes/abc", {
+      comoArquivo: true,
+    });
+    expect(arquivo).toBeInstanceOf(Blob);
+    expect(arquivo.type).toBe("application/pdf");
+    expect(await arquivo.text()).toBe("%PDF-");
+  });
+
+  test("o erro de um arquivo chega como os outros: com a mensagem da API", async () => {
+    responder(403, {
+      erro: "Só o tutor do animal e os veterinários abrem os exames.",
+    });
+    const erro = await erroDe(
+      chamarApi("/documentos/versoes/abc", { comoArquivo: true }),
+    );
+    expect(erro).toBeInstanceOf(ErroApi);
+    expect(erro.status).toBe(403);
+    expect(erro.message).toBe(
+      "Só o tutor do animal e os veterinários abrem os exames.",
+    );
+  });
+});

@@ -43,10 +43,13 @@ const campoInvalido = (campo, mensagem) =>
   new ErroApi(400, mensagem, { campos: { [campo]: mensagem } });
 
 // Responde com o animal inteiro, já com o registro novo: o site troca o
-// cartão de uma vez, sem montar o histórico por conta própria.
+// cartão de uma vez, sem montar o histórico por conta própria. Quem
+// registra é veterinário, e veterinários abrem os exames.
 async function responderComAnimal(res, animal) {
   res.status(201).json({
-    animal: dadosDoAnimal(await buscarComHistorico(animal.id)),
+    animal: dadosDoAnimal(await buscarComHistorico(animal.id), {
+      abreExames: true,
+    }),
   });
 }
 

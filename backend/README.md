@@ -64,6 +64,11 @@ histórico clínico (validações, doações e observações), com os casos que 
 telas precisam mostrar: validação vencida (Zeus), nunca validado (Luna),
 validado (Bela) e com pendências (Nina).
 
+Os exames de exemplo também são enviados de verdade, em imagem: Zeus tem o
+hemograma em duas versões e a carteira de vacinação; Luna, as sorologias;
+Bela, os três; Nina, o hemograma e a carteira. Os outros animais começam sem
+exames, para testar o envio do zero.
+
 Na busca, aparecem os animais que podem doar agora: Zeus fica de fora
 enquanto se recupera da doação de setembro, e Max, Luna e Nina, porque os
 tutores os pausaram.
@@ -131,10 +136,13 @@ Para outra validade, use `--dias` (de 1 a 30).
 | `GET /api/doadores/locais`                   | As cidades e os bairros onde há doadores, para os filtros (pública)                                            |
 | `GET /api/usuarios/:codigo`                  | O perfil público de uma pessoa, sem e-mail, telefone ou CPF                                                    |
 | `GET /api/usuarios/:codigo/contato`          | O e-mail e o telefone, só para o veterinário, a própria pessoa ou o tutor com liberação em vigor               |
-| `GET /api/usuarios/:codigo/animais`          | Os animais de uma pessoa, com o histórico clínico (público, como a busca)                                      |
+| `GET /api/usuarios/:codigo/animais`          | Os animais de uma pessoa, com os exames e o histórico clínico (público, como a busca)                          |
 | `POST /api/animais`                          | Cadastra um animal de quem está logado, com as fotos                                                           |
 | `PATCH /api/animais/:codigo`                 | Edita dados, disponibilidade ou fotos de um animal (só o dono)                                                 |
-| `DELETE /api/animais/:codigo`                | Exclui um animal e as fotos dele (só o dono)                                                                   |
+| `DELETE /api/animais/:codigo`                | Exclui um animal, com as fotos e os exames dele (só o dono)                                                    |
+| `POST /api/animais/:codigo/documentos/:tipo` | Envia um exame (`HEMOGRAMA`, `SOROLOGIA` ou `VACINACAO`); cada envio é uma versão nova (só o dono)             |
+| `GET /api/documentos/versoes/:id`            | O arquivo de uma versão de exame (só o dono do animal e veterinários)                                          |
+| `DELETE /api/documentos/versoes/:id`         | Apaga uma versão de exame (só o dono); se a validação em vigor a conferiu, o critério dela perde o efeito      |
 | `POST /api/animais/:codigo/validacoes`       | Valida os critérios de doação, com o tipo sanguíneo (só veterinário)                                           |
 | `POST /api/animais/:codigo/doacoes`          | Registra uma doação realizada (só veterinário)                                                                 |
 | `POST /api/animais/:codigo/observacoes`      | Registra uma observação sobre a coleta (só veterinário)                                                        |
@@ -155,6 +163,14 @@ Com fotos, o cadastro e a edição de animal vão como formulário com arquivos
 (multipart): os dados em JSON no campo `dados` e as fotos no campo `fotos`.
 Na edição, `dados.fotos` diz a ordem final: o id de cada foto que fica e
 `"nova"` no lugar de cada foto enviada. Sem fotos, os pedidos são JSON.
+
+O exame também vai como formulário com arquivo, no campo `arquivo`: uma
+imagem (JPG, PNG ou WebP) ou um PDF, com até 10 MB. Nos animais, cada um dos
+três documentos vem com as versões enviadas, da primeira à última; o
+`arquivoUrl` de cada versão só vem para quem pode abrir o arquivo (para os
+outros, é `null`). O `criterioAfetado` de cada versão diz que critério da
+validação em vigor perde o efeito se ela for apagada (`SOROLOGIAS`,
+`VACINACAO` ou `null`), para o site avisar antes.
 
 A busca recebe os filtros no endereço: `especie` (`CAO` ou `GATO`,
 obrigatória), `tipos` (repetido, um por tipo), `cidade`, `bairro`
@@ -208,7 +224,7 @@ backend/
 │   ├── modelos/            contas, convites, animais, a busca de doadores e o
 │   │                       acesso aos contatos (Model)
 │   ├── middlewares/        filtros antes do controlador: login, limites, envio
-│   │                       de fotos
+│   │                       de fotos e exames
 │   ├── validacao.js        as regras dos dados que chegam (Zod)
 │   ├── erros.js            as respostas de erro, todas no mesmo formato
 │   ├── token.js            o crachá de sessão (JWT) e o cookie dele
@@ -216,12 +232,15 @@ backend/
 │   ├── cifra.js            cifragem e índices de CPF, e-mail e telefone
 │   ├── codigos.js          sorteio dos códigos públicos e de convite
 │   ├── datas.js            datas sem hora (nascimento) entre a API e o banco
-│   ├── imagens.js          o tratamento das fotos (conferir, reduzir, sem GPS)
-│   ├── armazenamento.js    onde as fotos ficam guardadas (hoje, a pasta arquivos/)
+│   ├── imagens.js          o tratamento das imagens (conferir, reduzir, sem GPS)
+│   ├── armazenamento.js    onde as fotos e os exames ficam guardados (hoje, as
+│   │                       pastas arquivos/ e exames/)
 │   ├── registro.js         o registro de eventos de segurança
 │   ├── config.js           a configuração, lida do .env
 │   └── banco.js            o cliente do banco, único para todo o back-end
 ├── arquivos/               as fotos enviadas, no computador (não vai para o git)
+├── exames/                 os exames enviados, no computador: pasta que nenhum
+│                           endereço serve direto (não vai para o git)
 ├── testes/                 testes automatizados (Vitest)
 └── generated/              cliente gerado pelo Prisma (não vai para o git)
 ```
@@ -261,7 +280,8 @@ O que a API já faz:
   do exame é obrigatório e precisa ser da espécie; a coleta não pode ter data
   futura nem anterior ao nascimento. Quando o tutor muda o peso ou o
   nascimento, o critério de peso e idade da validação em vigor perde o efeito,
-  sem mexer no que foi assinado.
+  sem mexer no que foi assinado; quando apaga uma sorologia ou uma carteira de
+  vacinação que a validação conferiu, o mesmo vale para o critério dela.
 - **Busca e perfis públicos, sem contato:** a busca e o perfil de outra
   pessoa abrem sem conta (NF16.4), mas só com o que a tela mostra: nada de
   e-mail, telefone, CPF ou ids internos. O contato tem endereço próprio, com
@@ -275,13 +295,27 @@ O que a API já faz:
   GPS que o celular guarda (`src/imagens.js`). O nome do arquivo é sorteado,
   nunca vem de quem enviou, e a pasta só entrega as fotos, sem listar nada.
   Excluir o animal ou encerrar a conta apaga os arquivos junto.
+- **Exames, só para o dono e para veterinários:** um laudo costuma trazer,
+  no cabeçalho do laboratório, o nome, o telefone e o endereço do tutor. Por
+  isso os arquivos ficam numa pasta que nenhum endereço serve direto
+  (`exames/`) e saem por uma rota com login, que confere a cada pedido se
+  quem pede é o dono do animal ou veterinário; a resposta não fica guardada
+  no navegador (`no-store`), e a política de segurança não deixa o arquivo
+  rodar nada. Todos veem que exames existem e quando foram enviados, mas o
+  endereço do arquivo só vai para quem pode abri-lo. Só o dono envia, e cada
+  envio vira uma versão nova, sem apagar as anteriores. Só o dono apaga uma
+  versão; se ela já estava no site quando a validação em vigor foi assinada,
+  o critério que ela comprova perde o efeito, na mesma transação. A imagem
+  passa pelo mesmo tratamento das fotos (sem GPS); o PDF é conferido pela
+  assinatura do formato, e não pelo nome do arquivo.
 - **Login:** e-mail errado e senha errada recebem a mesma resposta, no mesmo
   tempo, para ninguém descobrir quem tem conta.
 - **Limite de tentativas:** 20 logins errados a cada 15 minutos, 30 cadastros
   por hora, 60 conferências de e-mail e CPF a cada 15 minutos, 60 buscas e 60
   perfis abertos por minuto e 300 pedidos por minuto, por endereço de rede; e, por conta, 10 senhas atuais erradas a
-  cada 15 minutos, 30 animais cadastrados e 60 envios de fotos por hora, e 60
-  registros clínicos por hora (validações, doações e observações).
+  cada 15 minutos, 30 animais cadastrados, 60 envios de fotos e 30 de exames
+  por hora, e 60 registros clínicos por hora (validações, doações e
+  observações).
 - **Validação:** todo dado que chega é conferido e normalizado
   (`src/validacao.js`). O banco é acessado só pelo Prisma, que nunca mistura o
   dado digitado com o comando (sem risco de SQL injection).
@@ -305,9 +339,10 @@ ele é esvaziado. Por segurança, os testes se recusam a rodar num banco cujo
 nome não termine em `_test`, e usam chaves próprias, nunca as do `.env`.
 
 Os testes da API (`cadastro-api`, `sessao-api`, `conta-api`, `animais-api`,
-`fotos-api`, `historico-api`, `busca-api`, `perfis-api` e `acesso-api`) chamam os endereços
-como o site chamaria, sem ligar a API numa porta. As fotos dos testes vão para uma pasta temporária,
-nunca para `arquivos/`.
+`fotos-api`, `documentos-api`, `historico-api`, `busca-api`, `perfis-api` e
+`acesso-api`) chamam os endereços como o site chamaria, sem ligar a API numa
+porta. As fotos e os exames dos testes vão para pastas temporárias, nunca
+para `arquivos/` e `exames/`.
 
 ## Como mudar o banco
 

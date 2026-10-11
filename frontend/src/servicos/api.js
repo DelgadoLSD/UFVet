@@ -33,9 +33,14 @@ export const definirContaDaAba = (codigo) => {
   contaDaAba = codigo;
 };
 
-// `corpo` vai em JSON; com arquivos (fotos), é um FormData, que o navegador
-// envia como formulário com arquivos e com o cabeçalho certo.
-export async function chamarApi(caminho, { metodo = "GET", corpo } = {}) {
+// `corpo` vai em JSON; com arquivos (fotos, exames), é um FormData, que o
+// navegador envia como formulário com arquivos e com o cabeçalho certo. Com
+// `comoArquivo`, a resposta volta como arquivo (Blob), e não como JSON: é
+// assim que o site abre um exame. Os erros chegam em JSON do mesmo jeito.
+export async function chamarApi(
+  caminho,
+  { metodo = "GET", corpo, comoArquivo = false } = {},
+) {
   const comArquivos = corpo instanceof FormData;
   let resposta;
   try {
@@ -55,6 +60,7 @@ export async function chamarApi(caminho, { metodo = "GET", corpo } = {}) {
   }
 
   if (resposta.status === 204) return null;
+  if (comoArquivo && resposta.ok) return resposta.blob();
   const dados = await resposta.json().catch(() => null);
   if (!resposta.ok) {
     throw new ErroApi(

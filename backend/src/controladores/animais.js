@@ -1,4 +1,8 @@
-import { apagarArquivos, guardarImagem } from "../armazenamento.js";
+import {
+  apagarArquivos,
+  apagarExames,
+  guardarImagem,
+} from "../armazenamento.js";
 import { banco } from "../banco.js";
 import { codigoDoEndereco } from "../codigos.js";
 import {
@@ -17,6 +21,7 @@ import {
   codigoAnimalLivre,
   dadosDoAnimal,
   invalidarPesoIdade,
+  podeAbrirExames,
 } from "../modelos/animal.js";
 import { registrar } from "../registro.js";
 import { esquemaAnimal, esquemaEdicaoAnimal } from "../validacao.js";
@@ -25,7 +30,9 @@ import { esquemaAnimal, esquemaEdicaoAnimal } from "../validacao.js";
 // (F10), mudar a disponibilidade (F11) e as fotos de cada um (NF8.3).
 //
 // Ver é público, como a busca (NF16.4): os dados do animal não identificam
-// ninguém. Mudar exige ser o dono, que é sempre quem está logado.
+// ninguém. A exceção são os arquivos dos exames, que só o dono e os
+// veterinários abrem (ver controladores/documentos.js). Mudar exige ser o
+// dono, que é sempre quem está logado.
 
 // Os dados de um pedido. Sem fotos, o corpo é JSON. Com fotos, é um
 // formulário com arquivos (multipart): os dados vêm num campo "dados", em
@@ -81,8 +88,9 @@ function nascimentoInformado({ dataNascimento, idadeAproximada }) {
 
 // O animal pelo código do endereço, com as fotos, se for de quem está
 // logado. O de outra pessoa recebe a mesma resposta de um que não existe:
-// quem tenta mexer no animal alheio não fica sabendo de nada.
-async function animalDoUsuario(req) {
+// quem tenta mexer no animal alheio não fica sabendo de nada. Os exames
+// (controladores/documentos.js) usam a mesma conferência.
+export async function animalDoUsuario(req) {
   const animal = await banco.animal.findUnique({
     where: { codigo: codigoDoEndereco(req.params.codigo) },
     include: COM_FOTOS,
@@ -94,7 +102,8 @@ async function animalDoUsuario(req) {
 }
 
 // GET /api/usuarios/:codigo/animais — os animais de uma pessoa, do primeiro
-// cadastrado ao último, para o perfil dela.
+// cadastrado ao último, para o perfil dela. Os exames vão com o endereço dos
+// arquivos só para quem pode abri-los: o próprio tutor e os veterinários.
 export async function listarAnimais(req, res) {
   const tutor = await banco.usuario.findUnique({
     where: { codigo: codigoDoEndereco(req.params.codigo) },
@@ -107,7 +116,10 @@ export async function listarAnimais(req, res) {
     orderBy: { criadoEm: "asc" },
     include: COM_HISTORICO,
   });
-  res.json({ animais: animais.map(dadosDoAnimal) });
+  const abreExames = podeAbrirExames(req.usuario, tutor.id);
+  res.json({
+    animais: animais.map((animal) => dadosDoAnimal(animal, { abreExames })),
+  });
 }
 
 // POST /api/animais — cadastra um animal de quem está logado (F8), com as
@@ -149,7 +161,9 @@ export async function cadastrarAnimal(req, res) {
   // histórico dentro dela mandaria várias consultas ao mesmo tempo pela mesma
   // conexão. Por isso o animal completo é buscado depois, como na edição.
   const cadastrado = await buscarComHistorico(animal.id);
-  res.status(201).json({ animal: dadosDoAnimal(cadastrado) });
+  res
+    .status(201)
+    .json({ animal: dadosDoAnimal(cadastrado, { abreExames: true }) });
 }
 
 // Confere a nova ordem das fotos (ver esquemaEdicaoAnimal) contra as fotos
@@ -304,17 +318,21 @@ export async function editarAnimal(req, res) {
       ? [...new Set([...Object.keys(dados), "fotos"])]
       : Object.keys(dados),
   });
-  res.json({ animal: dadosDoAnimal(atualizado) });
+  res.json({ animal: dadosDoAnimal(atualizado, { abreExames: true }) });
 }
 
 // DELETE /api/animais/:codigo — exclui o animal (F10). O banco apaga junto
 // fotos, exames, validações, observações e doações dele (onDelete no
-// schema.prisma); depois, saem os arquivos das fotos. Quando os exames forem
-// enviados de verdade, os arquivos deles também precisam sair aqui.
+// schema.prisma); depois, saem os arquivos das fotos e dos exames.
 export async function excluirAnimal(req, res) {
   const animal = await animalDoUsuario(req);
+  const exames = await banco.documentoVersao.findMany({
+    where: { documento: { animalId: animal.id } },
+    select: { arquivoUrl: true },
+  });
   await banco.animal.delete({ where: { id: animal.id } });
   await apagarArquivos(animal.fotos.map((foto) => foto.url));
+  await apagarExames(exames.map((exame) => exame.arquivoUrl));
   registrar("animal_excluido", {
     usuarioId: req.usuario.id,
     animal: animal.codigo,

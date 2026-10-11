@@ -115,23 +115,52 @@ export const TIPOS_DOCUMENTO = {
 export const validaAte = (validacao) =>
   validacao.validaAte ?? somarAnos(validacao.realizadaEm, 1);
 
-// O tutor mudou o peso ou a data de nascimento depois da validação (F21): o
-// critério de peso e idade foi conferido sobre o valor antigo. Devolve o
-// dado que mudou ("peso" ou "nascimento"), ou null.
-export function pesoIdadeAlterados(validacao) {
-  const motivo = validacao?.invalidacao?.motivo;
-  if (motivo === "EDICAO_PESO") return "peso";
-  if (motivo === "EDICAO_NASCIMENTO") return "nascimento";
-  return null;
-}
+// Um critério da validação perde o efeito quando o tutor mexe, depois da
+// assinatura, no que o veterinário conferiu (F21): muda o peso ou a data de
+// nascimento (o critério de peso e idade), ou apaga um exame que a validação
+// conferiu (a sorologia, a carteira de vacinação). O motivo vem do banco; o
+// aviso diz à pessoa o que aconteceu. NOVA_VALIDACAO não entra: a validação
+// substituída não perde critério nenhum, só deixa de ser a mais recente.
+const SEM_EFEITO = {
+  EDICAO_PESO: {
+    criterio: "PESO_IDADE",
+    aviso: (nome) =>
+      `O peso de ${nome} mudou depois desta validação: peso e idade precisam ser conferidos de novo.`,
+  },
+  EDICAO_NASCIMENTO: {
+    criterio: "PESO_IDADE",
+    aviso: (nome) =>
+      `A data de nascimento de ${nome} mudou depois desta validação: peso e idade precisam ser conferidos de novo.`,
+  },
+  EXCLUSAO_SOROLOGIA: {
+    criterio: "SOROLOGIAS",
+    aviso: () =>
+      "Uma sorologia que esta validação conferiu foi apagada: as sorologias precisam ser conferidas de novo.",
+  },
+  EXCLUSAO_VACINACAO: {
+    criterio: "VACINACAO",
+    aviso: () =>
+      "Uma carteira de vacinação que esta validação conferiu foi apagada: a vacinação precisa ser conferida de novo.",
+  },
+};
 
-// Os critérios que valem hoje: os que o veterinário assinou, menos o de peso
-// e idade quando ele foi conferido sobre outro valor (F21). O registro
-// assinado não muda; só o efeito dele.
-export const criteriosEmVigor = (validacao) =>
-  pesoIdadeAlterados(validacao)
-    ? { ...validacao.criterios, PESO_IDADE: false }
+// O critério que perdeu o efeito ("PESO_IDADE", "SOROLOGIAS" ou
+// "VACINACAO"), ou null.
+export const criterioSemEfeito = (validacao) =>
+  SEM_EFEITO[validacao?.invalidacao?.motivo]?.criterio ?? null;
+
+// O aviso sobre o critério que perdeu o efeito, ou null.
+export const avisoSemEfeito = (validacao, nomeAnimal) =>
+  SEM_EFEITO[validacao?.invalidacao?.motivo]?.aviso(nomeAnimal) ?? null;
+
+// Os critérios que valem hoje: os que o veterinário assinou, menos o que
+// perdeu o efeito (F21). O registro assinado não muda; só o efeito dele.
+export function criteriosEmVigor(validacao) {
+  const criterio = criterioSemEfeito(validacao);
+  return criterio
+    ? { ...validacao.criterios, [criterio]: false }
     : validacao.criterios;
+}
 
 // "pendente" (nunca validado), "vencida", "validado" ou "pendencias".
 export function statusValidacao(validacao) {

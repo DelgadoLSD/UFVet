@@ -416,6 +416,10 @@ export const esquemaEdicaoAnimal = z
     },
   );
 
+// Os três documentos de cada animal (NF14.1), com as mesmas chaves do banco
+// e na ordem em que o perfil os mostra.
+export const TIPOS_DOCUMENTO = ["HEMOGRAMA", "SOROLOGIA", "VACINACAO"];
+
 // ─── O que o veterinário registra no animal ───────────────────────────────────
 
 // Os cinco critérios da validação (F19), com as mesmas chaves do banco.

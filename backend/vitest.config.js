@@ -23,6 +23,7 @@ export default defineConfig({
       // As fotos dos testes vão para uma pasta temporária, nunca para a
       // pasta de fotos do desenvolvimento.
       PASTA_ARQUIVOS: path.join(os.tmpdir(), "ufvet-testes-arquivos"),
+      PASTA_EXAMES: path.join(os.tmpdir(), "ufvet-testes-exames"),
     },
     // Cria o banco de testes, se faltar, e aplica as migrações.
     globalSetup: ["./testes/preparar-banco.js"],

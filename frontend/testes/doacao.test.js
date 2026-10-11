@@ -3,7 +3,8 @@ import {
   REFERENCIA_DOADOR,
   criteriosEmVigor,
   dataUltimaDoacao,
-  pesoIdadeAlterados,
+  avisoSemEfeito,
+  criterioSemEfeito,
   nomeRaca,
   situacaoRecuperacao,
   statusValidacao,
@@ -82,8 +83,14 @@ describe("situação da validação", () => {
       invalidacao: { em: "2026-09-01T12:00:00Z", motivo: "EDICAO_NASCIMENTO" },
     };
 
-    expect(pesoIdadeAlterados(peso)).toBe("peso");
-    expect(pesoIdadeAlterados(nascimento)).toBe("nascimento");
+    expect(criterioSemEfeito(peso)).toBe("PESO_IDADE");
+    expect(criterioSemEfeito(nascimento)).toBe("PESO_IDADE");
+    expect(avisoSemEfeito(peso, "Zeus")).toBe(
+      "O peso de Zeus mudou depois desta validação: peso e idade precisam ser conferidos de novo.",
+    );
+    expect(avisoSemEfeito(nascimento, "Zeus")).toBe(
+      "A data de nascimento de Zeus mudou depois desta validação: peso e idade precisam ser conferidos de novo.",
+    );
     expect(statusValidacao(peso)).toBe("pendencias");
     expect(criteriosEmVigor(peso)).toEqual({
       ...todosCriterios(true),
@@ -99,8 +106,40 @@ describe("situação da validação", () => {
       invalidacao: { em: "2026-09-01T12:00:00Z", motivo: "NOVA_VALIDACAO" },
     };
 
-    expect(pesoIdadeAlterados(substituida)).toBeNull();
+    expect(criterioSemEfeito(substituida)).toBeNull();
+    expect(avisoSemEfeito(substituida, "Zeus")).toBeNull();
     expect(criteriosEmVigor(substituida)).toEqual(todosCriterios(true));
+  });
+
+  test("exame conferido e apagado pelo tutor: o critério que ele comprova perde o efeito (F21)", () => {
+    const assinada = validacao("2026-08-20");
+    const sorologia = {
+      ...assinada,
+      invalidacao: { em: "2026-09-01T12:00:00Z", motivo: "EXCLUSAO_SOROLOGIA" },
+    };
+    const vacinacao = {
+      ...assinada,
+      invalidacao: { em: "2026-09-01T12:00:00Z", motivo: "EXCLUSAO_VACINACAO" },
+    };
+
+    expect(criteriosEmVigor(sorologia)).toEqual({
+      ...todosCriterios(true),
+      SOROLOGIAS: false,
+    });
+    expect(criteriosEmVigor(vacinacao)).toEqual({
+      ...todosCriterios(true),
+      VACINACAO: false,
+    });
+    // Sem o critério, o selo deixa de ser "validado".
+    expect(statusValidacao(sorologia)).toBe("pendencias");
+    expect(avisoSemEfeito(sorologia, "Zeus")).toBe(
+      "Uma sorologia que esta validação conferiu foi apagada: as sorologias precisam ser conferidas de novo.",
+    );
+    expect(avisoSemEfeito(vacinacao, "Zeus")).toBe(
+      "Uma carteira de vacinação que esta validação conferiu foi apagada: a vacinação precisa ser conferida de novo.",
+    );
+    // O registro assinado não muda.
+    expect(sorologia.criterios.SOROLOGIAS).toBe(true);
   });
 });
 

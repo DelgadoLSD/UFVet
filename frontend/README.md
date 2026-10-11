@@ -1,12 +1,10 @@
 # UFVet — front-end
 
-O site do UFVet, em React. O login, o cadastro, a página da conta (com a
-foto de perfil), os perfis (a pessoa, os animais, as fotos e o histórico
-clínico: validação, doações e observações) e a busca de doadores já falam
-com a API (pasta `backend`). O resto (os exames e os pedidos e liberações de
-contato) ainda usa dados de exemplo no lugar da API: dá para navegar por
-tudo, mas o que muda nessas partes não é salvo, e recarregar a página volta
-ao começo.
+O site do UFVet, em React. Todas as telas falam com a API (pasta
+`backend`): o login, o cadastro, a página da conta (com a foto de perfil), os
+perfis (a pessoa, os animais, as fotos, os exames e o histórico clínico:
+validação, doações e observações), a busca de doadores e o acesso aos
+contatos. O que muda fica salvo no banco.
 
 ## Como rodar
 
@@ -46,10 +44,9 @@ Com as contas de exemplo do back-end (`npm run db:exemplos`):
 | Pedro (tutor)         | `pedro@example.com`        | `ufvet-exemplo` |
 | Camila Nunes (tutora) | `camila.nunes@example.com` | `ufvet-exemplo` |
 
-Elas têm os mesmos códigos públicos das pessoas dos dados de exemplo, então o
-site mostra os pedidos e as liberações de exemplo de cada uma. Os retratos,
-os animais, as fotos, o histórico clínico e os doadores da busca vêm do
-banco (o mesmo comando os cria); os exames ainda saem dos dados de exemplo.
+Os retratos, os animais, as fotos, os exames, o histórico clínico, os pedidos
+e as liberações de contato e os doadores da busca vêm do banco (o mesmo
+comando os cria).
 Entrando com o Victor e com a Beatriz, dá para ver o mesmo site pelos dois
 lados: no perfil do Lucas, por exemplo, o veterinário vê o contato, e a
 tutora só pode pedir a liberação.
@@ -77,10 +74,9 @@ src/
 │   └── conta/              partes usadas só na conta
 ├── components/         peças de interface usadas em mais de uma página
 ├── servicos/           de onde as telas tiram os dados (a API)
-├── dados/              listas fixas e dados de exemplo
-│   └── exemplos/           os exames de exemplo dos animais
+├── dados/              listas fixas (municípios e bairros)
 ├── regras/             regras do negócio (doação, acesso aos contatos, conta,
-│                       fotos)
+│                       fotos, exames)
 ├── util/               funções pequenas de datas, textos e localidades
 ├── hooks/              hooks do React reaproveitados
 └── assets/             imagens
@@ -94,13 +90,11 @@ usam, vai para `components/`.
 
 ## Como os dados chegam às telas
 
-As telas não leem os dados de exemplo diretamente: elas sempre passam por
-`servicos/`.
+As telas não chamam a API diretamente: elas sempre passam por `servicos/`.
 
 ```
-tela  →  servicos/  →  API               (sessão, conta, perfis, animais, histórico, busca
-                                          e acesso aos contatos)
-tela  →  servicos/  →  dados/exemplos/   (os exames, por enquanto)
+tela  →  servicos/  →  API   (sessão, conta, perfis, animais, exames, histórico,
+                              busca e acesso aos contatos)
 ```
 
 | Serviço                      | O que oferece                                                                                                               |
@@ -108,7 +102,7 @@ tela  →  servicos/  →  dados/exemplos/   (os exames, por enquanto)
 | `servicos/api.js`            | A conversa com a API, usada pelos outros serviços                                                                           |
 | `servicos/sessao.js`         | Quem está logado (`useSessao`); entrar, sair e a conta                                                                      |
 | `servicos/pessoas.js`        | O perfil de outra pessoa e o contato dela, os veterinários de cada hospital e a conferência do tutor antes de liberar (API) |
-| `servicos/animais.js`        | Animais dos perfis, com o histórico clínico, e o que o veterinário registra (API)                                           |
+| `servicos/animais.js`        | Animais dos perfis, com os exames e o histórico clínico; enviar, abrir e apagar exames; o que o veterinário registra (API) |
 | `servicos/doadores.js`       | A busca de doadores e os lugares dos filtros (API)                                                                          |
 | `servicos/acessoContatos.js` | Quem pode ver os contatos; os pedidos e as liberações de acesso (API)                                                       |
 
@@ -167,16 +161,18 @@ chegar à API: as máscaras de CPF e telefone, a conferência dos dígitos do CP
 e do telefone, as mensagens dos campos de cadastro e conta, o destino depois
 de entrar (que só aceita páginas do próprio site), a idade e o prazo de
 recuperação dos animais, a situação da validação (vencida, com pendências e o
-critério de peso e idade que perde o efeito quando o peso ou o nascimento
-muda), o formulário do animal (o que ele confere e o que manda para a API), o
+critério que perde o efeito quando o peso ou o nascimento muda, ou quando um
+exame conferido é apagado), o formulário do animal (o que ele confere e o que manda para a API), o
 registro de doação (o que falta antes de enviar), as fotos (formatos aceitos,
-tamanho e a ordem que vai para a API), a consulta da busca (o que vai para a
+tamanho e a ordem que vai para a API), os exames (PDF ou imagem, até 10 MB),
+a consulta da busca (o que vai para a
 API), o perfil de outra pessoa (que chega sem contato), qual animal o perfil
 abre no carrossel (o do endereço, vindo da busca, ou o primeiro), quem vê o
 contato dos tutores e por quê (com a liberação que vence com a página
 aberta) e a conferência do tutor antes de liberar. Também confere como
 os erros da API chegam aos formulários: o de um campo vai para embaixo dele,
-e o geral (sem conexão, limite de tentativas) para cima do botão. Os testes
+e o geral (sem conexão, limite de tentativas) para cima do botão; e que o
+arquivo de um exame chega como arquivo, com o erro da API quando não abre. Os testes
 não abrem o navegador nem precisam da API ligada.
 
 Essas regras são cópias das que a API confere (`backend/src/validacao.js`), e
@@ -193,7 +189,5 @@ banco não guarda gênero de tutores, então eles aparecem como "Tutor(a)".
 
 ## O que falta para a integração com a API
 
-- Os exames dos animais ainda ficam só no navegador, até recarregar a
-  página.
 - Publicado o site, a hospedagem precisa repassar `/api` para a API, como o
   Vite faz no computador.

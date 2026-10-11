@@ -69,10 +69,15 @@ enum CriterioDoacao {
   @@map("criterio_doacao")
 }
 
+/// Por que uma validação perdeu o efeito: o tutor mudou um dado que ela
+/// conferiu (o peso, o nascimento), apagou um exame que ela conferiu (a
+/// sorologia, a carteira de vacinação), ou um veterinário validou de novo.
 enum MotivoInvalidacao {
   EDICAO_PESO
   EDICAO_NASCIMENTO
   NOVA_VALIDACAO
+  EXCLUSAO_SOROLOGIA
+  EXCLUSAO_VACINACAO
 
   @@map("motivo_invalidacao")
 }

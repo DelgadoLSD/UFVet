@@ -6,8 +6,8 @@ import PainelSecao from "./PainelSecao";
 import { ESTILO_CRITERIO } from "./estiloCriterio";
 import {
   CRITERIOS_DOACAO,
+  avisoSemEfeito,
   criteriosEmVigor,
-  pesoIdadeAlterados,
   statusValidacao,
   validaAte,
 } from "../../regras/doacao";
@@ -74,8 +74,8 @@ const ACAO_VALIDACAO = {
 // caixa verde-clara com ✓ quando atendido e caixa vermelha cheia com ✕
 // quando não (ver estiloCriterio.js).
 function ItemCriterio({ criterio, validacao }) {
-  // O que vale hoje: o critério de peso e idade conferido sobre um valor
-  // que o tutor mudou depois não conta (F21).
+  // O que vale hoje: o critério que perdeu o efeito depois da assinatura (o
+  // peso mudou, um exame conferido foi apagado) não conta (F21).
   const atendido = validacao && criteriosEmVigor(validacao)[criterio.chave];
   const estilo =
     ESTILO_CRITERIO[
@@ -167,15 +167,13 @@ function PainelValidacao({
         {estilo.explicacao(nomeAnimal)}
       </p>
 
-      {/* F21: o peso ou o nascimento mudaram depois da validação. O registro
-          assinado continua igual; só o critério de peso e idade perde o
-          efeito, até um veterinário conferir de novo. */}
-      {status !== "vencida" && pesoIdadeAlterados(validacao) && (
+      {/* F21: o tutor mudou um dado que a validação conferiu, ou apagou um
+          exame que ela conferiu. O registro assinado continua igual; só
+          aquele critério perde o efeito, até um veterinário conferir de
+          novo. */}
+      {status !== "vencida" && avisoSemEfeito(validacao, nomeAnimal) && (
         <p className="text-xs font-semibold text-[#9e0a24] leading-relaxed">
-          {pesoIdadeAlterados(validacao) === "peso"
-            ? `O peso de ${nomeAnimal} mudou`
-            : `A data de nascimento de ${nomeAnimal} mudou`}{" "}
-          depois desta validação: peso e idade precisam ser conferidos de novo.
+          {avisoSemEfeito(validacao, nomeAnimal)}
         </p>
       )}
 

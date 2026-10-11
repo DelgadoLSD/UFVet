@@ -151,5 +151,7 @@ vite.config.ts.timestamp-*
 # Não se versiona código que se regenera com um comando.
 backend/generated/
 
-# Fotos enviadas enquanto a API roda no computador (backend/src/armazenamento.js).
+# Fotos e exames enviados enquanto a API roda no computador
+# (backend/src/armazenamento.js).
 backend/arquivos/
+backend/exames/

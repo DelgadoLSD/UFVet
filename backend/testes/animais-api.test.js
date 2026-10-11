@@ -95,6 +95,12 @@ describe("cadastrar um animal (F8)", () => {
       validacoes: [],
       doacoes: [],
       observacoes: [],
+      // Nem exames: os três documentos vêm sempre, ainda sem versões.
+      documentos: [
+        { tipo: "HEMOGRAMA", versoes: [] },
+        { tipo: "SOROLOGIA", versoes: [] },
+        { tipo: "VACINACAO", versoes: [] },
+      ],
       criadoEm: expect.any(String),
     });
     const dono = await banco.usuario.findFirstOrThrow();
