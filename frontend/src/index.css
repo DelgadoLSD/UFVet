@@ -11,6 +11,18 @@ html {
   touch-action: manipulation;
 }
 
+/* No celular, deslizar o dedo para o lado troca de seção
+   (components/DeslizeEntreSecoes.jsx). Sem isto, o Chrome e o Edge também
+   voltavam uma página no histórico com o mesmo gesto, por cima do formulário
+   que o deslize protege. O "voltar" pela borda do iPhone é do sistema e
+   continua valendo. No computador, nada muda (o deslize de dois dedos no
+   trackpad continua voltando). */
+@media (max-width: 767px) {
+  html {
+    overscroll-behavior-x: none;
+  }
+}
+
 /* Fonte Sora, carregada do Google Fonts no index.html. */
 body {
   font-family: "Sora", sans-serif;

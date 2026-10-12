@@ -71,7 +71,10 @@ function CarrosselAfirmacoes({ verdade = false, itens }) {
         </span>
       </div>
 
+      {/* O deslize do dedo aqui troca a afirmação, e não a seção do site
+          (data-sem-deslize, ver components/DeslizeEntreSecoes.jsx). */}
       <div
+        data-sem-deslize
         className="mt-8 flex-1 overflow-hidden"
         onTouchStart={(e) => {
           inicioToque.current = e.touches[0].clientX;

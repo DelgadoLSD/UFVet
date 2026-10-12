@@ -2,6 +2,8 @@ import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Avatar from "./Avatar";
 import { sair, useEstadoSessao } from "../servicos/sessao";
+import { metadeDoCaminho, secaoDoCaminho } from "../regras/secoes";
+import { pilulaDoTopo } from "./pilulaDoTopo";
 import { nomeCurto, primeiroNome, rotuloPapel } from "../util/texto";
 
 // Barra do topo, presente em todas as páginas: um seletor das três seções do
@@ -18,24 +20,6 @@ import { nomeCurto, primeiroNome, rotuloPapel } from "../util/texto";
 // para nada ficar apertado. Para o visitante, a conta se divide em duas
 // partes, Entrar e Cadastre-se, com uma pílula vermelha menor que desliza
 // entre elas do mesmo jeito. Nada fica escondido num menu.
-
-// A seção de cada página: 0, o início; 1, a busca; 2, a conta. Uma página
-// fora delas (um endereço que não existe) fica sem destaque.
-function secaoDoCaminho(caminho) {
-  if (caminho === "/") return 0;
-  if (caminho === "/buscar" || caminho.startsWith("/tutor/")) return 1;
-  if (["/meu-perfil", "/conta", "/login", "/cadastrar"].includes(caminho)) {
-    return 2;
-  }
-  return null;
-}
-
-// Onde a pílula estava na página anterior. Cada página desenha o próprio
-// topo: guardada aqui, fora dele, a posição deixa o topo da página nova
-// começar com a pílula no lugar antigo e deslizar até o novo.
-let posicaoAnterior = null;
-// O mesmo para a pílula menor do visitante: 0, Entrar; 1, Cadastre-se.
-let metadeAnterior = null;
 
 // "page" no link da página aberta; "true" no da seção, quando a página é
 // outra dela (um perfil aberto pela busca, a página da conta).
@@ -226,12 +210,12 @@ const PARTE =
   "relative z-[1] min-w-0 flex-auto lg:flex-1 h-full flex items-center justify-center rounded-full px-1 text-[13px] md:text-[15px] font-semibold whitespace-nowrap transition-colors duration-deslize ease-deslize motion-reduce:transition-none after:absolute after:inset-x-0 after:-inset-y-1";
 
 function SecaoDoVisitante({ naSecao, caminho }) {
-  const metade = caminho === "/login" ? 0 : caminho === "/cadastrar" ? 1 : null;
+  const metade = metadeDoCaminho(caminho);
   // Vindo de Entrar para Cadastre-se (ou o contrário), a pílula menor começa
   // na anterior e desliza; vindo de outra seção, já nasce na desta página.
-  const [posicao, setPosicao] = useState(() => metadeAnterior ?? metade);
+  const [posicao, setPosicao] = useState(() => pilulaDoTopo.metade ?? metade);
   useEffect(() => {
-    metadeAnterior = metade;
+    pilulaDoTopo.metade = metade;
     if (metade === null) return;
     const quadro = requestAnimationFrame(() => setPosicao(metade));
     return () => cancelAnimationFrame(quadro);
@@ -265,6 +249,7 @@ function SecaoDoVisitante({ naSecao, caminho }) {
             quando se vem de outra seção. */}
         <span
           ref={pilulaRef}
+          data-pilula-menor
           aria-hidden="true"
           className={`absolute inset-y-0 left-0 rounded-full bg-[#9e0a24] shadow-[0_6px_16px_-8px_rgba(158,10,36,0.9),inset_0_1px_0_rgba(255,255,255,0.14)] transition-[transform,width,opacity] duration-deslize ease-deslize motion-reduce:transition-none ${
             naSecao && metade !== null ? "opacity-100" : "opacity-0"
@@ -299,10 +284,10 @@ function Header() {
   // A pílula começa onde estava na página anterior e, um quadro depois,
   // desliza até a seção desta página (de uma seção para ela mesma, não se
   // move). Quem pediu menos movimento ao sistema vê a troca na hora.
-  const [posicao, setPosicao] = useState(() => posicaoAnterior ?? secao);
+  const [posicao, setPosicao] = useState(() => pilulaDoTopo.secao ?? secao);
   useEffect(() => {
     if (secao === null) return;
-    posicaoAnterior = secao;
+    pilulaDoTopo.secao = secao;
     const quadro = requestAnimationFrame(() => setPosicao(secao));
     return () => cancelAnimationFrame(quadro);
   }, [secao]);
@@ -382,6 +367,7 @@ function Header() {
               de Cadastre-se. */}
           <span
             ref={pilulaRef}
+            data-pilula
             aria-hidden="true"
             className={`absolute inset-y-1 left-0 rounded-full transition-[transform,width,opacity,background-color,box-shadow] duration-deslize ease-deslize motion-reduce:transition-none ${
               destaque === null ? "opacity-0" : "opacity-100"

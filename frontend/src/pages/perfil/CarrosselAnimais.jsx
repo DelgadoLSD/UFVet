@@ -412,6 +412,7 @@ function CarrosselAnimais({
               as setas e os pontinhos mostram que há mais. */}
           <div
             ref={faixaRef}
+            data-sem-deslize
             style={{
               ...mascara(escondidos),
               paddingInline: "calc(50% - var(--largura) / 2)",

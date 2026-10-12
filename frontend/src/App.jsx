@@ -7,6 +7,7 @@ import {
   useNavigationType,
 } from "react-router-dom";
 import Confirmacao from "./components/Confirmacao";
+import DeslizeEntreSecoes from "./components/DeslizeEntreSecoes";
 import { recarregarAcesso } from "./servicos/acessoContatos";
 import { useSessao } from "./servicos/sessao";
 import { ehVeterinario } from "./util/texto";
@@ -77,6 +78,8 @@ function App() {
     <BrowserRouter>
       <PosicaoDaRolagem />
       <AcessoAntecipado />
+      {/* No celular, o dedo deslizando para o lado troca de seção. */}
+      <DeslizeEntreSecoes />
       <Routes>
         <Route path="/" element={<InicioPage />} />
         <Route path="/cadastrar" element={<CadastroPage />} />
