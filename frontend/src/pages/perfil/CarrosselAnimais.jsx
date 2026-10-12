@@ -15,8 +15,10 @@ import { nomeRaca, partesDoTipo, statusValidacao } from "../../regras/doacao";
 //
 // Para escolher outro: as setas nas laterais, um clique num vizinho, as
 // setas do teclado (como nas abas) ou, no celular, arrastar a faixa com o
-// dedo: o cartão que para no centro vira o escolhido. Os pontinhos embaixo
-// mostram quantos são e qual está no centro.
+// dedo. Arrastando, o vermelho acompanha o dedo: o cartão que chega ao
+// centro já fica vermelho, sem esperar a faixa parar; ele vira o escolhido
+// (o cartão completo embaixo, o endereço) assim que a faixa assenta. Os
+// pontinhos embaixo mostram quantos são e qual está no centro.
 //
 // - `itens`: a fila, com os códigos (ver itensDoCarrossel): no próprio
 //   perfil, o cartão de cadastrar vem primeiro (NOVO_ANIMAL);
@@ -32,7 +34,7 @@ function CartaoAnimalDaFila({ animal, noCentro }) {
   const foto = animal.fotos[0]?.url;
   const tipo = animal.tipoSanguineo && partesDoTipo(animal.tipoSanguineo);
   const validado = statusValidacao(animal.validacoes[0] ?? null) === "validado";
-  const cor = "transition-colors duration-deslize ease-deslize";
+  const cor = "transition-colors duration-150 ease-out";
 
   return (
     <>
@@ -132,7 +134,7 @@ function CartaoAnimalDaFila({ animal, noCentro }) {
 // vermelho e o convite. No centro, fica vermelho como o animal escolhido,
 // com o "+" em branco.
 function CartaoCadastrarDaFila({ noCentro }) {
-  const cor = "transition-colors duration-deslize ease-deslize";
+  const cor = "transition-colors duration-150 ease-out";
   return (
     <span className="flex-1 flex flex-col items-center justify-center gap-3 px-5 text-center">
       <span
@@ -250,6 +252,16 @@ function CarrosselAnimais({
     depois: false,
   });
 
+  // O cartão pintado de vermelho. Arrastando a faixa, ele acompanha o
+  // dedo (ver a escuta da rolagem, abaixo); quando o escolhido muda por
+  // outro caminho, ele vai junto.
+  const [destacado, setDestacado] = useState(centro);
+  const [centroAnterior, setCentroAnterior] = useState(centro);
+  if (centroAnterior !== centro) {
+    setCentroAnterior(centro);
+    setDestacado(centro);
+  }
+
   const porCodigo = new Map(animais.map((animal) => [animal.codigo, animal]));
   const posicao = itens.indexOf(centro);
   const nomeDe = (codigo) =>
@@ -315,27 +327,43 @@ function CarrosselAnimais({
   useEffect(() => () => cancelAnimationFrame(quadro.current), []);
 
   // Escuta a faixa: mede o que está escondido nas bordas e, quando a pessoa
-  // arrasta a faixa (o dedo, o trackpad), o cartão que para no centro vira
-  // o escolhido, um instante depois de ela parar. Ao mudar de tamanho (a
+  // arrasta a faixa (o dedo, o trackpad), pinta de vermelho, a cada quadro,
+  // o cartão que está no centro. Quando a faixa assenta, ele vira o
+  // escolhido: no fim da rolagem (o evento scrollend) ou, nos navegadores
+  // que não o têm, depois de um instante sem rolar. Ao mudar de tamanho (a
   // janela), o escolhido volta para o centro.
   useEffect(() => {
     const faixa = faixaRef.current;
     let espera;
+    let quadroDaRolagem = 0;
     const medir = () =>
       setEscondidos({
         antes: faixa.scrollLeft > 2,
         depois: faixa.scrollLeft + faixa.clientWidth < faixa.scrollWidth - 2,
       });
+    const escolherOCentro = () => {
+      clearTimeout(espera);
+      if (andandoSozinha.current) return;
+      const codigo = cartaoNoCentro(faixa)?.dataset.codigo;
+      if (codigo && codigo !== atual.current.centro) {
+        atual.current.onEscolher(codigo);
+      }
+    };
     const aoRolar = () => {
-      medir();
+      if (!quadroDaRolagem) {
+        quadroDaRolagem = requestAnimationFrame(() => {
+          quadroDaRolagem = 0;
+          medir();
+          // A faixa andando sozinha (uma seta, um pontinho) já leva o
+          // destaque no cartão de destino; os do meio do caminho não piscam.
+          if (andandoSozinha.current) return;
+          const codigo = cartaoNoCentro(faixa)?.dataset.codigo;
+          if (codigo) setDestacado(codigo);
+        });
+      }
       if (andandoSozinha.current) return;
       clearTimeout(espera);
-      espera = setTimeout(() => {
-        const codigo = cartaoNoCentro(faixa)?.dataset.codigo;
-        if (codigo && codigo !== atual.current.centro) {
-          atual.current.onEscolher(codigo);
-        }
-      }, 140);
+      espera = setTimeout(escolherOCentro, 100);
     };
     const recentralizar = () => {
       const cartao = faixa.querySelector(
@@ -348,11 +376,14 @@ function CarrosselAnimais({
     };
     medir();
     faixa.addEventListener("scroll", aoRolar, { passive: true });
+    faixa.addEventListener("scrollend", escolherOCentro);
     const observador = new ResizeObserver(recentralizar);
     observador.observe(faixa);
     return () => {
       clearTimeout(espera);
+      cancelAnimationFrame(quadroDaRolagem);
       faixa.removeEventListener("scroll", aoRolar);
+      faixa.removeEventListener("scrollend", escolherOCentro);
       observador.disconnect();
     };
   }, [itens.length]);
@@ -393,7 +424,8 @@ function CarrosselAnimais({
               className="flex gap-3 md:gap-6"
             >
               {itens.map((codigo) => {
-                const noCentro = codigo === centro;
+                const escolhido = codigo === centro;
+                const noCentro = codigo === destacado;
                 const novo = codigo === NOVO_ANIMAL;
                 return (
                   <button
@@ -402,10 +434,10 @@ function CarrosselAnimais({
                     role="tab"
                     id={idDaAba(codigo)}
                     data-codigo={codigo}
-                    aria-selected={noCentro}
+                    aria-selected={escolhido}
                     aria-controls={idDoPainel(codigo)}
                     aria-label={novo ? "Cadastrar animal" : undefined}
-                    tabIndex={noCentro ? 0 : -1}
+                    tabIndex={escolhido ? 0 : -1}
                     onClick={() => {
                       onEscolher(codigo);
                       // O cartão de cadastrar já abre o cadastro.
@@ -413,7 +445,7 @@ function CarrosselAnimais({
                     }}
                     onKeyDown={aoTeclar}
                     style={{ width: "var(--largura)" }}
-                    className={`group snap-center shrink-0 flex flex-col p-2 text-left rounded-2xl border transition-[transform,background-color,border-color,color,box-shadow] duration-deslize ease-deslize motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1c1c] focus-visible:ring-offset-2 ${
+                    className={`group snap-center shrink-0 flex flex-col p-2 text-left rounded-2xl border [transition:transform_420ms_cubic-bezier(0.32,0.72,0,1),background-color_150ms_ease-out,border-color_150ms_ease-out,color_150ms_ease-out,box-shadow_150ms_ease-out] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1c1c] focus-visible:ring-offset-2 ${
                       noCentro
                         ? "scale-[1.06] bg-[#9e0a24] border-[#9e0a24] text-white shadow-[0_22px_44px_-22px_rgba(158,10,36,0.7)]"
                         : `bg-white text-[#1a1c1c] hover:border-[#cfa9a7] ${
@@ -465,7 +497,7 @@ function CarrosselAnimais({
           cadastrar aparece como um "+". */}
       <div aria-hidden="true" className="flex items-center justify-center">
         {itens.map((codigo) => {
-          const noCentro = codigo === centro;
+          const noCentro = codigo === destacado;
           return codigo === NOVO_ANIMAL ? (
             <button
               key={codigo}

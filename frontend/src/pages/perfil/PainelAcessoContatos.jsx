@@ -113,10 +113,10 @@ function MenuRenovar({ liberacao, ocupado, onRenovar }) {
       if (!raizRef.current?.contains(e.target)) setAberto(false);
     };
     const aoTeclar = (e) => e.key === "Escape" && setAberto(false);
-    document.addEventListener("mousedown", fecharFora);
+    document.addEventListener("pointerdown", fecharFora);
     document.addEventListener("keydown", aoTeclar);
     return () => {
-      document.removeEventListener("mousedown", fecharFora);
+      document.removeEventListener("pointerdown", fecharFora);
       document.removeEventListener("keydown", aoTeclar);
     };
   }, [aberto]);

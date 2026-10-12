@@ -52,14 +52,23 @@ import { ehVeterinario, nomeCurto, nomeProfissional } from "../util/texto";
 // histórico clínico. No perfil de outra pessoa, o contato não vem junto: ele
 // é pedido à parte, por quem pode ver (ver perfil/BlocoContato.jsx).
 
+// A pessoa e os animais de cada perfil já visto, enquanto a aba está
+// aberta, por quem está vendo (o que a API manda depende de quem pede: os
+// exames só abrem para o dono e os veterinários). Voltando a um perfil, ele
+// aparece na hora, sem "carregando", e a página confere a API por trás.
+const pessoasGuardadas = new Map();
+const animaisGuardados = new Map();
+
 // Os animais de uma pessoa, e como a página atualiza a lista depois de
 // cadastrar, editar, excluir ou de um registro do veterinário. Cada resposta
 // é guardada com o código (e a tentativa) que a pediu: até chegar a de agora,
-// a lista está carregando, e nunca mostra os animais de outro perfil.
-function useAnimais(codigo) {
+// aparecem os animais guardados desse perfil (se houver) ou a lista está
+// carregando, e nunca mostra os animais de outro perfil.
+function useAnimais(codigo, quemVe) {
   // Mudar este número faz a lista ser buscada de novo ("Tentar de novo").
   const [tentativa, setTentativa] = useState(0);
   const chave = `${codigo}#${tentativa}`;
+  const chaveGuardada = `${quemVe}|${codigo}`;
   const [estado, setEstado] = useState({ chave: null, animais: [], erro: "" });
 
   useEffect(() => {
@@ -68,23 +77,40 @@ function useAnimais(codigo) {
     // nova tentativa) é ignorada.
     let valendo = true;
     listarAnimais(codigo).then(
-      (animais) => valendo && setEstado({ chave, animais, erro: "" }),
+      (animais) => {
+        if (!valendo) return;
+        animaisGuardados.set(chaveGuardada, animais);
+        setEstado({ chave, animais, erro: "" });
+      },
       (falha) =>
         valendo && setEstado({ chave, animais: [], erro: falha.message }),
     );
     return () => {
       valendo = false;
     };
-  }, [codigo, chave]);
+  }, [codigo, chave, chaveGuardada]);
 
+  const guardados = animaisGuardados.get(chaveGuardada);
+  const vista =
+    estado.chave === chave
+      ? estado
+      : guardados && tentativa === 0
+        ? { chave, animais: guardados, erro: "" }
+        : null;
+
+  // Cadastrar, editar e excluir mudam a lista na tela e a guardada.
   const mudarLista = (mudar) =>
-    setEstado((prev) => ({ ...prev, animais: mudar(prev.animais) }));
-  const pronto = estado.chave === chave;
+    setEstado((prev) => {
+      const atuais = prev.chave === chave ? prev.animais : (guardados ?? []);
+      const animais = mudar(atuais);
+      animaisGuardados.set(chaveGuardada, animais);
+      return { chave, animais, erro: "" };
+    });
 
   return {
-    animais: pronto ? estado.animais : [],
-    erro: pronto ? estado.erro : "",
-    carregando: !pronto,
+    animais: vista ? vista.animais : [],
+    erro: vista ? vista.erro : "",
+    carregando: !vista,
     tentarDeNovo: () => setTentativa((n) => n + 1),
     adicionar: (animal) => mudarLista((lista) => [...lista, animal]),
     substituir: (animal) =>
@@ -118,9 +144,10 @@ function EstadoDaLista({ erro, ehProprio, onTentarDeNovo }) {
 // A pessoa do perfil de outra pessoa, pela API, do mesmo jeito que os
 // animais: até chegar a resposta do código de agora, nada aparece. Sem
 // código (o próprio perfil), não busca nada.
-function usePessoa(codigo) {
+function usePessoa(codigo, quemVe) {
   const [tentativa, setTentativa] = useState(0);
   const chave = `${codigo}#${tentativa}`;
+  const chaveGuardada = `${quemVe}|${codigo}`;
   const [estado, setEstado] = useState({
     chave: null,
     perfil: null,
@@ -131,19 +158,30 @@ function usePessoa(codigo) {
     if (!codigo) return;
     let valendo = true;
     buscarPerfil(codigo).then(
-      (perfil) => valendo && setEstado({ chave, perfil, erro: null }),
+      (perfil) => {
+        if (!valendo) return;
+        pessoasGuardadas.set(chaveGuardada, perfil);
+        setEstado({ chave, perfil, erro: null });
+      },
       (falha) => valendo && setEstado({ chave, perfil: null, erro: falha }),
     );
     return () => {
       valendo = false;
     };
-  }, [codigo, chave]);
+  }, [codigo, chave, chaveGuardada]);
 
-  const pronto = estado.chave === chave;
+  // Até a resposta de agora chegar, a pessoa guardada (se houver).
+  const guardada = pessoasGuardadas.get(chaveGuardada);
+  const vista =
+    estado.chave === chave
+      ? estado
+      : guardada && tentativa === 0
+        ? { perfil: guardada, erro: null }
+        : null;
   return {
-    perfil: pronto ? estado.perfil : null,
-    erro: pronto ? estado.erro : null,
-    carregando: !pronto,
+    perfil: vista ? vista.perfil : null,
+    erro: vista ? vista.erro : null,
+    carregando: !vista,
     tentarDeNovo: () => setTentativa((n) => n + 1),
   };
 }
@@ -253,10 +291,15 @@ function PerfilPage() {
   // editar.
   const ehMeuCodigo = !ehProprio && codigoVisitado === usuario?.codigo;
   const ehVet = ehVeterinario(usuario);
-  const pessoa = usePessoa(ehProprio || ehMeuCodigo ? null : codigoVisitado);
+  const quemVe = usuario?.codigo ?? "visitante";
+  const pessoa = usePessoa(
+    ehProprio || ehMeuCodigo ? null : codigoVisitado,
+    quemVe,
+  );
   const perfil = ehProprio ? usuario : pessoa.perfil;
   const lista = useAnimais(
     ehProprio ? usuario.codigo : ehMeuCodigo ? null : codigoVisitado,
+    quemVe,
   );
   const animais = lista.animais;
   const listaPronta = !lista.carregando && !lista.erro;

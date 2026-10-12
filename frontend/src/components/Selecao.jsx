@@ -42,8 +42,8 @@ function Selecao({
     const fecharFora = (e) => {
       if (!raizRef.current?.contains(e.target)) setAberto(false);
     };
-    document.addEventListener("mousedown", fecharFora);
-    return () => document.removeEventListener("mousedown", fecharFora);
+    document.addEventListener("pointerdown", fecharFora);
+    return () => document.removeEventListener("pointerdown", fecharFora);
   }, [aberto]);
 
   const abrir = () => {

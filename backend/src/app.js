@@ -38,13 +38,16 @@ export function criarApp({ pastaSite = config.pastaSite } = {}) {
     }),
   );
 
-  const limites = criarLimites();
-  app.use("/api", limites.geral);
-
   // As fotos guardadas na pasta da API (ver armazenamento.js). Só arquivos
   // dessa pasta, sem listar o que há nela e sem arquivos ocultos; caminhos
   // com "../" são barrados. Uma foto nunca muda (trocar cria outro arquivo),
   // então o navegador pode guardá-la por muito tempo.
+  //
+  // As fotos vêm antes do limite geral de pedidos: uma foto é um arquivo
+  // pronto, barato de entregar, e um perfil traz várias. Contadas no limite
+  // (que é por endereço de rede), algumas pessoas no mesmo Wi-Fi, abrindo
+  // perfis, o estouravam, e fotos e páginas paravam de carregar. Um nome de
+  // arquivo que não existe passa adiante e cai no limite como o resto.
   app.use(
     "/api/arquivos",
     express.static(config.pastaArquivos, {
@@ -54,6 +57,9 @@ export function criarApp({ pastaSite = config.pastaSite } = {}) {
       maxAge: "365d",
     }),
   );
+
+  const limites = criarLimites();
+  app.use("/api", limites.geral);
 
   // Lê o corpo dos pedidos em JSON, com teto de tamanho. As fotos, que são
   // maiores, chegam por outro caminho (middlewares/envio.js).

@@ -113,6 +113,52 @@ function SemResultados({ onLimpar }) {
   );
 }
 
+// A última busca da pessoa, enquanto a aba está aberta: voltando à busca
+// (de um perfil aberto por ela, por exemplo), os filtros e a ordem continuam
+// os mesmos.
+let ultimaBusca = { filtros: FILTROS_INICIAIS, ordem: "validados" };
+
+// O que a busca já trouxe, por consulta (e as cidades, por espécie):
+// voltando a uma busca, os doadores aparecem na hora, sem "buscando", e a
+// página confere a API por trás, trocando a lista se algo mudou (um doador
+// que ficou indisponível, por exemplo). Só uma lista com páginas a mais
+// ("Carregar mais"), guardada há menos de um minuto, não é conferida: a
+// conferência traria só a primeira página, e a lista encolheria. A busca é
+// a mesma para todos (não traz contatos).
+const resultadosGuardados = new Map();
+const locaisGuardados = new Map();
+const FRESCO_MS = 60_000;
+const fresco = (guardado) =>
+  !!guardado && Date.now() - guardado.quando < FRESCO_MS;
+
+// Na primeira busca, enquanto os doadores não chegam: cartões de espera no
+// formato dos de verdade (a faixa do nome, a foto, os dados), que pulsam de
+// leve. Quando os doadores chegam, eles tomam o mesmo lugar, e a página não
+// pula. No celular, dois; no computador, duas linhas de dois.
+function CartoesEsperando() {
+  return (
+    <div role="status" className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <span className="sr-only">Buscando doadores…</span>
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          aria-hidden="true"
+          className={`rounded-2xl border border-[#eadede] bg-white overflow-hidden animate-pulse motion-reduce:animate-none ${
+            i > 1 ? "max-sm:hidden" : ""
+          }`}
+        >
+          <div className="h-[68px] bg-[#f3e4e6]" />
+          <div className="p-3 flex flex-col gap-3">
+            <div className="aspect-[5/4] rounded-xl bg-[#f7f0f0]" />
+            <div className="h-[100px] rounded-xl bg-[#f7f0f0]" />
+            <div className="h-4 w-1/2 rounded-full bg-[#f7f0f0]" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // O valor só depois de a pessoa parar de mexer nele por `ms` milissegundos.
 function useAdiado(valor, ms) {
   const [adiado, setAdiado] = useState(valor);
@@ -143,17 +189,22 @@ function useBusca(filtros, ordem) {
 
   useEffect(() => {
     let valendo = true;
-    buscarDoadores(consulta).then(
-      (resposta) =>
-        valendo &&
-        setEstado({
-          chave,
-          doadores: resposta.doadores,
-          total: resposta.total,
-          pagina: 1,
-          porPagina: resposta.porPagina,
-          erro: "",
-        }),
+    const guardado = resultadosGuardados.get(consulta);
+    const pedido =
+      tentativa === 0 && guardado?.dados.pagina > 1 && fresco(guardado)
+        ? Promise.resolve(guardado.dados)
+        : buscarDoadores(consulta).then((resposta) => {
+            const dados = {
+              doadores: resposta.doadores,
+              total: resposta.total,
+              pagina: 1,
+              porPagina: resposta.porPagina,
+            };
+            resultadosGuardados.set(consulta, { dados, quando: Date.now() });
+            return dados;
+          });
+    pedido.then(
+      (dados) => valendo && setEstado({ chave, ...dados, erro: "" }),
       (falha) =>
         valendo &&
         setEstado({
@@ -168,26 +219,47 @@ function useBusca(filtros, ordem) {
     return () => {
       valendo = false;
     };
-  }, [consulta, chave]);
+  }, [consulta, chave, tentativa]);
+
+  // Enquanto a resposta da consulta de agora não chega, o que já foi
+  // guardado dela aparece no lugar (sem "buscando").
+  const guardado = resultadosGuardados.get(consulta);
+  const vista =
+    estado.chave === chave
+      ? estado
+      : guardado && tentativa === 0
+        ? { chave, ...guardado.dados, erro: "" }
+        : estado;
 
   const carregarMais = async () => {
-    const pedida = estado.chave;
-    const pagina = estado.pagina + 1;
+    const pedida = vista.chave;
+    const pagina = vista.pagina + 1;
     setMais({ carregando: true, erro: "" });
     try {
       const resposta = await buscarDoadores(
         consultaDaBusca(filtros, ordem, pagina),
       );
-      setEstado((atual) =>
-        atual.chave === pedida
-          ? {
-              ...atual,
-              doadores: [...atual.doadores, ...resposta.doadores],
-              total: resposta.total,
-              pagina,
-            }
-          : atual,
-      );
+      setEstado((atual) => {
+        const base = atual.chave === pedida ? atual : vista;
+        if (base.chave !== pedida) return atual;
+        const juntos = {
+          ...base,
+          doadores: [...base.doadores, ...resposta.doadores],
+          total: resposta.total,
+          pagina,
+        };
+        // As páginas a mais também ficam guardadas.
+        resultadosGuardados.set(consulta, {
+          dados: {
+            doadores: juntos.doadores,
+            total: juntos.total,
+            pagina,
+            porPagina: juntos.porPagina,
+          },
+          quando: Date.now(),
+        });
+        return juntos;
+      });
       setMais({ carregando: false, erro: "" });
     } catch (falha) {
       setMais({ carregando: false, erro: falha.message });
@@ -195,10 +267,10 @@ function useBusca(filtros, ordem) {
   };
 
   return {
-    ...estado,
-    carregando: estado.chave !== chave,
-    primeiraVez: estado.chave === null,
-    mais: estado.chave === chave ? mais : { carregando: false, erro: "" },
+    ...vista,
+    carregando: vista.chave !== chave,
+    primeiraVez: vista.chave === null,
+    mais: vista.chave === chave ? mais : { carregando: false, erro: "" },
     carregarMais,
     tentarDeNovo: () => setTentativa((n) => n + 1),
   };
@@ -214,7 +286,11 @@ function useLocais(especie) {
   });
   useEffect(() => {
     let valendo = true;
-    listarLocais(especie).then(
+    const pedido = listarLocais(especie).then((cidades) => {
+      locaisGuardados.set(especie, { cidades, quando: Date.now() });
+      return cidades;
+    });
+    pedido.then(
       (cidades) => valendo && setLocais({ especie, cidades, erro: "" }),
       () =>
         valendo &&
@@ -228,7 +304,10 @@ function useLocais(especie) {
       valendo = false;
     };
   }, [especie]);
-  return locais;
+  const guardado = locaisGuardados.get(especie);
+  return locais.especie === especie || !guardado
+    ? locais
+    : { especie, cidades: guardado.cidades, erro: "" };
 }
 
 // A lista de opções, com o valor escolhido sempre presente: mesmo que ele
@@ -240,8 +319,11 @@ const comEscolhido = (lista, escolhido) =>
 function BuscaPage() {
   const acesso = useAcessoContatos();
 
-  const [filtros, setFiltros] = useState(FILTROS_INICIAIS);
-  const [ordem, setOrdem] = useState("validados");
+  const [filtros, setFiltros] = useState(() => ultimaBusca.filtros);
+  const [ordem, setOrdem] = useState(() => ultimaBusca.ordem);
+  useEffect(() => {
+    ultimaBusca = { filtros, ordem };
+  }, [filtros, ordem]);
   // Modal aberto: "validacao", "contato", "pedido" ou null.
   // Fecha sozinho se a aba passar para outra conta.
   const [modal, setModal] = useModalDaConta();
@@ -358,12 +440,7 @@ function BuscaPage() {
                 </Botao>
               </div>
             ) : resultado.primeiraVez ? (
-              <p
-                role="status"
-                className="text-sm text-[#5f5e5e] py-16 text-center"
-              >
-                Buscando doadores…
-              </p>
+              <CartoesEsperando />
             ) : total === 0 && !carregando ? (
               <SemResultados onLimpar={limparFiltros} />
             ) : (

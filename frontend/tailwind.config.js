@@ -31,6 +31,14 @@ export default {
         "entrar-pela-esquerda": {
           from: { transform: `translateX(calc(-1 * ${LADO}))` },
         },
+        // As janelas do celular sobem da borda de baixo, e o fundo escurece
+        // junto (components/Modal).
+        subir: {
+          from: { transform: "translateY(100%)" },
+        },
+        escurecer: {
+          from: { opacity: "0" },
+        },
       },
       animation: {
         aparecer: "aparecer 120ms ease-out",
@@ -38,6 +46,8 @@ export default {
         "sair-para-direita": `sair-para-direita ${DESLIZE} forwards`,
         "entrar-pela-direita": `entrar-pela-direita ${DESLIZE}`,
         "entrar-pela-esquerda": `entrar-pela-esquerda ${DESLIZE}`,
+        subir: "subir 380ms cubic-bezier(0.32, 0.72, 0, 1)",
+        escurecer: "escurecer 240ms ease-out",
       },
       transitionDuration: {
         deslize: "420ms",

@@ -89,12 +89,12 @@ export function useBalao() {
     };
     const fecharTecla = (e) => e.key === "Escape" && fechar();
 
-    document.addEventListener("mousedown", fecharFora);
+    document.addEventListener("pointerdown", fecharFora);
     document.addEventListener("keydown", fecharTecla);
     window.addEventListener("scroll", fechar, true);
     window.addEventListener("resize", fechar);
     return () => {
-      document.removeEventListener("mousedown", fecharFora);
+      document.removeEventListener("pointerdown", fecharFora);
       document.removeEventListener("keydown", fecharTecla);
       window.removeEventListener("scroll", fechar, true);
       window.removeEventListener("resize", fechar);

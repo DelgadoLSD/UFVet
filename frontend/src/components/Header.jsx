@@ -10,7 +10,10 @@ import { nomeCurto, rotuloPapel } from "../util/texto";
 // abertos por ela são dessa seção); a conta, ao próprio perfil (e a página
 // da conta, entrar e criar conta são dessa seção). Uma pílula vermelha fica
 // atrás da seção em que a pessoa está e, ao trocar de seção, desliza até a
-// nova, como quem passa de uma tela para a outra. Igual no celular e no
+// nova, como quem passa de uma tela para a outra. Cada seção é uma pílula
+// própria, com um vão pequeno entre elas. Para o visitante, a seção da conta
+// se divide em duas metades, Entrar e Criar conta, com uma pílula vermelha
+// menor que desliza entre elas do mesmo jeito. Igual no celular e no
 // computador; nada fica escondido num menu.
 
 // A seção de cada página: 0, o início; 1, a busca; 2, a conta. Uma página
@@ -28,6 +31,8 @@ function secaoDoCaminho(caminho) {
 // topo: guardada aqui, fora dele, a posição deixa o topo da página nova
 // começar com a pílula no lugar antigo e deslizar até o novo.
 let posicaoAnterior = null;
+// O mesmo para a pílula menor do visitante: 0, Entrar; 1, Criar conta.
+let metadeAnterior = null;
 
 // "page" no link da página aberta; "true" no da seção, quando a página é
 // outra dela (um perfil aberto pela busca, a página da conta).
@@ -77,10 +82,10 @@ function TercoDaConta({ conta, destaque, naSecao, caminho }) {
       if (!raizRef.current?.contains(e.target)) setAberto(false);
     };
     const aoTeclar = (e) => e.key === "Escape" && setAberto(false);
-    document.addEventListener("mousedown", fecharFora);
+    document.addEventListener("pointerdown", fecharFora);
     document.addEventListener("keydown", aoTeclar);
     return () => {
-      document.removeEventListener("mousedown", fecharFora);
+      document.removeEventListener("pointerdown", fecharFora);
       document.removeEventListener("keydown", aoTeclar);
     };
   }, [aberto]);
@@ -181,33 +186,57 @@ function TercoDaConta({ conta, destaque, naSecao, caminho }) {
   );
 }
 
-// O terço da conta para o visitante: "Entrar" e, no computador, "Criar
-// conta", numa pílula discreta (a vermelha é a da seção). No celular, só
-// "Entrar", e o terço inteiro responde ao toque; criar conta fica no início
-// e na página de entrar.
-function TercoDoVisitante({ destaque, caminho }) {
+// O terço da conta para o visitante, dividido em duas metades: Entrar e
+// Criar conta. Na página de uma delas, uma pílula vermelha menor fica atrás
+// dela (e a outra metade fica no tom claro da seção) e, de uma para a outra,
+// desliza como a pílula das seções. No celular, metade de um terço é
+// estreita: fica "Criar", e o leitor de tela ouve "Criar conta".
+const METADE =
+  "min-w-0 h-full flex items-center justify-center rounded-full px-1 text-[13px] sm:text-sm md:text-[15px] font-semibold whitespace-nowrap transition-colors duration-deslize ease-deslize motion-reduce:transition-none";
+
+function TercoDoVisitante({ naSecao, caminho }) {
+  const metade = caminho === "/login" ? 0 : caminho === "/cadastrar" ? 1 : null;
+  const [posicao, setPosicao] = useState(() => metadeAnterior ?? metade);
+  useEffect(() => {
+    if (metade === null) return;
+    metadeAnterior = metade;
+    const quadro = requestAnimationFrame(() => setPosicao(metade));
+    return () => cancelAnimationFrame(quadro);
+  }, [metade]);
+  const destaque = metade === null ? null : posicao;
+  const corDa = (indice) =>
+    destaque === indice
+      ? "text-white"
+      : naSecao
+        ? "text-white/80 hover:text-white"
+        : `text-white/65 hover:text-white ${PASSAR}`;
+
   return (
-    <div className={`${TERCO} gap-2 px-2 ${destaque ? "" : PASSAR}`}>
-      <Link
-        to="/login"
-        aria-current={atual(false, caminho === "/login")}
-        className={`px-2 py-1.5 rounded-full text-sm sm:text-[15px] font-semibold whitespace-nowrap transition-colors duration-deslize ease-deslize max-md:after:absolute max-md:after:inset-0 max-md:after:rounded-full ${FOCO} ${
-          destaque ? "text-white" : "text-white/75 hover:text-white"
+    <div className={`${TERCO} p-1`}>
+      <span
+        aria-hidden="true"
+        className={`absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/2)] rounded-full bg-[#9e0a24] shadow-[0_6px_16px_-8px_rgba(158,10,36,0.9),inset_0_1px_0_rgba(255,255,255,0.14)] transition-[transform,opacity] duration-deslize ease-deslize motion-reduce:transition-none ${
+          destaque === null ? "opacity-0" : "opacity-100"
         }`}
-      >
-        Entrar
-      </Link>
-      <Link
-        to="/cadastrar"
-        aria-current={atual(false, caminho === "/cadastrar")}
-        className={`hidden md:inline-flex items-center h-9 px-4 rounded-full text-sm font-bold text-white whitespace-nowrap transition-colors ${FOCO} ${
-          destaque
-            ? "bg-white/20 hover:bg-white/30"
-            : "bg-white/10 hover:bg-white/[0.16]"
-        }`}
-      >
-        Criar conta
-      </Link>
+        style={{ transform: `translateX(${(posicao ?? 0) * 100}%)` }}
+      />
+      <div className="relative z-[1] w-full h-full grid grid-cols-2">
+        <Link
+          to="/login"
+          aria-current={atual(false, caminho === "/login")}
+          className={`${METADE} ${FOCO} ${corDa(0)}`}
+        >
+          Entrar
+        </Link>
+        <Link
+          to="/cadastrar"
+          aria-label="Criar conta"
+          aria-current={atual(false, caminho === "/cadastrar")}
+          className={`${METADE} ${FOCO} ${corDa(1)}`}
+        >
+          Criar<span className="max-md:hidden">&nbsp;conta</span>
+        </Link>
+      </div>
     </div>
   );
 }
@@ -232,6 +261,7 @@ function Header() {
   // O terço destacado é o que está em cima da pílula agora: as cores trocam
   // junto com o deslize.
   const destaque = secao === null ? null : posicao;
+  const contaDoVisitante = !carregando && !usuario && destaque === 2;
 
   // Zera o estado ao trocar de rota (ajuste durante a renderização, não em
   // efeito) — evita chegar numa página nova com o header escondido.
@@ -263,16 +293,36 @@ function Header() {
       <div className="h-16 md:h-20 px-4 min-[375px]:px-5 md:px-8 max-w-[1200px] mx-auto flex items-center">
         <nav
           aria-label="Seções do site"
-          className="relative flex-1 grid grid-cols-3 h-12 md:h-[52px] p-1 rounded-full bg-white/[0.04] ring-1 ring-inset ring-white/[0.08]"
+          className="relative flex-1 grid grid-cols-3 gap-[var(--vao)] [--vao:4px] md:[--vao:6px] h-11 md:h-12"
         >
-          {/* A pílula vermelha: um terço da barra, levada de um terço a outro
-              pelo transform (100% da própria largura é um terço). */}
+          {/* O fundo das três pílulas, atrás da vermelha. */}
           <span
             aria-hidden="true"
-            className={`absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-full bg-[#9e0a24] shadow-[0_8px_20px_-10px_rgba(158,10,36,0.9),inset_0_1px_0_rgba(255,255,255,0.14)] transition-[transform,opacity] duration-deslize ease-deslize motion-reduce:transition-none ${
+            className="absolute inset-0 grid grid-cols-3 gap-[var(--vao)] pointer-events-none"
+          >
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="rounded-full bg-white/[0.05] ring-1 ring-inset ring-white/[0.07]"
+              />
+            ))}
+          </span>
+          {/* A pílula da seção: um terço da barra, levada de um terço a outro
+              pelo transform (100% da própria largura, mais o vão). Na conta
+              do visitante, ela fica no tom claro, e a vermelha é a menor,
+              dentro dela, atrás de Entrar ou de Criar conta. */}
+          <span
+            aria-hidden="true"
+            className={`absolute inset-y-0 left-0 w-[calc((100%-2*var(--vao))/3)] rounded-full transition-[transform,opacity,background-color,box-shadow] duration-deslize ease-deslize motion-reduce:transition-none ${
               destaque === null ? "opacity-0" : "opacity-100"
+            } ${
+              contaDoVisitante
+                ? "bg-white/[0.13] shadow-none"
+                : "bg-[#9e0a24] shadow-[0_8px_20px_-10px_rgba(158,10,36,0.9),inset_0_1px_0_rgba(255,255,255,0.14)]"
             }`}
-            style={{ transform: `translateX(${(posicao ?? 0) * 100}%)` }}
+            style={{
+              transform: `translateX(calc(${posicao ?? 0} * (100% + var(--vao))))`,
+            }}
           />
 
           <Link
@@ -338,7 +388,7 @@ function Header() {
               caminho={caminho}
             />
           ) : (
-            <TercoDoVisitante destaque={destaque === 2} caminho={caminho} />
+            <TercoDoVisitante naSecao={destaque === 2} caminho={caminho} />
           )}
         </nav>
       </div>

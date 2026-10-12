@@ -339,6 +339,34 @@ describe("fotos dos animais (NF8.3)", () => {
   });
 });
 
+describe("fotos fora do limite de pedidos", () => {
+  // Um perfil traz várias fotos, e o limite geral (300 por minuto) é por
+  // endereço de rede: contadas nele, algumas pessoas no mesmo Wi-Fi o
+  // estouravam só abrindo perfis.
+  test("pedir a mesma foto mais de 300 vezes não esbarra no limite nem gasta a cota da API", async () => {
+    const navegador = await navegadorComConta();
+    const resposta = await cadastrarComFotos(navegador, await fotos(1));
+    const url = resposta.body.animal.fotos[0].url;
+
+    for (let i = 0; i < 320; i++) {
+      const foto = await request(app).get(url);
+      expect(foto.status).toBe(200);
+    }
+    // A cota da API continua inteira: a busca responde normalmente.
+    await request(app).get("/api/doadores?especie=CAO").expect(200);
+  });
+
+  test("um nome de foto que não existe continua contando no limite", async () => {
+    let ultima;
+    for (let i = 0; i < 301; i++) {
+      ultima = await request(app).get(
+        "/api/arquivos/00000000-0000-0000-0000-000000000000.webp",
+      );
+    }
+    expect(ultima.status).toBe(429);
+  });
+});
+
 describe("foto de perfil (F3)", () => {
   const trocarFoto = (navegador, conteudo) =>
     comArquivos(

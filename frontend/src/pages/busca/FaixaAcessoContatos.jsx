@@ -63,6 +63,27 @@ function conteudoDaFaixa(acesso) {
 }
 
 function FaixaAcessoContatos({ acesso, onPedirLiberacao, onComoFunciona }) {
+  // Enquanto a situação do acesso chega da API, o lugar da faixa já fica
+  // reservado (o ícone, o texto e, no celular, o botão embaixo), para ela não
+  // empurrar a página quando aparecer.
+  if (acesso.motivo === "carregando") {
+    return (
+      <section
+        aria-hidden="true"
+        className="rounded-2xl bg-[#1a1c1c] px-4 py-4 sm:px-5 flex flex-col sm:flex-row sm:items-center gap-x-5 gap-y-4"
+      >
+        <span className="flex-1 flex items-start sm:items-center gap-4">
+          <span className="w-10 h-10 shrink-0 rounded-full bg-white/10" />
+          <span className="flex-1 flex flex-col gap-2 pt-1 sm:pt-0">
+            <span className="h-3.5 w-2/3 rounded-full bg-white/10" />
+            <span className="h-3 w-5/6 rounded-full bg-white/[0.07]" />
+            <span className="h-3 w-1/2 rounded-full bg-white/[0.07] sm:hidden" />
+          </span>
+        </span>
+        <span className="h-11 rounded-xl bg-white/[0.07] sm:hidden" />
+      </section>
+    );
+  }
   const conteudo = conteudoDaFaixa(acesso);
   if (!conteudo) return null;
 
