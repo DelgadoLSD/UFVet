@@ -1,20 +1,23 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Avatar from "./Avatar";
 import { sair, useEstadoSessao } from "../servicos/sessao";
-import { nomeCurto, rotuloPapel } from "../util/texto";
+import { nomeCurto, primeiroNome, rotuloPapel } from "../util/texto";
 
 // Barra do topo, presente em todas as páginas: um seletor das três seções do
-// site, em terços iguais, no desenho da chave Disponível/Indisponível dos
-// animais. A logo leva ao início; a busca, à busca de doadores (e os perfis
-// abertos por ela são dessa seção); a conta, ao próprio perfil (e a página
-// da conta, entrar e criar conta são dessa seção). Uma pílula vermelha fica
+// site, como os seletores do iPhone, numa pílula só. A logo leva ao início;
+// a busca, à busca de doadores (e os perfis abertos por ela são dessa
+// seção); a conta, ao próprio perfil (e a página da conta, entrar e
+// cadastrar-se são dessa seção). Uma pílula vermelha, dentro da grande, fica
 // atrás da seção em que a pessoa está e, ao trocar de seção, desliza até a
-// nova, como quem passa de uma tela para a outra. Cada seção é uma pílula
-// própria, com um vão pequeno entre elas. Para o visitante, a seção da conta
-// se divide em duas metades, Entrar e Criar conta, com uma pílula vermelha
-// menor que desliza entre elas do mesmo jeito. Igual no celular e no
-// computador; nada fica escondido num menu.
+// nova, como quem passa de uma tela para a outra. Entre as seções, um vão
+// pequeno e uma linha fina (que some ao lado da pílula) as separam.
+//
+// No computador, as três seções têm a mesma largura. No celular, cada uma
+// ocupa o que precisa (a logo, a lupa da busca) e a conta fica com o resto,
+// para nada ficar apertado. Para o visitante, a conta se divide em duas
+// partes, Entrar e Cadastre-se, com uma pílula vermelha menor que desliza
+// entre elas do mesmo jeito. Nada fica escondido num menu.
 
 // A seção de cada página: 0, o início; 1, a busca; 2, a conta. Uma página
 // fora delas (um endereço que não existe) fica sem destaque.
@@ -31,7 +34,7 @@ function secaoDoCaminho(caminho) {
 // topo: guardada aqui, fora dele, a posição deixa o topo da página nova
 // começar com a pílula no lugar antigo e deslizar até o novo.
 let posicaoAnterior = null;
-// O mesmo para a pílula menor do visitante: 0, Entrar; 1, Criar conta.
+// O mesmo para a pílula menor do visitante: 0, Entrar; 1, Cadastre-se.
 let metadeAnterior = null;
 
 // "page" no link da página aberta; "true" no da seção, quando a página é
@@ -39,14 +42,32 @@ let metadeAnterior = null;
 const atual = (daSecao, daPagina) =>
   daPagina ? "page" : daSecao ? "true" : undefined;
 
-// Um terço da barra: o conteúdo no meio, por cima da pílula. A cor do texto
+// Põe a pílula sobre o elemento `alvo`: a mesma distância da esquerda e a
+// mesma largura, escritas direto nela. Sem `animar` (a primeira posição, ou
+// a tela que mudou de tamanho), ela só aparece no lugar, sem deslizar.
+function cobrir(pilula, alvo, animar) {
+  const transform = `translateX(${alvo.offsetLeft}px)`;
+  const width = `${alvo.offsetWidth}px`;
+  if (pilula.style.transform === transform && pilula.style.width === width) {
+    return;
+  }
+  if (!animar) pilula.style.transition = "none";
+  pilula.style.transform = transform;
+  pilula.style.width = width;
+  if (!animar) {
+    pilula.getBoundingClientRect();
+    pilula.style.transition = "";
+  }
+}
+
+// Uma seção da barra: o conteúdo no meio, por cima da pílula. A cor do texto
 // muda junto com ela, no mesmo tempo e na mesma curva.
-const TERCO =
+const SECAO =
   "relative z-[1] min-w-0 h-full flex items-center justify-center rounded-full transition-colors duration-deslize ease-deslize motion-reduce:transition-none";
 const FOCO =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70";
-// Sem a pílula, o terço clareia um pouco ao passar o mouse.
-const PASSAR = "hover:bg-white/[0.05]";
+// Sem a pílula, a seção clareia um pouco ao passar o mouse.
+const PASSAR = "hover:bg-white/[0.06]";
 
 const CLASSE_ITEM =
   "w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-[#1a1c1c] text-left hover:bg-[#faf6f6] transition-colors";
@@ -67,11 +88,12 @@ function ItemMenu({ as: Componente = Link, icone, children, ...props }) {
   );
 }
 
-// O terço da conta logada, em duas partes, como nos aplicativos: a foto (e,
-// no computador, o nome) leva ao próprio perfil, e o terço inteiro responde
-// ao toque; a setinha abre as outras opções (a conta e sair). O perfil não se
-// repete no menu: a foto já leva até ele.
-function TercoDaConta({ conta, destaque, naSecao, caminho }) {
+// A seção da conta logada, em duas partes, como nos aplicativos: a foto e o
+// nome (no celular, o primeiro; no computador, o nome curto e o papel) levam
+// ao próprio perfil, e a seção inteira responde ao toque; a setinha abre as
+// outras opções (a conta e sair). O perfil não se repete no menu: a foto já
+// leva até ele.
+function SecaoDaConta({ conta, destaque, naSecao, caminho }) {
   const [aberto, setAberto] = useState(false);
   const raizRef = useRef(null);
   const navegar = useNavigate();
@@ -101,20 +123,28 @@ function TercoDaConta({ conta, destaque, naSecao, caminho }) {
   return (
     <div
       ref={raizRef}
-      className={`${TERCO} gap-1 sm:gap-2 px-1 ${destaque ? "" : PASSAR}`}
+      data-secao
+      className={`${SECAO} flex-1 gap-1 md:gap-2 px-1.5 ${destaque ? "" : PASSAR}`}
     >
       <Link
         to="/meu-perfil"
         aria-label={`Meu perfil (${nomeCurto(conta)})`}
         aria-current={atual(naSecao, caminho === "/meu-perfil")}
-        className="min-w-0 flex items-center gap-2.5 rounded-full after:absolute after:inset-0 after:rounded-full focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-white/70"
+        className="min-w-0 flex items-center gap-2 md:gap-2.5 rounded-full after:absolute after:inset-0 after:rounded-full focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-white/70"
       >
         <span
           className={`shrink-0 rounded-full transition-shadow duration-deslize ease-deslize ${
             destaque ? "ring-2 ring-white/80" : "ring-1 ring-white/15"
           }`}
         >
-          <Avatar pessoa={conta} tamanho="w-8 h-8 sm:w-9 sm:h-9" />
+          <Avatar pessoa={conta} tamanho="w-8 h-8 md:w-9 md:h-9" />
+        </span>
+        <span
+          className={`md:hidden min-w-0 truncate text-[13px] font-semibold transition-colors duration-deslize ease-deslize ${
+            destaque ? "text-white" : "text-white/75"
+          }`}
+        >
+          {primeiroNome(conta.nomeCompleto)}
         </span>
         <span className="hidden md:flex flex-col min-w-0 leading-tight text-left">
           <span className="text-sm font-bold text-white truncate">
@@ -157,7 +187,6 @@ function TercoDaConta({ conta, destaque, naSecao, caminho }) {
           role="menu"
           className="absolute right-0 top-full z-[3] mt-3 w-72 bg-white rounded-2xl border border-[#eadede] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.45)] overflow-hidden animate-aparecer"
         >
-          {/* Quem está logado: no celular, o terço mostra só a foto. */}
           <div className="px-4 pt-3.5 pb-3 border-b border-[#f0e6e6]">
             <p className="text-sm font-bold text-[#1a1c1c] truncate">
               {conta.nomeCompleto}
@@ -186,20 +215,24 @@ function TercoDaConta({ conta, destaque, naSecao, caminho }) {
   );
 }
 
-// O terço da conta para o visitante, dividido em duas metades: Entrar e
-// Criar conta. Na página de uma delas, uma pílula vermelha menor fica atrás
-// dela (e a outra metade fica no tom claro da seção) e, de uma para a outra,
-// desliza como a pílula das seções. No celular, metade de um terço é
-// estreita: fica "Criar", e o leitor de tela ouve "Criar conta".
-const METADE =
-  "min-w-0 h-full flex items-center justify-center rounded-full px-1 text-[13px] sm:text-sm md:text-[15px] font-semibold whitespace-nowrap transition-colors duration-deslize ease-deslize motion-reduce:transition-none";
+// A seção da conta para o visitante, em duas partes: Entrar e Cadastre-se.
+// Na página de uma delas, a seção fica no tom claro e uma pílula vermelha
+// menor fica atrás dela; de uma para a outra, essa pílula desliza como a das
+// seções. No computador, as duas partes têm a mesma largura. No celular e no
+// tablet, cada palavra tem a mesma folga dos lados: em metades iguais,
+// "Cadastre-se" (o dobro de "Entrar") encostava na borda da pílula. O toque
+// vale a altura inteira da seção, e não só a da pílula menor.
+const PARTE =
+  "relative z-[1] min-w-0 flex-auto lg:flex-1 h-full flex items-center justify-center rounded-full px-1 text-[13px] md:text-[15px] font-semibold whitespace-nowrap transition-colors duration-deslize ease-deslize motion-reduce:transition-none after:absolute after:inset-x-0 after:-inset-y-1";
 
-function TercoDoVisitante({ naSecao, caminho }) {
+function SecaoDoVisitante({ naSecao, caminho }) {
   const metade = caminho === "/login" ? 0 : caminho === "/cadastrar" ? 1 : null;
+  // Vindo de Entrar para Cadastre-se (ou o contrário), a pílula menor começa
+  // na anterior e desliza; vindo de outra seção, já nasce na desta página.
   const [posicao, setPosicao] = useState(() => metadeAnterior ?? metade);
   useEffect(() => {
-    if (metade === null) return;
     metadeAnterior = metade;
+    if (metade === null) return;
     const quadro = requestAnimationFrame(() => setPosicao(metade));
     return () => cancelAnimationFrame(quadro);
   }, [metade]);
@@ -209,32 +242,47 @@ function TercoDoVisitante({ naSecao, caminho }) {
       ? "text-white"
       : naSecao
         ? "text-white/80 hover:text-white"
-        : `text-white/65 hover:text-white ${PASSAR}`;
+        : `text-white/70 hover:text-white ${PASSAR}`;
+
+  const faixaRef = useRef(null);
+  const pilulaRef = useRef(null);
+  const noLugar = useRef(false);
+  useLayoutEffect(() => {
+    const partes = faixaRef.current.querySelectorAll("a");
+    const posicionar = (animar) =>
+      cobrir(pilulaRef.current, partes[posicao ?? 0], animar);
+    posicionar(noLugar.current);
+    noLugar.current = true;
+    const observador = new ResizeObserver(() => posicionar(false));
+    partes.forEach((parte) => observador.observe(parte));
+    return () => observador.disconnect();
+  }, [posicao]);
 
   return (
-    <div className={`${TERCO} p-1`}>
-      <span
-        aria-hidden="true"
-        className={`absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/2)] rounded-full bg-[#9e0a24] shadow-[0_6px_16px_-8px_rgba(158,10,36,0.9),inset_0_1px_0_rgba(255,255,255,0.14)] transition-[transform,opacity] duration-deslize ease-deslize motion-reduce:transition-none ${
-          destaque === null ? "opacity-0" : "opacity-100"
-        }`}
-        style={{ transform: `translateX(${(posicao ?? 0) * 100}%)` }}
-      />
-      <div className="relative z-[1] w-full h-full grid grid-cols-2">
+    <div data-secao className={`${SECAO} flex-1 p-1`}>
+      <div ref={faixaRef} className="relative w-full h-full flex">
+        {/* Aparece junto com a pílula clara da seção, que chega deslizando
+            quando se vem de outra seção. */}
+        <span
+          ref={pilulaRef}
+          aria-hidden="true"
+          className={`absolute inset-y-0 left-0 rounded-full bg-[#9e0a24] shadow-[0_6px_16px_-8px_rgba(158,10,36,0.9),inset_0_1px_0_rgba(255,255,255,0.14)] transition-[transform,width,opacity] duration-deslize ease-deslize motion-reduce:transition-none ${
+            naSecao && metade !== null ? "opacity-100" : "opacity-0"
+          }`}
+        />
         <Link
           to="/login"
           aria-current={atual(false, caminho === "/login")}
-          className={`${METADE} ${FOCO} ${corDa(0)}`}
+          className={`${PARTE} ${FOCO} ${corDa(0)}`}
         >
           Entrar
         </Link>
         <Link
           to="/cadastrar"
-          aria-label="Criar conta"
           aria-current={atual(false, caminho === "/cadastrar")}
-          className={`${METADE} ${FOCO} ${corDa(1)}`}
+          className={`${PARTE} ${FOCO} ${corDa(1)}`}
         >
-          Criar<span className="max-md:hidden">&nbsp;conta</span>
+          Cadastre-se
         </Link>
       </div>
     </div>
@@ -258,10 +306,43 @@ function Header() {
     const quadro = requestAnimationFrame(() => setPosicao(secao));
     return () => cancelAnimationFrame(quadro);
   }, [secao]);
-  // O terço destacado é o que está em cima da pílula agora: as cores trocam
+  // A seção destacada é a que está embaixo da pílula agora: as cores trocam
   // junto com o deslize.
   const destaque = secao === null ? null : posicao;
-  const contaDoVisitante = !carregando && !usuario && destaque === 2;
+  // Entrar e Cadastre-se são só do visitante (quem está logado é levado ao
+  // próprio perfil): nelas, a pílula da seção já nasce no tom claro, sem
+  // esperar saber quem está logado (sem isso, piscava vermelha e clareava).
+  const contaDoVisitante =
+    destaque === 2 && (caminho === "/login" || caminho === "/cadastrar");
+
+  // As seções não têm a mesma largura no celular: a pílula mede a seção em
+  // que vai ficar e toma o lugar e a largura dela (antes de a tela ser
+  // desenhada, para não piscar). Quando o tamanho muda (a fonte chegou, a
+  // tela girou), mede de novo.
+  const barraRef = useRef(null);
+  const pilulaRef = useRef(null);
+  const noLugar = useRef(false);
+  useLayoutEffect(() => {
+    const barra = barraRef.current;
+    const posicionar = (animar) => {
+      const secoes = barra.querySelectorAll("[data-secao]");
+      if (secoes.length !== 3) return;
+      cobrir(pilulaRef.current, secoes[posicao ?? 0], animar);
+      // As linhas finas ficam no meio do vão entre duas seções.
+      barra.querySelectorAll("[data-divisao]").forEach((linha, i) => {
+        const fim = secoes[i].offsetLeft + secoes[i].offsetWidth;
+        linha.style.left = `${(fim + secoes[i + 1].offsetLeft) / 2}px`;
+      });
+    };
+    posicionar(noLugar.current);
+    noLugar.current = true;
+    const observador = new ResizeObserver(() => posicionar(false));
+    observador.observe(barra);
+    barra
+      .querySelectorAll("[data-secao]")
+      .forEach((el) => observador.observe(el));
+    return () => observador.disconnect();
+  }, [posicao, usuario, carregando]);
 
   // Zera o estado ao trocar de rota (ajuste durante a renderização, não em
   // efeito) — evita chegar numa página nova com o header escondido.
@@ -292,44 +373,44 @@ function Header() {
     >
       <div className="h-16 md:h-20 px-4 min-[375px]:px-5 md:px-8 max-w-[1200px] mx-auto flex items-center">
         <nav
+          ref={barraRef}
           aria-label="Seções do site"
-          className="relative flex-1 grid grid-cols-3 gap-[var(--vao)] [--vao:4px] md:[--vao:6px] h-11 md:h-12"
+          className="relative flex-1 flex md:grid md:grid-cols-3 gap-1 md:gap-1.5 p-1 h-12 md:h-[52px] rounded-full bg-white/[0.05] ring-1 ring-inset ring-white/[0.08]"
         >
-          {/* O fundo das três pílulas, atrás da vermelha. */}
+          {/* A pílula da seção. Na conta do visitante, ela fica no tom
+              claro, e a vermelha é a menor, dentro dela, atrás de Entrar ou
+              de Cadastre-se. */}
           <span
+            ref={pilulaRef}
             aria-hidden="true"
-            className="absolute inset-0 grid grid-cols-3 gap-[var(--vao)] pointer-events-none"
-          >
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                className="rounded-full bg-white/[0.05] ring-1 ring-inset ring-white/[0.07]"
-              />
-            ))}
-          </span>
-          {/* A pílula da seção: um terço da barra, levada de um terço a outro
-              pelo transform (100% da própria largura, mais o vão). Na conta
-              do visitante, ela fica no tom claro, e a vermelha é a menor,
-              dentro dela, atrás de Entrar ou de Criar conta. */}
-          <span
-            aria-hidden="true"
-            className={`absolute inset-y-0 left-0 w-[calc((100%-2*var(--vao))/3)] rounded-full transition-[transform,opacity,background-color,box-shadow] duration-deslize ease-deslize motion-reduce:transition-none ${
+            className={`absolute inset-y-1 left-0 rounded-full transition-[transform,width,opacity,background-color,box-shadow] duration-deslize ease-deslize motion-reduce:transition-none ${
               destaque === null ? "opacity-0" : "opacity-100"
             } ${
               contaDoVisitante
                 ? "bg-white/[0.13] shadow-none"
                 : "bg-[#9e0a24] shadow-[0_8px_20px_-10px_rgba(158,10,36,0.9),inset_0_1px_0_rgba(255,255,255,0.14)]"
             }`}
-            style={{
-              transform: `translateX(calc(${posicao ?? 0} * (100% + var(--vao))))`,
-            }}
           />
+          {/* As linhas finas entre as seções; a que encosta na pílula some. */}
+          {[0, 1].map((i) => (
+            <span
+              key={i}
+              data-divisao
+              aria-hidden="true"
+              className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-4 w-px bg-white/15 transition-opacity duration-deslize ease-deslize motion-reduce:transition-none ${
+                destaque === i || destaque === i + 1
+                  ? "opacity-0"
+                  : "opacity-100"
+              }`}
+            />
+          ))}
 
           <Link
+            data-secao
             to="/"
             aria-label="UFVet, página inicial"
             aria-current={atual(secao === 0, caminho === "/")}
-            className={`${TERCO} ${FOCO} ${destaque === 0 ? "" : PASSAR}`}
+            className={`${SECAO} ${FOCO} shrink-0 px-3 min-[375px]:px-4 md:px-0 ${destaque === 0 ? "" : PASSAR}`}
           >
             <span
               aria-hidden="true"
@@ -346,21 +427,23 @@ function Header() {
             </span>
           </Link>
 
-          {/* A busca: o ícone fica cheio na própria seção, para o destaque
-              não depender só da cor. */}
+          {/* A busca: no celular, só a lupa; no computador, com o nome. O
+              ícone fica cheio na própria seção, para o destaque não
+              depender só da cor. */}
           <Link
+            data-secao
             to="/buscar"
             aria-label="Buscar doadores"
             aria-current={atual(secao === 1, caminho === "/buscar")}
-            className={`${TERCO} ${FOCO} gap-2 px-3 text-sm sm:text-[15px] font-semibold ${
+            className={`${SECAO} ${FOCO} shrink-0 w-11 min-[375px]:w-12 md:w-auto gap-2 text-[15px] font-semibold ${
               destaque === 1
                 ? "text-white"
-                : `text-white/65 hover:text-white ${PASSAR}`
+                : `text-white/70 hover:text-white ${PASSAR}`
             }`}
           >
             <span
               aria-hidden="true"
-              className="material-symbols-outlined text-[20px] shrink-0"
+              className="material-symbols-outlined text-[22px] md:text-[20px] shrink-0"
               style={
                 destaque === 1
                   ? { fontVariationSettings: "'FILL' 1, 'wght' 500" }
@@ -369,26 +452,24 @@ function Header() {
             >
               search
             </span>
-            <span className="truncate">
-              Buscar<span className="max-sm:hidden"> doadores</span>
-            </span>
+            <span className="hidden md:inline truncate">Buscar doadores</span>
           </Link>
 
-          {/* Enquanto o site pergunta à API quem está logado, o terço mostra
+          {/* Enquanto o site pergunta à API quem está logado, a seção mostra
               só o lugar da foto, para não piscar "Entrar" antes da conta. */}
           {carregando ? (
-            <div className={TERCO}>
-              <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10" />
+            <div data-secao className={`${SECAO} flex-1`}>
+              <span className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/10" />
             </div>
           ) : usuario ? (
-            <TercoDaConta
+            <SecaoDaConta
               conta={usuario}
               destaque={destaque === 2}
               naSecao={secao === 2}
               caminho={caminho}
             />
           ) : (
-            <TercoDoVisitante naSecao={destaque === 2} caminho={caminho} />
+            <SecaoDoVisitante naSecao={destaque === 2} caminho={caminho} />
           )}
         </nav>
       </div>

@@ -125,7 +125,7 @@ function LoginPage() {
           to="/cadastrar"
           className="font-semibold text-[#9e0a24] hover:underline"
         >
-          Criar conta
+          Cadastre-se
         </Link>
       </p>
     </LayoutAutenticacao>

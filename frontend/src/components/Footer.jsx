@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 const LINKS = [
   { to: "/", rotulo: "Início" },
   { to: "/buscar", rotulo: "Buscar doadores" },
-  { to: "/cadastrar", rotulo: "Criar conta" },
+  { to: "/cadastrar", rotulo: "Cadastre-se" },
   { to: "/login", rotulo: "Entrar" },
 ];
 
