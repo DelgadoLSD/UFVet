@@ -33,7 +33,7 @@ function CarrosselFotos({ fotos, nome }) {
   if (!temFotos) {
     return (
       <div className="w-full h-56 lg:h-auto lg:flex-1 min-h-[240px] bg-[#fdecee] flex items-center justify-center rounded-2xl">
-        <span className="text-[#8f6f6e] text-sm font-semibold">
+        <span className="text-[#7a5f5e] text-sm font-semibold">
           Sem foto ainda
         </span>
       </div>
@@ -74,17 +74,22 @@ function CarrosselFotos({ fotos, nome }) {
             {atual + 1}/{fotos.length}
           </div>
 
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex z-10">
             {fotos.map((_, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => setAtual(i)}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === atual ? "w-4 bg-white" : "w-1.5 bg-white/50"
-                }`}
+                className="h-6 min-w-6 px-[3px] flex items-center justify-center"
                 aria-label={`Ir para foto ${i + 1}`}
-              />
+              >
+                <span
+                  aria-hidden="true"
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === atual ? "w-4 bg-white" : "w-1.5 bg-white/50"
+                  }`}
+                />
+              </button>
             ))}
           </div>
         </>

@@ -287,7 +287,7 @@ function CampoBusca({
               </p>
             )}
             {textoRodape && (
-              <p className="px-4 py-2 border-t border-[#f0e6e6] bg-[#fcfafa] text-[11px] text-[#8f6f6e]">
+              <p className="px-4 py-2 border-t border-[#f0e6e6] bg-[#fcfafa] text-[11px] text-[#7a5f5e]">
                 {textoRodape}
               </p>
             )}

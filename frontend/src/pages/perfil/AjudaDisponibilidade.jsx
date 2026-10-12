@@ -1,5 +1,6 @@
 import Ajuda from "../../components/Ajuda";
 import { pronomeAnimal } from "../../regras/doacao";
+import { maiuscula } from "../../util/texto";
 
 // O "?" ao lado da disponibilidade do animal, embaixo da foto. Para o dono,
 // explica como pausar as doações; para quem visita, o que a situação quer
@@ -18,22 +19,18 @@ function AjudaDisponibilidade({
     return (
       <Ajuda titulo="Disponibilidade para doação" claro={claro}>
         <p>
-          Use a chave embaixo da foto para mudar. Vai viajar ou {animal.nome}
-          não pode doar por um tempo? Pause as doações: outros tutores vão saber
-          que {pronomeAnimal(animal)} não está disponível agora, e seu contato
-          deixa de aparecer para pedidos de doação até você retomar.
+          Marque Indisponível quando {animal.nome} não puder doar por um tempo,
+          como numa viagem. {maiuscula(pronomeAnimal(animal))} sai da busca até
+          você marcar Disponível de novo.
         </p>
         {femeaNaoCastrada && (
           <p>
-            Como {animal.nome} não é castrada, deixe-a indisponível durante o
-            cio, a gestação e a amamentação.
+            Fêmeas não castradas não doam no cio, na gestação nem na
+            amamentação.
           </p>
         )}
         {!recuperacao.apto && (
-          <p>
-            Depois de uma doação, o corpo precisa de cerca de 3 meses para se
-            recuperar — por isso a etiqueta mostra até quando.
-          </p>
+          <p>Depois de uma doação, são cerca de 3 meses de recuperação.</p>
         )}
       </Ajuda>
     );
@@ -43,20 +40,15 @@ function AjudaDisponibilidade({
     <Ajuda titulo="Disponibilidade para doação" claro={claro}>
       {!disponivel ? (
         <p>
-          O tutor pausou as doações por um tempo — por exemplo, durante uma
-          viagem. Enquanto isso, o contato dele não aparece para pedidos de
-          doação. Vale conferir de novo mais tarde.
+          O tutor pausou as doações por um tempo. Vale olhar de novo mais tarde.
         </p>
       ) : !recuperacao.apto ? (
         <p>
-          {animal.nome} doou recentemente e precisa de cerca de 3 meses para se
-          recuperar antes da próxima doação.
+          {animal.nome} doou há pouco tempo e precisa de cerca de 3 meses para
+          se recuperar.
         </p>
       ) : (
-        <p>
-          O tutor informou que {animal.nome} pode doar agora e está disponível
-          para ser contatado.
-        </p>
+        <p>{animal.nome} pode doar agora, segundo o tutor.</p>
       )}
     </Ajuda>
   );

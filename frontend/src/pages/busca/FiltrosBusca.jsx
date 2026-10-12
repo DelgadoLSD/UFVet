@@ -237,21 +237,18 @@ function FiltrosBusca({
               <Ajuda titulo="Qual tipo escolher?">
                 {especie === "CAO" ? (
                   <p>
-                    Selecione o tipo do cão que vai receber o sangue, se você
-                    souber. Doadores DEA 1.1 negativo (DEA 1.1− e Universal)
-                    podem doar para a maioria dos cães.
+                    O tipo do cão que vai receber o sangue, se você souber.
+                    DEA&nbsp;1.1− e Universal doam para quase todos os cães.
                   </p>
                 ) : (
                   <p>
-                    Gatos precisam receber sangue de um tipo compatível.
-                    Selecione o tipo do gato que vai receber o sangue — o
-                    hospital sempre confirma a compatibilidade.
+                    O tipo do gato que vai receber o sangue: gatos só recebem
+                    sangue do mesmo tipo.
                   </p>
                 )}
                 <p>
-                  Dá para escolher mais de um tipo. Filtrar por tipo oculta os
-                  doadores sem tipagem confirmada: o tipo deles só é conhecido
-                  depois do exame, feito no hospital.
+                  Dá para marcar mais de um. Quem ainda não tem o tipo
+                  confirmado em exame fica de fora.
                 </p>
               </Ajuda>
             }

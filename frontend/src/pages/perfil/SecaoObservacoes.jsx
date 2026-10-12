@@ -80,12 +80,9 @@ function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
       ajuda={
         <Ajuda titulo="Observações para a coleta" claro>
           <p>
-            Anotações de veterinários sobre como o animal se comportou em
-            coletas anteriores — por exemplo, se é calmo ou se precisa de mais
-            cuidado.
-          </p>
-          <p>
-            Elas ajudam a equipe a preparar uma coleta tranquila para o doador.
+            O que os veterinários anotaram nas coletas anteriores, como se o
+            animal é calmo ou precisa de mais cuidado. Ajuda a próxima equipe a
+            se preparar.
           </p>
         </Ajuda>
       }
@@ -129,7 +126,7 @@ function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
             }}
             rows={3}
             placeholder="Ex.: dócil, coleta tranquila sem necessidade de contenção."
-            className="w-full bg-white text-gray-900 [color-scheme:light] text-sm resize-none focus:outline-none"
+            className="w-full bg-white text-gray-900 [color-scheme:light] text-base resize-none focus:outline-none"
           />
           <div className="flex justify-end gap-2 mt-2">
             <Botao variante="fantasma" tamanho="sm" onClick={cancelar}>
@@ -165,7 +162,7 @@ function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
         <button
           type="button"
           onClick={() => setTodasAbertas(true)}
-          className="flex items-center gap-1.5 text-[#9e0a24] font-semibold text-xs hover:underline underline-offset-2 w-fit mt-auto"
+          className="flex items-center gap-1.5 py-1 -my-1 text-[#9e0a24] font-semibold text-xs hover:underline underline-offset-2 w-fit mt-auto"
         >
           <span
             aria-hidden="true"

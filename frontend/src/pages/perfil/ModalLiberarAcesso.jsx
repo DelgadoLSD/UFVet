@@ -48,7 +48,7 @@ function CartaoTutor({ tutor, liberacaoAtiva }) {
           {tutor.cidade}. {tutor.animaisResumo}.
         </p>
         {tutor.membroDesde && (
-          <p className="text-xs text-[#8f6f6e] mt-0.5">
+          <p className="text-xs text-[#7a5f5e] mt-0.5">
             No UFVet desde {mesAno(tutor.membroDesde)}
           </p>
         )}

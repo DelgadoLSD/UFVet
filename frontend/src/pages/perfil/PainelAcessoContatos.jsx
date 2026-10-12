@@ -65,7 +65,7 @@ function Pedido({ pedido, ocupado, onLiberar, onRecusar }) {
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-bold text-white">{pedido.tutorNome}</p>
           <EtiquetaCodigo codigo={pedido.tutorCodigo} claro />
-          <span className="text-xs text-white/60">
+          <span className="text-xs text-white/80">
             {quando(pedido.criadoEm)}
           </span>
         </div>

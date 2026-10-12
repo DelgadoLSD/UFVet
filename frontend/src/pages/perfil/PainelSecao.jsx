@@ -171,7 +171,7 @@ function PainelSecao({
 export function CampoPainel({ rotulo, children }) {
   return (
     <div className="min-w-0">
-      <p className="text-xs text-[#8f6f6e]">{rotulo}</p>
+      <p className="text-xs text-[#7a5f5e]">{rotulo}</p>
       <div className="mt-0.5 text-sm font-semibold text-[#1a1c1c] flex items-center gap-1.5 flex-wrap min-w-0">
         {children}
       </div>

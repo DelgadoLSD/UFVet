@@ -20,13 +20,13 @@ const SITUACAO_VALIDACAO = {
     titulo: "Validado por veterinário",
     icone: "verified",
     explicacao:
-      "Um veterinário já conferiu os exames e os critérios de doação. No hospital, basta uma checagem rápida, e a coleta pode acontecer no mesmo dia.",
+      "Um veterinário já conferiu os exames. No hospital, a checagem é rápida e a coleta pode ser no mesmo dia.",
   },
   naoValidado: {
     titulo: "Ainda não validado",
     icone: "schedule",
     explicacao:
-      "Pode doar normalmente, mas os exames ainda não foram conferidos por um veterinário. O hospital faz esses exames antes da coleta, e os resultados levam alguns dias.",
+      "Pode doar, mas os exames ainda não foram conferidos. O hospital faz os exames antes, e os resultados levam alguns dias.",
   },
 };
 
@@ -155,7 +155,7 @@ function CartaoDoador({ doador }) {
               className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
-            <p className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-[#8f6f6e]">
+            <p className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-[#7a5f5e]">
               Sem foto ainda
             </p>
           )}

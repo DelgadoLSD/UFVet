@@ -65,7 +65,7 @@ function ComoEHoje() {
           >
             <p className="text-xs font-bold text-[#9e0a24]">{m.autor}</p>
             <p className="text-[15px] text-[#1a1c1c] leading-snug">{m.texto}</p>
-            <p className="text-[11px] text-[#8f8a8a] text-right mt-0.5">
+            <p className="text-[11px] text-[#6f6a6a] text-right mt-0.5">
               {m.hora}
             </p>
           </div>

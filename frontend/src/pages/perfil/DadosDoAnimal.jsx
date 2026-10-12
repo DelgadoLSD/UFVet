@@ -6,7 +6,7 @@ import {
   TIPOS_UNIVERSAIS,
 } from "../../regras/doacao";
 import { formatarData, idadeEmAnos, textoIdade } from "../../util/datas";
-import { formatarPeso } from "../../util/texto";
+import { formatarPeso, maiuscula } from "../../util/texto";
 
 // A faixa de dados do cartão do animal: tipo sanguíneo, peso e idade em
 // células vermelho-claras com divisões brancas, e as doações numa linha
@@ -73,49 +73,31 @@ function LinhaDoacoes({
 }
 
 // Explicação do "?" do tipo sanguíneo: sem tipo, diz de onde ele vem; com
-// tipo, explica a tipagem da espécie.
+// tipo, o que importa na espécie. Curta, direto ao ponto.
 function ajudaTipoSanguineo(animal, tipoSanguineo) {
   if (!tipoSanguineo) {
     return (
-      <>
-        <p>
-          O tipo sanguíneo de {animal.nome} ainda não foi registrado. Ele vem do
-          exame de tipagem, e quem anota no perfil é o veterinário que assina a
-          validação.
-        </p>
-        <p>
-          Até lá, o hospital faz a tipagem antes da coleta — o animal pode doar
-          do mesmo jeito.
-        </p>
-      </>
+      <p>
+        Ainda não confirmado em exame. Se precisar, o hospital faz a tipagem
+        antes da coleta, e {animal.nome} pode doar do mesmo jeito.
+      </p>
     );
   }
 
   if (animal.especie === "CAO") {
     return (
-      <>
-        <p>
-          Assim como as pessoas, cães têm tipos de sangue. O mais importante é o
-          DEA 1.1.
-        </p>
-        <p>
-          Cães DEA 1.1 negativo são chamados de doadores universais, porque
-          podem doar para a maioria dos cães. O hospital sempre confirma a
-          compatibilidade antes da transfusão.
-        </p>
-      </>
+      <p>
+        Nos cães, o que mais importa é o DEA&nbsp;1.1. Quem é DEA&nbsp;1.1
+        negativo doa para quase todos os cães: é o doador universal.
+      </p>
     );
   }
 
   return (
-    <>
-      <p>Gatos podem ter sangue do tipo A, B ou AB.</p>
-      <p>
-        Diferente dos cães, eles já nascem com defesas contra o tipo que não têm
-        — por isso o doador precisa ser compatível com o gato que vai receber. O
-        hospital sempre faz esse teste antes da transfusão.
-      </p>
-    </>
+    <p>
+      Gatos têm tipo A, B ou AB e só recebem sangue do mesmo tipo. O hospital
+      sempre confere antes da transfusão.
+    </p>
   );
 }
 
@@ -168,13 +150,12 @@ function DadosDoAnimal({
         }
         alerta={!pesoOk}
         ajuda={{
-          titulo: "Por que o peso importa?",
+          titulo: "Peso mínimo",
           texto: (
             <p>
-              A quantidade de sangue coletada acompanha o tamanho do animal. Por
-              isso existe um peso mínimo — {ref.pesoMin} kg para{" "}
-              {ESPECIES[animal.especie].plural} — para que a doação seja segura
-              para o próprio doador.
+              {maiuscula(ESPECIES[animal.especie].plural)} doam a partir de{" "}
+              {ref.pesoMin} kg: a quantidade de sangue coletada depende do
+              tamanho, e o mínimo protege o doador.
             </p>
           ),
         }}
@@ -189,12 +170,11 @@ function DadosDoAnimal({
         }
         alerta={!idadeOk}
         ajuda={{
-          titulo: "Por que a idade importa?",
+          titulo: "Idade para doar",
           texto: (
             <p>
-              Animais adultos, entre {ref.idadeMin} e {ref.idadeMax} anos,
-              costumam estar na melhor fase para doar e se recuperam bem da
-              coleta.
+              Entre {ref.idadeMin} e {ref.idadeMax} anos, o animal está na
+              melhor fase para doar e se recupera bem da coleta.
             </p>
           ),
         }}

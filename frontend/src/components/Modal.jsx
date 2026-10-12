@@ -1,8 +1,14 @@
 import { useEffect, useId, useRef } from "react";
+import { createPortal } from "react-dom";
 
 // Janela sobre a página (diálogo), usada por todos os modais do site:
 // cabeçalho com título e botão de fechar, corpo que rola sozinho e um rodapé
 // opcional para os botões de ação.
+//
+// A janela é desenhada direto no <body>, e não onde o componente está: uma
+// seção fechada no celular (escondida) esconderia junto a janela que o "?"
+// dela abriu, e um ancestral com transform prenderia a janela "fixa" dentro
+// dele.
 //
 // Fecha pelo X, por um clique fora da janela ou pela tecla Esc. Ao abrir, o
 // foco do teclado entra na janela; ao fechar, volta para onde estava (em
@@ -39,7 +45,7 @@ function Modal({
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 max-sm:items-end max-sm:p-0"
       onClick={(e) => e.target === e.currentTarget && onFechar()}
@@ -87,7 +93,8 @@ function Modal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

@@ -49,8 +49,8 @@ function CampoBuscaTexto({ valor, onMudar }) {
         value={valor}
         maxLength={TAMANHO_MAXIMO_BUSCA}
         onChange={(e) => onMudar(e.target.value)}
-        placeholder="Buscar por nome, raça, bairro ou código (#)..."
-        className="w-full pl-12 pr-12 py-3 bg-white border border-[#dccfcf] rounded-xl text-sm shadow-[0_1px_2px_rgba(26,28,28,0.04)] transition-colors hover:border-[#c9b6b6] focus:outline-none focus:border-[#9e0a24] focus:ring-4 focus:ring-[#9e0a24]/10"
+        placeholder="Nome, raça, bairro ou código"
+        className="w-full pl-12 pr-12 py-3 bg-white border border-[#dccfcf] rounded-xl text-base shadow-[0_1px_2px_rgba(26,28,28,0.04)] transition-colors hover:border-[#c9b6b6] focus:outline-none focus:border-[#9e0a24] focus:ring-4 focus:ring-[#9e0a24]/10"
       />
       {valor && (
         <button
@@ -313,9 +313,14 @@ function BuscaPage() {
           />
 
           <section className="lg:col-span-2 min-w-0 flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* No celular, o total e a ordem ficam centralizados, um
+                embaixo do outro. */}
+            <div className="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:justify-center">
               {/* Anunciado ao leitor de tela a cada busca. */}
-              <p aria-live="polite" className="text-sm text-[#5b403f]">
+              <p
+                aria-live="polite"
+                className="text-sm text-[#5b403f] max-sm:text-center"
+              >
                 {carregando ? (
                   "Buscando doadores…"
                 ) : erro ? (

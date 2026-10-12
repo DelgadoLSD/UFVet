@@ -1,31 +1,23 @@
 import { useBalao } from "../hooks/useBalao";
+import { BotaoSimboloAjuda } from "./BotaoAjuda";
 
-// Botão "?" que explica um dado num balão. No computador abre ao pousar o
-// mouse por um instante, sem precisar clicar; no celular, e para quem prefere,
-// abre com clique (o funcionamento do balão está em hooks/useBalao). O
-// círculo é pequeno; no toque, uma área invisível em volta chega a 40px.
+// O "?" que explica um dado num balão curto. No computador abre ao pousar o
+// mouse por um instante, sem precisar clicar; no celular, e para quem
+// prefere, abre com clique (o funcionamento do balão está em
+// hooks/useBalao). O desenho é o do "?" de todo o site (BotaoAjuda).
 //
-// Para um "?" que abre um modal com a explicação completa, use BotaoAjuda.
+// Para um "?" que abre uma janela com a explicação completa, use BotaoAjuda.
 function Ajuda({ titulo, children, claro = false, className = "" }) {
   const { botao, balao } = useBalao();
-  // A área de toque é posicionada pelo próprio botão. Quem já o posiciona
-  // (como o canto das células de dados, com absolute) não pode perder essa
-  // posição.
-  const posicao = className.split(" ").includes("absolute") ? "" : "relative";
 
   return (
     <>
-      <button
+      <BotaoSimboloAjuda
         {...botao}
         aria-label={`Entenda: ${titulo}`}
-        className={`${posicao} toque:before:absolute toque:before:-inset-3 inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold leading-none normal-case tracking-normal cursor-help transition-colors shrink-0 ${
-          claro
-            ? "bg-white/25 text-white hover:bg-white hover:text-[#7d0a1d]"
-            : "bg-[#9e0a24]/10 text-[#9e0a24] hover:bg-[#7d0a1d] hover:text-white"
-        } ${className}`}
-      >
-        ?
-      </button>
+        claro={claro}
+        className={`cursor-help ${className}`}
+      />
       {balao(titulo, children)}
     </>
   );

@@ -63,7 +63,7 @@ const CAMPO_DA_API = {
 };
 
 const CLASSE_CAMPO =
-  "w-full px-4 py-2.5 bg-white border border-[#e4bebc] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#9e0a24] focus:border-[#9e0a24] placeholder:text-gray-400 aria-[invalid=true]:border-[#9e0a24]";
+  "w-full px-4 py-2.5 bg-white border border-[#e4bebc] rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#9e0a24] focus:border-[#9e0a24] placeholder:text-gray-400 aria-[invalid=true]:border-[#9e0a24]";
 const CLASSE_TITULO = "text-sm font-semibold text-[#1a1c1c]";
 const CLASSE_ROTULO = `block mb-1.5 ${CLASSE_TITULO}`;
 
@@ -435,13 +435,9 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
               <span className={CLASSE_TITULO}>Castrado(a)? *</span>
               <Ajuda titulo="Por que perguntamos?">
                 <p>
-                  A castração não é obrigatória para doar. Mas fêmeas não
-                  castradas não podem doar durante o cio, a gestação e a
-                  amamentação.
-                </p>
-                <p>
-                  Depois da cirurgia de castração, é preciso esperar 30 dias
-                  antes de doar.
+                  Não precisa ser castrado para doar. Mas fêmeas não castradas
+                  não doam no cio, na gestação nem na amamentação, e depois da
+                  castração é preciso esperar 30 dias.
                 </p>
               </Ajuda>
             </div>

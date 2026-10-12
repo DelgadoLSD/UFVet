@@ -263,7 +263,7 @@ function ModalValidacao({ animal, validacao, onSalvar, onFechar }) {
             onChange={(e) => setNota(e.target.value)}
             rows={2}
             placeholder="Ex.: sorologia de Leishmania ainda não apresentada."
-            className="w-full bg-white text-gray-900 [color-scheme:light] border border-[#e4bebc] rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#9e0a24]"
+            className="w-full bg-white text-gray-900 [color-scheme:light] border border-[#e4bebc] rounded-xl p-3 text-base resize-none focus:outline-none focus:ring-2 focus:ring-[#9e0a24]"
           />
         </div>
       </div>

@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* No iPhone, dois toques rápidos (um campo e logo o seguinte, um botão
+   tocado duas vezes) davam zoom na página. Com "manipulation", o toque
+   duplo não amplia mais; o zoom de pinça continua valendo, para quem
+   precisa ampliar. O zoom ao tocar num campo é outro: some com os campos
+   de 16 px ou mais. */
+html {
+  touch-action: manipulation;
+}
+
 /* Fonte Sora, carregada do Google Fonts no index.html. */
 body {
   font-family: "Sora", sans-serif;
@@ -56,4 +65,25 @@ input::-ms-clear {
     "opsz" 24;
   width: 1em;
   overflow: hidden;
+}
+
+/* O "?" de ajuda (components/BotaoAjuda): o círculo vazado, um pouco mais
+   firme que os outros ícones, fica cheio ao passar o mouse, ao focar ou com
+   a explicação aberta. */
+.simbolo-ajuda {
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 500,
+    "GRAD" 0,
+    "opsz" 20;
+  transition: font-variation-settings 150ms ease-out;
+}
+.botao-ajuda:hover .simbolo-ajuda,
+.botao-ajuda:focus-visible .simbolo-ajuda,
+.botao-ajuda[aria-expanded="true"] .simbolo-ajuda {
+  font-variation-settings:
+    "FILL" 1,
+    "wght" 500,
+    "GRAD" 0,
+    "opsz" 20;
 }

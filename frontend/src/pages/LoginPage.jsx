@@ -98,7 +98,7 @@ function LoginPage() {
             // A recuperação de senha ainda não existe.
             <a
               href="#"
-              className="text-sm font-semibold text-[#9e0a24] hover:underline"
+              className="py-0.5 text-sm font-semibold text-[#9e0a24] hover:underline"
             >
               Esqueceu a senha?
             </a>

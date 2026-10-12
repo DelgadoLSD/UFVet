@@ -392,7 +392,7 @@ function LinhaDocumento({
       <div className="flex-1 min-w-[9.5rem]">
         <p className="text-sm font-semibold text-[#1a1c1c]">{nome}</p>
         <p
-          className={`text-xs mt-0.5 ${ultima ? "text-[#5f5e5e]" : "text-[#8f6f6e] italic"}`}
+          className={`text-xs mt-0.5 ${ultima ? "text-[#5f5e5e]" : "text-[#7a5f5e] italic"}`}
         >
           {ultima
             ? `Enviado em ${formatarData(ultima.enviadoEm)}${versoes.length > 1 ? `, ${versoes.length} versões` : ""}`
@@ -528,18 +528,10 @@ function SecaoDocumentos({
       ajuda={
         <Ajuda titulo="Por que enviar documentos?" claro>
           <p>
-            Com exames recentes e a carteira de vacinação em mãos, um
-            veterinário consegue validar o animal sem pedir que os exames sejam
-            refeitos.
+            Com exames recentes e a carteira de vacinação, o veterinário valida
+            o animal sem pedir os exames de novo, o que poupa tempo e custo.
           </p>
-          <p>
-            Sem eles, o hospital pode precisar repetir esses exames antes da
-            coleta — o que leva mais tempo e pode ter custo.
-          </p>
-          <p>
-            Os arquivos só abrem para o tutor do animal e para os veterinários:
-            um laudo costuma trazer o nome, o telefone e o endereço do tutor.
-          </p>
+          <p>Os arquivos só abrem para o tutor e para veterinários.</p>
         </Ajuda>
       }
       subtitulo="Evitam que exames sejam refeitos no hospital"

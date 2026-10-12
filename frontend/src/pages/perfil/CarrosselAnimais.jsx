@@ -44,7 +44,7 @@ function CartaoAnimalDaFila({ animal, noCentro }) {
             className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
-          <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-[#8f6f6e]">
+          <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-[#7a5f5e]">
             Sem foto ainda
           </span>
         )}
@@ -463,10 +463,7 @@ function CarrosselAnimais({
       {/* Os pontinhos: quantos são e qual está no centro. Para quem usa o
           mouse; o leitor de tela e o teclado já têm as abas. O cartão de
           cadastrar aparece como um "+". */}
-      <div
-        aria-hidden="true"
-        className="flex items-center justify-center gap-2"
-      >
+      <div aria-hidden="true" className="flex items-center justify-center">
         {itens.map((codigo) => {
           const noCentro = codigo === centro;
           return codigo === NOVO_ANIMAL ? (
@@ -475,13 +472,15 @@ function CarrosselAnimais({
               type="button"
               tabIndex={-1}
               onClick={() => onEscolher(codigo)}
-              className={`material-symbols-outlined text-[16px] leading-none transition-colors ${
+              className={`w-6 h-6 flex items-center justify-center transition-colors ${
                 noCentro
                   ? "text-[#9e0a24]"
                   : "text-[#c9b6b6] hover:text-[#7d0a1d]"
               }`}
             >
-              add
+              <span className="material-symbols-outlined text-[16px] leading-none">
+                add
+              </span>
             </button>
           ) : (
             <button
@@ -489,25 +488,19 @@ function CarrosselAnimais({
               type="button"
               tabIndex={-1}
               onClick={() => onEscolher(codigo)}
-              className={`h-2 rounded-full transition-all duration-deslize ease-deslize ${
-                noCentro
-                  ? "w-6 bg-[#9e0a24]"
-                  : "w-2 bg-[#e2cfcf] hover:bg-[#cfa9a7]"
-              }`}
-            />
+              className="group h-6 min-w-6 px-1 flex items-center justify-center"
+            >
+              <span
+                className={`h-2 rounded-full transition-all duration-deslize ease-deslize ${
+                  noCentro
+                    ? "w-6 bg-[#9e0a24]"
+                    : "w-2 bg-[#e2cfcf] group-hover:bg-[#cfa9a7]"
+                }`}
+              />
+            </button>
           );
         })}
       </div>
-
-      <p className="md:hidden flex items-center justify-center gap-1.5 text-xs text-[#5f5e5e]">
-        <span
-          aria-hidden="true"
-          className="material-symbols-outlined text-[18px] text-[#9e0a24]"
-        >
-          swipe
-        </span>
-        Deslize para o lado para ver os outros
-      </p>
     </div>
   );
 }

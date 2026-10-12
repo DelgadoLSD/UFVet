@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Botao from "../../components/Botao";
 import BotaoAjuda from "../../components/BotaoAjuda";
+import { TituloComAjuda } from "../perfil/PainelSecao";
 import { nomeProfissionalCurto, pronome } from "../../util/texto";
 import { tempoRestante } from "../../util/datas";
 
@@ -68,56 +69,61 @@ function FaixaAcessoContatos({ acesso, onPedirLiberacao, onComoFunciona }) {
   return (
     <section
       aria-label="Acesso aos contatos"
-      className="rounded-2xl bg-[#1a1c1c] text-white px-4 py-4 sm:px-5 flex items-start sm:items-center gap-4"
+      className="rounded-2xl bg-[#1a1c1c] text-white px-4 py-4 sm:px-5 flex flex-col sm:flex-row sm:items-center gap-x-5 gap-y-4"
     >
-      <span
-        aria-hidden="true"
-        className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${
-          conteudo.falta ? "bg-[#9e0a24]" : "bg-white/10"
-        }`}
-      >
-        <span className="material-symbols-outlined text-[20px]">
-          {conteudo.icone}
+      {/* No celular, o botão vai para baixo do ícone e do texto, na largura
+          do bloco inteiro; a partir do tablet, fica na mesma linha, à
+          direita. É o botão vermelho principal do site, e não uma caixa
+          branca sobre o preto. */}
+      <div className="flex-1 min-w-0 flex items-start sm:items-center gap-4">
+        <span
+          aria-hidden="true"
+          className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${
+            conteudo.falta ? "bg-[#9e0a24]" : "bg-white/10"
+          }`}
+        >
+          <span className="material-symbols-outlined text-[20px]">
+            {conteudo.icone}
+          </span>
         </span>
-      </span>
-
-      {/* No celular, o botão vai para baixo do texto, na largura toda; a
-          partir do tablet, fica na mesma linha, à direita. É o botão
-          vermelho principal do site, e não uma caixa branca sobre o preto. */}
-      <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-x-5 gap-y-3">
         <div className="flex-1 min-w-0">
-          <p className="flex items-center gap-1 text-[15px] font-bold leading-snug">
-            {conteudo.titulo}
-            <BotaoAjuda
-              claro
-              rotulo="Como funciona o acesso aos contatos?"
-              onClick={onComoFunciona}
+          <p className="text-[15px] font-bold leading-snug">
+            <TituloComAjuda
+              titulo={conteudo.titulo}
+              margem="ml-1"
+              ajuda={
+                <BotaoAjuda
+                  claro
+                  rotulo="Como funciona o acesso aos contatos?"
+                  onClick={onComoFunciona}
+                />
+              }
             />
           </p>
           <p className="mt-0.5 text-sm text-white/70 leading-snug text-pretty">
             {conteudo.texto}
           </p>
         </div>
-        {acesso.motivo === "sem-liberacao" && (
-          <Botao
-            icone="lock_open"
-            className="self-stretch sm:self-auto shrink-0 max-sm:h-11"
-            onClick={onPedirLiberacao}
-          >
-            Pedir liberação
-          </Botao>
-        )}
-        {acesso.motivo === "visitante" && (
-          <Botao
-            as={Link}
-            to="/login?voltar=/buscar"
-            icone="login"
-            className="self-stretch sm:self-auto shrink-0 max-sm:h-11"
-          >
-            Entrar
-          </Botao>
-        )}
       </div>
+      {acesso.motivo === "sem-liberacao" && (
+        <Botao
+          icone="lock_open"
+          className="w-full sm:w-auto shrink-0 max-sm:h-11"
+          onClick={onPedirLiberacao}
+        >
+          Pedir liberação
+        </Botao>
+      )}
+      {acesso.motivo === "visitante" && (
+        <Botao
+          as={Link}
+          to="/login?voltar=/buscar"
+          icone="login"
+          className="w-full sm:w-auto shrink-0 max-sm:h-11"
+        >
+          Entrar
+        </Botao>
+      )}
     </section>
   );
 }

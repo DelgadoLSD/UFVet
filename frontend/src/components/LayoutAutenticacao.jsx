@@ -37,7 +37,7 @@ export function BotaoGoogle({ children }) {
     <>
       <div className="flex items-center gap-4 my-6" aria-hidden="true">
         <span className="h-px flex-1 bg-[#eadede]" />
-        <span className="text-sm text-[#8f8a8a]">ou</span>
+        <span className="text-sm text-[#6f6a6a]">ou</span>
         <span className="h-px flex-1 bg-[#eadede]" />
       </div>
       <Botao variante="secundario" tamanho="lg" className="w-full">

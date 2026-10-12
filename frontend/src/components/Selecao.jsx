@@ -83,7 +83,10 @@ function Selecao({
   };
 
   return (
-    <div ref={raizRef} className={compacto ? "relative inline-block" : "relative"}>
+    <div
+      ref={raizRef}
+      className={compacto ? "relative inline-block" : "relative"}
+    >
       <button
         type="button"
         role="combobox"
@@ -123,7 +126,7 @@ function Selecao({
           className={`flex-1 truncate ${
             selecionada
               ? `text-[#1a1c1c] ${compacto ? "font-bold" : "font-semibold"}`
-              : "text-[#8f6f6e]"
+              : "text-[#7a5f5e]"
           } ${limpavel && selecionada ? "pr-7" : ""}`}
         >
           {selecionada

@@ -114,7 +114,7 @@ function CarrosselAfirmacoes({ verdade = false, itens }) {
       </div>
 
       <div className="mt-8 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center -mx-1">
           {itens.map((item, i) => (
             <button
               key={item.afirmacao}
@@ -122,12 +122,17 @@ function CarrosselAfirmacoes({ verdade = false, itens }) {
               onClick={() => setIndice(i)}
               aria-label={`Ir para ${nome.toLowerCase()} ${i + 1}`}
               aria-current={i === indice}
-              className={`h-2 rounded-full transition-all motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 ${cores.foco} ${
-                i === indice
-                  ? `w-6 ${cores.ponto}`
-                  : `w-2 ${cores.pontoInativo}`
-              }`}
-            />
+              className={`h-6 min-w-6 px-1 flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 ${cores.foco}`}
+            >
+              <span
+                aria-hidden="true"
+                className={`h-2 rounded-full transition-all motion-reduce:transition-none ${
+                  i === indice
+                    ? `w-6 ${cores.ponto}`
+                    : `w-2 ${cores.pontoInativo}`
+                }`}
+              />
+            </button>
           ))}
         </div>
         <div className="flex gap-2">

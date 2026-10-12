@@ -227,7 +227,7 @@ function FormularioDoacao({ animal, hospitalPadrao, onSalvar }) {
                 placeholder={animal.especie === "GATO" ? "50" : "450"}
                 className="flex-1 min-w-0 h-full px-4 bg-transparent text-base text-[#1a1c1c] placeholder:text-[#a79d9d] focus:outline-none"
               />
-              <span className="pr-4 text-sm font-semibold text-[#8f6f6e] select-none">
+              <span className="pr-4 text-sm font-semibold text-[#7a5f5e] select-none">
                 mL
               </span>
             </div>

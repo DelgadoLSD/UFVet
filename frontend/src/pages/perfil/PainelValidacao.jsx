@@ -184,7 +184,7 @@ function PainelValidacao({
 
       <ul
         className={`grid grid-cols-1 sm:grid-cols-2 gap-2 ${
-          status === "vencida" ? "opacity-60" : ""
+          status === "vencida" ? "opacity-80" : ""
         }`}
       >
         {CRITERIOS_DOACAO.map((c) => (
@@ -210,7 +210,7 @@ function PainelValidacao({
         <button
           type="button"
           onClick={onVerHistorico}
-          className="self-start text-xs font-semibold text-[#9e0a24] hover:underline underline-offset-2"
+          className="self-start py-1 -my-1 text-xs font-semibold text-[#9e0a24] hover:underline underline-offset-2"
         >
           {totalValidacoes > 1
             ? `Ver histórico de validações (${totalValidacoes})`

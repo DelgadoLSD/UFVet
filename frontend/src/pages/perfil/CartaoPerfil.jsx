@@ -240,7 +240,7 @@ function CartaoPerfil({
               className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
-            <p className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-[#8f6f6e]">
+            <p className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-[#7a5f5e]">
               Sem foto ainda
             </p>
           )}

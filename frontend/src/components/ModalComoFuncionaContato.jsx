@@ -34,11 +34,10 @@ function ModalComoFuncionaContato({ onFechar }) {
       largura="max-w-3xl"
       onFechar={onFechar}
     >
-      <div className="flex flex-col gap-6 text-[#5b403f]">
-        <p>
-          Quem cadastra um doador aceita ser procurado em uma emergência, não
-          ter o telefone aberto para qualquer pessoa que criar uma conta. Por
-          isso o contato só aparece para quem está mesmo em um atendimento.
+      <div className="flex flex-col gap-5 text-[#5b403f]">
+        <p className="text-sm leading-relaxed">
+          O telefone de quem cadastra um doador só aparece para quem está num
+          atendimento.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-[auto_1fr] gap-4">
@@ -46,16 +45,14 @@ function ModalComoFuncionaContato({ onFechar }) {
             <h3 className="font-bold text-white">Se você é tutor</h3>
             <ul className="flex flex-col gap-2">
               <Item escuro>
-                O veterinário que está cuidando do seu animal libera o seu
-                acesso pelo seu código.
+                O veterinário que cuida do seu animal libera seu acesso pelo seu
+                código.
               </Item>
               <Item escuro>
-                Enquanto a liberação estiver ativa, você vê o contato de
-                qualquer doador e fala direto com o tutor.
+                Enquanto vale, você vê o contato de todos os doadores.
               </Item>
               <Item escuro>
-                A liberação tem prazo e expira sozinha, sem ninguém precisar
-                lembrar de encerrar.
+                O acesso vence sozinho: em 24 horas, 3 ou 7 dias.
               </Item>
             </ul>
           </div>
@@ -63,36 +60,17 @@ function ModalComoFuncionaContato({ onFechar }) {
           <div className={`${CARTAO} bg-white border border-[#eadede]`}>
             <h3 className="font-bold text-[#1a1c1c]">Se você é veterinário</h3>
             <ul className="flex flex-col gap-2">
+              <Item>Você vê os contatos sempre, sem pedir a ninguém.</Item>
               <Item>
-                Você vê os contatos quando precisar, sem pedir liberação a
-                ninguém.
-              </Item>
-              <Item>
-                O contato aparece direto no perfil do doador, com telefone e
-                e-mail prontos para copiar.
-              </Item>
-              <Item>
-                Você libera e encerra o acesso dos tutores em atendimento pelo
-                seu perfil.
+                Você libera, renova e encerra o acesso dos tutores pelo seu
+                perfil.
               </Item>
             </ul>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <h3 className="text-base font-bold text-[#1a1c1c]">
-            Por quanto tempo dura
-          </h3>
-          <p>
-            A liberação é dada por 24 horas, 3 dias ou 7 dias, conforme o
-            atendimento. Ela vence sozinha no fim do prazo, e o veterinário pode
-            renovar ou encerrar antes disso pelo perfil dele.
-          </p>
-        </div>
-
         <p className="text-xs text-[#5f5e5e] border-t border-[#f0e6e6] pt-4">
-          Nada disso substitui o combinado com o tutor do doador: a doação
-          continua sendo voluntária, e ele pode dizer não a qualquer momento.
+          A doação é voluntária: o tutor do doador pode dizer não.
         </p>
       </div>
     </Modal>
