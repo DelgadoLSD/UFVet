@@ -42,11 +42,18 @@ input::-ms-clear {
   }
 }
 
-/* Ícones do Material Symbols, sempre no traço vazado e no peso normal. */
+/* Ícones do Material Symbols, sempre no traço vazado e no peso normal.
+   Cada ícone é o nome dele escrito numa fonte ("expand_more" vira a
+   setinha). Enquanto a fonte não chega, o nome fica invisível, mas ocupa a
+   largura da palavra inteira e empurrava a página para o lado no celular.
+   Com a largura de um ícone e o resto cortado, o lugar já fica certo antes
+   de a fonte chegar. */
 .material-symbols-outlined {
   font-variation-settings:
     "FILL" 0,
     "wght" 400,
     "GRAD" 0,
     "opsz" 24;
+  width: 1em;
+  overflow: hidden;
 }
