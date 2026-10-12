@@ -345,9 +345,9 @@ describe("fotos guardadas no banco", () => {
     const resposta = await cadastrarComFotos(navegador, await fotos(1));
     const url = resposta.body.animal.fotos[0].url;
 
-    const [nome] = await arquivosGuardados();
-    expect(url).toBe(`/api/arquivos/${nome}`);
-    const { conteudo } = await banco.arquivo.findUnique({ where: { nome } });
+    const [id] = await arquivosGuardados();
+    expect(url).toBe(`/api/arquivos/${id}.webp`);
+    const { conteudo } = await banco.arquivo.findUnique({ where: { id } });
     // Outra API, como depois de a hospedagem reiniciar o serviço.
     app = criarApp();
     const foto = await baixar(url);
@@ -358,6 +358,17 @@ describe("fotos guardadas no banco", () => {
     expect(foto.headers["cache-control"]).toBe(
       "public, max-age=31536000, immutable",
     );
+  });
+
+  test("endereço com id malformado é só 'não encontrado', sem erro do banco", async () => {
+    for (const nome of [
+      "------------------------------------.webp",
+      "zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz.webp",
+      "00000000-0000-0000-0000-000000000000.png",
+    ]) {
+      const resposta = await request(app).get(`/api/arquivos/${nome}`);
+      expect(resposta.status).toBe(404);
+    }
   });
 
   test("quem já tem a foto e pergunta se ela mudou recebe 304, sem baixá-la de novo", async () => {
@@ -371,6 +382,56 @@ describe("fotos guardadas no banco", () => {
       .set("If-None-Match", primeira.headers.etag);
 
     expect(segunda.status).toBe(304);
+  });
+});
+
+describe("cada foto aponta para um arquivo que existe (chave estrangeira)", () => {
+  // O banco garante sozinho, sem depender do código: ninguém aponta para um
+  // arquivo que não existe, nem apaga um arquivo em uso, e um arquivo serve
+  // a um dono só.
+  test("a conta não aponta para uma foto que não existe", async () => {
+    const navegador = await navegadorComConta();
+
+    await expect(
+      banco.usuario.update({
+        where: { codigo: navegador.codigo },
+        data: { fotoId: "00000000-0000-4000-8000-000000000099" },
+      }),
+    ).rejects.toThrow();
+  });
+
+  test("o banco não deixa apagar a foto que uma conta usa", async () => {
+    const navegador = await navegadorComConta();
+    const { body } = await comArquivos(
+      navegador.put("/api/conta/foto"),
+      undefined,
+      await fotos(1),
+      "foto",
+    ).expect(200);
+    const [id] = await arquivosGuardados();
+
+    await expect(banco.arquivo.delete({ where: { id } })).rejects.toThrow();
+    await request(app).get(body.usuario.fotoUrl).expect(200);
+  });
+
+  test("o mesmo arquivo não vira foto de dois animais", async () => {
+    const navegador = await navegadorComConta();
+    const { body } = await cadastrarComFotos(navegador, await fotos(1));
+    const [id] = await arquivosGuardados();
+    const outro = await cadastrarComFotos(navegador, [], {
+      ...zeus,
+      nome: "Thor",
+    });
+    const thor = await banco.animal.findUnique({
+      where: { codigo: outro.body.animal.codigo },
+    });
+
+    await expect(
+      banco.animalFoto.create({
+        data: { animalId: thor.id, arquivoId: id, ordem: 0 },
+      }),
+    ).rejects.toThrow();
+    expect(body.animal.fotos[0].url).toBe(`/api/arquivos/${id}.webp`);
   });
 });
 

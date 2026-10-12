@@ -75,14 +75,16 @@ sanguíneo e disponibilidade.
 identidade ("hemograma deste animal"); as versões são os arquivos. Um exame
 refeito não substitui o anterior: entra como versão nova, e o histórico fica
 disponível para o veterinário comparar a evolução. O arquivo em si fica na
-tabela `arquivo`; a versão guarda o nome dele.
+tabela `arquivo`, e a versão aponta para ele.
 
 **`arquivo`** — o conteúdo das fotos e dos exames enviados. Fica no banco
-porque a hospedagem gratuita apaga o disco do serviço a cada reinício. As
-outras tabelas apontam para ele pelo endereço ou pelo nome (`usuario.foto_url`,
-`animal_foto.url`, `documento_versao.arquivo_url`), sem chave estrangeira. O
-tipo separa o que é público (a foto) do que só sai pela API, para o dono do
-animal e os veterinários (o exame).
+porque a hospedagem gratuita apaga o disco do serviço a cada reinício. Cada
+arquivo tem um dono só, que aponta para ele por chave estrangeira: a foto de
+perfil (`usuario.foto_id`), uma foto de animal (`animal_foto.arquivo_id`) ou
+uma versão de exame (`documento_versao.arquivo_id`). Assim o banco garante
+que ninguém aponta para um arquivo que não existe, e não deixa apagar um
+arquivo em uso. O tipo separa o que é público (a foto) do que só sai pela
+API, para o dono do animal e os veterinários (o exame).
 
 ### Validação clínica
 
@@ -120,6 +122,9 @@ o veterinário pode renovar ou encerrar antes.
 | `estabelecimento` → `veterinario` | 1:N | Um local tem vários veterinários; cada um atua em um local |
 | `usuario` → `animal` | 1:N | Um tutor tem vários animais; cada animal tem um tutor |
 | `animal` → `animal_foto` | 1:N | Até cinco fotos por animal |
+| `arquivo` → `usuario` | 1:1 (opcional) | A foto de perfil; sem ela, o site mostra as iniciais |
+| `arquivo` → `animal_foto` | 1:1 | O arquivo de cada foto de animal |
+| `arquivo` → `documento_versao` | 1:1 | O arquivo de cada versão de exame |
 | `animal` → `documento` | 1:N | Um documento por tipo e por animal |
 | `documento` → `documento_versao` | 1:N | Cada envio é uma versão |
 | `animal` → `validacao` | 1:N | Histórico: renovar gera uma validação nova |
@@ -395,7 +400,7 @@ UQ = restrição de unicidade.
 | telefone_cifrado | text | NOT NULL | Telefone cifrado (AES-256-GCM); contato protegido pelas regras de liberação |
 | cidade | varchar(80) | NOT NULL | Cidade, usada no filtro da busca |
 | bairro | varchar(80) | NOT NULL | Bairro, usado no filtro da busca |
-| foto_url | varchar(255) | NULL | Foto de perfil |
+| foto_id | uuid | FK → arquivo, UQ, NULL | Foto de perfil; sem ela, o site mostra as iniciais |
 | sessoes_validas_desde | timestamptz | NULL | Sessões (crachás JWT) emitidas antes deste instante deixam de valer; preenchido ao trocar a senha ou sair de todos os aparelhos |
 | criado_em | timestamptz | NOT NULL | Data de cadastro |
 | atualizado_em | timestamptz | NOT NULL | Última alteração |
@@ -462,7 +467,7 @@ UQ = restrição de unicidade.
 |---|---|---|---|
 | id | uuid | PK | Identificador |
 | animal_id | uuid | FK → animal | Animal |
-| url | varchar(255) | NOT NULL | Endereço do arquivo |
+| arquivo_id | uuid | FK → arquivo, UQ, NOT NULL | O arquivo da foto |
 | ordem | smallint | NOT NULL, UQ com animal_id | Zero é a foto principal |
 | criado_em | timestamptz | NOT NULL | Data do envio |
 
@@ -481,7 +486,7 @@ UQ = restrição de unicidade.
 |---|---|---|---|
 | id | uuid | PK | Identificador |
 | documento_id | uuid | FK → documento | Documento |
-| arquivo_url | varchar(255) | NOT NULL | O nome do arquivo na tabela `arquivo`, como exame, que não é público (o arquivo sai só pela API, para o dono do animal e veterinários) |
+| arquivo_id | uuid | FK → arquivo, UQ, NOT NULL | O arquivo do exame, que não é público (sai só pela API, para o dono do animal e veterinários) |
 | enviado_por_id | uuid | FK → usuario, NULL | Quem enviou |
 | enviado_por_nome | varchar(120) | NOT NULL | Nome copiado no envio |
 | enviado_em | timestamptz | NOT NULL | Momento do envio |
@@ -490,8 +495,9 @@ UQ = restrição de unicidade.
 
 | Campo | Tipo | Restrições | Descrição |
 |---|---|---|---|
-| nome | varchar(64) | PK | Sorteado pela API, com a extensão: `<uuid>.webp` ou `<uuid>.pdf` |
+| id | uuid | PK | Identificador; o endereço público de uma foto é `/api/arquivos/<id>.webp` |
 | tipo | enum | NOT NULL | FOTO (pública) ou EXAME (só pela API) |
+| formato | enum | NOT NULL | WEBP (fotos e exames em imagem) ou PDF (exames) |
 | conteudo | bytea | NOT NULL | O arquivo |
 | criado_em | timestamptz | NOT NULL | Momento do envio |
 

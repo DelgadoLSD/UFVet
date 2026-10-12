@@ -100,16 +100,16 @@ export function criarAnimal({ tutorId, nome }) {
 
 // ─── Fotos ────────────────────────────────────────────────────────────────────
 
-// Os nomes das fotos guardadas no banco agora (limparBanco as apaga com o
+// Os ids das fotos guardadas no banco agora (limparBanco as apaga com o
 // resto).
 const guardados = async (tipo) =>
   (
     await banco.arquivo.findMany({
       where: { tipo },
-      select: { nome: true },
+      select: { id: true },
       orderBy: { criadoEm: "asc" },
     })
-  ).map((arquivo) => arquivo.nome);
+  ).map((arquivo) => arquivo.id);
 export const arquivosGuardados = () => guardados("FOTO");
 
 // O mesmo para os exames.

@@ -653,7 +653,7 @@ async function criarDocumentos(animal) {
     const versoes = [];
     for (const dia of dias) {
       versoes.push({
-        arquivoUrl: await guardarExame(imagem, "webp"),
+        arquivoId: await guardarExame(imagem, "webp"),
         enviadoPorId: dono.id,
         enviadoPorNome: dono.nomeCompleto,
         enviadoEm: new Date(`${dia}T10:00:00-03:00`),
@@ -732,10 +732,10 @@ async function criarContas(hospital) {
       console.log(`Criada: ${conta.nomeCompleto} (${conta.email})`);
     }
 
-    if (!usuario.fotoUrl && retrato) {
+    if (!usuario.fotoId && retrato) {
       await banco.usuario.update({
         where: { id: usuario.id },
-        data: { fotoUrl: await enviarImagem(retrato.arquivo, retrato) },
+        data: { fotoId: await enviarImagem(retrato.arquivo, retrato) },
       });
       console.log(`  com a foto de perfil`);
     }
@@ -770,7 +770,7 @@ async function criarAnimais(hospital) {
         await banco.animalFoto.create({
           data: {
             animalId: existente.id,
-            url: await enviarImagem(arquivo),
+            arquivoId: await enviarImagem(arquivo),
             ordem,
           },
         });

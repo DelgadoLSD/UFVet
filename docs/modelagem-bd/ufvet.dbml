@@ -69,6 +69,11 @@ Enum tipo_arquivo {
   EXAME
 }
 
+Enum formato_arquivo {
+  WEBP
+  PDF
+}
+
 // ─────────────────────────── Pessoas e locais ───────────────────────────
 
 Table estabelecimento {
@@ -96,7 +101,7 @@ Table usuario {
   telefone_cifrado text [not null, note: 'AES-256-GCM, chave fora do banco']
   cidade varchar(80) [not null]
   bairro varchar(80) [not null]
-  foto_url varchar(255)
+  foto_id uuid [unique, note: 'Foto de perfil; sem ela, o site mostra as iniciais.']
   sessoes_validas_desde timestamptz [note: 'Sessões emitidas antes deste instante deixam de valer (troca de senha, sair de todos os aparelhos).']
   criado_em timestamptz [not null]
   atualizado_em timestamptz [not null]
@@ -179,7 +184,7 @@ Table animal {
 Table animal_foto {
   id uuid [pk]
   animal_id uuid [not null]
-  url varchar(255) [not null]
+  arquivo_id uuid [unique, not null]
   ordem smallint [not null, note: 'Zero é a foto principal. Até cinco por animal.']
   criado_em timestamptz [not null]
 
@@ -206,7 +211,7 @@ Table documento {
 Table documento_versao {
   id uuid [pk]
   documento_id uuid [not null]
-  arquivo_url varchar(255) [not null]
+  arquivo_id uuid [unique, not null]
   enviado_por_id uuid
   enviado_por_nome varchar(120) [not null]
   enviado_em timestamptz [not null]
@@ -217,12 +222,13 @@ Table documento_versao {
 // ─────────────────────────── Arquivos ───────────────────────────
 
 Table arquivo {
-  nome varchar(64) [pk, note: 'Sorteado pela API: <uuid>.webp ou <uuid>.pdf.']
+  id uuid [pk, note: 'O endereço público de uma foto é /api/arquivos/<id>.webp.']
   tipo tipo_arquivo [not null]
+  formato formato_arquivo [not null]
   conteudo bytea [not null]
   criado_em timestamptz [not null]
 
-  Note: 'O conteúdo das fotos e dos exames. As outras tabelas apontam para ele pelo endereço ou pelo nome, sem chave estrangeira.'
+  Note: 'O conteúdo das fotos e dos exames. Cada arquivo tem um dono só (a foto de perfil, uma foto de animal ou uma versão de exame), que aponta para ele por chave estrangeira; o banco não deixa apagar um arquivo em uso.'
 }
 
 // ─────────────────────────── Validação clínica ───────────────────────────
@@ -334,6 +340,7 @@ Table liberacao_contato {
 // ─────────────────────────── Relacionamentos ───────────────────────────
 
 Ref: veterinario.usuario_id - usuario.id [delete: cascade]
+Ref: usuario.foto_id - arquivo.id [delete: restrict]
 Ref: veterinario.estabelecimento_id > estabelecimento.id [delete: restrict]
 Ref: aceite.usuario_id > usuario.id [delete: cascade]
 Ref: convite_veterinario.estabelecimento_id > estabelecimento.id [delete: cascade]
@@ -342,10 +349,12 @@ Ref: convite_veterinario.usado_por_id > usuario.id [delete: set null]
 Ref: animal.tutor_id > usuario.id [delete: cascade]
 Ref: animal.tipagem_validacao_id - validacao.id [delete: set null]
 Ref: animal_foto.animal_id > animal.id [delete: cascade]
+Ref: animal_foto.arquivo_id - arquivo.id [delete: restrict]
 
 Ref: documento.animal_id > animal.id [delete: cascade]
 Ref: documento_versao.documento_id > documento.id [delete: cascade]
 Ref: documento_versao.enviado_por_id > usuario.id [delete: set null]
+Ref: documento_versao.arquivo_id - arquivo.id [delete: restrict]
 
 Ref: validacao.animal_id > animal.id [delete: cascade]
 Ref: validacao.veterinario_id > usuario.id [delete: set null]

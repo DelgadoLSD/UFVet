@@ -1,3 +1,4 @@
+import { enderecoDaFoto } from "../armazenamento.js";
 import { banco } from "../banco.js";
 import {
   deDataDoBanco,
@@ -88,7 +89,7 @@ function dadosDoDoador({ animal, validado }) {
     pesoKg: Number(animal.pesoKg),
     tipoSanguineo: animal.tipoSanguineo,
     validado,
-    foto: animal.fotos[0]?.url ?? null,
+    foto: enderecoDaFoto(animal.fotos[0]?.arquivoId),
     cidade: animal.tutor.cidade,
     bairro: animal.tutor.bairro,
     tutorCodigo: animal.tutor.codigo,
@@ -129,7 +130,11 @@ export async function buscarDoadores(filtros) {
       pesoKg: true,
       tipoSanguineo: true,
       tutor: { select: { codigo: true, cidade: true, bairro: true } },
-      fotos: { orderBy: { ordem: "asc" }, take: 1, select: { url: true } },
+      fotos: {
+        orderBy: { ordem: "asc" },
+        take: 1,
+        select: { arquivoId: true },
+      },
       validacoes: {
         orderBy: { criadoEm: "desc" },
         take: 1,

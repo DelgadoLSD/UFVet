@@ -1,3 +1,4 @@
+import { enderecoDaFoto } from "../armazenamento.js";
 import { banco } from "../banco.js";
 import { decifrar, indiceEmail } from "../cifra.js";
 import { sortearCodigoLivre, sortearCodigoPublico } from "../codigos.js";
@@ -58,7 +59,7 @@ export async function dadosPublicos(usuario) {
     nomeCompleto: usuario.nomeCompleto,
     cidade: usuario.cidade,
     bairro: usuario.bairro,
-    fotoUrl: usuario.fotoUrl,
+    fotoUrl: enderecoDaFoto(usuario.fotoId),
     membroDesde: usuario.criadoEm,
     veterinario: veterinario && {
       crmv: veterinario.crmv,
@@ -104,7 +105,7 @@ export async function dadosDaConta(usuario) {
     cpfMascarado: mascararCpf(decifrar(usuario.cpfCifrado)),
     cidade: usuario.cidade,
     bairro: usuario.bairro,
-    fotoUrl: usuario.fotoUrl,
+    fotoUrl: enderecoDaFoto(usuario.fotoId),
     membroDesde: usuario.criadoEm,
     veterinario: veterinario && {
       crmv: veterinario.crmv,

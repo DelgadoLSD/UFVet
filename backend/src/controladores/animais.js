@@ -49,22 +49,22 @@ function dadosDoPedido(req) {
 const fotosInvalidas = (mensagem) =>
   new ErroApi(400, mensagem, { campos: { fotos: mensagem } });
 
-// Trata e guarda as fotos enviadas, na ordem do envio, e devolve os
-// endereços. Todas são tratadas antes de a primeira ser guardada: com uma
+// Trata e guarda as fotos enviadas, na ordem do envio, e devolve os ids dos
+// arquivos. Todas são tratadas antes de a primeira ser guardada: com uma
 // foto ruim no meio, nenhuma fica gravada.
 async function guardarFotos(arquivos) {
   const tratadas = [];
   for (const arquivo of arquivos) {
     tratadas.push(await prepararFoto(arquivo.buffer, "fotos"));
   }
-  const enderecos = [];
+  const ids = [];
   try {
-    for (const imagem of tratadas) enderecos.push(await guardarImagem(imagem));
+    for (const imagem of tratadas) ids.push(await guardarImagem(imagem));
   } catch (erro) {
-    await apagarArquivos(enderecos);
+    await apagarArquivos(ids);
     throw erro;
   }
-  return enderecos;
+  return ids;
 }
 
 // A data de nascimento a gravar, conforme o tutor informou (NF8.2). A idade
@@ -126,7 +126,7 @@ export async function listarAnimais(req, res) {
 // fotos, se vierem, na ordem do envio. Ele já nasce disponível para doação.
 export async function cadastrarAnimal(req, res) {
   const dados = esquemaAnimal.parse(dadosDoPedido(req));
-  const enderecos = await guardarFotos(req.files ?? []);
+  const arquivos = await guardarFotos(req.files ?? []);
 
   let animal;
   try {
@@ -142,20 +142,20 @@ export async function cadastrarAnimal(req, res) {
         pesoKg: dados.pesoKg,
         ...nascimentoInformado(dados),
         fotos: {
-          create: enderecos.map((url, ordem) => ({ url, ordem })),
+          create: arquivos.map((arquivoId, ordem) => ({ arquivoId, ordem })),
         },
       },
       select: { id: true, codigo: true },
     });
   } catch (erro) {
     // Sem o animal no banco, as fotos guardadas não servem para nada.
-    await apagarArquivos(enderecos);
+    await apagarArquivos(arquivos);
     throw erro;
   }
   registrar("animal_cadastrado", {
     usuarioId: req.usuario.id,
     animal: animal.codigo,
-    fotos: enderecos.length,
+    fotos: arquivos.length,
   });
   // Gravar as fotos junto faz o Prisma abrir uma transação, e buscar o
   // histórico dentro dela mandaria várias consultas ao mesmo tempo pela mesma
@@ -185,17 +185,18 @@ function conferirOrdemDasFotos(atuais, ordem, enviadas) {
   }
 }
 
-// As fotos na ordem final: { id } das que continuam e { url } das novas.
-function fotosDepois(atuais, ordem, enderecosNovos) {
+// As fotos na ordem final: { id } das que continuam e { arquivoId } das
+// novas.
+function fotosDepois(atuais, ordem, arquivosNovos) {
   if (ordem === undefined) {
     return [
       ...atuais.map(({ id }) => ({ id })),
-      ...enderecosNovos.map((url) => ({ url })),
+      ...arquivosNovos.map((arquivoId) => ({ arquivoId })),
     ];
   }
-  const novas = [...enderecosNovos];
+  const novas = [...arquivosNovos];
   return ordem.map((item) =>
-    item === "nova" ? { url: novas.shift() } : { id: item },
+    item === "nova" ? { arquivoId: novas.shift() } : { id: item },
   );
 }
 
@@ -220,7 +221,9 @@ async function gravarFotos(tx, animalId, depois) {
     if (foto.id) {
       await tx.animalFoto.update({ where: { id: foto.id }, data: { ordem } });
     } else {
-      await tx.animalFoto.create({ data: { animalId, url: foto.url, ordem } });
+      await tx.animalFoto.create({
+        data: { animalId, arquivoId: foto.arquivoId, ordem },
+      });
     }
   }
 }
@@ -267,8 +270,8 @@ export async function editarAnimal(req, res) {
 
   conferirOrdemDasFotos(animal.fotos, dados.fotos, enviadas.length);
   const mudaFotos = dados.fotos !== undefined || enviadas.length > 0;
-  const enderecosNovos = await guardarFotos(enviadas);
-  const depois = fotosDepois(animal.fotos, dados.fotos, enderecosNovos);
+  const arquivosNovos = await guardarFotos(enviadas);
+  const depois = fotosDepois(animal.fotos, dados.fotos, arquivosNovos);
   const removidas = animal.fotos.filter(
     (atual) => !depois.some((foto) => foto.id === atual.id),
   );
@@ -297,11 +300,11 @@ export async function editarAnimal(req, res) {
       if (mudaFotos) await gravarFotos(tx, animal.id, depois);
     });
   } catch (erro) {
-    await apagarArquivos(enderecosNovos);
+    await apagarArquivos(arquivosNovos);
     throw erro;
   }
   // Só depois de gravado: os arquivos das fotos que saíram.
-  await apagarArquivos(removidas.map((foto) => foto.url));
+  await apagarArquivos(removidas.map((foto) => foto.arquivoId));
 
   const atualizado = await buscarComHistorico(animal.id);
   if (invalidou) {
@@ -328,11 +331,11 @@ export async function excluirAnimal(req, res) {
   const animal = await animalDoUsuario(req);
   const exames = await banco.documentoVersao.findMany({
     where: { documento: { animalId: animal.id } },
-    select: { arquivoUrl: true },
+    select: { arquivoId: true },
   });
   await banco.animal.delete({ where: { id: animal.id } });
-  await apagarArquivos(animal.fotos.map((foto) => foto.url));
-  await apagarExames(exames.map((exame) => exame.arquivoUrl));
+  await apagarArquivos(animal.fotos.map((foto) => foto.arquivoId));
+  await apagarExames(exames.map((exame) => exame.arquivoId));
   registrar("animal_excluido", {
     usuarioId: req.usuario.id,
     animal: animal.codigo,

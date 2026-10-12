@@ -106,6 +106,15 @@ enum TipoArquivo {
   @@map("tipo_arquivo")
 }
 
+/// A foto é sempre gravada em WebP (ver src/imagens.js); o exame, em WebP
+/// (foto do laudo) ou em PDF.
+enum FormatoArquivo {
+  WEBP
+  PDF
+
+  @@map("formato_arquivo")
+}
+
 // ─────────────────────────── Pessoas e locais ───────────────────────────
 
 /// Hospital veterinário ou clínica. A clínica particular de um veterinário
@@ -154,7 +163,9 @@ model Usuario {
   telefoneCifrado     String       @map("telefone_cifrado")
   cidade              String       @db.VarChar(80)
   bairro              String       @db.VarChar(80)
-  fotoUrl             String?      @map("foto_url") @db.VarChar(255)
+  /// A foto de perfil, na tabela arquivo. Sem foto, o site mostra as
+  /// iniciais.
+  fotoId              String?      @unique @map("foto_id") @db.Uuid
   /// Crachás de sessão (JWT) emitidos antes deste instante deixam de valer.
   /// É preenchido ao trocar a senha e ao "sair de todos os aparelhos"; fica
   /// nulo enquanto nada disso acontece. Sem ele, um crachá esquecido num
@@ -163,6 +174,7 @@ model Usuario {
   criadoEm            DateTime     @default(now()) @map("criado_em") @db.Timestamptz(3)
   atualizadoEm        DateTime     @updatedAt @map("atualizado_em") @db.Timestamptz(3)
 
+  foto                 Arquivo?             @relation(fields: [fotoId], references: [id], onDelete: Restrict)
   veterinario          Veterinario?
   convitesUsados       ConviteVeterinario[]
   aceites              Aceite[]
@@ -290,14 +302,15 @@ model Animal {
 }
 
 model AnimalFoto {
-  id       String   @id @default(uuid()) @db.Uuid
-  animalId String   @map("animal_id") @db.Uuid
-  url      String   @db.VarChar(255)
+  id        String   @id @default(uuid()) @db.Uuid
+  animalId  String   @map("animal_id") @db.Uuid
+  arquivoId String   @unique @map("arquivo_id") @db.Uuid
   /// Zero é a foto principal. Até cinco por animal.
-  ordem    Int      @db.SmallInt
-  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+  ordem     Int      @db.SmallInt
+  criadoEm  DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
 
-  animal Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  animal  Animal  @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  arquivo Arquivo @relation(fields: [arquivoId], references: [id], onDelete: Restrict)
 
   @@unique([animalId, ordem])
   @@map("animal_foto")
@@ -325,12 +338,13 @@ model Documento {
 model DocumentoVersao {
   id             String   @id @default(uuid()) @db.Uuid
   documentoId    String   @map("documento_id") @db.Uuid
-  arquivoUrl     String   @map("arquivo_url") @db.VarChar(255)
+  arquivoId      String   @unique @map("arquivo_id") @db.Uuid
   enviadoPorId   String?  @map("enviado_por_id") @db.Uuid
   enviadoPorNome String   @map("enviado_por_nome") @db.VarChar(120)
   enviadoEm      DateTime @default(now()) @map("enviado_em") @db.Timestamptz(3)
 
   documento  Documento @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  arquivo    Arquivo   @relation(fields: [arquivoId], references: [id], onDelete: Restrict)
   enviadoPor Usuario?  @relation(fields: [enviadoPorId], references: [id], onDelete: SetNull)
 
   @@map("documento_versao")
@@ -339,16 +353,22 @@ model DocumentoVersao {
 // ─────────────────────────── Arquivos ───────────────────────────
 
 /// As fotos e os exames enviados, com o conteúdo. Ficam no banco porque a
-/// hospedagem gratuita apaga o disco do serviço a cada reinício. As outras
-/// tabelas guardam só o endereço ou o nome (usuario.foto_url,
-/// animal_foto.url, documento_versao.arquivo_url); quem grava, lê e apaga é
+/// hospedagem gratuita apaga o disco do serviço a cada reinício. Cada
+/// arquivo tem um dono só: a foto de perfil de um usuário, uma foto de um
+/// animal ou uma versão de um exame, que apontam para ele por chave
+/// estrangeira. O banco não deixa ninguém apontar para um arquivo que não
+/// existe, nem apagar um arquivo em uso (Restrict); quem grava, lê e apaga é
 /// src/armazenamento.js.
 model Arquivo {
-  /// Sorteado pela API, com a extensão: "<uuid>.webp" ou "<uuid>.pdf".
-  nome     String      @id @db.VarChar(64)
+  id       String         @id @default(uuid()) @db.Uuid
   tipo     TipoArquivo
+  formato  FormatoArquivo
   conteudo Bytes
-  criadoEm DateTime    @default(now()) @map("criado_em") @db.Timestamptz(3)
+  criadoEm DateTime       @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  usuario         Usuario?
+  animalFoto      AnimalFoto?
+  documentoVersao DocumentoVersao?
 
   @@map("arquivo")
 }

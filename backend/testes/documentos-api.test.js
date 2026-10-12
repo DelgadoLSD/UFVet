@@ -384,9 +384,9 @@ describe("quem abre os exames", () => {
 
   test("o exame não sai pelo endereço público das fotos", async () => {
     await comHemograma();
-    const [nome] = await examesGuardados();
+    const [id] = await examesGuardados();
 
-    const resposta = await request(app).get(`/api/arquivos/${nome}`);
+    const resposta = await request(app).get(`/api/arquivos/${id}.webp`);
 
     expect(resposta.status).toBe(404);
   });
@@ -400,26 +400,22 @@ describe("quem abre os exames", () => {
       await fotoDeCelular(),
       comoFoto,
     ).expect(201);
-    const [nome] = await examesGuardados();
-    expect(nome).toMatch(/\.webp$/);
+    const [id] = await examesGuardados();
+    const exame = await banco.arquivo.findUnique({ where: { id } });
+    expect(exame.formato).toBe("WEBP");
 
-    const resposta = await request(app).get(`/api/arquivos/${nome}`);
+    const resposta = await request(app).get(`/api/arquivos/${id}.webp`);
 
     expect(resposta.status).toBe(404);
   });
 
-  test("arquivo que não está mais guardado: a versão continua, e quem abre fica sabendo o que fazer", async () => {
+  test("o banco não deixa apagar o arquivo de uma versão que está no histórico", async () => {
     const { tutor, url } = await comHemograma();
-    const [nome] = await examesGuardados();
-    await banco.arquivo.delete({ where: { nome } });
+    const [id] = await examesGuardados();
 
-    const resposta = await tutor.get(url);
-
-    expect(resposta.status).toBe(404);
-    expect(resposta.body.erro).toBe(
-      "O arquivo deste exame não está mais guardado. Ele precisa ser enviado de novo.",
-    );
-    expect(resposta.headers["content-disposition"]).toBeUndefined();
+    await expect(banco.arquivo.delete({ where: { id } })).rejects.toThrow();
+    // E o exame continua abrindo.
+    await tutor.get(url).expect(200);
   });
 });
 

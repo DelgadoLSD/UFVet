@@ -1,3 +1,4 @@
+import { enderecoDaFoto } from "../armazenamento.js";
 import { banco } from "../banco.js";
 import { sortearCodigoAnimal, sortearCodigoLivre } from "../codigos.js";
 import { deDataDoBanco, hojeISO, paraDataDoBanco } from "../datas.js";
@@ -36,7 +37,14 @@ export const COM_HISTORICO = {
     orderBy: [{ dataColeta: "desc" }, { criadoEm: "desc" }],
   },
   observacoes: { orderBy: { criadoEm: "desc" } },
-  documentos: { include: { versoes: { orderBy: { enviadoEm: "asc" } } } },
+  documentos: {
+    include: {
+      versoes: {
+        orderBy: { enviadoEm: "asc" },
+        include: { arquivo: { select: { formato: true } } },
+      },
+    },
+  },
 };
 
 // O animal com o histórico, pelo id interno.
@@ -153,7 +161,7 @@ function dadosDosDocumentos(documentos, vigente, podeAbrir) {
         id: versao.id,
         enviadoEm: versao.enviadoEm,
         enviadoPorNome: versao.enviadoPorNome,
-        formato: versao.arquivoUrl.endsWith(".pdf") ? "pdf" : "imagem",
+        formato: versao.arquivo.formato === "PDF" ? "pdf" : "imagem",
         arquivoUrl: podeAbrir ? enderecoDoExame(versao) : null,
         criterioAfetado: criterioQueDependeDe(versao, tipo, vigente),
       })),
@@ -194,7 +202,10 @@ export function dadosDoAnimal(animal, { abreExames = false } = {}) {
     pesoKg: Number(animal.pesoKg),
     tipoSanguineo: animal.tipoSanguineo,
     disponivel: animal.disponivel,
-    fotos: animal.fotos.map((foto) => ({ id: foto.id, url: foto.url })),
+    fotos: animal.fotos.map((foto) => ({
+      id: foto.id,
+      url: enderecoDaFoto(foto.arquivoId),
+    })),
     validacoes: animal.validacoes.map(dadosDaValidacao),
     doacoes: animal.doacoes.map(dadosDaDoacao),
     observacoes: animal.observacoes.map(dadosDaObservacao),

@@ -1,3 +1,4 @@
+import { enderecoDaFoto } from "../armazenamento.js";
 import { banco } from "../banco.js";
 
 // Model (do MVC) do acesso aos contatos: os pedidos de liberação dos tutores
@@ -23,7 +24,7 @@ const COM_VETERINARIO = {
   },
 };
 const COM_TUTOR = {
-  tutor: { select: { codigo: true, nomeCompleto: true, fotoUrl: true } },
+  tutor: { select: { codigo: true, nomeCompleto: true, fotoId: true } },
 };
 
 // A liberação ativa de um tutor, de qualquer veterinário (NF28.4), ou null.
@@ -105,16 +106,23 @@ export const travarAcessoDoTutor = (tx, tutorId) =>
 export const dadosDoVeterinario = (usuario) => ({
   codigo: usuario.codigo,
   nomeCompleto: usuario.nomeCompleto,
-  fotoUrl: usuario.fotoUrl,
+  fotoUrl: enderecoDaFoto(usuario.fotoId),
   tratamento: usuario.veterinario.tratamento,
   crmv: usuario.veterinario.crmv,
   ufCrmv: usuario.veterinario.ufCrmv,
   estabelecimento: { nome: usuario.veterinario.estabelecimento.nome },
 });
 
+// O tutor de um pedido ou de uma liberação, com o endereço da foto.
+const dadosDoTutor = (tutor) => ({
+  codigo: tutor.codigo,
+  nomeCompleto: tutor.nomeCompleto,
+  fotoUrl: enderecoDaFoto(tutor.fotoId),
+});
+
 export const dadosDoPedido = (pedido) => ({
   id: pedido.id,
-  tutor: pedido.tutor,
+  tutor: dadosDoTutor(pedido.tutor),
   veterinario: dadosDoVeterinario(pedido.veterinario),
   caso: pedido.caso,
   criadoEm: pedido.criadoEm,
@@ -124,7 +132,7 @@ export const dadosDoPedido = (pedido) => ({
 // liberação guarda só o pedido_id); a dada pelo código tem o próprio.
 export const dadosDaLiberacao = (liberacao) => ({
   id: liberacao.id,
-  tutor: liberacao.tutor,
+  tutor: dadosDoTutor(liberacao.tutor),
   veterinario: dadosDoVeterinario(liberacao.veterinario),
   caso: liberacao.caso ?? liberacao.pedido?.caso ?? null,
   duracaoHoras: liberacao.duracaoHoras,

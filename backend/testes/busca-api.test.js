@@ -334,10 +334,21 @@ describe("o que sai de cada doador", () => {
       pesoKg: 32.5,
       tipoSanguineo: "DEA 1.1+",
     });
+    // Cada foto aponta para um arquivo guardado (chave estrangeira).
+    const PRINCIPAL = "00000000-0000-4000-8000-000000000001";
+    const SEGUNDA = "00000000-0000-4000-8000-000000000002";
+    await banco.arquivo.createMany({
+      data: [PRINCIPAL, SEGUNDA].map((id) => ({
+        id,
+        tipo: "FOTO",
+        formato: "WEBP",
+        conteudo: Buffer.from("foto"),
+      })),
+    });
     await banco.animalFoto.createMany({
       data: [
-        { animalId: thor.id, url: "/api/arquivos/segunda.webp", ordem: 1 },
-        { animalId: thor.id, url: "/api/arquivos/principal.webp", ordem: 0 },
+        { animalId: thor.id, arquivoId: SEGUNDA, ordem: 1 },
+        { animalId: thor.id, arquivoId: PRINCIPAL, ordem: 0 },
       ],
     });
     await validar(thor);
@@ -353,7 +364,7 @@ describe("o que sai de cada doador", () => {
       pesoKg: 32.5,
       tipoSanguineo: "DEA 1.1+",
       validado: true,
-      foto: "/api/arquivos/principal.webp",
+      foto: `/api/arquivos/${PRINCIPAL}.webp`,
       cidade: "Viçosa - MG",
       bairro: "Ramos",
       tutorCodigo: tutor.codigo,

@@ -113,3 +113,97 @@ describe("arquivos da API (o exame de um animal)", () => {
     );
   });
 });
+
+describe("arquivos enviados (fotos e exames)", () => {
+  // Um arquivo que o aparelho não consegue abrir, como o que está só na
+  // nuvem do OneDrive: a leitura falha.
+  const naoAbre = (nome) => {
+    const arquivo = new File(["x"], nome, { type: "image/jpeg" });
+    arquivo.arrayBuffer = () =>
+      Promise.reject(new DOMException("Não foi lido.", "NotReadableError"));
+    return arquivo;
+  };
+  const mensagemDe = (nome) =>
+    `Não foi possível abrir o arquivo "${nome}". Se ele está só na nuvem (como no OneDrive), baixe-o primeiro e escolha de novo.`;
+
+  test("arquivo que o aparelho não abre: avisa no campo dele, com o nome, sem enviar nada", async () => {
+    const enviar = vi.fn();
+    vi.stubGlobal("fetch", enviar);
+    const formulario = new FormData();
+    formulario.append("foto", naoAbre("IMG_0412.jpg"));
+
+    const erro = await erroDe(
+      chamarApi("/conta/foto", { metodo: "PUT", corpo: formulario }),
+    );
+
+    expect(erro).toBeInstanceOf(ErroApi);
+    expect(erro.message).toBe(mensagemDe("IMG_0412.jpg"));
+    expect(erro.campos).toEqual({ foto: mensagemDe("IMG_0412.jpg") });
+    expect(enviar).not.toHaveBeenCalled();
+  });
+
+  test("com várias fotos, o aviso diz qual delas não abriu", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+    const formulario = new FormData();
+    formulario.append("dados", "{}");
+    formulario.append("fotos", new File(["a"], "zeus-1.jpg"));
+    formulario.append("fotos", naoAbre("zeus-2.jpg"));
+
+    const erro = await erroDe(
+      chamarApi("/animais", { metodo: "POST", corpo: formulario }),
+    );
+
+    expect(erro.campos).toEqual({ fotos: mensagemDe("zeus-2.jpg") });
+  });
+
+  test("o arquivo que abre vai inteiro, com o nome e o tipo, junto dos outros campos", async () => {
+    let enviado;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_, opcoes) => {
+        enviado = opcoes.body;
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }),
+    );
+    const formulario = new FormData();
+    formulario.append("dados", JSON.stringify({ nome: "Zeus" }));
+    formulario.append(
+      "fotos",
+      new File(["conteúdo da foto"], "zeus.jpg", { type: "image/jpeg" }),
+    );
+
+    await chamarApi("/animais", { metodo: "POST", corpo: formulario });
+
+    expect(enviado.get("dados")).toBe('{"nome":"Zeus"}');
+    const foto = enviado.get("fotos");
+    expect(foto.name).toBe("zeus.jpg");
+    expect(foto.type).toBe("image/jpeg");
+    expect(await foto.text()).toBe("conteúdo da foto");
+  });
+
+  test("o arquivo abre, mas a internet cai no envio: a mensagem da conexão, como antes", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("Failed to fetch");
+      }),
+    );
+    const formulario = new FormData();
+    formulario.append(
+      "arquivo",
+      new File(["%PDF-"], "exame.pdf", { type: "application/pdf" }),
+    );
+
+    const erro = await erroDe(
+      chamarApi("/animais/L4N8C1/documentos/hemograma", {
+        metodo: "POST",
+        corpo: formulario,
+      }),
+    );
+
+    expect(erro.message).toBe(
+      "Não foi possível falar com o servidor. Confira sua internet e tente de novo.",
+    );
+    expect(erro.campos).toBeNull();
+  });
+});

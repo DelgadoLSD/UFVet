@@ -103,20 +103,21 @@ export async function atualizarConta(req, res) {
   res.json({ usuario: await dadosDaConta(usuario) });
 }
 
-// Grava a nova foto de perfil (ou nenhuma) e apaga o arquivo da anterior.
-// Se gravar falhar, o arquivo novo é que sai.
-async function mudarFoto(req, res, fotoUrl) {
+// Grava a nova foto de perfil (o id do arquivo, ou nenhuma) e só depois
+// apaga o arquivo da anterior, que o banco não deixa apagar enquanto a conta
+// aponta para ele. Se gravar falhar, o arquivo novo é que sai.
+async function mudarFoto(req, res, fotoId) {
   try {
     await banco.usuario.update({
       where: { id: req.usuario.id },
-      data: { fotoUrl },
+      data: { fotoId },
     });
   } catch (erro) {
-    await apagarArquivos([fotoUrl]);
+    await apagarArquivos([fotoId]);
     throw erro;
   }
-  await apagarArquivos([req.usuario.fotoUrl]);
-  registrar(fotoUrl ? "foto_de_perfil_trocada" : "foto_de_perfil_removida", {
+  await apagarArquivos([req.usuario.fotoId]);
+  registrar(fotoId ? "foto_de_perfil_trocada" : "foto_de_perfil_removida", {
     usuarioId: req.usuario.id,
   });
   const usuario = await buscarUsuarioPorId(req.usuario.id);
@@ -182,18 +183,18 @@ export async function encerrarConta(req, res) {
 
   const fotosDosAnimais = await banco.animalFoto.findMany({
     where: { animal: { tutorId: req.usuario.id } },
-    select: { url: true },
+    select: { arquivoId: true },
   });
   const examesDosAnimais = await banco.documentoVersao.findMany({
     where: { documento: { animal: { tutorId: req.usuario.id } } },
-    select: { arquivoUrl: true },
+    select: { arquivoId: true },
   });
   await banco.usuario.delete({ where: { id: req.usuario.id } });
   await apagarArquivos([
-    req.usuario.fotoUrl,
-    ...fotosDosAnimais.map((foto) => foto.url),
+    req.usuario.fotoId,
+    ...fotosDosAnimais.map((foto) => foto.arquivoId),
   ]);
-  await apagarExames(examesDosAnimais.map((exame) => exame.arquivoUrl));
+  await apagarExames(examesDosAnimais.map((exame) => exame.arquivoId));
   registrar("conta_encerrada", {
     usuarioId: req.usuario.id,
     papel: req.usuario.papel,

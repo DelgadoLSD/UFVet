@@ -33,6 +33,35 @@ export const definirContaDaAba = (codigo) => {
   contaDaAba = codigo;
 };
 
+// Os arquivos escolhidos (fotos, exames) são lidos antes de o pedido sair e
+// vão como cópia, já na memória. Um arquivo que o aparelho não consegue
+// abrir (o que está só na nuvem, como no OneDrive, ou que mudou depois de
+// escolhido) falha aqui, com uma mensagem no campo dele que diz o que fazer.
+// Sem isso, o envio falhava no meio, e o site pedia para conferir a
+// internet, que estava boa.
+async function copiarArquivos(formulario) {
+  const copia = new FormData();
+  for (const [campo, valor] of formulario) {
+    if (!(valor instanceof File)) {
+      copia.append(campo, valor);
+      continue;
+    }
+    let conteudo;
+    try {
+      conteudo = await valor.arrayBuffer();
+    } catch {
+      const mensagem = `Não foi possível abrir o arquivo "${valor.name}". Se ele está só na nuvem (como no OneDrive), baixe-o primeiro e escolha de novo.`;
+      throw new ErroApi(0, mensagem, { [campo]: mensagem });
+    }
+    copia.append(
+      campo,
+      new File([conteudo], valor.name, { type: valor.type }),
+      valor.name,
+    );
+  }
+  return copia;
+}
+
 // `corpo` vai em JSON; com arquivos (fotos, exames), é um FormData, que o
 // navegador envia como formulário com arquivos e com o cabeçalho certo. Com
 // `comoArquivo`, a resposta volta como arquivo (Blob), e não como JSON: é
@@ -42,6 +71,7 @@ export async function chamarApi(
   { metodo = "GET", corpo, comoArquivo = false } = {},
 ) {
   const comArquivos = corpo instanceof FormData;
+  const arquivos = comArquivos ? await copiarArquivos(corpo) : null;
   let resposta;
   try {
     const cabecalhos = {};
@@ -50,7 +80,7 @@ export async function chamarApi(
     resposta = await fetch(`/api${caminho}`, {
       method: metodo,
       headers: cabecalhos,
-      body: corpo && !comArquivos ? JSON.stringify(corpo) : corpo,
+      body: comArquivos ? arquivos : corpo ? JSON.stringify(corpo) : corpo,
     });
   } catch {
     throw new ErroApi(

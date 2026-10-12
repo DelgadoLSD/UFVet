@@ -72,7 +72,7 @@ export async function enviarDocumento(req, res) {
   if (!req.file) throw arquivoInvalido("Escolha o arquivo do exame.");
 
   const { conteudo, extensao } = await prepararExame(req.file.buffer);
-  const nome = await guardarExame(conteudo, extensao);
+  const arquivoId = await guardarExame(conteudo, extensao);
   try {
     // O documento é criado só se ainda não existe ("on conflict do
     // nothing"): dois envios ao mesmo tempo não esbarram um no outro.
@@ -87,14 +87,14 @@ export async function enviarDocumento(req, res) {
     await banco.documentoVersao.create({
       data: {
         documentoId: documento.id,
-        arquivoUrl: nome,
+        arquivoId,
         enviadoPorId: req.usuario.id,
         enviadoPorNome: req.usuario.nomeCompleto,
       },
     });
   } catch (erro) {
     // Sem a versão no banco, o arquivo guardado não serve para nada.
-    await apagarExames([nome]);
+    await apagarExames([arquivoId]);
     throw erro;
   }
   registrar("documento_enviado", {
@@ -140,7 +140,7 @@ const NOMES_PARA_SALVAR = {
   SOROLOGIA: "sorologias",
   VACINACAO: "carteira-de-vacinacao",
 };
-function nomeParaSalvar(versao) {
+function nomeParaSalvar(versao, formato) {
   const { tipo, animal } = versao.documento;
   const nomeDoAnimal =
     animal.nome
@@ -149,24 +149,11 @@ function nomeParaSalvar(versao) {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "") || animal.codigo.toLowerCase();
-  const extensao = versao.arquivoUrl.endsWith(".pdf") ? "pdf" : "webp";
-  return `${NOMES_PARA_SALVAR[tipo]}-${nomeDoAnimal}-${diaEmBrasilia(versao.enviadoEm)}.${extensao}`;
+  return `${NOMES_PARA_SALVAR[tipo]}-${nomeDoAnimal}-${diaEmBrasilia(versao.enviadoEm)}.${formato.toLowerCase()}`;
 }
 
-// O arquivo não está mais guardado (os enviados ao site publicado antes de
-// os arquivos irem para o banco sumiram com o disco da hospedagem): a versão
-// continua no histórico, e quem abre fica sabendo o que fazer.
-function semArquivo(versao) {
-  registrar("exame_sem_arquivo", { versao: versao.id });
-  return new ErroApi(
-    404,
-    "O arquivo deste exame não está mais guardado. Ele precisa ser enviado de novo.",
-  );
-}
-
-// O tipo do arquivo pela extensão do nome: WebP ou PDF.
-const tipoDoExame = (nome) =>
-  nome.endsWith(".pdf") ? "application/pdf" : "image/webp";
+// O tipo do arquivo para o navegador, pelo formato guardado.
+const TIPO_DO_FORMATO = { PDF: "application/pdf", WEBP: "image/webp" };
 
 // GET /api/documentos/versoes/:id — o arquivo de uma versão de exame, para o
 // dono do animal e para os veterinários. É o endereço que vai em arquivoUrl
@@ -186,15 +173,14 @@ export async function abrirDocumento(req, res) {
     );
   }
 
-  const conteudo = await lerExame(versao.arquivoUrl);
-  if (!conteudo) throw semArquivo(versao);
+  const { conteudo, formato } = await lerExame(versao.arquivoId);
 
   // Com res.end, e não res.send: sem a marca de cache (ETag) que o Express
   // poria. Quem decide o cache é o no-store.
   res.set({
-    "Content-Type": tipoDoExame(versao.arquivoUrl),
+    "Content-Type": TIPO_DO_FORMATO[formato],
     "Cache-Control": "private, no-store",
-    "Content-Disposition": `inline; filename="${nomeParaSalvar(versao)}"`,
+    "Content-Disposition": `inline; filename="${nomeParaSalvar(versao, formato)}"`,
     "Content-Security-Policy":
       "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; object-src 'self'; frame-ancestors 'self'",
   });
@@ -261,7 +247,7 @@ export async function apagarVersao(req, res) {
     }
   });
   // Só depois de gravado: o arquivo.
-  await apagarExames([versao.arquivoUrl]);
+  await apagarExames([versao.arquivoId]);
 
   registrar("documento_apagado", {
     usuarioId: req.usuario.id,
