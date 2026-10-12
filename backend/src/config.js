@@ -43,21 +43,6 @@ export const config = Object.freeze({
   // do intermediário.
   proxiesConfiaveis: Number(process.env.PROXIES_CONFIAVEIS ?? 0),
 
-  // A pasta das fotos enviadas, enquanto elas ficam no próprio computador
-  // (ver armazenamento.js). Os testes usam uma pasta temporária.
-  pastaArquivos: path.resolve(
-    process.env.PASTA_ARQUIVOS ??
-      fileURLToPath(new URL("../arquivos", import.meta.url)),
-  ),
-
-  // A pasta dos exames dos animais. Fica fora da pasta das fotos, que é
-  // pública: um exame só sai pela API, para quem pode abri-lo (ver
-  // controladores/documentos.js). Os testes também usam uma temporária.
-  pastaExames: path.resolve(
-    process.env.PASTA_EXAMES ??
-      fileURLToPath(new URL("../exames", import.meta.url)),
-  ),
-
   // O site já montado (npm run build, no frontend), que a API entrega no
   // mesmo endereço quando publicada: um serviço só, e o cookie de sessão é do
   // próprio site. No computador, quem entrega o site é o Vite, e isto fica

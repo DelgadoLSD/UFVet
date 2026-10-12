@@ -1,6 +1,6 @@
 // UFVet — modelo de dados
 // Cole este arquivo em https://dbdiagram.io para gerar o diagrama.
-// Atualizado em 20/09/2026.
+// Atualizado em 12/10/2026.
 
 Project ufvet {
   database_type: 'PostgreSQL'
@@ -62,6 +62,11 @@ Enum status_pedido {
 Enum tipo_aceite {
   TERMOS_DE_USO
   CIENCIA_RESPONSABILIDADE
+}
+
+Enum tipo_arquivo {
+  FOTO
+  EXAME
 }
 
 // ─────────────────────────── Pessoas e locais ───────────────────────────
@@ -207,6 +212,17 @@ Table documento_versao {
   enviado_em timestamptz [not null]
 
   Note: 'Exame refeito não substitui o anterior: entra como versão nova e o histórico permanece.'
+}
+
+// ─────────────────────────── Arquivos ───────────────────────────
+
+Table arquivo {
+  nome varchar(64) [pk, note: 'Sorteado pela API: <uuid>.webp ou <uuid>.pdf.']
+  tipo tipo_arquivo [not null]
+  conteudo bytea [not null]
+  criado_em timestamptz [not null]
+
+  Note: 'O conteúdo das fotos e dos exames. As outras tabelas apontam para ele pelo endereço ou pelo nome, sem chave estrangeira.'
 }
 
 // ─────────────────────────── Validação clínica ───────────────────────────

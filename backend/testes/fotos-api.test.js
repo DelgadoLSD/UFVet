@@ -7,18 +7,16 @@ import {
   arquivosGuardados,
   fotoDeCelular,
   gerarCpf,
-  limparArquivos,
   limparBanco,
 } from "./apoio.js";
 
 // As fotos pela API: as dos animais (NF8.3) e a de perfil (F3). Toda foto é
 // conferida, reduzida e gravada de novo, sem a localização GPS (NF8.5). Cada
-// teste começa com o banco e a pasta de fotos vazios.
+// teste começa com o banco vazio, e as fotos ficam nele.
 
 let app;
 beforeEach(async () => {
   await limparBanco();
-  await limparArquivos();
   app = criarApp();
 });
 afterAll(() => banco.$disconnect());
@@ -323,7 +321,7 @@ describe("fotos dos animais (NF8.3)", () => {
     expect(await arquivosGuardados()).toEqual([]);
   });
 
-  test("a pasta de fotos só entrega as fotos, sem listar nem sair dela", async () => {
+  test("o endereço das fotos só entrega fotos, sem listar nada nem sair dele", async () => {
     const navegador = await navegadorComConta();
     await cadastrarComFotos(navegador, await fotos(1));
 
@@ -336,6 +334,43 @@ describe("fotos dos animais (NF8.3)", () => {
       const resposta = await request(app).get(endereco);
       expect(resposta.status).not.toBe(200);
     }
+  });
+});
+
+describe("fotos guardadas no banco", () => {
+  // O disco da hospedagem gratuita é apagado a cada reinício: a foto fica
+  // no banco, e não numa pasta da API.
+  test("a foto fica no banco, e o endereço entrega os mesmos bytes, mesmo com a API ligada de novo", async () => {
+    const navegador = await navegadorComConta();
+    const resposta = await cadastrarComFotos(navegador, await fotos(1));
+    const url = resposta.body.animal.fotos[0].url;
+
+    const [nome] = await arquivosGuardados();
+    expect(url).toBe(`/api/arquivos/${nome}`);
+    const { conteudo } = await banco.arquivo.findUnique({ where: { nome } });
+    // Outra API, como depois de a hospedagem reiniciar o serviço.
+    app = criarApp();
+    const foto = await baixar(url);
+    expect(foto.status).toBe(200);
+    expect(foto.headers["content-type"]).toBe("image/webp");
+    expect(foto.body.equals(Buffer.from(conteudo))).toBe(true);
+    // Uma foto nunca muda: o navegador pode guardá-la por um ano.
+    expect(foto.headers["cache-control"]).toBe(
+      "public, max-age=31536000, immutable",
+    );
+  });
+
+  test("quem já tem a foto e pergunta se ela mudou recebe 304, sem baixá-la de novo", async () => {
+    const navegador = await navegadorComConta();
+    const resposta = await cadastrarComFotos(navegador, await fotos(1));
+    const url = resposta.body.animal.fotos[0].url;
+    const primeira = await request(app).get(url);
+
+    const segunda = await request(app)
+      .get(url)
+      .set("If-None-Match", primeira.headers.etag);
+
+    expect(segunda.status).toBe(304);
   });
 });
 

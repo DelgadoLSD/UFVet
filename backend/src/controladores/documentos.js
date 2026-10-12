@@ -1,8 +1,4 @@
-import {
-  apagarExames,
-  caminhoDoExame,
-  guardarExame,
-} from "../armazenamento.js";
+import { apagarExames, guardarExame, lerExame } from "../armazenamento.js";
 import { banco } from "../banco.js";
 import { diaEmBrasilia } from "../datas.js";
 import { ErroApi } from "../erros.js";
@@ -157,8 +153,9 @@ function nomeParaSalvar(versao) {
   return `${NOMES_PARA_SALVAR[tipo]}-${nomeDoAnimal}-${diaEmBrasilia(versao.enviadoEm)}.${extensao}`;
 }
 
-// O arquivo sumiu da pasta (apagado à mão, ou a hospedagem limpou o disco):
-// a versão continua no histórico, e quem abre fica sabendo o que fazer.
+// O arquivo não está mais guardado (os enviados ao site publicado antes de
+// os arquivos irem para o banco sumiram com o disco da hospedagem): a versão
+// continua no histórico, e quem abre fica sabendo o que fazer.
 function semArquivo(versao) {
   registrar("exame_sem_arquivo", { versao: versao.id });
   return new ErroApi(
@@ -167,16 +164,9 @@ function semArquivo(versao) {
   );
 }
 
-// O arquivo vai como está no disco, com o tipo pela extensão (WebP ou PDF).
-// Sem as marcas de cache do Express: quem decide o cache é abrirDocumento.
-const enviarArquivo = (res, caminho) =>
-  new Promise((resolve, reject) => {
-    res.sendFile(
-      caminho,
-      { cacheControl: false, etag: false, lastModified: false },
-      (erro) => (erro ? reject(erro) : resolve()),
-    );
-  });
+// O tipo do arquivo pela extensão do nome: WebP ou PDF.
+const tipoDoExame = (nome) =>
+  nome.endsWith(".pdf") ? "application/pdf" : "image/webp";
 
 // GET /api/documentos/versoes/:id — o arquivo de uma versão de exame, para o
 // dono do animal e para os veterinários. É o endereço que vai em arquivoUrl
@@ -196,24 +186,19 @@ export async function abrirDocumento(req, res) {
     );
   }
 
-  const caminho = caminhoDoExame(versao.arquivoUrl);
-  if (!caminho) throw semArquivo(versao);
+  const conteudo = await lerExame(versao.arquivoUrl);
+  if (!conteudo) throw semArquivo(versao);
 
+  // Com res.end, e não res.send: sem a marca de cache (ETag) que o Express
+  // poria. Quem decide o cache é o no-store.
   res.set({
+    "Content-Type": tipoDoExame(versao.arquivoUrl),
     "Cache-Control": "private, no-store",
     "Content-Disposition": `inline; filename="${nomeParaSalvar(versao)}"`,
     "Content-Security-Policy":
       "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; object-src 'self'; frame-ancestors 'self'",
   });
-  try {
-    await enviarArquivo(res, caminho);
-  } catch (erro) {
-    // A pessoa fechou a janela no meio do envio: não há a quem responder.
-    if (res.headersSent) return;
-    res.removeHeader("Content-Disposition");
-    if (erro.code === "ENOENT") throw semArquivo(versao);
-    throw erro;
-  }
+  res.end(conteudo);
 }
 
 // DELETE /api/documentos/versoes/:id — o dono apaga uma versão que enviou: o

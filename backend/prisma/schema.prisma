@@ -97,6 +97,15 @@ enum TipoAceite {
   @@map("tipo_aceite")
 }
 
+/// Uma foto é pública (sai em /api/arquivos); um exame só sai pela API, para
+/// quem pode abri-lo.
+enum TipoArquivo {
+  FOTO
+  EXAME
+
+  @@map("tipo_arquivo")
+}
+
 // ─────────────────────────── Pessoas e locais ───────────────────────────
 
 /// Hospital veterinário ou clínica. A clínica particular de um veterinário
@@ -131,28 +140,28 @@ model Estabelecimento {
 /// (HMAC-SHA256, com outra chave secreta) que é a impressão digital do valor.
 /// É pelo índice que o login encontra a conta e que o banco impede repetição.
 model Usuario {
-  id              String       @id @default(uuid()) @db.Uuid
+  id                  String       @id @default(uuid()) @db.Uuid
   /// Código público (#T3M8P1). É por ele que o veterinário libera o acesso e
   /// o tutor endereça o pedido — nomes se repetem, códigos não.
-  codigo          String       @unique @db.Char(6)
-  papel           PapelUsuario
-  nomeCompleto    String       @map("nome_completo") @db.VarChar(120)
-  cpfCifrado      String       @map("cpf_cifrado")
-  cpfIndice       String       @unique @map("cpf_indice") @db.Char(64)
-  emailCifrado    String       @map("email_cifrado")
-  emailIndice     String       @unique @map("email_indice") @db.Char(64)
-  senhaHash       String       @map("senha_hash") @db.VarChar(72)
-  telefoneCifrado String       @map("telefone_cifrado")
-  cidade          String       @db.VarChar(80)
-  bairro          String       @db.VarChar(80)
-  fotoUrl         String?      @map("foto_url") @db.VarChar(255)
+  codigo              String       @unique @db.Char(6)
+  papel               PapelUsuario
+  nomeCompleto        String       @map("nome_completo") @db.VarChar(120)
+  cpfCifrado          String       @map("cpf_cifrado")
+  cpfIndice           String       @unique @map("cpf_indice") @db.Char(64)
+  emailCifrado        String       @map("email_cifrado")
+  emailIndice         String       @unique @map("email_indice") @db.Char(64)
+  senhaHash           String       @map("senha_hash") @db.VarChar(72)
+  telefoneCifrado     String       @map("telefone_cifrado")
+  cidade              String       @db.VarChar(80)
+  bairro              String       @db.VarChar(80)
+  fotoUrl             String?      @map("foto_url") @db.VarChar(255)
   /// Crachás de sessão (JWT) emitidos antes deste instante deixam de valer.
   /// É preenchido ao trocar a senha e ao "sair de todos os aparelhos"; fica
   /// nulo enquanto nada disso acontece. Sem ele, um crachá esquecido num
   /// computador continuaria valendo até vencer sozinho.
-  sessoesValidasDesde DateTime? @map("sessoes_validas_desde") @db.Timestamptz(3)
-  criadoEm        DateTime     @default(now()) @map("criado_em") @db.Timestamptz(3)
-  atualizadoEm    DateTime     @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+  sessoesValidasDesde DateTime?    @map("sessoes_validas_desde") @db.Timestamptz(3)
+  criadoEm            DateTime     @default(now()) @map("criado_em") @db.Timestamptz(3)
+  atualizadoEm        DateTime     @updatedAt @map("atualizado_em") @db.Timestamptz(3)
 
   veterinario          Veterinario?
   convitesUsados       ConviteVeterinario[]
@@ -162,10 +171,10 @@ model Usuario {
   validacoesAssinadas  Validacao[]
   observacoes          Observacao[]
   doacoesRegistradas   Doacao[]
-  pedidosFeitos        PedidoLiberacao[]  @relation("PedidosDoTutor")
-  pedidosRecebidos     PedidoLiberacao[]  @relation("PedidosParaVeterinario")
-  liberacoesRecebidas  LiberacaoContato[] @relation("LiberacoesDoTutor")
-  liberacoesConcedidas LiberacaoContato[] @relation("LiberacoesDoVeterinario")
+  pedidosFeitos        PedidoLiberacao[]    @relation("PedidosDoTutor")
+  pedidosRecebidos     PedidoLiberacao[]    @relation("PedidosParaVeterinario")
+  liberacoesRecebidas  LiberacaoContato[]   @relation("LiberacoesDoTutor")
+  liberacoesConcedidas LiberacaoContato[]   @relation("LiberacoesDoVeterinario")
 
   @@index([cidade, bairro])
   @@map("usuario")
@@ -325,6 +334,23 @@ model DocumentoVersao {
   enviadoPor Usuario?  @relation(fields: [enviadoPorId], references: [id], onDelete: SetNull)
 
   @@map("documento_versao")
+}
+
+// ─────────────────────────── Arquivos ───────────────────────────
+
+/// As fotos e os exames enviados, com o conteúdo. Ficam no banco porque a
+/// hospedagem gratuita apaga o disco do serviço a cada reinício. As outras
+/// tabelas guardam só o endereço ou o nome (usuario.foto_url,
+/// animal_foto.url, documento_versao.arquivo_url); quem grava, lê e apaga é
+/// src/armazenamento.js.
+model Arquivo {
+  /// Sorteado pela API, com a extensão: "<uuid>.webp" ou "<uuid>.pdf".
+  nome     String      @id @db.VarChar(64)
+  tipo     TipoArquivo
+  conteudo Bytes
+  criadoEm DateTime    @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  @@map("arquivo")
 }
 
 // ─────────────────────────── Validação clínica ───────────────────────────

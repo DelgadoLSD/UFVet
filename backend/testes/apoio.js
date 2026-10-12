@@ -1,8 +1,6 @@
-import { readdir, rm } from "node:fs/promises";
 import sharp from "sharp";
 import { banco } from "../src/banco.js";
 import { cifrar, indiceCpf, indiceEmail } from "../src/cifra.js";
-import { config } from "../src/config.js";
 
 // Ferramentas que os testes usam para preparar o cenário.
 
@@ -102,21 +100,20 @@ export function criarAnimal({ tutorId, nome }) {
 
 // ─── Fotos ────────────────────────────────────────────────────────────────────
 
-// Esvazia a pasta temporária das fotos dos testes (ver vitest.config.js).
-export async function limparArquivos() {
-  await rm(config.pastaArquivos, { recursive: true, force: true });
-}
+// Os nomes das fotos guardadas no banco agora (limparBanco as apaga com o
+// resto).
+const guardados = async (tipo) =>
+  (
+    await banco.arquivo.findMany({
+      where: { tipo },
+      select: { nome: true },
+      orderBy: { criadoEm: "asc" },
+    })
+  ).map((arquivo) => arquivo.nome);
+export const arquivosGuardados = () => guardados("FOTO");
 
-// Os arquivos que estão na pasta das fotos agora.
-export const arquivosGuardados = () =>
-  readdir(config.pastaArquivos).catch(() => []);
-
-// O mesmo para a pasta dos exames.
-export async function limparExames() {
-  await rm(config.pastaExames, { recursive: true, force: true });
-}
-export const examesGuardados = () =>
-  readdir(config.pastaExames).catch(() => []);
+// O mesmo para os exames.
+export const examesGuardados = () => guardados("EXAME");
 
 // Um PDF pequeno, como o laudo que um laboratório manda. Para a API, o que
 // conta é a assinatura do formato no começo ("%PDF-").

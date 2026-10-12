@@ -155,9 +155,11 @@ Depois disso, cada `git push` na branch principal publica de novo sozinho.
   grátis do mês dão para isso.
 - **5 GB de tráfego por mês.** Passou disso, o Render suspende o serviço até
   o mês seguinte.
-- **Fotos e exames ainda não ficam guardados.** O disco do serviço é apagado
-  a cada reinício, inclusive quando ele dorme. Até os arquivos irem para o
-  banco, uma foto enviada no site publicado some depois de algumas horas.
+- **Fotos e exames ficam no banco do Neon**, e não no disco do serviço, que
+  o Render apaga a cada reinício (inclusive quando ele dorme). O Neon grátis
+  tem 0,5 GB: com fotos de uns 80 KB, cabem alguns milhares de arquivos. Se
+  faltar espaço, os arquivos podem ir para um serviço de arquivos na nuvem
+  (como o Cloudflare R2), mudando só `src/armazenamento.js`.
 - **Começa vazio**, só com o hospital. As contas de exemplo nunca vão para
   produção: a senha delas é pública, e o veterinário de exemplo veria os
   contatos de pessoas reais.
@@ -298,14 +300,11 @@ backend/
 │   ├── codigos.js          sorteio dos códigos públicos e de convite
 │   ├── datas.js            datas sem hora (nascimento) entre a API e o banco
 │   ├── imagens.js          o tratamento das imagens (conferir, reduzir, sem GPS)
-│   ├── armazenamento.js    onde as fotos e os exames ficam guardados (hoje, as
-│   │                       pastas arquivos/ e exames/)
+│   ├── armazenamento.js    onde as fotos e os exames ficam guardados (no banco,
+│   │                       na tabela arquivo)
 │   ├── registro.js         o registro de eventos de segurança
 │   ├── config.js           a configuração, lida do .env
 │   └── banco.js            o cliente do banco, único para todo o back-end
-├── arquivos/               as fotos enviadas, no computador (não vai para o git)
-├── exames/                 os exames enviados, no computador: pasta que nenhum
-│                           endereço serve direto (não vai para o git)
 ├── testes/                 testes automatizados (Vitest)
 └── generated/              cliente gerado pelo Prisma (não vai para o git)
 ```
@@ -358,16 +357,18 @@ O que a API já faz:
   levar instruções além do desenho, são recusados). A foto é reduzida e
   gravada de novo, sem os dados do arquivo original, inclusive a localização
   GPS que o celular guarda (`src/imagens.js`). O nome do arquivo é sorteado,
-  nunca vem de quem enviou, e a pasta só entrega as fotos, sem listar nada.
+  nunca vem de quem enviou, e o endereço das fotos só entrega fotos, sem
+  listar nada.
   Excluir o animal ou encerrar a conta apaga os arquivos junto.
 - **Exames, só para o dono e para veterinários:** um laudo costuma trazer,
   no cabeçalho do laboratório, o nome, o telefone e o endereço do tutor. Por
-  isso os arquivos ficam numa pasta que nenhum endereço serve direto
-  (`exames/`) e saem por uma rota com login, que confere a cada pedido se
-  quem pede é o dono do animal ou veterinário; a resposta não fica guardada
-  no navegador (`no-store`), e a política de segurança não deixa o arquivo
-  rodar nada. Todos veem que exames existem e quando foram enviados, mas o
-  endereço do arquivo só vai para quem pode abri-lo. Só o dono envia, e cada
+  isso o exame fica guardado como exame, que nenhum endereço entrega direto
+  (nem o das fotos, mesmo em WebP), e sai por uma rota com login, que
+  confere a cada pedido se quem pede é o dono do animal ou veterinário; a
+  resposta não fica guardada no navegador (`no-store`), e a política de
+  segurança não deixa o arquivo rodar nada. Todos veem que exames existem e
+  quando foram enviados, mas o endereço do arquivo só vai para quem pode
+  abri-lo. Só o dono envia, e cada
   envio vira uma versão nova, sem apagar as anteriores. Só o dono apaga uma
   versão; se ela já estava no site quando a validação em vigor foi assinada,
   o critério que ela comprova perde o efeito, na mesma transação. A imagem
@@ -407,8 +408,8 @@ nome não termine em `_test`, e usam chaves próprias, nunca as do `.env`.
 Os testes da API (`cadastro-api`, `sessao-api`, `conta-api`, `animais-api`,
 `fotos-api`, `documentos-api`, `historico-api`, `busca-api`, `perfis-api` e
 `acesso-api`) chamam os endereços como o site chamaria, sem ligar a API numa
-porta. As fotos e os exames dos testes vão para pastas temporárias, nunca
-para `arquivos/` e `exames/`.
+porta. As fotos e os exames dos testes ficam no banco de testes, esvaziado
+antes de cada teste.
 
 ## Como mudar o banco
 

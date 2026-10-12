@@ -2,6 +2,7 @@ import cookieParser from "cookie-parser";
 import express from "express";
 import helmet from "helmet";
 import path from "node:path";
+import { lerFoto } from "./armazenamento.js";
 import { config } from "./config.js";
 import { rotaInexistente, tratarErros } from "./erros.js";
 import { criarLimites } from "./middlewares/limites.js";
@@ -38,25 +39,25 @@ export function criarApp({ pastaSite = config.pastaSite } = {}) {
     }),
   );
 
-  // As fotos guardadas na pasta da API (ver armazenamento.js). Só arquivos
-  // dessa pasta, sem listar o que há nela e sem arquivos ocultos; caminhos
-  // com "../" são barrados. Uma foto nunca muda (trocar cria outro arquivo),
-  // então o navegador pode guardá-la por muito tempo.
+  // As fotos guardadas (ver armazenamento.js). Uma foto nunca muda (trocar
+  // cria outra, com outro nome), então o navegador pode guardá-la por muito
+  // tempo; quem pergunta se ela mudou recebe "não mudou" (304), pela marca
+  // que o Express calcula (ETag), sem receber a foto de novo.
   //
-  // As fotos vêm antes do limite geral de pedidos: uma foto é um arquivo
-  // pronto, barato de entregar, e um perfil traz várias. Contadas no limite
-  // (que é por endereço de rede), algumas pessoas no mesmo Wi-Fi, abrindo
-  // perfis, o estouravam, e fotos e páginas paravam de carregar. Um nome de
-  // arquivo que não existe passa adiante e cai no limite como o resto.
-  app.use(
-    "/api/arquivos",
-    express.static(config.pastaArquivos, {
-      index: false,
-      dotfiles: "deny",
-      immutable: true,
-      maxAge: "365d",
-    }),
-  );
+  // As fotos vêm antes do limite geral de pedidos: uma foto é barata de
+  // entregar (uma consulta pela chave), e um perfil traz várias. Contadas no
+  // limite (que é por endereço de rede), algumas pessoas no mesmo Wi-Fi,
+  // abrindo perfis, o estouravam, e fotos e páginas paravam de carregar. Um
+  // nome que não existe passa adiante e cai no limite como o resto.
+  app.get("/api/arquivos/:nome", async (req, res, next) => {
+    const foto = await lerFoto(req.params.nome);
+    if (!foto) return next();
+    res.set({
+      "Content-Type": "image/webp",
+      "Cache-Control": "public, max-age=31536000, immutable",
+    });
+    res.send(foto);
+  });
 
   const limites = criarLimites();
   app.use("/api", limites.geral);

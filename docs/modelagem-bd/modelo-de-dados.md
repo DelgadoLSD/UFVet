@@ -74,9 +74,15 @@ sanguíneo e disponibilidade.
 **`documento`** e **`documento_versao`** — os exames. O documento é a
 identidade ("hemograma deste animal"); as versões são os arquivos. Um exame
 refeito não substitui o anterior: entra como versão nova, e o histórico fica
-disponível para o veterinário comparar a evolução. O arquivo em si fica fora
-do banco, numa pasta que nenhum endereço público serve; a versão guarda onde
-ele está.
+disponível para o veterinário comparar a evolução. O arquivo em si fica na
+tabela `arquivo`; a versão guarda o nome dele.
+
+**`arquivo`** — o conteúdo das fotos e dos exames enviados. Fica no banco
+porque a hospedagem gratuita apaga o disco do serviço a cada reinício. As
+outras tabelas apontam para ele pelo endereço ou pelo nome (`usuario.foto_url`,
+`animal_foto.url`, `documento_versao.arquivo_url`), sem chave estrangeira. O
+tipo separa o que é público (a foto) do que só sai pela API, para o dono do
+animal e os veterinários (o exame).
 
 ### Validação clínica
 
@@ -475,10 +481,19 @@ UQ = restrição de unicidade.
 |---|---|---|---|
 | id | uuid | PK | Identificador |
 | documento_id | uuid | FK → documento | Documento |
-| arquivo_url | varchar(255) | NOT NULL | Onde o arquivo está guardado: o nome dele na pasta dos exames, que não é pública (o arquivo sai só pela API, para o dono do animal e veterinários) |
+| arquivo_url | varchar(255) | NOT NULL | O nome do arquivo na tabela `arquivo`, como exame, que não é público (o arquivo sai só pela API, para o dono do animal e veterinários) |
 | enviado_por_id | uuid | FK → usuario, NULL | Quem enviou |
 | enviado_por_nome | varchar(120) | NOT NULL | Nome copiado no envio |
 | enviado_em | timestamptz | NOT NULL | Momento do envio |
+
+### `arquivo`
+
+| Campo | Tipo | Restrições | Descrição |
+|---|---|---|---|
+| nome | varchar(64) | PK | Sorteado pela API, com a extensão: `<uuid>.webp` ou `<uuid>.pdf` |
+| tipo | enum | NOT NULL | FOTO (pública) ou EXAME (só pela API) |
+| conteudo | bytea | NOT NULL | O arquivo |
+| criado_em | timestamptz | NOT NULL | Momento do envio |
 
 ### `validacao`
 

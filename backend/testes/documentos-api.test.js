@@ -1,11 +1,8 @@
-import { rm } from "node:fs/promises";
-import path from "node:path";
 import sharp from "sharp";
 import request from "supertest";
 import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
-import { config } from "../src/config.js";
 import { hojeISO } from "../src/datas.js";
 import { criarConvite } from "../src/modelos/convite.js";
 import {
@@ -13,9 +10,7 @@ import {
   examesGuardados,
   fotoDeCelular,
   gerarCpf,
-  limparArquivos,
   limparBanco,
-  limparExames,
   pdfDeExame,
 } from "./apoio.js";
 
@@ -23,14 +18,12 @@ import {
 // sorologias e a carteira de vacinação. O dono envia (imagem ou PDF, NF14.2),
 // cada envio vira uma versão nova, e o arquivo só abre para o dono e para os
 // veterinários: um laudo costuma trazer o nome, o telefone e o endereço do
-// tutor. Cada teste começa com o banco e as pastas de arquivos vazios.
+// tutor. Cada teste começa com o banco vazio, e os arquivos ficam nele.
 
 let app;
 let hospital;
 beforeEach(async () => {
   await limparBanco();
-  await limparArquivos();
-  await limparExames();
   app = criarApp();
   hospital = await banco.estabelecimento.create({
     data: { nome: "Hospital Veterinário UFV", cidade: "Viçosa", uf: "MG" },
@@ -171,7 +164,7 @@ describe("enviar exames (F14)", () => {
     expect(arquivo.headers["content-disposition"]).toBe(
       `inline; filename="hemograma-zeus-${hojeISO()}.pdf"`,
     );
-    // Vai para a pasta dos exames, e não para a pasta pública das fotos.
+    // Fica guardado como exame, e não entre as fotos, que são públicas.
     expect(await examesGuardados()).toHaveLength(1);
     expect(await arquivosGuardados()).toHaveLength(0);
   });
@@ -389,7 +382,7 @@ describe("quem abre os exames", () => {
     }
   });
 
-  test("o exame não sai pela pasta pública das fotos", async () => {
+  test("o exame não sai pelo endereço público das fotos", async () => {
     await comHemograma();
     const [nome] = await examesGuardados();
 
@@ -398,10 +391,27 @@ describe("quem abre os exames", () => {
     expect(resposta.status).toBe(404);
   });
 
-  test("arquivo que sumiu da pasta: a versão continua, e quem abre fica sabendo o que fazer", async () => {
+  test("nem o exame em imagem, que também é WebP, sai pelo endereço das fotos", async () => {
+    const { tutor, codigo } = await cenario();
+    await enviar(
+      tutor,
+      codigo,
+      "VACINACAO",
+      await fotoDeCelular(),
+      comoFoto,
+    ).expect(201);
+    const [nome] = await examesGuardados();
+    expect(nome).toMatch(/\.webp$/);
+
+    const resposta = await request(app).get(`/api/arquivos/${nome}`);
+
+    expect(resposta.status).toBe(404);
+  });
+
+  test("arquivo que não está mais guardado: a versão continua, e quem abre fica sabendo o que fazer", async () => {
     const { tutor, url } = await comHemograma();
     const [nome] = await examesGuardados();
-    await rm(path.join(config.pastaExames, nome));
+    await banco.arquivo.delete({ where: { nome } });
 
     const resposta = await tutor.get(url);
 
