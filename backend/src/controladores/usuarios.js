@@ -1,5 +1,5 @@
 import { banco } from "../banco.js";
-import { cifrar, indiceCpf, indiceEmail } from "../cifra.js";
+import { cifrar, indiceEmail } from "../cifra.js";
 import { ErroApi } from "../erros.js";
 import { acharConviteValido, usarConvite } from "../modelos/convite.js";
 import {
@@ -17,32 +17,21 @@ import { esquemaCadastro, esquemaDisponibilidade } from "../validacao.js";
 // Versão dos termos de uso e da ciência sobre os custos, gravada junto com o
 // aceite (F7). É a mesma que a página de termos mostra
 // (frontend/src/pages/termos/indice.js): quando o texto mudar, as duas mudam
-// juntas. A versão 1 foi aceita antes de os termos estarem escritos.
-const VERSAO_DOS_TERMOS = "2";
+// juntas. A versão 1 foi aceita antes de os termos estarem escritos; a 2
+// ainda pedia o CPF.
+const VERSAO_DOS_TERMOS = "3";
 
 const MENSAGEM_CONVITE =
   "Convite inválido, já usado ou vencido. Peça um novo à direção do hospital.";
 
-// E-mail e CPF não podem se repetir entre contas (NF1.2). O banco também
-// barra a repetição; conferir antes serve para dizer qual dos dois repetiu.
-// Confere só os que vierem: o site pergunta por um campo de cada vez.
-async function camposRepetidos({ email, cpf }) {
-  const [porEmail, porCpf] = await Promise.all([
-    email &&
-      banco.usuario.findUnique({
-        where: { emailIndice: indiceEmail(email) },
-        select: { id: true },
-      }),
-    cpf &&
-      banco.usuario.findUnique({
-        where: { cpfIndice: indiceCpf(cpf) },
-        select: { id: true },
-      }),
-  ]);
-  const campos = {};
-  if (porEmail) campos.email = "Já existe uma conta com este e-mail.";
-  if (porCpf) campos.cpf = "Já existe uma conta com este CPF.";
-  return campos;
+// O e-mail não pode se repetir entre contas (NF1.2). O banco também barra a
+// repetição; conferir antes serve para dizer, embaixo do campo, o que houve.
+async function camposRepetidos({ email }) {
+  const existente = await banco.usuario.findUnique({
+    where: { emailIndice: indiceEmail(email) },
+    select: { id: true },
+  });
+  return existente ? { email: "Já existe uma conta com este e-mail." } : {};
 }
 
 async function conferirRepetidos(dados) {
@@ -53,8 +42,8 @@ async function conferirRepetidos(dados) {
 }
 
 // POST /api/usuarios/disponibilidade — diz, durante o cadastro, se o e-mail
-// ou o CPF já têm conta, para o site avisar na hora e não só no fim. Responde
-// { campos: {} } quando estão livres. É POST para o CPF não ir no endereço,
+// já tem conta, para o site avisar na hora e não só no fim. Responde
+// { campos: {} } quando está livre. É POST para o e-mail não ir no endereço,
 // que fica nos registros de acesso.
 export async function conferirDisponibilidade(req, res) {
   const dados = esquemaDisponibilidade.parse(req.body);
@@ -82,8 +71,9 @@ async function conferirConvite(req, codigo) {
 }
 
 // POST /api/usuarios — cria a conta (F1), registra o aceite dos termos (F7)
-// e já deixa a pessoa logada. CPF, e-mail e telefone são gravados cifrados,
-// com a impressão digital ao lado (NF1.5); a senha, como hash (NF1.1).
+// e já deixa a pessoa logada. E-mail e telefone são gravados cifrados, o
+// e-mail com a impressão digital ao lado (NF1.5); a senha, como hash
+// (NF1.1).
 export async function cadastrar(req, res) {
   const dados = esquemaCadastro.parse(req.body);
   const ehVeterinario = dados.papel === "VETERINARIO";
@@ -106,8 +96,6 @@ export async function cadastrar(req, res) {
         codigo,
         papel: dados.papel,
         nomeCompleto: dados.nomeCompleto,
-        cpfCifrado: cifrar(dados.cpf),
-        cpfIndice: indiceCpf(dados.cpf),
         emailCifrado: cifrar(dados.email),
         emailIndice: indiceEmail(dados.email),
         telefoneCifrado: cifrar(dados.telefone),

@@ -37,13 +37,6 @@ const NIVEIS = [
     nota: "Um veterinário pode liberar para o tutor de um animal em emergência o acesso aos contatos de todas as pessoas cadastradas. A liberação dura 24 horas, 3 dias ou 7 dias e termina sozinha.",
   },
   {
-    quem: "Só você",
-    detalhe: "Na página Minha conta.",
-    icone: "person",
-    estilo: "fechado",
-    itens: ["Seu CPF. Mesmo para você, ele aparece com uma parte escondida."],
-  },
-  {
     quem: "Ninguém, nem o UFVet",
     icone: "lock",
     estilo: "nenhum",
@@ -69,14 +62,6 @@ const ESTILOS = {
     texto: "text-[#5b403f]",
     marcador: "bg-[#9e0a24]",
     icone: "bg-[#9e0a24] text-white",
-  },
-  fechado: {
-    caixa: "bg-[#1a1a1a]",
-    quem: "text-white",
-    detalhe: "text-white/70",
-    texto: "text-white/85",
-    marcador: "bg-white/60",
-    icone: "bg-white text-[#1a1a1a]",
   },
   nenhum: {
     caixa: "bg-[#9e0a24]",

@@ -7,9 +7,9 @@ import { BYTES_MAXIMOS_SENHA } from "./senha.js";
 // pode chamá-la direto, sem passar pelo site, e a conferência do site serve
 // só para avisar a pessoa antes de enviar.
 //
-// Cada campo também é normalizado: espaços sobrando saem, o CPF fica só com
-// números, o e-mail em minúsculas e o telefone sempre no mesmo formato. Os
-// tamanhos máximos são os das colunas do banco.
+// Cada campo também é normalizado: espaços sobrando saem, o e-mail fica em
+// minúsculas e o telefone sempre no mesmo formato. Os tamanhos máximos são
+// os das colunas do banco.
 
 // Siglas das 27 unidades da federação.
 export const UFS = [
@@ -65,24 +65,6 @@ const PESO_MAXIMO = 150;
 const IDADE_MAXIMA = 30;
 const IDADE_FORA = `Informe a idade em anos, de 0 a ${IDADE_MAXIMA}.`;
 
-// ─── CPF ──────────────────────────────────────────────────────────────────────
-
-// Confere os dois dígitos verificadores, a conta que a Receita usa para pegar
-// erros de digitação. CPFs com todos os números iguais passam na conta, mas
-// não existem.
-export function cpfValido(cpf) {
-  if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return false;
-  const digito = (quantos) => {
-    let soma = 0;
-    for (let i = 0; i < quantos; i++) {
-      soma += Number(cpf[i]) * (quantos + 1 - i);
-    }
-    const resto = (soma * 10) % 11;
-    return resto === 10 ? 0 : resto;
-  };
-  return digito(9) === Number(cpf[9]) && digito(10) === Number(cpf[10]);
-}
-
 // ─── Telefone ─────────────────────────────────────────────────────────────────
 
 // DDD sem zero, e depois um celular (9 + 8 dígitos) ou um fixo (8 dígitos,
@@ -107,14 +89,6 @@ export const campos = {
       .min(1, PREENCHA)
       .max(120, "O nome pode ter no máximo 120 caracteres.")
       .refine((nome) => nome.includes(" "), "Informe o nome e o sobrenome."),
-  ),
-
-  cpf: z.preprocess(
-    soDigitos,
-    z
-      .string(obrigatorio)
-      .min(1, PREENCHA)
-      .refine(cpfValido, "CPF inválido. Confira os números."),
   ),
 
   email: z.preprocess(
@@ -266,7 +240,6 @@ const aceite = z.literal(true, {
 
 const dadosDaPessoa = {
   nomeCompleto: campos.nomeCompleto,
-  cpf: campos.cpf,
   email: campos.email,
   telefone: campos.telefone,
   cidade: campos.cidade,
@@ -292,12 +265,8 @@ export const esquemaCadastro = z.discriminatedUnion(
   { error: "Escolha se você é tutor ou veterinário." },
 );
 
-// Conferência do e-mail e do CPF durante o cadastro: vem um, o outro ou os
-// dois, com as mesmas regras do cadastro.
-export const esquemaDisponibilidade = z.object({
-  email: campos.email.optional(),
-  cpf: campos.cpf.optional(),
-});
+// Conferência do e-mail durante o cadastro, com a mesma regra do cadastro.
+export const esquemaDisponibilidade = z.object({ email: campos.email });
 
 // Senha digitada para entrar ou para confirmar uma mudança. O formato não é
 // conferido, só se ela bate com o hash guardado. O teto de 200 caracteres
@@ -315,9 +284,8 @@ export const esquemaLogin = z.object({
 });
 
 // Dados da própria conta (F3). Vem só o que a pessoa mudou, e a senha atual
-// quando o e-mail muda. CPF, CRMV, papel e código não fazem parte do
-// esquema, e o que não faz parte é descartado: não há como mudá-los por aqui
-// (NF3.1).
+// quando o e-mail muda. CRMV, papel e código não fazem parte do esquema, e
+// o que não faz parte é descartado: não há como mudá-los por aqui (NF3.1).
 export const esquemaConta = z
   .object({
     nomeCompleto: campos.nomeCompleto.optional(),

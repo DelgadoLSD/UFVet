@@ -133,8 +133,8 @@ banco fica no Neon. Os dois têm plano grátis. A receita do Render está em
    UTC (ver `src/banco.js`), e o pooling não guarda esse ajuste.
 2. **Chaves novas.** Gere duas, uma para `CHAVE_CIFRAGEM` e outra para
    `CHAVE_INDICE`, com o comando do `.env.example`. Nunca use as do seu
-   `.env`. Guarde as duas num gerenciador de senhas: sem elas, o CPF, o e-mail
-   e o telefone cifrados no banco não voltam.
+   `.env`. Guarde as duas num gerenciador de senhas: sem elas, o e-mail e o
+   telefone cifrados no banco não voltam.
 3. **Serviço no Render.** Crie a conta em [render.com](https://render.com)
    (entrando com o GitHub), vá em **New → Blueprint**, escolha o repositório
    do UFVet e confirme. O Render lê o `render.yaml` e pede três valores:
@@ -187,7 +187,7 @@ npm run convite:producao -- --nome "Ana Souza" --crmv 12345 --uf MG
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `GET /api/saude`                             | Responde se a API está no ar                                                                                   |
 | `POST /api/usuarios`                         | Cria a conta (tutor, ou veterinário com convite) e já entra                                                    |
-| `POST /api/usuarios/disponibilidade`         | Diz, durante o cadastro, se o e-mail ou o CPF já têm conta                                                     |
+| `POST /api/usuarios/disponibilidade`         | Diz, durante o cadastro, se o e-mail já tem conta                                                              |
 | `GET /api/convites/:codigo`                  | Confere um convite antes do fim do cadastro                                                                    |
 | `GET /api/sessao`                            | Diz quem está logado (`{ "usuario": null }` para o visitante)                                                  |
 | `POST /api/sessao`                           | Entra com e-mail e senha                                                                                       |
@@ -200,7 +200,7 @@ npm run convite:producao -- --nome "Ana Souza" --crmv 12345 --uf MG
 | `DELETE /api/conta/foto`                     | Remove a foto de perfil                                                                                        |
 | `GET /api/doadores`                          | A busca de doadores: filtros, ordem e páginas de 6 (pública, sem contatos)                                     |
 | `GET /api/doadores/locais`                   | As cidades e os bairros onde há doadores, para os filtros (pública)                                            |
-| `GET /api/usuarios/:codigo`                  | O perfil público de uma pessoa, sem e-mail, telefone ou CPF                                                    |
+| `GET /api/usuarios/:codigo`                  | O perfil público de uma pessoa, sem e-mail nem telefone                                                        |
 | `GET /api/usuarios/:codigo/contato`          | O e-mail e o telefone, só para o veterinário, a própria pessoa ou o tutor com liberação em vigor               |
 | `GET /api/usuarios/:codigo/animais`          | Os animais de uma pessoa, com os exames e o histórico clínico (público, como a busca)                          |
 | `POST /api/animais`                          | Cadastra um animal de quem está logado, com as fotos                                                           |
@@ -296,7 +296,7 @@ backend/
 │   ├── erros.js            as respostas de erro, todas no mesmo formato
 │   ├── token.js            o crachá de sessão (JWT) e o cookie dele
 │   ├── senha.js            o hash das senhas (bcrypt)
-│   ├── cifra.js            cifragem e índices de CPF, e-mail e telefone
+│   ├── cifra.js            cifragem do e-mail e do telefone, e os índices
 │   ├── codigos.js          sorteio dos códigos públicos e de convite
 │   ├── datas.js            datas sem hora (nascimento) entre a API e o banco
 │   ├── imagens.js          o tratamento das imagens (conferir, reduzir, sem GPS)
@@ -317,8 +317,9 @@ Por que cada tabela e cada coluna existe está em
 O que a API já faz:
 
 - **Senhas** viram hash bcrypt (`src/senha.js`); a senha nunca é guardada.
-- **Dados pessoais** (CPF, e-mail e telefone) são cifrados antes de chegar ao
-  banco (`src/cifra.js`), com as chaves fora do código, no `.env`.
+- **Dados pessoais** (e-mail e telefone) são cifrados antes de chegar ao
+  banco (`src/cifra.js`), com as chaves fora do código, no `.env`. O cadastro
+  não pede CPF: nenhuma parte do serviço usa esse dado.
 - **Sessão:** um crachá (JWT) assinado, num cookie que o JavaScript da página
   não lê e que só volta para o próprio site. Vale 8 horas; "sair de todos os
   aparelhos" e a troca de senha invalidam os crachás antigos.
@@ -329,8 +330,8 @@ O que a API já faz:
   porque alguém saiu e entrou com outra em outra aba. Nada é feito em nome de
   uma pessoa diferente da que aparece na tela.
 - **A própria conta, e só ela:** os endereços de `/api/conta` agem sobre a
-  conta do crachá, sem receber id de ninguém. CPF, CRMV, papel e código não
-  mudam por eles, mesmo que o pedido traga. Trocar o e-mail ou a senha e
+  conta do crachá, sem receber id de ninguém. CRMV, papel e código não mudam
+  por eles, mesmo que o pedido traga. Trocar o e-mail ou a senha e
   encerrar a conta pedem a senha atual, e o e-mail novo só é conferido
   depois dela, para o endereço não revelar quem tem conta.
 - **Animais, só pelo dono:** editar e excluir exigem ser o dono, e o animal
@@ -348,7 +349,7 @@ O que a API já faz:
   vacinação que a validação conferiu, o mesmo vale para o critério dela.
 - **Busca e perfis públicos, sem contato:** a busca e o perfil de outra
   pessoa abrem sem conta (NF16.4), mas só com o que a tela mostra: nada de
-  e-mail, telefone, CPF ou ids internos. O contato tem endereço próprio, com
+  e-mail, telefone ou ids internos. O contato tem endereço próprio, com
   login, e só abre para o veterinário, para a própria pessoa ou para o tutor
   com uma liberação que não venceu nem foi encerrada; a resposta não fica
   guardada em cache.
@@ -377,7 +378,7 @@ O que a API já faz:
 - **Login:** e-mail errado e senha errada recebem a mesma resposta, no mesmo
   tempo, para ninguém descobrir quem tem conta.
 - **Limite de tentativas:** 20 logins errados a cada 15 minutos, 30 cadastros
-  por hora, 60 conferências de e-mail e CPF a cada 15 minutos, 60 buscas e 60
+  por hora, 60 conferências de e-mail a cada 15 minutos, 60 buscas e 60
   perfis abertos por minuto e 300 pedidos por minuto, por endereço de rede; e, por conta, 10 senhas atuais erradas a
   cada 15 minutos, 30 animais cadastrados, 60 envios de fotos e 30 de exames
   por hora, e 60 registros clínicos por hora (validações, doações e

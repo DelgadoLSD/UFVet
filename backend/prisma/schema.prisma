@@ -140,12 +140,14 @@ model Estabelecimento {
 /// virarem entidades separadas.
 ///
 /// Não há latitude, longitude nem CEP: a busca localiza por cidade e bairro, e
-/// o endereço da casa de alguém não é necessário para o serviço.
+/// o endereço da casa de alguém não é necessário para o serviço. Pelo mesmo
+/// motivo não há CPF: nada no serviço depende dele, e quem garante um
+/// veterinário é o convite do hospital, não um documento.
 ///
-/// CPF, e-mail e telefone são guardados cifrados pela API (AES-256-GCM), com a
+/// E-mail e telefone são guardados cifrados pela API (AES-256-GCM), com a
 /// chave fora do banco, no .env do servidor. Quem tiver só o banco, ou um
 /// backup dele, vê texto embaralhado. O texto cifrado muda a cada gravação e
-/// por isso não serve para comparar: CPF e e-mail têm ao lado um índice
+/// por isso não serve para comparar: o e-mail tem ao lado um índice
 /// (HMAC-SHA256, com outra chave secreta) que é a impressão digital do valor.
 /// É pelo índice que o login encontra a conta e que o banco impede repetição.
 model Usuario {
@@ -155,8 +157,6 @@ model Usuario {
   codigo              String       @unique @db.Char(6)
   papel               PapelUsuario
   nomeCompleto        String       @map("nome_completo") @db.VarChar(120)
-  cpfCifrado          String       @map("cpf_cifrado")
-  cpfIndice           String       @unique @map("cpf_indice") @db.Char(64)
   emailCifrado        String       @map("email_cifrado")
   emailIndice         String       @unique @map("email_indice") @db.Char(64)
   senhaHash           String       @map("senha_hash") @db.VarChar(72)

@@ -32,8 +32,8 @@ import { ehVeterinario, formatarTelefone, rotuloPapel } from "../util/texto";
 // página própria porque encerrar uma conta pede espaço para dizer o que se
 // perde, e isso não cabe num modal aberto por engano.
 
-// Campos que a pessoa pode mudar por aqui. CPF, CRMV e o local de atuação
-// do veterinário ficam de fora (ver DadoFixo).
+// Campos que a pessoa pode mudar por aqui. O CRMV e o local de atuação do
+// veterinário ficam de fora (ver DadoFixo).
 const CAMPOS_EDITAVEIS = [
   "nomeCompleto",
   "email",
@@ -365,27 +365,20 @@ function ContaPage() {
                 <AvisoErro>{erroGeral}</AvisoErro>
               </div>
 
-              <div className="mt-6 pt-5 border-t border-[#f0e6e6] divide-y divide-[#f6f0f0]">
-                <DadoFixo
-                  rotulo="CPF"
-                  valor={usuario.cpf}
-                  motivo="Identifica você nos registros de doação e por isso não muda por aqui."
-                />
-                {ehVet && (
-                  <>
-                    <DadoFixo
-                      rotulo="CRMV"
-                      valor={usuario.crmv}
-                      motivo="Sua assinatura nas validações. Para trocar, o suporte confirma o registro no conselho."
-                    />
-                    <DadoFixo
-                      rotulo="Local de atuação"
-                      valor={usuario.hospital}
-                      motivo="Veio do convite do hospital. Para mudar, fale com a direção do novo local."
-                    />
-                  </>
-                )}
-              </div>
+              {ehVet && (
+                <div className="mt-6 pt-5 border-t border-[#f0e6e6] divide-y divide-[#f6f0f0]">
+                  <DadoFixo
+                    rotulo="CRMV"
+                    valor={usuario.crmv}
+                    motivo="Sua assinatura nas validações. Para trocar, o suporte confirma o registro no conselho."
+                  />
+                  <DadoFixo
+                    rotulo="Local de atuação"
+                    valor={usuario.hospital}
+                    motivo="Veio do convite do hospital. Para mudar, fale com a direção do novo local."
+                  />
+                </div>
+              )}
             </Secao>
           </form>
 

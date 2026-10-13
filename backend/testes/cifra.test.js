@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { cifrar, decifrar, indiceCpf, indiceEmail } from "../src/cifra.js";
+import { cifrar, decifrar, indiceEmail } from "../src/cifra.js";
 
 // Cada teste tem três partes:
 //   preparar: monta a situação;
@@ -32,7 +32,7 @@ describe("cofre dos dados pessoais", () => {
   });
 
   test("um dado adulterado no banco é recusado, e não aberto com outro conteúdo", () => {
-    const cifrado = cifrar("084.512.336-70");
+    const cifrado = cifrar("beatriz@example.com");
     const ultimo = cifrado.at(-5);
     const adulterado =
       cifrado.slice(0, -5) + (ultimo === "A" ? "B" : "A") + cifrado.slice(-4);
@@ -56,7 +56,7 @@ describe("cofre dos dados pessoais", () => {
   });
 });
 
-describe("impressão digital (índice) de e-mail e CPF", () => {
+describe("impressão digital (índice) do e-mail", () => {
   test("o mesmo e-mail, escrito de jeitos diferentes, tem a mesma impressão digital", () => {
     expect(indiceEmail(" Victor.Hugo@UFV.br ")).toBe(
       indiceEmail("victor.hugo@ufv.br"),
@@ -67,14 +67,10 @@ describe("impressão digital (índice) de e-mail e CPF", () => {
     expect(indiceEmail("ana@ufv.br")).not.toBe(indiceEmail("ana@gmail.com"));
   });
 
-  test("CPF com e sem pontuação tem a mesma impressão digital", () => {
-    expect(indiceCpf("084.512.336-70")).toBe(indiceCpf("08451233670"));
-  });
-
   test("a impressão digital não contém o dado original", () => {
-    const indice = indiceCpf("08451233670");
+    const indice = indiceEmail("victor.hugo@ufv.br");
 
     expect(indice).toMatch(/^[0-9a-f]{64}$/);
-    expect(indice).not.toContain("08451233670");
+    expect(indice).not.toContain("victor");
   });
 });

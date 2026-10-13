@@ -14,7 +14,6 @@ import {
   criarAnimal,
   criarTutor,
   criarVeterinario,
-  gerarCpf,
   limparBanco,
 } from "./apoio.js";
 
@@ -48,24 +47,20 @@ beforeEach(async () => {
   beatriz = await criarTutor({
     nome: "Beatriz dos Reis",
     email: "beatriz@example.com",
-    cpf: gerarCpf("111444777"),
   });
   camila = await criarTutor({
     nome: "Camila Nunes",
     email: "camila@example.com",
-    cpf: gerarCpf("161803398"),
   });
   victor = await criarVeterinario({
     nome: "Victor Hugo Martins",
     email: "victor@example.com",
-    cpf: gerarCpf("084512336"),
     crmv: "78120",
     estabelecimentoId: hospital.id,
   });
   paulo = await criarVeterinario({
     nome: "Paulo Rezende",
     email: "paulo@example.com",
-    cpf: gerarCpf("333444555"),
     crmv: "88214",
     estabelecimentoId: hospital.id,
   });
@@ -128,7 +123,7 @@ describe("pedido de liberação (F27)", () => {
       },
     });
     // Sem contato de ninguém na resposta.
-    expect(JSON.stringify(body)).not.toMatch(/@|98871|cpf/i);
+    expect(JSON.stringify(body)).not.toMatch(/@|98871/);
 
     const { body: acesso } = await tutora.get("/api/acesso").expect(200);
     expect(acesso.pedido.veterinario.codigo).toBe(victor.codigo);
@@ -609,7 +604,7 @@ describe("conferência do tutor antes de liberar (NF28.3) e veterinários do hos
       animais: [{ nome: "Luna", especie: "CAO" }],
     });
     expect(body.liberacao.veterinario.codigo).toBe(paulo.codigo);
-    expect(JSON.stringify(body)).not.toMatch(/@|cpf|telefone/i);
+    expect(JSON.stringify(body)).not.toMatch(/@|telefone/i);
   });
 
   test("a conferência é só para veterinários, e o código precisa ser de um tutor", async () => {
@@ -636,7 +631,6 @@ describe("conferência do tutor antes de liberar (NF28.3) e veterinários do hos
     await criarVeterinario({
       nome: "Murilo Nogueira",
       email: "murilo@example.com",
-      cpf: gerarCpf("444555666"),
       crmv: "63771",
       estabelecimentoId: outro.id,
     });
@@ -648,7 +642,7 @@ describe("conferência do tutor antes de liberar (NF28.3) e veterinários do hos
       "Paulo Rezende",
       "Victor Hugo Martins",
     ]);
-    expect(JSON.stringify(body)).not.toMatch(/@|cpf|telefone/i);
+    expect(JSON.stringify(body)).not.toMatch(/@|telefone/i);
     const nada = await tutora
       .get("/api/estabelecimentos/qualquer-coisa/veterinarios")
       .expect(200);

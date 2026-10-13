@@ -5,7 +5,7 @@ import {
   randomBytes,
 } from "node:crypto";
 
-// Cifragem dos dados pessoais (CPF, e-mail e telefone). Ver a seção 6.1 de
+// Cifragem dos dados pessoais (e-mail e telefone). Ver a seção 6.1 de
 // docs/modelagem-bd/modelo-de-dados.md para o porquê de cada escolha.
 //
 // Duas chaves, cada uma com uma função:
@@ -76,8 +76,9 @@ export function decifrar(cifrado) {
 }
 
 // Impressão digital (HMAC-SHA256, em hexadecimal: 64 caracteres). Usa chave
-// secreta de propósito: um SHA-256 simples do CPF seria revertido por força
-// bruta, porque existem só cerca de um bilhão de CPFs possíveis.
+// secreta de propósito: com um SHA-256 simples, quem tivesse uma lista de
+// e-mails (vazada de outro site, por exemplo) calcularia a impressão de cada
+// um e descobriria, comparando com o banco, quem tem conta no UFVet.
 function impressaoDigital(valor) {
   return createHmac("sha256", lerChave("CHAVE_INDICE"))
     .update(valor, "utf8")
@@ -85,20 +86,15 @@ function impressaoDigital(valor) {
 }
 
 // O índice é calculado sobre o valor normalizado, para "Ana@Email.com " e
-// "ana@email.com" serem a mesma conta, e "123.456.789-09" e "12345678909",
-// o mesmo CPF.
+// "ana@email.com" serem a mesma conta.
 export const normalizarEmail = (email) =>
   email.normalize("NFC").trim().toLowerCase();
 
-export const normalizarCpf = (cpf) => cpf.replace(/\D/g, "");
-
 export const indiceEmail = (email) => impressaoDigital(normalizarEmail(email));
-
-export const indiceCpf = (cpf) => impressaoDigital(normalizarCpf(cpf));
 
 // Código de convite de veterinário ("7K3P-9XQ2"): vale com ou sem o traço e
 // em minúsculas. O prefixo separa os convites dos outros índices, para nunca
-// coincidirem com o de um e-mail ou CPF.
+// coincidirem com o de um e-mail.
 export const normalizarConvite = (codigo) =>
   codigo.toUpperCase().replace(/[^A-Z0-9]/g, "");
 

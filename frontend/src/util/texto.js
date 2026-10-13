@@ -11,35 +11,6 @@ export const maiuscula = (texto) =>
 // "32 kg", "4,5 kg"
 export const formatarPeso = (kg) => `${kg.toLocaleString("pt-BR")} kg`;
 
-// CPF formatado enquanto a pessoa digita: só números, no máximo 11, com os
-// pontos e o traço entrando sozinhos ("12345678" -> "123.456.78").
-export function formatarCpf(texto) {
-  return texto
-    .replace(/\D/g, "")
-    .slice(0, 11)
-    .replace(/^(\d{3})(\d)/, "$1.$2")
-    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d{1,2})$/, ".$1-$2");
-}
-
-// Confere os dois dígitos verificadores, a mesma conta que a API faz
-// (backend/src/validacao.js). Pega erro de digitação e CPF inventado; não
-// prova que o CPF é da pessoa. Todos os números iguais passam na conta, mas
-// não existem.
-export function cpfValido(texto) {
-  const cpf = texto.replace(/\D/g, "");
-  if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return false;
-  const digito = (quantos) => {
-    let soma = 0;
-    for (let i = 0; i < quantos; i++) {
-      soma += Number(cpf[i]) * (quantos + 1 - i);
-    }
-    const resto = (soma * 10) % 11;
-    return resto === 10 ? 0 : resto;
-  };
-  return digito(9) === Number(cpf[9]) && digito(10) === Number(cpf[10]);
-}
-
 // A mesma regra da API (backend/src/validacao.js): DDD sem zero, e depois um
 // celular (9 + 8 dígitos) ou um fixo (8 dígitos, começando de 2 a 8).
 export const telefoneValido = (texto) =>

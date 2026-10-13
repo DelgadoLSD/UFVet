@@ -2,12 +2,7 @@ import request from "supertest";
 import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
-import {
-  arquivosGuardados,
-  fotoDeCelular,
-  gerarCpf,
-  limparBanco,
-} from "./apoio.js";
+import { arquivosGuardados, fotoDeCelular, limparBanco } from "./apoio.js";
 
 // A segunda trava contra CSRF (middlewares/origem.js): um pedido que muda
 // alguma coisa e vem de outro site é recusado antes de qualquer efeito. Aqui
@@ -32,7 +27,6 @@ const SENHA = "senha-da-beatriz";
 const tutora = {
   papel: "TUTOR",
   nomeCompleto: "Beatriz dos Reis",
-  cpf: gerarCpf("111444777"),
   email: "beatriz@example.com",
   telefone: "(31) 98871-4402",
   cidade: "Viçosa - MG",

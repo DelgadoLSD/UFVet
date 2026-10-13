@@ -10,7 +10,7 @@ import {
   subtrairAnos,
 } from "../src/datas.js";
 import { criarConvite } from "../src/modelos/convite.js";
-import { gerarCpf, limparBanco } from "./apoio.js";
+import { limparBanco } from "./apoio.js";
 
 // O histórico clínico de um animal pela API (F19 a F26): a validação dos
 // critérios de doação, com o tipo sanguíneo, as doações realizadas e as
@@ -33,7 +33,6 @@ afterAll(() => banco.$disconnect());
 const tutora = {
   papel: "TUTOR",
   nomeCompleto: "Beatriz dos Reis",
-  cpf: gerarCpf("111444777"),
   email: "beatriz@example.com",
   telefone: "(31) 98871-4402",
   cidade: "Viçosa - MG",
@@ -47,7 +46,6 @@ const veterinaria = {
   ...tutora,
   papel: "VETERINARIO",
   nomeCompleto: "Camila Rocha Duarte",
-  cpf: gerarCpf("987654321"),
   email: "camila@example.com",
   tratamento: "DRA",
 };

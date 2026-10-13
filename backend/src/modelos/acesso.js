@@ -102,7 +102,7 @@ export const travarAcessoDoTutor = (tx, tutorId) =>
   tx.$queryRaw`select pg_advisory_xact_lock(hashtext(${tutorId}::text))::text as trava`;
 
 // O veterinário como as telas mostram, em quem liberou ou recebeu um pedido.
-// Sem e-mail, telefone ou CPF.
+// Sem e-mail nem telefone.
 export const dadosDoVeterinario = (usuario) => ({
   codigo: usuario.codigo,
   nomeCompleto: usuario.nomeCompleto,

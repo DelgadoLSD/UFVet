@@ -111,7 +111,7 @@ seção 4.
 
 **Descrição:** O sistema deve permitir que uma pessoa crie uma conta,
 escolhendo entre os perfis de tutor e de veterinário. São coletados nome
-completo, CPF, e-mail, telefone, cidade, bairro e senha. Quando o perfil
+completo, e-mail, telefone, cidade, bairro e senha. Quando o perfil
 escolhido é o de veterinário, a pessoa informa também o código de convite
 recebido da instituição onde atua e o tratamento com que assina (Dr. ou Dra.);
 o CRMV, a UF do conselho e o estabelecimento vêm do convite.
@@ -119,11 +119,11 @@ o CRMV, a UF do conselho e o estabelecimento vêm do convite.
 | Código | Nome | Restrição | Categoria | Desejável | Permanente |
 |---|---|---|---|---|---|
 | NF1.1 | Armazenamento de senha | A senha deve ser armazenada como hash bcrypt, nunca em texto legível. | Segurança | ( ) | (x) |
-| NF1.2 | Unicidade de identificação | CPF e e-mail não podem se repetir entre contas. | Especificação | ( ) | (x) |
+| NF1.2 | Unicidade de identificação | O e-mail não pode se repetir entre contas. | Especificação | ( ) | (x) |
 | NF1.3 | Cadastro em etapas | O formulário deve ser dividido em etapas, com indicação de progresso, para não apresentar todos os campos de uma vez. | Interface | (x) | ( ) |
 | NF1.4 | Aceite obrigatório | A conta só é criada após o aceite dos termos de uso e da ciência sobre os custos de insumos. | Legal | ( ) | (x) |
-| NF1.5 | Cifragem de dados pessoais | CPF, e-mail e telefone devem ser armazenados cifrados, com chave mantida fora do banco de dados. A unicidade exigida por NF1.2 e a localização da conta no login devem ser feitas por índice derivado com chave secreta, sem decifrar os registros. | Segurança | ( ) | (x) |
-| NF1.6 | Coleta mínima | Não devem ser coletados dados sem uso no serviço. A localização do usuário se limita a cidade e bairro, sem CEP nem endereço. | Legal | ( ) | (x) |
+| NF1.5 | Cifragem de dados pessoais | E-mail e telefone devem ser armazenados cifrados, com chave mantida fora do banco de dados. A unicidade exigida por NF1.2 e a localização da conta no login devem ser feitas por índice derivado com chave secreta, sem decifrar os registros. | Segurança | ( ) | (x) |
+| NF1.6 | Coleta mínima | Não devem ser coletados dados sem uso no serviço. A localização do usuário se limita a cidade e bairro, sem CEP nem endereço. O CPF não é coletado: nenhuma função depende dele, e conferir os dígitos não prova que o número é de quem se cadastra. | Legal | ( ) | (x) |
 | NF1.7 | Localidade escolhida em lista | A cidade deve ser escolhida na lista oficial de municípios do IBGE. Ao abrir, o campo já oferece as cidades da região imediata de Viçosa; digitar permite buscar qualquer outra, com tolerância a acentos e grafias próximas ("Vicosa", "Vissosa"). O bairro deve ser escolhido na lista da cidade, quando houver uma, com a opção de informar outro nome. Assim o filtro da busca por cidade e bairro não se perde em grafias diferentes do mesmo lugar. | Interface | ( ) | ( ) |
 | NF1.8 | Veterinário por convite | A conta de veterinário só pode ser criada com um convite gerado a pedido da instituição onde ele atua, válido para um único CRMV, uma única vez e por prazo limitado. O CRMV é público e não prova, sozinho, a identidade de quem se cadastra. O código do convite não deve ser armazenado em texto legível. | Segurança | ( ) | (x) |
 
@@ -151,7 +151,7 @@ dados de contato (e-mail e telefone), cidade, bairro e foto de perfil.
 
 | Código | Nome | Restrição | Categoria | Desejável | Permanente |
 |---|---|---|---|---|---|
-| NF3.1 | Dados imutáveis | CPF e CRMV não podem ser alterados pelo próprio usuário, por identificarem a pessoa nos registros de doação e nas validações assinadas. | Segurança | ( ) | (x) |
+| NF3.1 | Dados imutáveis | O CRMV não pode ser alterado pelo próprio usuário, por identificar o veterinário nas validações assinadas e nos registros de doação. | Segurança | ( ) | (x) |
 | NF3.2 | Confirmação de alteração | O sistema deve indicar visualmente quando há alterações não salvas e confirmar a gravação. | Interface | (x) | ( ) |
 | NF3.3 | Troca de e-mail confirmada por senha | O e-mail é o identificador de acesso: sua troca só é efetivada com a senha atual, e o novo e-mail não pode pertencer a outra conta. | Segurança | ( ) | (x) |
 

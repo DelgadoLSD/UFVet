@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
   PREENCHA,
-  erroCpf,
   erroEmail,
   erroNome,
   erroTelefone,
@@ -19,15 +18,6 @@ describe("nome", () => {
     expect(erroNome(undefined)).toBe(PREENCHA);
     expect(erroNome("Beatriz")).toBe("Informe o nome e o sobrenome.");
     expect(erroNome(" Beatriz dos Reis ")).toBeUndefined();
-  });
-});
-
-describe("CPF", () => {
-  test("primeiro confere o tamanho, depois os dígitos verificadores", () => {
-    expect(erroCpf("")).toBe("O CPF tem 11 números.");
-    expect(erroCpf("123.456.789")).toBe("O CPF tem 11 números.");
-    expect(erroCpf("123.456.789-00")).toBe("CPF inválido. Confira os números.");
-    expect(erroCpf("529.982.247-25")).toBeUndefined();
   });
 });
 
@@ -56,11 +46,11 @@ describe("lista de problemas", () => {
   test("fica só com os campos que têm mensagem", () => {
     const erros = soComProblema({
       nomeCompleto: undefined,
-      cpf: "O CPF tem 11 números.",
+      telefone: "Informe o telefone com DDD.",
       email: "",
     });
 
-    expect(erros).toEqual({ cpf: "O CPF tem 11 números." });
+    expect(erros).toEqual({ telefone: "Informe o telefone com DDD." });
     expect(soComProblema({ nomeCompleto: undefined })).toEqual({});
   });
 });

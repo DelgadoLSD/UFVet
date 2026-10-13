@@ -9,7 +9,7 @@ import {
   subtrairAnos,
   subtrairDias,
 } from "../src/datas.js";
-import { criarTutor, gerarCpf, limparBanco } from "./apoio.js";
+import { criarTutor, limparBanco } from "./apoio.js";
 
 // A busca de doadores pela API (F16 a F18): pública, só com quem pode doar
 // agora, com os filtros, a situação da validação, a ordem e as páginas, e
@@ -37,7 +37,6 @@ async function tutorEm(cidade = "Viçosa - MG", bairro = "Centro") {
   const tutor = await criarTutor({
     nome: `Tutor ${pessoas}`,
     email: `tutor${pessoas}@example.com`,
-    cpf: gerarCpf(String(100000000 + pessoas)),
   });
   return banco.usuario.update({
     where: { id: tutor.id },
@@ -406,7 +405,6 @@ describe("pedidos com problema", () => {
         .send({
           papel: "TUTOR",
           nomeCompleto: `Pessoa ${n}`,
-          cpf: gerarCpf(String(400000000 + n)),
           email: `pessoa${n}@example.com`,
           telefone: "(31) 98871-4402",
           cidade: "Viçosa - MG",

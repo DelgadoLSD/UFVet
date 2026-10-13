@@ -45,7 +45,7 @@ I = incluir · A = alterar · E = excluir · C = consultar
 
 | Conceito | I | A | E | C | Observação | Ref. cruzadas |
 |---|---|---|---|---|---|---|
-| **Usuário** | x | x | x | x | A exclusão remove o usuário e tudo que é exclusivamente seu. Validações e doações que ele tenha assinado em animais de terceiros permanecem, com a assinatura preservada. CPF e CRMV não são alteráveis. A autenticação (F2) é pré-condição de todos os casos de uso, conforme a seção 4.1. | F1, F2, F3, F4, F5, F6, F7 |
+| **Usuário** | x | x | x | x | A exclusão remove o usuário e tudo que é exclusivamente seu. Validações e doações que ele tenha assinado em animais de terceiros permanecem, com a assinatura preservada. O CRMV não é alterável. A autenticação (F2) é pré-condição de todos os casos de uso, conforme a seção 4.1. | F1, F2, F3, F4, F5, F6, F7 |
 | **Animal** | x | x | x | x | A inclusão acontece pelo caso de uso "Cadastrar animal doador". O tipo sanguíneo não é alterável pelo tutor: só é gravado pelo caso de uso "Validar doador". | F8, F9, F10, F11 |
 | **Exame** | x | | x | x | Não há alteração: um exame refeito entra como nova versão e o histórico permanece. O tutor pode excluir uma versão que enviou (um arquivo errado, por exemplo); se a validação vigente a conferiu, o critério que ela comprova perde efeito. | F14, F15, F21 |
 | **Observação** | x | | | x | Registrada pelo caso de uso "Validar doador" ou isoladamente. Não é editável, por ser anotação datada e assinada. | F23 |

@@ -36,20 +36,13 @@ export const codigoPublicoLivre = (papel) =>
       })),
   );
 
-// "12944780655" -> "•••.447.806-••": o bastante para a pessoa reconhecer o
-// próprio CPF, sem o número inteiro aparecer na tela.
-function mascararCpf(cpf) {
-  const digitos = cpf.replace(/\D/g, "");
-  return `•••.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-••`;
-}
-
 // Quantas validações um veterinário já assinou, o número do perfil dele.
 const validacoesAssinadas = (usuario) =>
   banco.validacao.count({ where: { veterinarioId: usuario.id } });
 
 // O perfil de uma pessoa do jeito que qualquer um o vê, inclusive o visitante
-// sem conta, que chega pela busca (NF16.4). Não leva e-mail, telefone nem
-// CPF: o contato tem endereço próprio, só para quem pode ver (podeVerContato).
+// sem conta, que chega pela busca (NF16.4). Não leva e-mail nem telefone: o
+// contato tem endereço próprio, só para quem pode ver (podeVerContato).
 // Do local do veterinário vai só o nome, sem o id interno.
 export async function dadosPublicos(usuario) {
   const { veterinario } = usuario;
@@ -91,9 +84,8 @@ export const contatoDe = (usuario) => ({
 });
 
 // A conta do jeito que a própria pessoa a recebe (topo do site, página da
-// conta). E-mail e telefone vão abertos, porque são dela; o CPF vai
-// mascarado. O hash da senha, os índices e os textos cifrados nunca saem da
-// API.
+// conta). E-mail e telefone vão abertos, porque são dela. O hash da senha, os
+// índices e os textos cifrados nunca saem da API.
 export async function dadosDaConta(usuario) {
   const { veterinario } = usuario;
   return {
@@ -102,7 +94,6 @@ export async function dadosDaConta(usuario) {
     nomeCompleto: usuario.nomeCompleto,
     email: decifrar(usuario.emailCifrado),
     telefone: decifrar(usuario.telefoneCifrado),
-    cpfMascarado: mascararCpf(decifrar(usuario.cpfCifrado)),
     cidade: usuario.cidade,
     bairro: usuario.bairro,
     fotoUrl: enderecoDaFoto(usuario.fotoId),

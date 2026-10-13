@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
 import { hojeISO, subtrairAnos } from "../src/datas.js";
-import { gerarCpf, limparBanco } from "./apoio.js";
+import { limparBanco } from "./apoio.js";
 
 // F8 a F11 pela API: cadastrar, ver, editar, excluir e mudar a
 // disponibilidade de um animal. Cada teste cria uma API nova (com os limites
@@ -19,7 +19,6 @@ afterAll(() => banco.$disconnect());
 const tutora = {
   papel: "TUTOR",
   nomeCompleto: "Beatriz dos Reis",
-  cpf: gerarCpf("111444777"),
   email: "beatriz@example.com",
   telefone: "(31) 98871-4402",
   cidade: "Viçosa - MG",
@@ -32,7 +31,6 @@ const tutora = {
 const outroTutor = {
   ...tutora,
   nomeCompleto: "Caio Ferreira",
-  cpf: gerarCpf("222555888"),
   email: "caio@example.com",
 };
 

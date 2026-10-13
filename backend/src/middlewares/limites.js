@@ -187,9 +187,9 @@ export function criarLimites() {
       },
     }),
 
-    // Conferência de e-mail e CPF durante o cadastro. Responde se um e-mail
-    // tem conta, então o limite barra quem tentaria testar uma lista inteira.
-    // Um cadastro normal faz poucas conferências.
+    // Conferência do e-mail durante o cadastro. Responde se um e-mail tem
+    // conta, então o limite barra quem tentaria testar uma lista inteira. Um
+    // cadastro normal faz poucas conferências.
     disponibilidade: rateLimit({
       ...opcoesComuns,
       windowMs: 15 * MINUTO,

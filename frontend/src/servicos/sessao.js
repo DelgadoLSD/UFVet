@@ -44,7 +44,6 @@ function paraUsuario(conta) {
     nomeCompleto: conta.nomeCompleto,
     email: conta.email,
     telefone: conta.telefone,
-    cpf: conta.cpfMascarado,
     cidade: conta.cidade,
     bairro: conta.bairro,
     membroDesde: conta.membroDesde,
@@ -183,8 +182,8 @@ export async function sair() {
   }
 }
 
-// Pergunta à API se o e-mail ou o CPF já têm conta. Devolve a mensagem de
-// cada campo repetido ({ email: "Já existe..." }), ou {} se estão livres.
+// Pergunta à API se o e-mail já tem conta. Devolve { email: "Já existe..." },
+// ou {} se está livre.
 export async function conferirDisponibilidade(dados) {
   const { campos } = await chamarApi("/usuarios/disponibilidade", {
     metodo: "POST",

@@ -255,7 +255,6 @@ hide methods
 class Usuario {
   codigo
   nome
-  cpf
   email
   telefone
   cidade

@@ -4,7 +4,7 @@ import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
 import { NOME_COOKIE } from "../src/token.js";
-import { gerarCpf, limparBanco } from "./apoio.js";
+import { limparBanco } from "./apoio.js";
 
 // F2 pela API: entrar, ver quem está logado, sair e o crachá de sessão.
 
@@ -20,7 +20,6 @@ const SENHA = "senha-da-beatriz";
 const tutora = {
   papel: "TUTOR",
   nomeCompleto: "Beatriz dos Reis",
-  cpf: gerarCpf("111444777"),
   email: "beatriz@example.com",
   telefone: "(31) 98871-4402",
   cidade: "Viçosa - MG",

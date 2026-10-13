@@ -9,7 +9,6 @@ import {
   arquivosGuardados,
   examesGuardados,
   fotoDeCelular,
-  gerarCpf,
   limparBanco,
   pdfDeExame,
 } from "./apoio.js";
@@ -36,7 +35,6 @@ const SENHA = "senha-da-beatriz";
 const tutora = {
   papel: "TUTOR",
   nomeCompleto: "Beatriz dos Reis",
-  cpf: gerarCpf("111444777"),
   email: "beatriz@example.com",
   telefone: "(31) 98871-4402",
   cidade: "Viçosa - MG",
@@ -49,7 +47,6 @@ const tutora = {
 const outroTutor = {
   ...tutora,
   nomeCompleto: "Caio Ferreira",
-  cpf: gerarCpf("222555888"),
   email: "caio@example.com",
 };
 
@@ -85,7 +82,6 @@ async function navegadorDaVeterinaria() {
     ...tutora,
     papel: "VETERINARIO",
     nomeCompleto: "Camila Rocha Duarte",
-    cpf: gerarCpf("987654321"),
     email: "camila@example.com",
     tratamento: "DRA",
     convite: codigo,

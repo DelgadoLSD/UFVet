@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import sharp from "sharp";
 import { guardarExame, guardarImagem } from "../src/armazenamento.js";
 import { banco } from "../src/banco.js";
-import { cifrar, indiceCpf, indiceEmail } from "../src/cifra.js";
+import { cifrar, indiceEmail } from "../src/cifra.js";
 import { paraDataDoBanco, somarAnos } from "../src/datas.js";
 import { prepararFoto, prepararImagemDeExame } from "../src/imagens.js";
 import { assinaturaDe } from "../src/modelos/usuario.js";
@@ -15,9 +15,8 @@ import { gerarHashSenha } from "../src/senha.js";
 //
 // Roda com `npm run db:exemplos`, depois de `npm run db:seed`, e pode rodar
 // de novo sem duplicar: só cria o que falta (uma conta, um animal, as fotos
-// ou os exames deles). Nunca roda em produção: a senha está escrita aqui e é pública. Os
-// CPFs são os dos dados de exemplo, que de propósito não passam na conta dos
-// dígitos verificadores; assim não pertencem a ninguém.
+// ou os exames deles). Nunca roda em produção: a senha está escrita aqui e é
+// pública.
 
 const SENHA_DE_EXEMPLO = "ufvet-exemplo";
 const VERSAO_DOS_TERMOS = "1";
@@ -31,7 +30,6 @@ const CONTAS = [
     papel: "VETERINARIO",
     nomeCompleto: "Victor Hugo Martins",
     email: "victor@example.com",
-    cpf: "08451233670",
     telefone: "(31) 99204-7715",
     cidade: "Viçosa - MG",
     bairro: "Centro",
@@ -53,7 +51,6 @@ const CONTAS = [
     papel: "VETERINARIO",
     nomeCompleto: "Paulo Rezende",
     email: "paulo@example.com",
-    cpf: "50361284917",
     telefone: "(31) 99630-2214",
     cidade: "Viçosa - MG",
     bairro: "Clélia Bernardes",
@@ -64,7 +61,6 @@ const CONTAS = [
     papel: "TUTOR",
     nomeCompleto: "Beatriz dos Reis",
     email: "beatriz@example.com",
-    cpf: "12944780655",
     telefone: "(31) 98871-4402",
     cidade: "Viçosa - MG",
     bairro: "Ramos",
@@ -78,7 +74,6 @@ const CONTAS = [
     papel: "TUTOR",
     nomeCompleto: "Lucas Silva Delgado",
     email: "lucas@example.com",
-    cpf: "31452087611",
     telefone: "(31) 99715-2280",
     cidade: "Viçosa - MG",
     bairro: "Silvestre",
@@ -89,7 +84,6 @@ const CONTAS = [
     papel: "TUTOR",
     nomeCompleto: "Pedro Alves",
     email: "pedro@example.com",
-    cpf: "27183918222",
     telefone: "(31) 98123-4567",
     cidade: "Viçosa - MG",
     bairro: "Belvedere",
@@ -99,7 +93,6 @@ const CONTAS = [
     papel: "TUTOR",
     nomeCompleto: "Camila Nunes",
     email: "camila.nunes@example.com",
-    cpf: "16180339833",
     telefone: "(31) 99452-1873",
     cidade: "Teixeiras - MG",
     bairro: "Centro",
@@ -705,8 +698,6 @@ async function criarContas(hospital) {
           codigo: conta.codigo,
           papel: conta.papel,
           nomeCompleto: conta.nomeCompleto,
-          cpfCifrado: cifrar(conta.cpf),
-          cpfIndice: indiceCpf(conta.cpf),
           emailCifrado: cifrar(conta.email),
           emailIndice: indiceEmail(conta.email),
           telefoneCifrado: cifrar(conta.telefone),

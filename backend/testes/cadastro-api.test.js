@@ -4,7 +4,7 @@ import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
 import { criarConvite } from "../src/modelos/convite.js";
 import { NOME_COOKIE } from "../src/token.js";
-import { gerarCpf, limparBanco } from "./apoio.js";
+import { limparBanco } from "./apoio.js";
 
 // F1 e F7 pela API: o cadastro de tutor, o de veterinário com convite e o
 // aceite dos termos. Cada teste cria uma API nova (com os limites de
@@ -20,7 +20,6 @@ afterAll(() => banco.$disconnect());
 const tutora = {
   papel: "TUTOR",
   nomeCompleto: "Beatriz dos Reis",
-  cpf: gerarCpf("111444777"),
   email: "beatriz@example.com",
   telefone: "(31) 98871-4402",
   cidade: "Viçosa - MG",
@@ -50,7 +49,6 @@ describe("cadastro de tutor", () => {
       papel: "TUTOR",
       nomeCompleto: "Beatriz dos Reis",
       email: "beatriz@example.com",
-      cpfMascarado: "•••.444.777-••",
       veterinario: null,
     });
     // Código público de tutor: T e mais cinco letras e números (F6).
@@ -71,7 +69,18 @@ describe("cadastro de tutor", () => {
     expect(texto).not.toContain("senha");
     expect(texto).not.toContain("Indice");
     expect(texto).not.toContain("Cifrado");
-    expect(texto).not.toContain(tutora.cpf);
+  });
+
+  test("não pede CPF: se um pedido trouxer um, ele é ignorado e não fica guardado", async () => {
+    const resposta = await cadastrar({ ...tutora, cpf: "529.982.247-25" });
+
+    expect(resposta.status).toBe(201);
+    expect(JSON.stringify(resposta.body)).not.toMatch(
+      /cpf|52998224725|529\.982/i,
+    );
+    // Nem coluna de CPF existe mais: uma, mesmo vazia, apareceria aqui.
+    const [linha] = await banco.$queryRaw`select * from usuario`;
+    expect(JSON.stringify(linha)).not.toMatch(/cpf|52998224725/i);
   });
 
   test("guarda a senha como hash bcrypt e registra os dois aceites", async () => {
@@ -87,7 +96,7 @@ describe("cadastro de tutor", () => {
       "TERMOS_DE_USO",
     ]);
     // A versão é a da página de termos (frontend/src/pages/termos/indice.js).
-    expect(usuario.aceites.map((a) => a.versao)).toEqual(["2", "2"]);
+    expect(usuario.aceites.map((a) => a.versao)).toEqual(["3", "3"]);
   });
 
   test("arruma o que foi digitado: espaços, maiúsculas e o formato do telefone", async () => {
@@ -112,7 +121,6 @@ describe("cadastro de tutor", () => {
 
     const resposta = await cadastrar({
       ...tutora,
-      cpf: gerarCpf("123456789"),
       email: "BEATRIZ@example.com",
     });
 
@@ -123,24 +131,10 @@ describe("cadastro de tutor", () => {
     expect(await banco.usuario.count()).toBe(1);
   });
 
-  test("recusa CPF já cadastrado, mesmo escrito de outro jeito", async () => {
-    await cadastrar(tutora);
-
-    const resposta = await cadastrar({
-      ...tutora,
-      email: "outra@example.com",
-      cpf: tutora.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4"),
-    });
-
-    expect(resposta.status).toBe(409);
-    expect(resposta.body.campos).toHaveProperty("cpf");
-  });
-
   test("aponta cada campo inválido com a sua mensagem", async () => {
     const resposta = await cadastrar({
       ...tutora,
       nomeCompleto: "Beatriz",
-      cpf: "123.456.789-00",
       telefone: "1234",
       cidade: "Viçosa",
       senha: "curta",
@@ -150,7 +144,6 @@ describe("cadastro de tutor", () => {
     expect(resposta.status).toBe(400);
     expect(resposta.body.campos).toEqual({
       nomeCompleto: "Informe o nome e o sobrenome.",
-      cpf: "CPF inválido. Confira os números.",
       telefone: "Telefone inválido. Use o DDD e o número.",
       cidade: "Escolha a cidade na lista.",
       senha: "A senha precisa ter pelo menos 8 caracteres.",
@@ -166,43 +159,41 @@ describe("cadastro de tutor", () => {
   });
 });
 
-describe("conferência de e-mail e CPF durante o cadastro", () => {
+describe("conferência do e-mail durante o cadastro", () => {
   const conferir = (dados) =>
     request(app).post("/api/usuarios/disponibilidade").send(dados);
 
-  test("e-mail e CPF livres não trazem nenhum aviso", async () => {
-    const resposta = await conferir({
-      email: tutora.email,
-      cpf: tutora.cpf,
-    });
+  test("e-mail livre não traz nenhum aviso", async () => {
+    const resposta = await conferir({ email: tutora.email });
 
     expect(resposta.status).toBe(200);
     expect(resposta.body).toEqual({ campos: {} });
   });
 
-  test("aponta o e-mail e o CPF que já têm conta, um de cada vez", async () => {
+  test("aponta o e-mail que já tem conta, mesmo escrito de outro jeito", async () => {
     await cadastrar(tutora);
 
-    const porEmail = await conferir({ email: "Beatriz@Example.com " });
-    expect(porEmail.body.campos).toEqual({
-      email: "Já existe uma conta com este e-mail.",
-    });
+    const resposta = await conferir({ email: "Beatriz@Example.com " });
 
-    const porCpf = await conferir({
-      cpf: tutora.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4"),
-    });
-    expect(porCpf.body.campos).toEqual({
-      cpf: "Já existe uma conta com este CPF.",
+    expect(resposta.body.campos).toEqual({
+      email: "Já existe uma conta com este e-mail.",
     });
   });
 
-  test("recusa dado mal escrito, com a mesma mensagem do cadastro", async () => {
-    const resposta = await conferir({ cpf: "123.456.789-00" });
+  test("recusa e-mail mal escrito, com a mesma mensagem do cadastro", async () => {
+    const resposta = await conferir({ email: "beatriz@" });
 
     expect(resposta.status).toBe(400);
     expect(resposta.body.campos).toEqual({
-      cpf: "CPF inválido. Confira os números.",
+      email: "E-mail inválido. Confira o endereço.",
     });
+  });
+
+  test("sem o e-mail, diz o que falta", async () => {
+    const resposta = await conferir({});
+
+    expect(resposta.status).toBe(400);
+    expect(resposta.body.campos).toEqual({ email: "Preencha este campo." });
   });
 
   test("tem limite de conferências, para ninguém testar uma lista de e-mails", async () => {
@@ -220,7 +211,6 @@ describe("cadastro de veterinário", () => {
     ...tutora,
     papel: "VETERINARIO",
     nomeCompleto: "Camila Duarte",
-    cpf: gerarCpf("987654321"),
     email: "camila@example.com",
     tratamento: "DRA",
   };
@@ -273,7 +263,6 @@ describe("cadastro de veterinário", () => {
 
     const segunda = await cadastrar({
       ...veterinaria,
-      cpf: gerarCpf("123456789"),
       email: "outra@example.com",
       convite: codigo,
     });

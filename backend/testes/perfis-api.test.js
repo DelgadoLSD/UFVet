@@ -4,12 +4,7 @@ import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
 import { paraDataDoBanco } from "../src/datas.js";
 import { criarConvite } from "../src/modelos/convite.js";
-import {
-  criarTutor,
-  criarVeterinario,
-  gerarCpf,
-  limparBanco,
-} from "./apoio.js";
+import { criarTutor, criarVeterinario, limparBanco } from "./apoio.js";
 
 // O perfil de outra pessoa pela API: os dados públicos, que qualquer um vê
 // (a busca é aberta, NF16.4), e o contato, que só quem tem acesso vê (F33):
@@ -30,14 +25,12 @@ beforeEach(async () => {
   pedro = await criarTutor({
     nome: "Pedro Alves",
     email: "pedro@example.com",
-    cpf: gerarCpf("222333444"),
     telefone: "(31) 98123-4567",
   });
   // O veterinário que dá as liberações nos testes de contato.
   paulo = await criarVeterinario({
     nome: "Paulo Rezende",
     email: "paulo@example.com",
-    cpf: gerarCpf("333444555"),
     crmv: "88214",
     estabelecimentoId: hospital.id,
   });
@@ -47,7 +40,6 @@ afterAll(() => banco.$disconnect());
 const tutora = {
   papel: "TUTOR",
   nomeCompleto: "Beatriz dos Reis",
-  cpf: gerarCpf("111444777"),
   email: "beatriz@example.com",
   telefone: "(31) 98871-4402",
   cidade: "Viçosa - MG",
@@ -82,7 +74,6 @@ async function navegadorDaVeterinaria() {
       ...tutora,
       papel: "VETERINARIO",
       nomeCompleto: "Camila Rocha Duarte",
-      cpf: gerarCpf("987654321"),
       email: "camila@example.com",
       tratamento: "DRA",
       convite: codigo,
@@ -108,7 +99,7 @@ const liberar = (tutor, { expiraEm, encerradaEm = null }) =>
 const HORA = 60 * 60 * 1000;
 
 describe("perfil público", () => {
-  test("qualquer um vê, sem e-mail, telefone ou CPF", async () => {
+  test("qualquer um vê, sem e-mail nem telefone", async () => {
     const resposta = await request(app)
       .get(`/api/usuarios/${pedro.codigo}`)
       .expect(200);
@@ -132,7 +123,6 @@ describe("perfil público", () => {
     const victor = await criarVeterinario({
       nome: "Victor Hugo Martins",
       email: "victor@example.com",
-      cpf: gerarCpf("555666777"),
       crmv: "78120",
       estabelecimentoId: hospital.id,
     });

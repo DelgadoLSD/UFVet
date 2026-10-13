@@ -33,7 +33,6 @@ const conta = (codigo, nomeCompleto, papel = "TUTOR") => ({
   nomeCompleto,
   email: "x@example.com",
   telefone: "(31) 90000-0000",
-  cpfMascarado: "•••.000.000-••",
   cidade: "Viçosa - MG",
   bairro: "Centro",
   membroDesde: "2026-09-01T12:00:00.000Z",

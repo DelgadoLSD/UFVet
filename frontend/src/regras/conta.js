@@ -1,4 +1,4 @@
-import { cpfValido, telefoneValido } from "../util/texto";
+import { telefoneValido } from "../util/texto";
 
 // Regras da conta de usuário, as mesmas no cadastro e na página da conta. O
 // site confere só para avisar a pessoa antes de enviar: a API confere tudo de
@@ -18,11 +18,6 @@ export function erroNome(nome = "") {
   const limpo = nome.trim();
   if (!limpo) return PREENCHA;
   if (!limpo.includes(" ")) return "Informe o nome e o sobrenome.";
-}
-
-export function erroCpf(cpf = "") {
-  if (digitos(cpf).length !== 11) return "O CPF tem 11 números.";
-  if (!cpfValido(cpf)) return "CPF inválido. Confira os números.";
 }
 
 export function erroEmail(email = "") {

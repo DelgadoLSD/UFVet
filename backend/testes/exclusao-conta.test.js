@@ -24,14 +24,12 @@ async function montarCenario() {
   const vet = await criarVeterinario({
     nome: "Victor Hugo Martins",
     email: "victor.hugo@ufv.br",
-    cpf: "08451233670",
     crmv: "78120",
     estabelecimentoId: hospital.id,
   });
   const tutora = await criarTutor({
     nome: "Beatriz dos Reis",
     email: "beatriz.reis@gmail.com",
-    cpf: "12944780655",
   });
   const zeus = await criarAnimal({ tutorId: tutora.id, nome: "Zeus" });
   const thor = await criarAnimal({ tutorId: vet.id, nome: "Thor" });

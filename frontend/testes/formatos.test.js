@@ -1,54 +1,14 @@
 import { describe, expect, test } from "vitest";
 import {
-  cpfValido,
-  formatarCpf,
   formatarTelefone,
   limparCodigo,
   telefoneValido,
 } from "../src/util/texto";
 
-// As máscaras dos campos e as conferências de CPF e telefone (util/texto.js).
-// São cópias das regras da API (backend/src/validacao.js): os exemplos aqui
-// são os mesmos dos testes de lá, para as duas cópias não se desencontrarem.
-
-describe("máscara do CPF", () => {
-  test("põe os pontos e o traço enquanto a pessoa digita", () => {
-    expect(formatarCpf("1")).toBe("1");
-    expect(formatarCpf("1234")).toBe("123.4");
-    expect(formatarCpf("1234567")).toBe("123.456.7");
-    expect(formatarCpf("1234567890")).toBe("123.456.789-0");
-    expect(formatarCpf("12345678909")).toBe("123.456.789-09");
-  });
-
-  test("aceita só números e para em 11", () => {
-    expect(formatarCpf("abc12x3")).toBe("123");
-    expect(formatarCpf("123.456.789-0999")).toBe("123.456.789-09");
-  });
-
-  test("apagar não deixa ponto nem traço sobrando", () => {
-    // "123.4" com o 4 apagado chega como "123."
-    expect(formatarCpf("123.")).toBe("123");
-    expect(formatarCpf("")).toBe("");
-  });
-});
-
-describe("CPF válido", () => {
-  test("aceita CPF com os dígitos verificadores certos, com ou sem pontos", () => {
-    expect(cpfValido("529.982.247-25")).toBe(true);
-    expect(cpfValido("11144477735")).toBe(true);
-    expect(cpfValido("123.456.789-09")).toBe(true);
-  });
-
-  test("recusa dígito verificador errado, números repetidos e tamanho errado", () => {
-    expect(cpfValido("529.982.247-24")).toBe(false);
-    expect(cpfValido("123.456.789-00")).toBe(false);
-    // Passam na conta, mas não existem.
-    expect(cpfValido("111.111.111-11")).toBe(false);
-    expect(cpfValido("000.000.000-00")).toBe(false);
-    expect(cpfValido("123.456.789")).toBe(false);
-    expect(cpfValido("")).toBe(false);
-  });
-});
+// A máscara e a conferência do telefone e a limpeza do código público
+// (util/texto.js). As regras do telefone são cópias das da API
+// (backend/src/validacao.js): os exemplos aqui são os mesmos dos testes de
+// lá, para as duas cópias não se desencontrarem.
 
 describe("máscara do telefone", () => {
   test("monta o DDD e o número enquanto a pessoa digita", () => {

@@ -157,10 +157,9 @@ precisar mostrar um "carregando").
 ## Testes
 
 `npm test` confere as regras que rodam no navegador antes de qualquer dado
-chegar à API: as máscaras de CPF e telefone, a conferência dos dígitos do CPF
-e do telefone, as mensagens dos campos de cadastro e conta, o destino depois
-de entrar (que só aceita páginas do próprio site), a idade e o prazo de
-recuperação dos animais, a situação da validação (vencida, com pendências e o
+chegar à API: a máscara e a conferência do telefone, as mensagens dos campos
+de cadastro e conta, o destino depois de entrar (que só aceita páginas do
+próprio site), a idade e o prazo de recuperação dos animais, a situação da validação (vencida, com pendências e o
 critério que perde o efeito quando o peso ou o nascimento muda, ou quando um
 exame conferido é apagado), o formulário do animal (o que ele confere e o que manda para a API), o
 registro de doação (o que falta antes de enviar), as fotos (formatos aceitos,

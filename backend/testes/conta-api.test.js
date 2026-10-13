@@ -2,10 +2,10 @@ import request from "supertest";
 import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
-import { decifrar, indiceCpf } from "../src/cifra.js";
+import { decifrar, indiceEmail } from "../src/cifra.js";
 import { criarConvite } from "../src/modelos/convite.js";
 import { NOME_COOKIE } from "../src/token.js";
-import { criarAnimal, gerarCpf, limparBanco } from "./apoio.js";
+import { criarAnimal, limparBanco } from "./apoio.js";
 
 // F3, F4 e F5 pela API: mudar os dados da própria conta, trocar a senha e
 // encerrar a conta. Cada teste cria uma API nova (com os limites de
@@ -23,7 +23,6 @@ const SENHA = "senha-da-beatriz";
 const tutora = {
   papel: "TUTOR",
   nomeCompleto: "Beatriz dos Reis",
-  cpf: gerarCpf("111444777"),
   email: "beatriz@example.com",
   telefone: "(31) 98871-4402",
   cidade: "Viçosa - MG",
@@ -36,7 +35,6 @@ const tutora = {
 const outraTutora = {
   ...tutora,
   nomeCompleto: "Clara Mendes",
-  cpf: gerarCpf("222555888"),
   email: "clara@example.com",
 };
 
@@ -110,12 +108,11 @@ describe("mudar os dados da conta (F3)", () => {
     expect((await quemEstaLogado(navegador)).bairro).toBe("Centro");
   });
 
-  test("CPF, CRMV, papel e código não mudam por aqui, mesmo que o pedido traga (NF3.1)", async () => {
+  test("CRMV, papel e código não mudam por aqui, mesmo que o pedido traga (NF3.1)", async () => {
     const navegador = await navegadorComConta();
     const antes = await banco.usuario.findFirstOrThrow();
 
     const resposta = await mudarDados(navegador, {
-      cpf: gerarCpf("333666999"),
       papel: "VETERINARIO",
       codigo: "AAAAAA",
       senhaHash: "troquei",
@@ -127,7 +124,6 @@ describe("mudar os dados da conta (F3)", () => {
     const depois = await banco.usuario.findFirstOrThrow({
       include: { veterinario: true },
     });
-    expect(depois.cpfIndice).toBe(antes.cpfIndice);
     expect(depois.papel).toBe("TUTOR");
     expect(depois.codigo).toBe(antes.codigo);
     expect(depois.senhaHash).toBe(antes.senhaHash);
@@ -389,14 +385,14 @@ describe("encerrar a conta (F5)", () => {
     expect(await quemEstaLogado(computadorDoHospital)).toBeNull();
   });
 
-  test("depois de encerrada, o e-mail e o CPF podem ser usados num cadastro novo", async () => {
+  test("depois de encerrada, o e-mail pode ser usado num cadastro novo", async () => {
     const navegador = await navegadorComConta();
     await encerrar(navegador, SENHA).expect(204);
 
     await novoNavegador().post("/api/usuarios").send(tutora).expect(201);
 
     const nova = await banco.usuario.findFirstOrThrow();
-    expect(nova.cpfIndice).toBe(indiceCpf(tutora.cpf));
+    expect(nova.emailIndice).toBe(indiceEmail(tutora.email));
   });
 
   test("o veterinário sai, mas o que ele assinou no animal de outra pessoa fica (NF5.4)", async () => {
@@ -413,7 +409,6 @@ describe("encerrar a conta (F5)", () => {
       ...tutora,
       papel: "VETERINARIO",
       nomeCompleto: "Camila Duarte",
-      cpf: gerarCpf("987654321"),
       email: "camila@example.com",
       tratamento: "DRA",
       convite: codigo,

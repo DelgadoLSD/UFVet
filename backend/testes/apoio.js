@@ -1,6 +1,6 @@
 import sharp from "sharp";
 import { banco } from "../src/banco.js";
-import { cifrar, indiceCpf, indiceEmail } from "../src/cifra.js";
+import { cifrar, indiceEmail } from "../src/cifra.js";
 
 // Ferramentas que os testes usam para preparar o cenário.
 
@@ -21,21 +21,6 @@ export async function limparBanco() {
   await banco.$executeRawUnsafe(`truncate ${lista} cascade`);
 }
 
-// CPF válido (com os dígitos verificadores certos) a partir de 9 números.
-// Os testes da API precisam de CPFs que passem na validação.
-export function gerarCpf(nove) {
-  const digito = (numeros) => {
-    let soma = 0;
-    for (let i = 0; i < numeros.length; i++) {
-      soma += Number(numeros[i]) * (numeros.length + 1 - i);
-    }
-    const resto = (soma * 10) % 11;
-    return resto === 10 ? 0 : resto;
-  };
-  const dez = nove + digito(nove);
-  return dez + digito(dez);
-}
-
 // Códigos públicos (#T3M8P1) únicos dentro de uma rodada de testes.
 let contador = 0;
 const proximoCodigo = () =>
@@ -43,12 +28,10 @@ const proximoCodigo = () =>
 
 // Grava os dados pessoais do mesmo jeito que a API vai gravar: cifrados, com a
 // impressão digital ao lado.
-function dadosPessoais({ nome, email, cpf, telefone }) {
+function dadosPessoais({ nome, email, telefone }) {
   return {
     codigo: proximoCodigo(),
     nomeCompleto: nome,
-    cpfCifrado: cifrar(cpf),
-    cpfIndice: indiceCpf(cpf),
     emailCifrado: cifrar(email),
     emailIndice: indiceEmail(email),
     telefoneCifrado: cifrar(telefone),
@@ -58,23 +41,22 @@ function dadosPessoais({ nome, email, cpf, telefone }) {
   };
 }
 
-export function criarTutor({ nome, email, cpf, telefone = "(31) 90000-0000" }) {
+export function criarTutor({ nome, email, telefone = "(31) 90000-0000" }) {
   return banco.usuario.create({
-    data: { ...dadosPessoais({ nome, email, cpf, telefone }), papel: "TUTOR" },
+    data: { ...dadosPessoais({ nome, email, telefone }), papel: "TUTOR" },
   });
 }
 
 export function criarVeterinario({
   nome,
   email,
-  cpf,
   crmv,
   estabelecimentoId,
   telefone = "(31) 90000-0001",
 }) {
   return banco.usuario.create({
     data: {
-      ...dadosPessoais({ nome, email, cpf, telefone }),
+      ...dadosPessoais({ nome, email, telefone }),
       papel: "VETERINARIO",
       veterinario: {
         create: { crmv, ufCrmv: "MG", tratamento: "DR", estabelecimentoId },

@@ -129,8 +129,8 @@ function Compromissos() {
       <Lista>
         <Item>Ter 18 anos ou mais.</Item>
         <Item>
-          Informar dados verdadeiros e seus. Não crie conta com o nome, o CPF, o
-          e-mail ou o telefone de outra pessoa.
+          Informar dados verdadeiros e seus. Não crie conta com o nome, o e-mail
+          ou o telefone de outra pessoa.
         </Item>
         <Item>
           Manter o seu telefone atualizado, porque é por ele que vão procurar
@@ -334,10 +334,6 @@ function Privacidade() {
             para: "Para que quem procura um doador saiba com quem vai falar.",
           },
           {
-            dado: "CPF",
-            para: "Para evitar contas repetidas ou falsas. Ele nunca aparece para outras pessoas.",
-          },
-          {
             dado: "E-mail",
             para: "Para você entrar no site e para ser contatado por quem tem acesso aos contatos.",
           },
@@ -371,12 +367,16 @@ function Privacidade() {
           },
         ]}
       />
+      <Texto>
+        O UFVet não pede CPF, RG nem o endereço da sua casa: guardamos só o que
+        o serviço usa.
+      </Texto>
 
       <Subtitulo>Como protegemos os seus dados</Subtitulo>
       <Lista>
         <Item>
-          O CPF, o e-mail e o telefone são guardados cifrados, ou seja,
-          embaralhados com uma chave que fica fora do banco de dados.
+          O e-mail e o telefone são guardados cifrados, ou seja, embaralhados
+          com uma chave que fica fora do banco de dados.
         </Item>
         <Item>
           A senha é guardada de um jeito que não tem volta: nem o UFVet consegue

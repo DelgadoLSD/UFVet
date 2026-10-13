@@ -12,7 +12,6 @@ import Segmentado from "../components/Segmentado";
 import {
   PREENCHA,
   TAMANHO_MINIMO_SENHA,
-  erroCpf,
   erroEmail,
   erroNome,
   erroTelefone,
@@ -25,7 +24,7 @@ import {
   consultarConvite,
   useSessao,
 } from "../servicos/sessao";
-import { formatarCpf, formatarTelefone } from "../util/texto";
+import { formatarTelefone } from "../util/texto";
 // Foto de santosh verma (Unsplash, uso livre)
 import fotoGatoParede from "../assets/auth/gato-parede-vermelha.jpg";
 
@@ -34,9 +33,9 @@ import fotoGatoParede from "../assets/auth/gato-parede-vermelha.jpg";
 // - tutor: papel, dados, contato e localização, senha (4 etapas);
 // - veterinário: as mesmas, com o convite antes da senha (5).
 //
-// Cada etapa confere o básico antes de avançar. E-mail e CPF, que não podem
-// se repetir, são conferidos na API assim que a pessoa sai do campo e de novo
-// ao continuar. A conferência completa é da API, no fim: se ela apontar um
+// Cada etapa confere o básico antes de avançar. O e-mail, que não pode se
+// repetir, é conferido na API assim que a pessoa sai do campo e de novo ao
+// continuar. A conferência completa é da API, no fim: se ela apontar um
 // problema, a página volta para a etapa do campo e mostra a mensagem embaixo
 // dele.
 
@@ -64,7 +63,6 @@ const ULTIMA_ETAPA = 5;
 // erro.
 const ETAPA_DO_CAMPO = {
   nomeCompleto: 2,
-  cpf: 2,
   email: 2,
   telefone: 3,
   cidade: 3,
@@ -112,7 +110,6 @@ function errosDaEtapa(etapa, dados, convite) {
   const erros = {};
   if (etapa === 2) {
     erros.nomeCompleto = erroNome(dados.nomeCompleto);
-    erros.cpf = erroCpf(dados.cpf);
     erros.email = erroEmail(dados.email);
   }
   if (etapa === 3) {
@@ -198,17 +195,6 @@ function EtapaDados({ dados, erros, onMudar, onSair }) {
         value={dados.nomeCompleto || ""}
         onChange={(e) => onMudar("nomeCompleto", e.target.value)}
         erro={erros.nomeCompleto}
-      />
-      <Campo
-        id="cpf"
-        rotulo="CPF"
-        placeholder="000.000.000-00"
-        inputMode="numeric"
-        maxLength={14}
-        value={dados.cpf || ""}
-        onChange={(e) => onMudar("cpf", formatarCpf(e.target.value))}
-        onBlur={() => onSair("cpf")}
-        erro={erros.cpf}
       />
       <Campo
         id="email"
@@ -435,7 +421,7 @@ function CadastroPage() {
   // código antigo é ignorada.
   const codigoConferido = useRef("");
   // Os dados mais recentes, para descartar a resposta da conferência de um
-  // e-mail ou CPF que a pessoa já mudou.
+  // e-mail que a pessoa já mudou.
   const dadosAtuais = useRef(dados);
 
   const ehTutor = papel === "TUTOR";
@@ -469,10 +455,10 @@ function CadastroPage() {
     }
   };
 
-  // Ao sair do campo de e-mail, CPF ou telefone: se está mal escrito, avisa
-  // já; e-mail e CPF certos ainda vão à API, para saber se já têm conta.
-  // Campo vazio fica para o "Continuar". Falha de conexão aqui não avisa
-  // nada: a conferência se repete ao continuar e no fim do cadastro.
+  // Ao sair do campo de e-mail ou de telefone: se está mal escrito, avisa já;
+  // o e-mail certo ainda vai à API, para saber se já tem conta. Campo vazio
+  // fica para o "Continuar". Falha de conexão aqui não avisa nada: a
+  // conferência se repete ao continuar e no fim do cadastro.
   const sairDoCampo = async (campo) => {
     const valor = dados[campo];
     if (!valor?.trim()) return;
@@ -483,7 +469,7 @@ function CadastroPage() {
       setErros((prev) => ({ ...prev, [campo]: erroDeFormato }));
       return;
     }
-    // O telefone pode se repetir entre contas; só e-mail e CPF vão à API.
+    // O telefone pode se repetir entre contas; só o e-mail vai à API.
     if (campo === "telefone") return;
     try {
       const repetidos = await conferirDisponibilidade({ [campo]: valor });
@@ -498,15 +484,12 @@ function CadastroPage() {
     }
   };
 
-  // Antes de sair da etapa 2, e-mail e CPF juntos. Se a API não responder, a
+  // Antes de sair da etapa 2, o e-mail de novo. Se a API não responder, a
   // pessoa segue: o cadastro confere de novo no fim.
   const conferirRepetidos = async () => {
     setEnviando(true);
     try {
-      return await conferirDisponibilidade({
-        email: dados.email,
-        cpf: dados.cpf,
-      });
+      return await conferirDisponibilidade({ email: dados.email });
     } catch (falha) {
       return falha.campos ?? {};
     } finally {
@@ -535,7 +518,6 @@ function CadastroPage() {
       await cadastrar({
         papel,
         nomeCompleto: dados.nomeCompleto,
-        cpf: dados.cpf,
         email: dados.email,
         telefone: dados.telefone,
         cidade: dados.cidade,

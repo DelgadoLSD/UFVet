@@ -3,12 +3,7 @@ import request from "supertest";
 import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
-import {
-  arquivosGuardados,
-  fotoDeCelular,
-  gerarCpf,
-  limparBanco,
-} from "./apoio.js";
+import { arquivosGuardados, fotoDeCelular, limparBanco } from "./apoio.js";
 
 // As fotos pela API: as dos animais (NF8.3) e a de perfil (F3). Toda foto é
 // conferida, reduzida e gravada de novo, sem a localização GPS (NF8.5). Cada
@@ -26,7 +21,6 @@ const SENHA = "senha-da-beatriz";
 const tutora = {
   papel: "TUTOR",
   nomeCompleto: "Beatriz dos Reis",
-  cpf: gerarCpf("111444777"),
   email: "beatriz@example.com",
   telefone: "(31) 98871-4402",
   cidade: "Viçosa - MG",
@@ -39,7 +33,6 @@ const tutora = {
 const outroTutor = {
   ...tutora,
   nomeCompleto: "Caio Ferreira",
-  cpf: gerarCpf("222555888"),
   email: "caio@example.com",
 };
 
