@@ -7,6 +7,7 @@ import { hojeISO } from "../src/datas.js";
 import { criarConvite } from "../src/modelos/convite.js";
 import {
   arquivosGuardados,
+  cadastrarEEntrar,
   examesGuardados,
   fotoDeCelular,
   limparBanco,
@@ -65,8 +66,7 @@ const FORMATO = "Envie o exame em PDF, JPG, PNG ou WebP.";
 
 async function navegadorComConta(dados = tutora) {
   const navegador = request.agent(app);
-  const resposta = await navegador.post("/api/usuarios").send(dados);
-  navegador.codigo = resposta.body.usuario.codigo;
+  navegador.codigo = (await cadastrarEEntrar(navegador, dados)).codigo;
   return navegador;
 }
 

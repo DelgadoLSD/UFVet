@@ -3,7 +3,12 @@ import request from "supertest";
 import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
-import { arquivosGuardados, fotoDeCelular, limparBanco } from "./apoio.js";
+import {
+  arquivosGuardados,
+  cadastrarEEntrar,
+  fotoDeCelular,
+  limparBanco,
+} from "./apoio.js";
 
 // As fotos pela API: as dos animais (NF8.3) e a de perfil (F3). Toda foto é
 // conferida, reduzida e gravada de novo, sem a localização GPS (NF8.5). Cada
@@ -50,8 +55,7 @@ const NAO_E_IMAGEM = Buffer.from("<script>alert('oi')</script>");
 
 async function navegadorComConta(dados = tutora) {
   const navegador = request.agent(app);
-  const resposta = await navegador.post("/api/usuarios").send(dados);
-  navegador.codigo = resposta.body.usuario.codigo;
+  navegador.codigo = (await cadastrarEEntrar(navegador, dados)).codigo;
   return navegador;
 }
 

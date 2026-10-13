@@ -5,9 +5,14 @@ import {
 } from "../armazenamento.js";
 import { banco } from "../banco.js";
 import { cifrar, decifrar, indiceEmail } from "../cifra.js";
+import { mandarConfirmacao } from "../emails.js";
 import { ErroApi } from "../erros.js";
 import { prepararFoto } from "../imagens.js";
-import { buscarUsuarioPorId, dadosDaConta } from "../modelos/usuario.js";
+import {
+  CONTA_CONFIRMADA,
+  buscarUsuarioPorId,
+  dadosDaConta,
+} from "../modelos/usuario.js";
 import { registrar } from "../registro.js";
 import { conferirSenha, gerarHashSenha } from "../senha.js";
 import { abrirSessao, fecharSessao } from "../token.js";
@@ -44,9 +49,10 @@ async function conferirTrocaDeEmail(req, res, senhaAtual, emailIndice) {
   }
   await conferirSenhaAtual(req, res, senhaAtual);
 
-  // O e-mail novo não pode ser de outra conta (NF1.2).
-  const dono = await banco.usuario.findUnique({
-    where: { emailIndice },
+  // O e-mail novo não pode ser de outra conta (NF1.2). Um cadastro pendente
+  // não conta: ele sai quando a troca for confirmada.
+  const dono = await banco.usuario.findFirst({
+    where: { emailIndice, ...CONTA_CONFIRMADA },
     select: { id: true },
   });
   if (dono) {
@@ -56,7 +62,10 @@ async function conferirTrocaDeEmail(req, res, senhaAtual, emailIndice) {
 }
 
 // PATCH /api/conta — muda nome, e-mail, telefone, cidade e bairro (F3).
-// Grava só o que de fato mudou e responde com a conta atualizada.
+// Grava só o que de fato mudou e responde com a conta atualizada. O e-mail
+// novo não muda na hora: vai para ele um link de confirmação (NF3.4), e a
+// conta continua com o atual até a pessoa abrir o link. A resposta traz o
+// e-mail novo em `usuario.emailNovo` e diz se o link saiu.
 export async function atualizarConta(req, res) {
   const dados = esquemaConta.parse(req.body ?? {});
   const atual = req.usuario;
@@ -87,11 +96,12 @@ export async function atualizarConta(req, res) {
   if (dados.bairro !== undefined && dados.bairro !== atual.bairro) {
     mudar("bairro", { bairro: dados.bairro });
   }
+  let emailNovo = null;
   if (dados.email !== undefined) {
     const emailIndice = indiceEmail(dados.email);
     if (emailIndice !== atual.emailIndice) {
       await conferirTrocaDeEmail(req, res, dados.senhaAtual, emailIndice);
-      mudar("email", { emailCifrado: cifrar(dados.email), emailIndice });
+      emailNovo = dados.email;
     }
   }
 
@@ -100,7 +110,15 @@ export async function atualizarConta(req, res) {
     registrar("conta_alterada", { usuarioId: atual.id, campos: alterados });
   }
   const usuario = await buscarUsuarioPorId(atual.id);
-  res.json({ usuario: await dadosDaConta(usuario) });
+  let emailEnviado;
+  if (emailNovo) {
+    emailEnviado = await mandarConfirmacao(usuario, emailNovo);
+    registrar("troca_de_email_pedida", { usuarioId: atual.id });
+  }
+  res.json({
+    usuario: await dadosDaConta(usuario),
+    ...(emailNovo && { emailEnviado }),
+  });
 }
 
 // Grava a nova foto de perfil (o id do arquivo, ou nenhuma) e só depois

@@ -18,6 +18,9 @@ export default defineConfig({
       CHAVE_CIFRAGEM: chaveDeTeste(1),
       CHAVE_INDICE: chaveDeTeste(2),
       JWT_SEGREDO: chaveDeTeste(3),
+      // Os links dos e-mails apontam para cá; os e-mails não saem (ficam na
+      // caixa de saída do carteiro, na memória).
+      ENDERECO_DO_SITE: "http://ufvet.test",
     },
     // Cria o banco de testes, se faltar, e aplica as migrações.
     globalSetup: ["./testes/preparar-banco.js"],

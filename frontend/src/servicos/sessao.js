@@ -43,6 +43,8 @@ function paraUsuario(conta) {
     papel: conta.papel,
     nomeCompleto: conta.nomeCompleto,
     email: conta.email,
+    // O e-mail de uma troca que ainda espera a confirmação, ou null.
+    emailNovo: conta.emailNovo ?? null,
     telefone: conta.telefone,
     cidade: conta.cidade,
     bairro: conta.bairro,
@@ -163,15 +165,11 @@ export async function entrar(email, senha) {
   avisarOutrasAbas();
 }
 
-// Cria a conta; a API já deixa a pessoa logada.
-export async function cadastrar(dados) {
-  const { usuario } = await chamarApi("/usuarios", {
-    metodo: "POST",
-    corpo: dados,
-  });
-  logar(usuario);
-  avisarOutrasAbas();
-}
+// Cria a conta. Ela só entra no site depois que a pessoa abre o link que a
+// API manda para o e-mail. Devolve { email, enviado }: para onde o link foi
+// e se ele saiu.
+export const cadastrar = (dados) =>
+  chamarApi("/usuarios", { metodo: "POST", corpo: dados });
 
 export async function sair() {
   try {
@@ -239,15 +237,18 @@ export async function chamarComLogin(caminho, opcoes) {
   }
 }
 
-// Grava os dados da conta. Trocar o e-mail pede também `senhaAtual`.
-// Devolve a conta atualizada, do jeito que as telas usam.
+// Grava os dados da conta. Trocar o e-mail pede também `senhaAtual`, e o
+// e-mail novo só vale depois que a pessoa abrir o link mandado para ele.
+// Devolve { usuario, emailEnviado }: a conta atualizada, do jeito que as
+// telas usam (com o e-mail novo em `emailNovo`), e, numa troca de e-mail,
+// se o link saiu.
 export async function salvarConta(dados) {
-  const { usuario } = await chamarComLogin("/conta", {
+  const { usuario, emailEnviado } = await chamarComLogin("/conta", {
     metodo: "PATCH",
     corpo: dados,
   });
   logar(usuario);
-  return estado.usuario;
+  return { usuario: estado.usuario, emailEnviado };
 }
 
 // Troca a foto de perfil. A API confere a imagem, reduz e apaga a

@@ -19,6 +19,9 @@ import BuscaPage from "./pages/BuscaPage";
 import PerfilPage from "./pages/PerfilPage";
 import ContaPage from "./pages/ContaPage";
 import TermosPage from "./pages/TermosPage";
+import ConfirmarEmailPage from "./pages/ConfirmarEmailPage";
+import EsqueciSenhaPage from "./pages/EsqueciSenhaPage";
+import NovaSenhaPage from "./pages/NovaSenhaPage";
 
 // Rotas do site. /meu-perfil e /tutor/:codigo usam a mesma página: sem código,
 // é o perfil de quem está logado; com código, o de outra pessoa.
@@ -85,6 +88,9 @@ function App() {
         <Route path="/" element={<InicioPage />} />
         <Route path="/cadastrar" element={<CadastroPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/confirmar-email" element={<ConfirmarEmailPage />} />
+        <Route path="/esqueci-a-senha" element={<EsqueciSenhaPage />} />
+        <Route path="/nova-senha" element={<NovaSenhaPage />} />
         <Route path="/buscar" element={<BuscaPage />} />
         <Route path="/termos" element={<TermosPage />} />
         <Route path="/tutor/:codigo" element={<PerfilPage />} />

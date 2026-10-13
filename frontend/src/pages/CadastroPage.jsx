@@ -515,7 +515,7 @@ function CadastroPage() {
     setEnviando(true);
     setErroGeral("");
     try {
-      await cadastrar({
+      const { email, enviado } = await cadastrar({
         papel,
         nomeCompleto: dados.nomeCompleto,
         email: dados.email,
@@ -530,7 +530,7 @@ function CadastroPage() {
           tratamento: dados.tratamento,
         }),
       });
-      navegar("/meu-perfil", { replace: true });
+      navegar("/confirmar-email", { replace: true, state: { email, enviado } });
     } catch (falha) {
       setEnviando(false);
       // Volta para a primeira etapa com um campo errado, se houver.

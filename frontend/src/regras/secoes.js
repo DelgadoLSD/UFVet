@@ -4,21 +4,27 @@
 // regras sozinhas.
 
 // A seção de cada página: 0, o início; 1, a busca (e os perfis abertos por
-// ela); 2, a conta (o próprio perfil, a página da conta, entrar e
-// cadastrar-se). Uma página fora delas (um endereço que não existe) fica sem
-// seção.
+// ela); 2, a conta (o próprio perfil, a página da conta, entrar,
+// cadastrar-se e as páginas dos links do e-mail). Uma página fora delas (um
+// endereço que não existe) fica sem seção.
+const DE_ENTRAR = ["/login", "/esqueci-a-senha", "/nova-senha"];
+const DE_CADASTRAR = ["/cadastrar", "/confirmar-email"];
+
 export function secaoDoCaminho(caminho) {
   if (caminho === "/") return 0;
   if (caminho === "/buscar" || caminho.startsWith("/tutor/")) return 1;
-  if (["/meu-perfil", "/conta", "/login", "/cadastrar"].includes(caminho)) {
+  if (
+    ["/meu-perfil", "/conta", ...DE_ENTRAR, ...DE_CADASTRAR].includes(caminho)
+  ) {
     return 2;
   }
   return null;
 }
 
-// Na conta do visitante, a parte da página: 0, Entrar; 1, Cadastre-se.
+// Na conta do visitante, a parte da página: 0, Entrar (e a senha nova);
+// 1, Cadastre-se (e a confirmação do e-mail, que vem logo depois).
 export const metadeDoCaminho = (caminho) =>
-  caminho === "/login" ? 0 : caminho === "/cadastrar" ? 1 : null;
+  DE_ENTRAR.includes(caminho) ? 0 : DE_CADASTRAR.includes(caminho) ? 1 : null;
 
 // As paradas do deslize: a página principal de cada seção, na ordem do
 // topo. Para o visitante, Entrar e Cadastre-se são duas paradas, como no

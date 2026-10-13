@@ -101,6 +101,10 @@ export const normalizarConvite = (codigo) =>
 export const indiceConvite = (codigo) =>
   impressaoDigital(`convite:${normalizarConvite(codigo)}`);
 
+// Código dos links mandados por e-mail (ver modelos/links.js), com prefixo
+// próprio pelo mesmo motivo.
+export const indiceLink = (codigo) => impressaoDigital(`link:${codigo}`);
+
 // Confere de uma vez as duas chaves, para a API se recusar a ligar sem elas
 // (em vez de falhar só no primeiro cadastro).
 export function verificarChaves() {

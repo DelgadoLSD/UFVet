@@ -2,7 +2,12 @@ import request from "supertest";
 import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
-import { arquivosGuardados, fotoDeCelular, limparBanco } from "./apoio.js";
+import {
+  arquivosGuardados,
+  cadastrarEEntrar,
+  fotoDeCelular,
+  limparBanco,
+} from "./apoio.js";
 
 // A segunda trava contra CSRF (middlewares/origem.js): um pedido que muda
 // alguma coisa e vem de outro site é recusado antes de qualquer efeito. Aqui
@@ -48,7 +53,7 @@ const zeus = {
 // Um navegador com a conta da Beatriz já aberta, pelo próprio site.
 async function navegadorComConta() {
   const navegador = request.agent(app);
-  await navegador.post("/api/usuarios").set(DO_SITE).send(tutora).expect(201);
+  await cadastrarEEntrar(navegador, tutora, DO_SITE);
   return navegador;
 }
 

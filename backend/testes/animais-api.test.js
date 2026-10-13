@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
 import { hojeISO, subtrairAnos } from "../src/datas.js";
-import { limparBanco } from "./apoio.js";
+import { cadastrarEEntrar, limparBanco } from "./apoio.js";
 
 // F8 a F11 pela API: cadastrar, ver, editar, excluir e mudar a
 // disponibilidade de um animal. Cada teste cria uma API nova (com os limites
@@ -50,8 +50,7 @@ const { dataNascimento: _nascimento, ...zeusSemData } = zeus;
 // Um navegador logado: guarda os cookies entre um pedido e outro.
 async function navegadorComConta(dados = tutora) {
   const navegador = request.agent(app);
-  const resposta = await navegador.post("/api/usuarios").send(dados);
-  navegador.codigo = resposta.body.usuario.codigo;
+  navegador.codigo = (await cadastrarEEntrar(navegador, dados)).codigo;
   return navegador;
 }
 

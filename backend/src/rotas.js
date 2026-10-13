@@ -27,6 +27,12 @@ import {
 import { buscarDoadores, listarLocais } from "./controladores/busca.js";
 import { consultarConvite } from "./controladores/convites.js";
 import {
+  confirmarEmail,
+  criarSenhaNova,
+  esqueciASenha,
+  reenviarConfirmacao,
+} from "./controladores/email.js";
+import {
   abrirDocumento,
   apagarVersao,
   enviarDocumento,
@@ -73,13 +79,35 @@ export function criarRotas(limites) {
   rotas.get("/saude", (req, res) => res.json({ ok: true }));
 
   // Contas
-  rotas.post("/usuarios", limites.cadastro, cadastrar);
+  rotas.post(
+    "/usuarios",
+    limites.cadastro,
+    limites.emailsPorEndereco,
+    cadastrar,
+  );
   rotas.post(
     "/usuarios/disponibilidade",
     limites.disponibilidade,
     conferirDisponibilidade,
   );
   rotas.get("/convites/:codigo", limites.cadastro, consultarConvite);
+
+  // Os links que vão por e-mail: confirmar o e-mail (sem isso a conta não
+  // entra), pedir o link de novo e criar senha nova ("Esqueceu a senha?").
+  rotas.post("/email/confirmacao", limites.usoDeLink, confirmarEmail);
+  rotas.post(
+    "/email/reenvio",
+    limites.pedidosDeEmail,
+    limites.emailsPorEndereco,
+    reenviarConfirmacao,
+  );
+  rotas.post(
+    "/senha/esqueci",
+    limites.pedidosDeEmail,
+    limites.emailsPorEndereco,
+    esqueciASenha,
+  );
+  rotas.post("/senha/nova", limites.usoDeLink, criarSenhaNova);
 
   // Sessão (login)
   rotas.get("/sessao", sessaoAtual);
@@ -91,7 +119,13 @@ export function criarRotas(limites) {
   // Sempre a de quem está logado (ver controladores/conta.js). Quem envia
   // arquivo passa antes pelo login e pelo limite de envios: um visitante não
   // chega a mandar nada para a memória da API.
-  rotas.patch("/conta", exigirLogin, limites.senhaAtual, atualizarConta);
+  rotas.patch(
+    "/conta",
+    exigirLogin,
+    limites.senhaAtual,
+    limites.emailsPorEndereco,
+    atualizarConta,
+  );
   rotas.put(
     "/conta/foto",
     exigirLogin,

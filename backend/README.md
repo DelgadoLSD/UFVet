@@ -137,14 +137,51 @@ banco fica no Neon. Os dois têm plano grátis. A receita do Render está em
    telefone cifrados no banco não voltam.
 3. **Serviço no Render.** Crie a conta em [render.com](https://render.com)
    (entrando com o GitHub), vá em **New → Blueprint**, escolha o repositório
-   do UFVet e confirme. O Render lê o `render.yaml` e pede três valores:
-   `DATABASE_URL`, `CHAVE_CIFRAGEM` e `CHAVE_INDICE`. O `JWT_SEGREDO` ele
-   mesmo sorteia.
+   do UFVet e confirme. O Render lê o `render.yaml` e pede cinco valores:
+   `DATABASE_URL`, `CHAVE_CIFRAGEM`, `CHAVE_INDICE`, `EMAIL_SCRIPT_URL` e
+   `EMAIL_SCRIPT_SEGREDO` (os dois últimos vêm da seção "E-mails", abaixo).
+   O `JWT_SEGREDO` ele mesmo sorteia.
 4. **Espere a montagem**, alguns minutos na primeira vez: ela monta o site,
    prepara a API, aplica as migrações no banco do Neon e cadastra o hospital.
    O endereço do site aparece no topo da página do serviço.
 
 Depois disso, cada `git push` na branch principal publica de novo sozinho.
+
+### E-mails (a conta do Gmail do projeto)
+
+Sem confirmar o e-mail, ninguém entra no site, e o "Esqueceu a senha?" manda
+um link por e-mail. Quem leva os e-mails é um pequeno programa do Google, o
+Apps Script, numa conta Gmail só do projeto: o Render grátis bloqueia o envio
+direto de e-mail, e um e-mail que sai do próprio Gmail cai menos no spam do
+que o de um serviço sem domínio próprio. O limite é de 100 e-mails por dia.
+
+1. **A conta.** Crie um Gmail só do projeto (o nome precisa ter de 6 a 30
+   caracteres). Guarde a senha num gerenciador de senhas.
+2. **A senha do script.** Gere uma com o comando do `.env.example`. Ela vai
+   em dois lugares: no script (passo 4) e na variável `EMAIL_SCRIPT_SEGREDO`.
+3. **O script.** Entrando com essa conta, abra
+   [script.google.com](https://script.google.com), crie um **Novo projeto**
+   (dê o nome "Carteiro do UFVet") e troque todo o conteúdo do arquivo
+   `Código.gs` pelo de [`scripts/carteiro.gs`](scripts/carteiro.gs). Salve.
+4. **A senha no script.** Em **Configurações do projeto** (a engrenagem), no
+   fim da página, **Adicionar propriedade do script**: nome `SEGREDO`, valor
+   a senha do passo 2. Salve.
+5. **Publicar.** **Implantar → Nova implantação**, tipo **App da Web**.
+   Executar como: **eu**; quem pode acessar: **qualquer pessoa**. Na
+   autorização, o Google avisa que o app não foi verificado (é o seu próprio
+   script): **Avançado → Acessar Carteiro do UFVet → Permitir**.
+6. **O endereço.** Copie o **URL do app da Web** (termina em `/exec`): é o
+   `EMAIL_SCRIPT_URL`.
+7. **No Render**, em Environment, ponha `EMAIL_SCRIPT_URL` e
+   `EMAIL_SCRIPT_SEGREDO`. Sem os dois, a API publicada se recusa a ligar, em
+   vez de criar contas que ninguém consegue confirmar.
+
+No computador, sem essas variáveis no `.env`, nenhum e-mail sai: cada um
+vira um arquivo em `backend/emails-locais/`, para abrir no navegador e clicar
+no link. Com elas no `.env`, os e-mails saem de verdade, pelo script.
+
+Ao mudar o script, publique uma versão nova sem trocar o endereço:
+**Implantar → Gerenciar implantações → editar (lápis) → Versão: nova**.
 
 ### O que saber do plano grátis
 
@@ -186,14 +223,18 @@ npm run convite:producao -- --nome "Ana Souza" --crmv 12345 --uf MG
 | Método e endereço                            | O que faz                                                                                                      |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `GET /api/saude`                             | Responde se a API está no ar                                                                                   |
-| `POST /api/usuarios`                         | Cria a conta (tutor, ou veterinário com convite) e já entra                                                    |
+| `POST /api/usuarios`                          | Cria a conta (tutor, ou veterinário com convite), pendente até o e-mail ser confirmado                         |
 | `POST /api/usuarios/disponibilidade`         | Diz, durante o cadastro, se o e-mail já tem conta                                                              |
 | `GET /api/convites/:codigo`                  | Confere um convite antes do fim do cadastro                                                                    |
+| `POST /api/email/confirmacao`                 | Confirma o e-mail com o código do link (no cadastro ou na troca de e-mail)                                     |
+| `POST /api/email/reenvio`                     | Manda de novo o link de confirmação (responde igual tendo ou não cadastro)                                     |
+| `POST /api/senha/esqueci`                     | Manda o link de senha nova (responde igual tendo ou não conta)                                                 |
+| `POST /api/senha/nova`                        | Cria a senha nova com o código do link; todos os aparelhos saem                                                |
 | `GET /api/sessao`                            | Diz quem está logado (`{ "usuario": null }` para o visitante)                                                  |
-| `POST /api/sessao`                           | Entra com e-mail e senha                                                                                       |
+| `POST /api/sessao`                            | Entra com e-mail e senha (só com o e-mail confirmado)                                                          |
 | `DELETE /api/sessao`                         | Sai neste aparelho                                                                                             |
 | `DELETE /api/sessoes`                        | Sai de todos os aparelhos (exige login)                                                                        |
-| `PATCH /api/conta`                           | Muda os dados da própria conta (o e-mail, só com a senha)                                                      |
+| `PATCH /api/conta`                            | Muda os dados da própria conta (o e-mail, só com a senha e depois de confirmado)                               |
 | `PUT /api/conta/senha`                       | Troca a senha, com a atual; os outros aparelhos saem                                                           |
 | `DELETE /api/conta`                          | Encerra a própria conta, com a senha                                                                           |
 | `PUT /api/conta/foto`                        | Troca a foto de perfil (formulário com o arquivo em "foto")                                                    |
@@ -282,7 +323,8 @@ backend/
 │   └── exemplos.js         contas e animais de exemplo, só para desenvolver
 ├── prisma.config.ts        configuração do Prisma (lê a URL do banco do .env)
 ├── scripts/
-│   └── convite.js          o comando que cria convites de veterinário
+│   ├── convite.js          o comando que cria convites de veterinário
+│   └── carteiro.gs         o script do Google que manda os e-mails
 ├── src/
 │   ├── servidor.js         liga a API numa porta
 │   ├── app.js              monta a API: os passos por que todo pedido passa
@@ -297,6 +339,8 @@ backend/
 │   ├── token.js            o crachá de sessão (JWT) e o cookie dele
 │   ├── senha.js            o hash das senhas (bcrypt)
 │   ├── cifra.js            cifragem do e-mail e do telefone, e os índices
+│   ├── emails.js           o texto dos e-mails e o link de cada um
+│   ├── carteiro.js         quem leva os e-mails (o script, ou uma pasta)
 │   ├── codigos.js          sorteio dos códigos públicos e de convite
 │   ├── datas.js            datas sem hora (nascimento) entre a API e o banco
 │   ├── imagens.js          o tratamento das imagens (conferir, reduzir, sem GPS)
@@ -377,9 +421,20 @@ O que a API já faz:
   assinatura do formato, e não pelo nome do arquivo.
 - **Login:** e-mail errado e senha errada recebem a mesma resposta, no mesmo
   tempo, para ninguém descobrir quem tem conta.
+- **E-mail confirmado:** a conta só entra depois de abrir o link mandado para
+  o e-mail, e a troca de e-mail só vale depois de confirmada no e-mail novo.
+  Um cadastro que nunca confirmou não aparece para ninguém e não segura o
+  e-mail nem o convite; sai em 7 dias. Os links (confirmar e senha nova) têm
+  código sorteado de 32 bytes, guardado só como impressão digital, valem 24
+  horas e 1 hora, uma vez só, e o mais novo tira a validade dos anteriores.
+  O endereço dos links vem da configuração (`ENDERECO_DO_SITE`), nunca do
+  pedido. "Esqueceu a senha?" e "mandar o link de novo" respondem igual, e
+  na mesma hora, tendo ou não conta.
 - **Limite de tentativas:** 20 logins errados a cada 15 minutos, 30 cadastros
-  por hora, 60 conferências de e-mail a cada 15 minutos, 60 buscas e 60
-  perfis abertos por minuto e 300 pedidos por minuto, por endereço de rede; e, por conta, 10 senhas atuais erradas a
+  por hora, 60 conferências de e-mail a cada 15 minutos, 20 pedidos de
+  e-mail por hora, 30 links que não valem a cada 15 minutos, 60 buscas e 60
+  perfis abertos por minuto e 300 pedidos por minuto, por endereço de rede;
+  5 e-mails por hora para um mesmo endereço; e, por conta, 10 senhas atuais erradas a
   cada 15 minutos, 30 animais cadastrados, 60 envios de fotos e 30 de exames
   por hora, e 60 registros clínicos por hora (validações, doações e
   observações).

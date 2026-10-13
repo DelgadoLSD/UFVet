@@ -265,8 +265,23 @@ export const esquemaCadastro = z.discriminatedUnion(
   { error: "Escolha se você é tutor ou veterinário." },
 );
 
-// Conferência do e-mail durante o cadastro, com a mesma regra do cadastro.
-export const esquemaDisponibilidade = z.object({ email: campos.email });
+// Um e-mail só, com a mesma regra do cadastro: a conferência durante o
+// cadastro, o pedido do link de confirmação de novo e o "Esqueceu a senha?".
+export const esquemaSoEmail = z.object({ email: campos.email });
+export const esquemaDisponibilidade = esquemaSoEmail;
+
+// O código de um link mandado por e-mail: 32 bytes em base64url, 43
+// caracteres (ver modelos/links.js). Devolve o código, ou null quando o que
+// chegou não é um código inteiro: quem chama responde como a um link que
+// não vale mais, sem dizer a diferença.
+const CODIGO_DO_LINK = /^[A-Za-z0-9_-]{43}$/;
+export const codigoDoLink = (corpo) =>
+  typeof corpo?.codigo === "string" && CODIGO_DO_LINK.test(corpo.codigo)
+    ? corpo.codigo
+    : null;
+
+// A senha nova de "Esqueceu a senha?", com as regras do cadastro (NF4.1).
+export const esquemaNovaSenha = z.object({ senha: campos.senha });
 
 // Senha digitada para entrar ou para confirmar uma mudança. O formato não é
 // conferido, só se ela bate com o hash guardado. O teto de 200 caracteres

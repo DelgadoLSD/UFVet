@@ -74,6 +74,11 @@ Enum formato_arquivo {
   PDF
 }
 
+Enum finalidade_link {
+  CONFIRMAR_EMAIL
+  NOVA_SENHA
+}
+
 // ─────────────────────────── Pessoas e locais ───────────────────────────
 
 Table estabelecimento {
@@ -100,6 +105,7 @@ Table usuario {
   cidade varchar(80) [not null]
   bairro varchar(80) [not null]
   foto_id uuid [unique, note: 'Foto de perfil; sem ela, o site mostra as iniciais.']
+  email_confirmado_em timestamptz [note: 'Nulo: cadastro pendente, que não entra no site até abrir o link mandado ao e-mail.']
   sessoes_validas_desde timestamptz [note: 'Sessões emitidas antes deste instante deixam de valer (troca de senha, sair de todos os aparelhos).']
   criado_em timestamptz [not null]
   atualizado_em timestamptz [not null]
@@ -131,6 +137,24 @@ Table aceite {
   aceito_em timestamptz [not null]
 
   Note: 'Prova de que o usuário aceitou os termos e a ciência sobre custos de insumos, com a versão vigente na data.'
+}
+
+Table link_email {
+  id uuid [pk]
+  usuario_id uuid [not null]
+  finalidade finalidade_link [not null]
+  codigo_indice char(64) [unique, not null, note: 'HMAC-SHA256 do código do link; o código não é guardado']
+  email_cifrado text [note: 'O e-mail que o link confirma; nulo no link de senha nova']
+  email_indice char(64)
+  criado_em timestamptz [not null]
+  expira_em timestamptz [not null, note: '24 horas (confirmação) ou 1 hora (senha nova)']
+  usado_em timestamptz [note: 'Um link vale uma vez só']
+
+  Note: 'Links mandados por e-mail: confirmar o e-mail (no cadastro ou numa troca) e criar senha nova.'
+
+  Indexes {
+    (usuario_id, finalidade)
+  }
 }
 
 Table convite_veterinario {
@@ -341,6 +365,7 @@ Ref: veterinario.usuario_id - usuario.id [delete: cascade]
 Ref: usuario.foto_id - arquivo.id [delete: restrict]
 Ref: veterinario.estabelecimento_id > estabelecimento.id [delete: restrict]
 Ref: aceite.usuario_id > usuario.id [delete: cascade]
+Ref: link_email.usuario_id > usuario.id [delete: cascade]
 Ref: convite_veterinario.estabelecimento_id > estabelecimento.id [delete: cascade]
 Ref: convite_veterinario.usado_por_id > usuario.id [delete: set null]
 

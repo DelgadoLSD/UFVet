@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  Navigate,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
 import Campo from "../components/Campo";
 import LayoutAutenticacao, {
   BotaoGoogle,
 } from "../components/LayoutAutenticacao";
+import ReenvioDeConfirmacao from "../components/ReenvioDeConfirmacao";
 import { apagarAviso, entrar, useEstadoSessao } from "../servicos/sessao";
 import { destinoSeguro } from "../util/navegacao";
 // "Shelter dog ready for adoption", foto de Michael G (Unsplash, uso livre)
@@ -13,6 +20,9 @@ import fotoCaoVermelho from "../assets/auth/cao-vermelho.jpg";
 
 // Página de entrar, com e-mail e senha (F2). Depois de entrar, a pessoa volta
 // para a página de onde veio (?voltar=...) ou vai para o próprio perfil.
+// Quem chega da confirmação do e-mail ou da senha nova já encontra o e-mail
+// preenchido. Sem o e-mail confirmado, a conta não entra: a página diz por
+// quê e oferece mandar o link de novo.
 function LoginPage() {
   const { usuario, aviso: avisoDaSessao } = useEstadoSessao();
   const navegar = useNavigate();
@@ -23,8 +33,11 @@ function LoginPage() {
   const [parametros] = useSearchParams();
   const destino = destinoSeguro(parametros.get("voltar"));
 
-  const [dados, setDados] = useState({ email: "", senha: "" });
+  const { state } = useLocation();
+  const [dados, setDados] = useState({ email: state?.email ?? "", senha: "" });
   const [erro, setErro] = useState("");
+  // O e-mail da conta que ainda não confirmou, para mandar o link de novo.
+  const [semConfirmacao, setSemConfirmacao] = useState("");
   const [enviando, setEnviando] = useState(false);
 
   const mudar = (campo, valor) =>
@@ -34,11 +47,15 @@ function LoginPage() {
     e.preventDefault();
     setEnviando(true);
     setErro("");
+    setSemConfirmacao("");
     try {
       await entrar(dados.email, dados.senha);
       navegar(destino, { replace: true });
     } catch (falha) {
       setErro(falha.message);
+      if (falha.codigo === "EMAIL_NAO_CONFIRMADO") {
+        setSemConfirmacao(dados.email.trim());
+      }
       setEnviando(false);
     }
   };
@@ -95,16 +112,19 @@ function LoginPage() {
           value={dados.senha}
           onChange={(e) => mudar("senha", e.target.value)}
           extra={
-            // A recuperação de senha ainda não existe.
-            <a
-              href="#"
+            <Link
+              to="/esqueci-a-senha"
+              state={
+                dados.email.trim() ? { email: dados.email.trim() } : undefined
+              }
               className="py-0.5 text-sm font-semibold text-[#9e0a24] hover:underline"
             >
               Esqueceu a senha?
-            </a>
+            </Link>
           }
         />
         <AvisoErro>{erro}</AvisoErro>
+        {semConfirmacao && <ReenvioDeConfirmacao email={semConfirmacao} />}
         <div className="pt-3">
           <Botao
             type="submit"

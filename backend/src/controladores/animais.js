@@ -14,6 +14,7 @@ import {
 import { ErroApi } from "../erros.js";
 import { prepararFoto } from "../imagens.js";
 import { MAXIMO_FOTOS_POR_ANIMAL } from "../middlewares/envio.js";
+import { CONTA_CONFIRMADA } from "../modelos/usuario.js";
 import {
   COM_FOTOS,
   COM_HISTORICO,
@@ -111,7 +112,7 @@ export async function animalDoUsuario(req) {
 // arquivos só para quem pode abri-los: o próprio tutor e os veterinários.
 export async function listarAnimais(req, res) {
   const tutor = await banco.usuario.findUnique({
-    where: { codigo: codigoDoEndereco(req.params.codigo) },
+    where: { codigo: codigoDoEndereco(req.params.codigo), ...CONTA_CONFIRMADA },
     select: { id: true },
   });
   if (!tutor) throw new ErroApi(404, "Pessoa não encontrada.");

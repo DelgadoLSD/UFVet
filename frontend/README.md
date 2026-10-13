@@ -157,7 +157,8 @@ precisar mostrar um "carregando").
 ## Testes
 
 `npm test` confere as regras que rodam no navegador antes de qualquer dado
-chegar à API: a máscara e a conferência do telefone, as mensagens dos campos
+chegar à API: a máscara e a conferência do telefone, o código dos links que
+chegam por e-mail (confirmar o e-mail, criar senha nova), as mensagens dos campos
 de cadastro e conta, o destino depois de entrar (que só aceita páginas do
 próprio site), a idade e o prazo de recuperação dos animais, a situação da validação (vencida, com pendências e o
 critério que perde o efeito quando o peso ou o nascimento muda, ou quando um

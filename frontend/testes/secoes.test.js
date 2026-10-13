@@ -20,7 +20,15 @@ describe("as seções de cada página", () => {
     expect(secaoDoCaminho("/")).toBe(0);
     expect(secaoDoCaminho("/buscar")).toBe(1);
     expect(secaoDoCaminho("/tutor/T3M8P1")).toBe(1);
-    for (const caminho of ["/meu-perfil", "/conta", "/login", "/cadastrar"]) {
+    for (const caminho of [
+      "/meu-perfil",
+      "/conta",
+      "/login",
+      "/cadastrar",
+      "/confirmar-email",
+      "/esqueci-a-senha",
+      "/nova-senha",
+    ]) {
       expect(secaoDoCaminho(caminho)).toBe(2);
     }
     expect(secaoDoCaminho("/nao-existe")).toBeNull();
@@ -29,6 +37,10 @@ describe("as seções de cada página", () => {
   test("na conta do visitante, Entrar e Cadastre-se são as duas partes", () => {
     expect(metadeDoCaminho("/login")).toBe(0);
     expect(metadeDoCaminho("/cadastrar")).toBe(1);
+    // As páginas dos links do e-mail acendem a parte de onde a pessoa veio.
+    expect(metadeDoCaminho("/esqueci-a-senha")).toBe(0);
+    expect(metadeDoCaminho("/nova-senha")).toBe(0);
+    expect(metadeDoCaminho("/confirmar-email")).toBe(1);
     expect(metadeDoCaminho("/meu-perfil")).toBeNull();
   });
 });

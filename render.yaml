@@ -36,6 +36,11 @@ services:
       # com o endereço de quem pediu.
       - key: PROXIES_CONFIAVEIS
         value: "3"
+      # O endereço do site, para os links dos e-mails (confirmação e senha
+      # nova). Vem daqui, e não do pedido: um cabeçalho forjado faria o link
+      # apontar para outro site.
+      - key: ENDERECO_DO_SITE
+        value: https://ufvet.onrender.com
       # Os segredos são colados no painel do Render ao criar o serviço, nunca
       # aqui: o repositório é público.
       - key: DATABASE_URL
@@ -43,6 +48,12 @@ services:
       - key: CHAVE_CIFRAGEM
         sync: false
       - key: CHAVE_INDICE
+        sync: false
+      # O script do Google que manda os e-mails, e a senha dele (ver a seção
+      # "E-mails" do backend/README.md). Sem eles, a API não liga.
+      - key: EMAIL_SCRIPT_URL
+        sync: false
+      - key: EMAIL_SCRIPT_SEGREDO
         sync: false
       # Esta o próprio Render sorteia: trocá-la só desconecta todo mundo.
       - key: JWT_SEGREDO

@@ -115,6 +115,15 @@ enum FormatoArquivo {
   @@map("formato_arquivo")
 }
 
+/// Para que serve um link mandado por e-mail: confirmar o e-mail (no
+/// cadastro ou numa troca de e-mail) ou criar uma senha nova.
+enum FinalidadeLink {
+  CONFIRMAR_EMAIL
+  NOVA_SENHA
+
+  @@map("finalidade_link")
+}
+
 // ─────────────────────────── Pessoas e locais ───────────────────────────
 
 /// Hospital veterinário ou clínica. A clínica particular de um veterinário
@@ -171,10 +180,16 @@ model Usuario {
   /// nulo enquanto nada disso acontece. Sem ele, um crachá esquecido num
   /// computador continuaria valendo até vencer sozinho.
   sessoesValidasDesde DateTime?    @map("sessoes_validas_desde") @db.Timestamptz(3)
+  /// Quando a pessoa abriu o link que o UFVet mandou para o e-mail dela.
+  /// Enquanto é nulo, a conta é só um cadastro pendente: não entra no site,
+  /// não aparece para ninguém e não segura o e-mail nem o convite (um
+  /// cadastro novo com eles toma o lugar do pendente).
+  emailConfirmadoEm   DateTime?    @map("email_confirmado_em") @db.Timestamptz(3)
   criadoEm            DateTime     @default(now()) @map("criado_em") @db.Timestamptz(3)
   atualizadoEm        DateTime     @updatedAt @map("atualizado_em") @db.Timestamptz(3)
 
   foto                 Arquivo?             @relation(fields: [fotoId], references: [id], onDelete: Restrict)
+  linksEmail           LinkEmail[]
   veterinario          Veterinario?
   convitesUsados       ConviteVeterinario[]
   aceites              Aceite[]
@@ -235,6 +250,31 @@ model ConviteVeterinario {
 
   @@index([crmv, ufCrmv])
   @@map("convite_veterinario")
+}
+
+/// Um link que o UFVet mandou por e-mail: o de confirmar o e-mail ou o de
+/// criar uma senha nova. O código que vai no link não é guardado, só a
+/// impressão digital dele (HMAC, como o convite): quem ler o banco não
+/// consegue usar um link pendente. Cada link vale por pouco tempo e uma vez
+/// só, e um link novo da mesma finalidade tira a validade dos anteriores.
+model LinkEmail {
+  id           String         @id @default(uuid()) @db.Uuid
+  usuarioId    String         @map("usuario_id") @db.Uuid
+  finalidade   FinalidadeLink
+  codigoIndice String         @unique @map("codigo_indice") @db.Char(64)
+  /// O e-mail que o link confirma, cifrado e com a impressão digital: o do
+  /// cadastro, ou o novo numa troca de e-mail, que só passa a valer quando o
+  /// link é aberto. Nulo no link de senha nova.
+  emailCifrado String?        @map("email_cifrado")
+  emailIndice  String?        @map("email_indice") @db.Char(64)
+  criadoEm     DateTime       @default(now()) @map("criado_em") @db.Timestamptz(3)
+  expiraEm     DateTime       @map("expira_em") @db.Timestamptz(3)
+  usadoEm      DateTime?      @map("usado_em") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, finalidade])
+  @@map("link_email")
 }
 
 /// Prova de que o usuário aceitou os termos e a ciência sobre os custos de

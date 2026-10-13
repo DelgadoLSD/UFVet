@@ -59,6 +59,12 @@ para ela.
 ciência sobre os custos de insumos, com a versão vigente na data. É a prova
 documental do consentimento.
 
+**`link_email`** — um link que o sistema mandou por e-mail: o de confirmar o
+e-mail (no cadastro ou numa troca de e-mail) ou o de criar uma senha nova.
+Guarda a impressão digital do código, nunca o código, e, na confirmação, o
+e-mail que o link confirma (cifrado), porque numa troca o e-mail novo só passa
+para `usuario` quando o link é aberto.
+
 **`convite_veterinario`** — o convite com que um veterinário cria a conta.
 A direção do hospital informa nome e CRMV, e o convite gerado só vale para
 aquele registro, uma vez e por poucos dias. É dele que vêm o CRMV e o
@@ -176,6 +182,13 @@ instituição, e o CRMV e o estabelecimento vêm do convite, não do que a pesso
 digita. O código do convite não é guardado: fica só a impressão digital dele
 (HMAC, como o e-mail), e quem lê o banco não consegue usar um convite
 pendente. Um convite é usado uma vez (`usado_em`) e vence em `expira_em`.
+
+**Só entra quem confirmou o e-mail.** `usuario.email_confirmado_em` fica nulo
+até a pessoa abrir o link mandado ao e-mail; enquanto isso, a conta é um
+cadastro pendente, que não entra, não aparece para ninguém e não segura o
+e-mail nem o convite (um cadastro novo com eles apaga o pendente, e o
+convite volta a valer). Cada `link_email` vale até `expira_em` e uma vez só
+(`usado_em`); um link novo da mesma finalidade encerra os anteriores.
 
 **Uma sessão pode ser derrubada antes de vencer.** O login é um crachá
 assinado (JWT) que vale 8 horas, e a API não guarda lista de sessões. Para
@@ -407,6 +420,7 @@ UQ = restrição de unicidade.
 | bairro | varchar(80) | NOT NULL | Bairro, usado no filtro da busca |
 | foto_id | uuid | FK → arquivo, UQ, NULL | Foto de perfil; sem ela, o site mostra as iniciais |
 | sessoes_validas_desde | timestamptz | NULL | Sessões (crachás JWT) emitidas antes deste instante deixam de valer; preenchido ao trocar a senha ou sair de todos os aparelhos |
+| email_confirmado_em | timestamptz | NULL | Quando a pessoa abriu o link de confirmação; nulo, a conta é um cadastro pendente e não entra |
 | criado_em | timestamptz | NOT NULL | Data de cadastro |
 | atualizado_em | timestamptz | NOT NULL | Última alteração |
 
@@ -429,6 +443,20 @@ UQ = restrição de unicidade.
 | tipo | enum | NOT NULL | TERMOS_DE_USO ou CIENCIA_RESPONSABILIDADE |
 | versao | varchar(20) | NOT NULL | Versão do texto aceito |
 | aceito_em | timestamptz | NOT NULL | Momento do aceite |
+
+### `link_email`
+
+| Campo | Tipo | Restrições | Descrição |
+|---|---|---|---|
+| id | uuid | PK | Identificador |
+| usuario_id | uuid | FK → usuario (CASCADE) | A conta do link |
+| finalidade | enum | NOT NULL | CONFIRMAR_EMAIL ou NOVA_SENHA |
+| codigo_indice | char(64) | UQ, NOT NULL | HMAC-SHA256 do código do link; o código em si não é guardado |
+| email_cifrado | text | NULL | O e-mail que o link confirma (AES-256-GCM); nulo no link de senha nova |
+| email_indice | char(64) | NULL | HMAC-SHA256 desse e-mail, para comparar com o da conta |
+| criado_em | timestamptz | NOT NULL | Quando o link foi mandado |
+| expira_em | timestamptz | NOT NULL | 24 horas depois (confirmação) ou 1 hora (senha nova); um link novo antecipa o fim dos anteriores |
+| usado_em | timestamptz | NULL | Quando foi aberto; um link vale uma vez só |
 
 ### `convite_veterinario`
 

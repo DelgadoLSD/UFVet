@@ -9,7 +9,7 @@ import {
   subtrairAnos,
   subtrairDias,
 } from "../src/datas.js";
-import { criarTutor, limparBanco } from "./apoio.js";
+import { cadastrarEEntrar, criarTutor, limparBanco } from "./apoio.js";
 
 // A busca de doadores pela API (F16 a F18): pública, só com quem pode doar
 // agora, com os filtros, a situação da validação, a ordem e as páginas, e
@@ -400,20 +400,17 @@ describe("pedidos com problema", () => {
   test("quem está logado tem a própria cota: outra conta e o visitante no mesmo endereço continuam buscando", async () => {
     const entrar = async (n) => {
       const navegador = request.agent(app);
-      await navegador
-        .post("/api/usuarios")
-        .send({
-          papel: "TUTOR",
-          nomeCompleto: `Pessoa ${n}`,
-          email: `pessoa${n}@example.com`,
-          telefone: "(31) 98871-4402",
-          cidade: "Viçosa - MG",
-          bairro: "Centro",
-          senha: "senha-da-pessoa",
-          aceiteTermos: true,
-          cienciaResponsabilidade: true,
-        })
-        .expect(201);
+      await cadastrarEEntrar(navegador, {
+        papel: "TUTOR",
+        nomeCompleto: `Pessoa ${n}`,
+        email: `pessoa${n}@example.com`,
+        telefone: "(31) 98871-4402",
+        cidade: "Viçosa - MG",
+        bairro: "Centro",
+        senha: "senha-da-pessoa",
+        aceiteTermos: true,
+        cienciaResponsabilidade: true,
+      });
       return navegador;
     };
     const ana = await entrar(1);

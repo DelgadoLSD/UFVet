@@ -1,4 +1,5 @@
 import { ipKeyGenerator, rateLimit } from "express-rate-limit";
+import { indiceEmail } from "../cifra.js";
 import { registrar } from "../registro.js";
 
 // Limites de tentativas por endereço de rede (rate limit). Barram quem tenta
@@ -196,6 +197,47 @@ export function criarLimites() {
       limit: 60,
       message: {
         erro: "Muitas conferências feitas daqui em pouco tempo. Espere 15 minutos e tente de novo.",
+      },
+    }),
+
+    // E-mails mandados a um mesmo endereço: o do cadastro, o link de novo,
+    // o de senha nova e o da troca de e-mail, contados juntos. Barra quem
+    // usaria o UFVet para encher a caixa de outra pessoa, e poupa a cota
+    // diária do Gmail. A chave é a impressão digital do e-mail (o endereço
+    // não fica na memória da API). Só contam os pedidos aceitos.
+    emailsPorEndereco: rateLimit({
+      ...opcoesComuns,
+      windowMs: 60 * MINUTO,
+      limit: 5,
+      skip: (req) => typeof req.body?.email !== "string",
+      keyGenerator: (req) => `email:${indiceEmail(req.body.email)}`,
+      skipFailedRequests: true,
+      message: {
+        erro: "Já mandamos vários e-mails para este endereço na última hora. Procure no spam ou no lixo eletrônico, ou espere uma hora para pedir de novo.",
+      },
+    }),
+
+    // Pedidos de e-mail (o link de confirmação de novo e o de senha nova),
+    // por endereço de rede: barra quem pedisse para uma lista de e-mails.
+    pedidosDeEmail: rateLimit({
+      ...opcoesComuns,
+      windowMs: 60 * MINUTO,
+      limit: 20,
+      message: {
+        erro: "Muitos pedidos de e-mail feitos daqui em pouco tempo. Tente de novo mais tarde.",
+      },
+    }),
+
+    // Abrir um link do e-mail (confirmar, criar senha nova). O código não
+    // se adivinha, mas o limite barra quem tentasse mesmo assim. Só os links
+    // recusados contam.
+    usoDeLink: rateLimit({
+      ...opcoesComuns,
+      windowMs: 15 * MINUTO,
+      limit: 30,
+      skipSuccessfulRequests: true,
+      message: {
+        erro: "Muitas tentativas com links que não valem. Espere 15 minutos e tente de novo.",
       },
     }),
   };

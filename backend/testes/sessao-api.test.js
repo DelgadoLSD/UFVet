@@ -4,7 +4,7 @@ import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
 import { NOME_COOKIE } from "../src/token.js";
-import { limparBanco } from "./apoio.js";
+import { cadastrarEEntrar, limparBanco } from "./apoio.js";
 
 // F2 pela API: entrar, ver quem está logado, sair e o crachá de sessão.
 
@@ -34,7 +34,7 @@ const novoNavegador = () => request.agent(app);
 
 async function navegadorComConta() {
   const navegador = novoNavegador();
-  await navegador.post("/api/usuarios").send(tutora).expect(201);
+  await cadastrarEEntrar(navegador, tutora);
   return navegador;
 }
 

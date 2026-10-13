@@ -10,7 +10,7 @@ import {
   subtrairAnos,
 } from "../src/datas.js";
 import { criarConvite } from "../src/modelos/convite.js";
-import { limparBanco } from "./apoio.js";
+import { cadastrarEEntrar, limparBanco } from "./apoio.js";
 
 // O histórico clínico de um animal pela API (F19 a F26): a validação dos
 // critérios de doação, com o tipo sanguíneo, as doações realizadas e as
@@ -71,8 +71,7 @@ const todosAtendidos = {
 // Um navegador logado: guarda os cookies entre um pedido e outro.
 async function navegadorDaTutora() {
   const navegador = request.agent(app);
-  const resposta = await navegador.post("/api/usuarios").send(tutora);
-  navegador.codigo = resposta.body.usuario.codigo;
+  navegador.codigo = (await cadastrarEEntrar(navegador, tutora)).codigo;
   return navegador;
 }
 
@@ -85,10 +84,7 @@ async function navegadorDaVeterinaria() {
     estabelecimentoId: hospital.id,
   });
   const navegador = request.agent(app);
-  await navegador
-    .post("/api/usuarios")
-    .send({ ...veterinaria, convite: codigo })
-    .expect(201);
+  await cadastrarEEntrar(navegador, { ...veterinaria, convite: codigo });
   return navegador;
 }
 

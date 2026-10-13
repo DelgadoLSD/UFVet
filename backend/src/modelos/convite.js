@@ -33,15 +33,20 @@ export async function criarConvite({
 
 // O convite com este código, se ainda pode ser usado: existe, não foi usado
 // e não venceu. Senão, null, sem dizer qual dos três motivos, para não ajudar
-// quem tenta adivinhar códigos.
+// quem tenta adivinhar códigos. Usado por um cadastro que nunca confirmou o
+// e-mail, ele ainda vale: o cadastro novo toma o lugar do pendente (ver
+// apagarCadastrosPendentes).
 export async function acharConviteValido(codigo) {
   const convite = await banco.conviteVeterinario.findUnique({
     where: { codigoIndice: indiceConvite(codigo) },
-    include: { estabelecimento: true },
+    include: {
+      estabelecimento: true,
+      usadoPor: { select: { emailConfirmadoEm: true } },
+    },
   });
-  if (!convite || convite.usadoEm || convite.expiraEm <= new Date()) {
-    return null;
-  }
+  if (!convite || convite.expiraEm <= new Date()) return null;
+  const usoPendente = convite.usadoPor && !convite.usadoPor.emailConfirmadoEm;
+  if (convite.usadoEm && !usoPendente) return null;
   return convite;
 }
 

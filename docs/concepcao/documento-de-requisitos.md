@@ -126,6 +126,7 @@ o CRMV, a UF do conselho e o estabelecimento vêm do convite.
 | NF1.6 | Coleta mínima | Não devem ser coletados dados sem uso no serviço. A localização do usuário se limita a cidade e bairro, sem CEP nem endereço. O CPF não é coletado: nenhuma função depende dele, e conferir os dígitos não prova que o número é de quem se cadastra. | Legal | ( ) | (x) |
 | NF1.7 | Localidade escolhida em lista | A cidade deve ser escolhida na lista oficial de municípios do IBGE. Ao abrir, o campo já oferece as cidades da região imediata de Viçosa; digitar permite buscar qualquer outra, com tolerância a acentos e grafias próximas ("Vicosa", "Vissosa"). O bairro deve ser escolhido na lista da cidade, quando houver uma, com a opção de informar outro nome. Assim o filtro da busca por cidade e bairro não se perde em grafias diferentes do mesmo lugar. | Interface | ( ) | ( ) |
 | NF1.8 | Veterinário por convite | A conta de veterinário só pode ser criada com um convite gerado a pedido da instituição onde ele atua, válido para um único CRMV, uma única vez e por prazo limitado. O CRMV é público e não prova, sozinho, a identidade de quem se cadastra. O código do convite não deve ser armazenado em texto legível. | Segurança | ( ) | (x) |
+| NF1.9 | E-mail confirmado | A conta só entra no sistema depois que a pessoa abre o link de confirmação mandado ao e-mail informado, válido por 24 horas e uma única vez. Enquanto não confirmado, o cadastro não aparece para ninguém e não impede um novo cadastro com o mesmo e-mail ou o mesmo convite; cadastros não confirmados são apagados após 7 dias. | Segurança | ( ) | (x) |
 
 ---
 
@@ -154,19 +155,22 @@ dados de contato (e-mail e telefone), cidade, bairro e foto de perfil.
 | NF3.1 | Dados imutáveis | O CRMV não pode ser alterado pelo próprio usuário, por identificar o veterinário nas validações assinadas e nos registros de doação. | Segurança | ( ) | (x) |
 | NF3.2 | Confirmação de alteração | O sistema deve indicar visualmente quando há alterações não salvas e confirmar a gravação. | Interface | (x) | ( ) |
 | NF3.3 | Troca de e-mail confirmada por senha | O e-mail é o identificador de acesso: sua troca só é efetivada com a senha atual, e o novo e-mail não pode pertencer a outra conta. | Segurança | ( ) | (x) |
+| NF3.4 | Novo e-mail confirmado | O novo e-mail só passa a valer depois que a pessoa abre o link de confirmação mandado a ele; até lá, a conta continua com o e-mail anterior. | Segurança | ( ) | (x) |
 
 ---
 
 ### F4 — Alterar senha · Evidente · Obrigatório
 
 **Descrição:** O sistema deve permitir a troca de senha mediante informação da
-senha atual.
+senha atual e, para quem a esqueceu, a criação de uma senha nova por um link
+mandado ao e-mail da conta.
 
 | Código | Nome | Restrição | Categoria | Desejável | Permanente |
 |---|---|---|---|---|---|
 | NF4.1 | Comprimento mínimo | A nova senha deve ter ao menos oito caracteres. | Segurança | ( ) | ( ) |
 | NF4.2 | Confirmação da nova senha | A nova senha deve ser digitada duas vezes e conferir. | Interface | ( ) | (x) |
 | NF4.3 | Senha nova diferente | A nova senha não pode repetir a atual. | Segurança | ( ) | ( ) |
+| NF4.4 | Senha nova por e-mail | O link de senha nova vale por 1 hora e uma única vez. O pedido recebe a mesma resposta tendo ou não conta com o e-mail informado, e a senha nova encerra as sessões abertas em todos os aparelhos. | Segurança | ( ) | (x) |
 
 ---
 

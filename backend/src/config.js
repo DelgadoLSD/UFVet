@@ -26,6 +26,23 @@ function lerSegredo(nome) {
 
 verificarChaves();
 
+// Publicada, a API precisa mandar e-mails: sem eles, ninguém confirma o
+// e-mail e ninguém novo entra no site. No computador, sem o script, os
+// e-mails viram arquivos (ver carteiro.js).
+if (ambiente === "production") {
+  for (const nome of [
+    "ENDERECO_DO_SITE",
+    "EMAIL_SCRIPT_URL",
+    "EMAIL_SCRIPT_SEGREDO",
+  ]) {
+    if (!process.env[nome]) {
+      throw new Error(
+        `${nome} não está definida. Sem ela, o UFVet não manda o e-mail de confirmação, e ninguém novo consegue entrar. Veja a seção "E-mails" do backend/README.md.`,
+      );
+    }
+  }
+}
+
 export const config = Object.freeze({
   ambiente,
   producao: ambiente === "production",
@@ -42,6 +59,25 @@ export const config = Object.freeze({
   // está como o número foi conferido). Sem este número, o limite de
   // tentativas enxergaria todo mundo com o endereço do intermediário.
   proxiesConfiaveis: Number(process.env.PROXIES_CONFIAVEIS ?? 0),
+
+  // O endereço do site, para os links dos e-mails. Vem daqui, e não do
+  // pedido: um cabeçalho Host forjado faria o link de senha nova apontar
+  // para o site de outra pessoa.
+  enderecoDoSite: (
+    process.env.ENDERECO_DO_SITE ?? "http://localhost:5173"
+  ).replace(/\/+$/, ""),
+
+  // O carteiro dos e-mails (ver carteiro.js): o script do Google na conta
+  // Gmail do projeto e a senha que só ele e a API conhecem. Sem o script,
+  // os e-mails viram arquivos nesta pasta.
+  email: Object.freeze({
+    scriptUrl: process.env.EMAIL_SCRIPT_URL || null,
+    scriptSegredo: process.env.EMAIL_SCRIPT_SEGREDO || null,
+    pasta: path.resolve(
+      process.env.PASTA_EMAILS ??
+        fileURLToPath(new URL("../emails-locais", import.meta.url)),
+    ),
+  }),
 
   // O site já montado (npm run build, no frontend), que a API entrega no
   // mesmo endereço quando publicada: um serviço só, e o cookie de sessão é do

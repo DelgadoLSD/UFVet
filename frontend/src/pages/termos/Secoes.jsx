@@ -335,7 +335,7 @@ function Privacidade() {
           },
           {
             dado: "E-mail",
-            para: "Para você entrar no site e para ser contatado por quem tem acesso aos contatos.",
+            para: "Para você entrar no site, confirmar a conta e criar uma senha nova se esquecer a sua, e para ser contatado por quem tem acesso aos contatos.",
           },
           {
             dado: "Telefone",
@@ -404,6 +404,11 @@ function Privacidade() {
           Os dados ficam nos servidores das empresas que mantêm o site no ar:
           Render (o site), Neon (o banco de dados) e Cloudflare (a conexão).
           Esses servidores ficam nos Estados Unidos.
+        </Item>
+        <Item>
+          Os e-mails do UFVet (a confirmação do cadastro e o link de senha nova)
+          saem de uma conta do Gmail, do Google, que por isso recebe o seu
+          endereço de e-mail.
         </Item>
         <Item>
           As fontes e os ícones do site são carregados do Google Fonts, que

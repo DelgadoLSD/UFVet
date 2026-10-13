@@ -7,7 +7,8 @@ import { NOME_COOKIE, lerToken } from "../token.js";
 //
 // Devolve a conta, ou null quando não há crachá ou ele não vale mais:
 // - assinatura inválida ou prazo vencido (8 horas);
-// - conta encerrada depois que o crachá foi emitido;
+// - conta encerrada depois que o crachá foi emitido, ou que nunca confirmou
+//   o e-mail (o login não emite crachá para ela; isto é só uma garantia);
 // - crachá emitido antes de "sessões válidas desde" (a pessoa trocou a senha
 //   ou saiu de todos os aparelhos depois).
 export async function usuarioDaSessao(req) {
@@ -18,7 +19,7 @@ export async function usuarioDaSessao(req) {
   if (!sessao) return null;
 
   const usuario = await buscarUsuarioPorId(sessao.usuarioId);
-  if (!usuario) return null;
+  if (!usuario || !usuario.emailConfirmadoEm) return null;
 
   const validasDesde = usuario.sessoesValidasDesde?.getTime();
   if (validasDesde && !(sessao.emitidoEm >= validasDesde)) return null;

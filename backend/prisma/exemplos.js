@@ -702,6 +702,7 @@ async function criarContas(hospital) {
           emailIndice: indiceEmail(conta.email),
           telefoneCifrado: cifrar(conta.telefone),
           senhaHash,
+          emailConfirmadoEm: new Date(),
           cidade: conta.cidade,
           bairro: conta.bairro,
           aceites: {

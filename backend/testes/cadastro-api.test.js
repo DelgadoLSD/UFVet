@@ -4,7 +4,7 @@ import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
 import { criarConvite } from "../src/modelos/convite.js";
 import { NOME_COOKIE } from "../src/token.js";
-import { limparBanco } from "./apoio.js";
+import { cadastrarEEntrar, limparBanco } from "./apoio.js";
 
 // F1 e F7 pela API: o cadastro de tutor, o de veterinário com convite e o
 // aceite dos termos. Cada teste cria uma API nova (com os limites de
@@ -41,22 +41,25 @@ async function criarHospital() {
 }
 
 describe("cadastro de tutor", () => {
-  test("cria a conta e já deixa a pessoa logada", async () => {
-    const resposta = await cadastrar(tutora);
+  test("cria a conta, que entra depois de confirmar o e-mail", async () => {
+    const navegador = request.agent(app);
+    const conta = await cadastrarEEntrar(navegador, tutora);
 
-    expect(resposta.status).toBe(201);
-    expect(resposta.body.usuario).toMatchObject({
+    expect(conta).toMatchObject({
       papel: "TUTOR",
       nomeCompleto: "Beatriz dos Reis",
       email: "beatriz@example.com",
       veterinario: null,
     });
     // Código público de tutor: T e mais cinco letras e números (F6).
-    expect(resposta.body.usuario.codigo).toMatch(/^T[2-9A-HJ-NP-Z]{5}$/);
+    expect(conta.codigo).toMatch(/^T[2-9A-HJ-NP-Z]{5}$/);
 
     // O crachá vai num cookie que o JavaScript da página não lê, só volta
     // para a própria API e só para os endereços /api.
-    const cookie = cookieDaSessao(resposta);
+    const login = await request(app)
+      .post("/api/sessao")
+      .send({ email: tutora.email, senha: tutora.senha });
+    const cookie = cookieDaSessao(login);
     expect(cookie).toContain("HttpOnly");
     expect(cookie).toContain("SameSite=Strict");
     expect(cookie).toContain("Path=/api");
@@ -96,11 +99,11 @@ describe("cadastro de tutor", () => {
       "TERMOS_DE_USO",
     ]);
     // A versão é a da página de termos (frontend/src/pages/termos/indice.js).
-    expect(usuario.aceites.map((a) => a.versao)).toEqual(["3", "3"]);
+    expect(usuario.aceites.map((a) => a.versao)).toEqual(["4", "4"]);
   });
 
   test("arruma o que foi digitado: espaços, maiúsculas e o formato do telefone", async () => {
-    const resposta = await cadastrar({
+    const conta = await cadastrarEEntrar(request.agent(app), {
       ...tutora,
       nomeCompleto: "  Beatriz   dos Reis ",
       email: " Beatriz@Example.COM ",
@@ -108,7 +111,7 @@ describe("cadastro de tutor", () => {
       bairro: " Ramos ",
     });
 
-    expect(resposta.body.usuario).toMatchObject({
+    expect(conta).toMatchObject({
       nomeCompleto: "Beatriz dos Reis",
       email: "beatriz@example.com",
       telefone: "(31) 98871-4402",
@@ -116,8 +119,8 @@ describe("cadastro de tutor", () => {
     });
   });
 
-  test("recusa e-mail já cadastrado e diz qual campo repetiu", async () => {
-    await cadastrar(tutora);
+  test("recusa e-mail de conta confirmada e diz qual campo repetiu", async () => {
+    await cadastrarEEntrar(request.agent(app), tutora);
 
     const resposta = await cadastrar({
       ...tutora,
@@ -155,7 +158,8 @@ describe("cadastro de tutor", () => {
     const resposta = await cadastrar({ ...tutora, codigo: "AAAAAA" });
 
     expect(resposta.status).toBe(201);
-    expect(resposta.body.usuario.codigo).not.toBe("AAAAAA");
+    const conta = await banco.usuario.findFirstOrThrow();
+    expect(conta.codigo).not.toBe("AAAAAA");
   });
 });
 
@@ -171,7 +175,7 @@ describe("conferência do e-mail durante o cadastro", () => {
   });
 
   test("aponta o e-mail que já tem conta, mesmo escrito de outro jeito", async () => {
-    await cadastrar(tutora);
+    await cadastrarEEntrar(request.agent(app), tutora);
 
     const resposta = await conferir({ email: "Beatriz@Example.com " });
 
@@ -231,14 +235,13 @@ describe("cadastro de veterinário", () => {
     const codigo = await convite();
 
     // O código vale em minúsculas e sem o traço.
-    const resposta = await cadastrar({
+    const conta = await cadastrarEEntrar(request.agent(app), {
       ...veterinaria,
       convite: codigo.toLowerCase().replace("-", ""),
     });
 
-    expect(resposta.status).toBe(201);
-    expect(resposta.body.usuario.codigo).toMatch(/^V/);
-    expect(resposta.body.usuario.veterinario).toMatchObject({
+    expect(conta.codigo).toMatch(/^V/);
+    expect(conta.veterinario).toMatchObject({
       crmv: "45210",
       ufCrmv: "MG",
       tratamento: "DRA",
@@ -259,7 +262,10 @@ describe("cadastro de veterinário", () => {
 
   test("um convite só serve uma vez", async () => {
     const codigo = await convite();
-    await cadastrar({ ...veterinaria, convite: codigo });
+    await cadastrarEEntrar(request.agent(app), {
+      ...veterinaria,
+      convite: codigo,
+    });
 
     const segunda = await cadastrar({
       ...veterinaria,

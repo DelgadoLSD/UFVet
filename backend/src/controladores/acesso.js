@@ -15,7 +15,11 @@ import {
   pedidosPendentesPara,
   travarAcessoDoTutor,
 } from "../modelos/acesso.js";
-import { buscarUsuarioPorCodigo, dadosPublicos } from "../modelos/usuario.js";
+import {
+  CONTA_CONFIRMADA,
+  buscarUsuarioPorCodigo,
+  dadosPublicos,
+} from "../modelos/usuario.js";
 import { registrar } from "../registro.js";
 import {
   esquemaLiberacao,
@@ -369,7 +373,7 @@ export async function veterinariosDoEstabelecimento(req, res) {
   const id = req.params.id;
   const veterinarios = /^[0-9a-f-]{36}$/i.test(id)
     ? await banco.usuario.findMany({
-        where: { veterinario: { estabelecimentoId: id } },
+        where: { veterinario: { estabelecimentoId: id }, ...CONTA_CONFIRMADA },
         include: { veterinario: { include: { estabelecimento: true } } },
         orderBy: { nomeCompleto: "asc" },
       })

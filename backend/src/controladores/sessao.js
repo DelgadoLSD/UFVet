@@ -22,6 +22,18 @@ export async function entrar(req, res) {
     throw new ErroApi(401, "E-mail ou senha incorretos.");
   }
 
+  // Sem o e-mail confirmado, nem a senha certa entra (NF1.9). Só quem acertou
+  // a senha recebe este aviso: ele não conta a mais ninguém que o cadastro
+  // existe.
+  if (!usuario.emailConfirmadoEm) {
+    registrar("login_sem_confirmacao", { usuarioId: usuario.id });
+    throw new ErroApi(
+      403,
+      `Falta confirmar o seu e-mail: abra o link que mandamos para ${email}. Não achou? Procure no spam ou no lixo eletrônico.`,
+      { codigo: "EMAIL_NAO_CONFIRMADO" },
+    );
+  }
+
   registrar("login", { usuarioId: usuario.id });
   abrirSessao(res, usuario.id);
   res.json({ usuario: await dadosDaConta(usuario) });

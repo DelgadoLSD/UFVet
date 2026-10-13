@@ -20,7 +20,7 @@ export const tituloDo = (id) => ITENS.find((item) => item.id === id).titulo;
 // A versão em vigor. A mesma versão fica gravada no aceite de cada conta
 // nova (VERSAO_DOS_TERMOS, em backend/src/controladores/usuarios.js):
 // quando o texto mudar, as duas mudam juntas.
-export const VERSAO = { numero: "3", vigencia: "13 de outubro de 2026" };
+export const VERSAO = { numero: "4", vigencia: "13 de outubro de 2026" };
 
 // Para dúvidas e pedidos sobre os dados (o rodapé usa o mesmo).
 export const CONTATO = "lucas.delgado@ufv.br";

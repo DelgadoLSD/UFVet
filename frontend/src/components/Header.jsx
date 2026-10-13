@@ -297,8 +297,13 @@ function Header() {
   // Entrar e Cadastre-se são só do visitante (quem está logado é levado ao
   // próprio perfil): nelas, a pílula da seção já nasce no tom claro, sem
   // esperar saber quem está logado (sem isso, piscava vermelha e clareava).
+  // As páginas dos links do e-mail (confirmar, senha nova) também são do
+  // visitante, mas quem está logado pode abri-las (a troca de e-mail): nelas,
+  // o tom claro é só para quem não está logado.
+  const soDoVisitante = caminho === "/login" || caminho === "/cadastrar";
   const contaDoVisitante =
-    destaque === 2 && (caminho === "/login" || caminho === "/cadastrar");
+    destaque === 2 &&
+    (soDoVisitante || (metadeDoCaminho(caminho) !== null && !usuario));
 
   // As seções não têm a mesma largura no celular: a pílula mede a seção em
   // que vai ficar e toma o lugar e a largura dela (antes de a tela ser

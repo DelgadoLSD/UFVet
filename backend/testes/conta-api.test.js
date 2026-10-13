@@ -5,7 +5,7 @@ import { banco } from "../src/banco.js";
 import { decifrar, indiceEmail } from "../src/cifra.js";
 import { criarConvite } from "../src/modelos/convite.js";
 import { NOME_COOKIE } from "../src/token.js";
-import { criarAnimal, limparBanco } from "./apoio.js";
+import { cadastrarEEntrar, criarAnimal, limparBanco } from "./apoio.js";
 
 // F3, F4 e F5 pela API: mudar os dados da própria conta, trocar a senha e
 // encerrar a conta. Cada teste cria uma API nova (com os limites de
@@ -43,7 +43,7 @@ const novoNavegador = () => request.agent(app);
 
 async function navegadorComConta(dados = tutora) {
   const navegador = novoNavegador();
-  await navegador.post("/api/usuarios").send(dados).expect(201);
+  await cadastrarEEntrar(navegador, dados);
   return navegador;
 }
 
@@ -154,15 +154,13 @@ describe("mudar os dados da conta (F3)", () => {
       senhaAtual: SENHA,
     });
     expect(certo.status).toBe(200);
-    expect(certo.body.usuario.email).toBe("bia@example.com");
-
-    // Daqui em diante, entra-se com o e-mail novo, e o antigo não vale.
-    expect(
-      (await entrar(novoNavegador(), "bia@example.com", SENHA)).status,
-    ).toBe(200);
-    expect((await entrar(novoNavegador(), tutora.email, SENHA)).status).toBe(
-      401,
-    );
+    // Com a senha certa, o e-mail novo fica esperando a confirmação (os
+    // testes da troca estão em email-api.test.js).
+    expect(certo.body.usuario).toMatchObject({
+      email: tutora.email,
+      emailNovo: "bia@example.com",
+    });
+    expect(certo.body.emailEnviado).toBe(true);
   });
 
   test("o mesmo e-mail escrito de outro jeito não é troca e não pede senha", async () => {

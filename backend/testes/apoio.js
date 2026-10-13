@@ -1,5 +1,6 @@
 import sharp from "sharp";
 import { banco } from "../src/banco.js";
+import { aguardarEnvios, caixaDeSaida } from "../src/carteiro.js";
 import { cifrar, indiceEmail } from "../src/cifra.js";
 
 // Ferramentas que os testes usam para preparar o cenário.
@@ -19,6 +20,40 @@ export async function limparBanco() {
     where schemaname = 'public' and tablename <> '_prisma_migrations'`;
   const lista = tabelas.map((t) => `"${t.tablename}"`).join(", ");
   await banco.$executeRawUnsafe(`truncate ${lista} cascade`);
+  await aguardarEnvios();
+  caixaDeSaida.length = 0;
+  caixaDeSaida.foraDoAr = false;
+}
+
+// O código do link no último e-mail mandado para `email` (a caixa de saída
+// dos testes, ver carteiro.js). `tipo`: "confirmacao", "troca" ou "senha".
+export async function codigoDoUltimoEmail(email, tipo) {
+  await aguardarEnvios();
+  const mensagem = caixaDeSaida.findLast(
+    (m) => m.para === email && (!tipo || m.tipo === tipo),
+  );
+  if (!mensagem) throw new Error(`Nenhum e-mail para ${email}.`);
+  return mensagem.texto.match(/#([A-Za-z0-9_-]{43})/)[1];
+}
+
+// Cria a conta pela API, como o site faz, abre o link de confirmação do
+// e-mail e entra. `navegador` é um request.agent(app), que guarda o cookie
+// da sessão; `cabecalhos` vão em todos os pedidos. Devolve a conta, como o
+// login responde.
+export async function cadastrarEEntrar(navegador, dados, cabecalhos = {}) {
+  await navegador.post("/api/usuarios").set(cabecalhos).send(dados).expect(201);
+  const codigo = await codigoDoUltimoEmail(dados.email.trim().toLowerCase());
+  await navegador
+    .post("/api/email/confirmacao")
+    .set(cabecalhos)
+    .send({ codigo })
+    .expect(200);
+  const resposta = await navegador
+    .post("/api/sessao")
+    .set(cabecalhos)
+    .send({ email: dados.email, senha: dados.senha })
+    .expect(200);
+  return resposta.body.usuario;
 }
 
 // Códigos públicos (#T3M8P1) únicos dentro de uma rodada de testes.
@@ -36,6 +71,7 @@ function dadosPessoais({ nome, email, telefone }) {
     emailIndice: indiceEmail(email),
     telefoneCifrado: cifrar(telefone),
     senhaHash: "sem-senha-nos-testes",
+    emailConfirmadoEm: new Date(),
     cidade: "Viçosa - MG",
     bairro: "Centro",
   };

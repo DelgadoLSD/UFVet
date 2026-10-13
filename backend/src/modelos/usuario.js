@@ -3,6 +3,7 @@ import { banco } from "../banco.js";
 import { decifrar, indiceEmail } from "../cifra.js";
 import { sortearCodigoLivre, sortearCodigoPublico } from "../codigos.js";
 import { LIBERACAO_ATIVA } from "./acesso.js";
+import { emailNovoPendente } from "./links.js";
 
 // Model (do MVC) das contas: como achar uma conta no banco e o que dela pode
 // sair da API. As tabelas em si estão em prisma/schema.prisma.
@@ -11,12 +12,55 @@ import { LIBERACAO_ATIVA } from "./acesso.js";
 // estabelecimento onde ele atua.
 const COM_VETERINARIO = { veterinario: { include: { estabelecimento: true } } };
 
+// Filtro das contas com o e-mail confirmado. Um cadastro pendente não
+// aparece para ninguém: nem no perfil, nem na lista de veterinários de um
+// hospital.
+export const CONTA_CONFIRMADA = { emailConfirmadoEm: { not: null } };
+
 export const buscarUsuarioPorId = (id) =>
   banco.usuario.findUnique({ where: { id }, include: COM_VETERINARIO });
 
 // Pelo código público (#T3M8P1), como o perfil aparece no endereço do site.
 export const buscarUsuarioPorCodigo = (codigo) =>
-  banco.usuario.findUnique({ where: { codigo }, include: COM_VETERINARIO });
+  banco.usuario.findUnique({
+    where: { codigo, ...CONTA_CONFIRMADA },
+    include: COM_VETERINARIO,
+  });
+
+// Quanto tempo um cadastro pode ficar esperando a confirmação do e-mail.
+const DIAS_CADASTRO_PENDENTE = 7;
+
+// Apaga os cadastros pendentes (e-mail nunca confirmado) que ocupariam o
+// lugar de um cadastro ou de uma troca de e-mail: os com o mesmo e-mail e,
+// para um veterinário, os com o mesmo CRMV. Um cadastro pendente não segura
+// nada: a pessoa pode ter digitado o e-mail errado e começado de novo. Saem
+// junto os pendentes mais antigos que o prazo, que ninguém vai confirmar.
+// O convite que um deles usou volta a valer (até vencer). Roda dentro da
+// transação de quem chama (`tx`). Um cadastro pendente nunca entrou no site,
+// então não tem foto, animal nem nada além da própria linha.
+export async function apagarCadastrosPendentes(tx, { emailIndice, crmv }) {
+  const limite = new Date(
+    Date.now() - DIAS_CADASTRO_PENDENTE * 24 * 60 * 60 * 1000,
+  );
+  const pendentes = await tx.usuario.findMany({
+    where: {
+      emailConfirmadoEm: null,
+      OR: [
+        { emailIndice },
+        ...(crmv ? [{ veterinario: crmv }] : []),
+        { criadoEm: { lt: limite } },
+      ],
+    },
+    select: { id: true },
+  });
+  const ids = pendentes.map((p) => p.id);
+  if (ids.length === 0) return;
+  await tx.conviteVeterinario.updateMany({
+    where: { usadoPorId: { in: ids } },
+    data: { usadoEm: null, usadoPorId: null },
+  });
+  await tx.usuario.deleteMany({ where: { id: { in: ids } } });
+}
 
 // O e-mail fica cifrado no banco; a busca é pela impressão digital dele.
 export const buscarUsuarioPorEmail = (email) =>
@@ -94,6 +138,9 @@ export async function dadosDaConta(usuario) {
     nomeCompleto: usuario.nomeCompleto,
     email: decifrar(usuario.emailCifrado),
     telefone: decifrar(usuario.telefoneCifrado),
+    // O e-mail de uma troca pedida e ainda não confirmada, para a Minha conta
+    // avisar que ela está esperando a confirmação.
+    emailNovo: await emailNovoPendente(usuario),
     cidade: usuario.cidade,
     bairro: usuario.bairro,
     fotoUrl: enderecoDaFoto(usuario.fotoId),

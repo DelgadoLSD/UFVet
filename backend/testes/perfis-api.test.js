@@ -4,7 +4,12 @@ import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
 import { paraDataDoBanco } from "../src/datas.js";
 import { criarConvite } from "../src/modelos/convite.js";
-import { criarTutor, criarVeterinario, limparBanco } from "./apoio.js";
+import {
+  cadastrarEEntrar,
+  criarTutor,
+  criarVeterinario,
+  limparBanco,
+} from "./apoio.js";
 
 // O perfil de outra pessoa pela API: os dados públicos, que qualquer um vê
 // (a busca é aberta, NF16.4), e o contato, que só quem tem acesso vê (F33):
@@ -52,8 +57,7 @@ const tutora = {
 // Um navegador logado, que guarda o cookie da sessão.
 async function navegadorDaTutora() {
   const navegador = request.agent(app);
-  const resposta = await navegador.post("/api/usuarios").send(tutora);
-  navegador.codigo = resposta.body.usuario.codigo;
+  navegador.codigo = (await cadastrarEEntrar(navegador, tutora)).codigo;
   navegador.conta = await banco.usuario.findUnique({
     where: { codigo: navegador.codigo },
   });
@@ -68,18 +72,15 @@ async function navegadorDaVeterinaria() {
     estabelecimentoId: hospital.id,
   });
   const navegador = request.agent(app);
-  const resposta = await navegador
-    .post("/api/usuarios")
-    .send({
-      ...tutora,
-      papel: "VETERINARIO",
-      nomeCompleto: "Camila Rocha Duarte",
-      email: "camila@example.com",
-      tratamento: "DRA",
-      convite: codigo,
-    })
-    .expect(201);
-  navegador.codigo = resposta.body.usuario.codigo;
+  const conta = await cadastrarEEntrar(navegador, {
+    ...tutora,
+    papel: "VETERINARIO",
+    nomeCompleto: "Camila Rocha Duarte",
+    email: "camila@example.com",
+    tratamento: "DRA",
+    convite: codigo,
+  });
+  navegador.codigo = conta.codigo;
   return navegador;
 }
 

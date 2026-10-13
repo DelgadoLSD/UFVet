@@ -1,15 +1,16 @@
 import { banco } from "../banco.js";
 import { cifrar, indiceEmail } from "../cifra.js";
+import { mandarConfirmacao } from "../emails.js";
 import { ErroApi } from "../erros.js";
 import { acharConviteValido, usarConvite } from "../modelos/convite.js";
 import {
-  codigoPublicoLivre,
-  dadosDaConta,
+  CONTA_CONFIRMADA,
+  apagarCadastrosPendentes,
   buscarUsuarioPorId,
+  codigoPublicoLivre,
 } from "../modelos/usuario.js";
 import { registrar } from "../registro.js";
 import { gerarHashSenha } from "../senha.js";
-import { abrirSessao } from "../token.js";
 import { esquemaCadastro, esquemaDisponibilidade } from "../validacao.js";
 
 // Controller (do MVC) das contas.
@@ -18,17 +19,19 @@ import { esquemaCadastro, esquemaDisponibilidade } from "../validacao.js";
 // aceite (F7). É a mesma que a página de termos mostra
 // (frontend/src/pages/termos/indice.js): quando o texto mudar, as duas mudam
 // juntas. A versão 1 foi aceita antes de os termos estarem escritos; a 2
-// ainda pedia o CPF.
-const VERSAO_DOS_TERMOS = "3";
+// ainda pedia o CPF; a 3 não dizia que os e-mails saem pelo Gmail.
+const VERSAO_DOS_TERMOS = "4";
 
 const MENSAGEM_CONVITE =
   "Convite inválido, já usado ou vencido. Peça um novo à direção do hospital.";
 
 // O e-mail não pode se repetir entre contas (NF1.2). O banco também barra a
 // repetição; conferir antes serve para dizer, embaixo do campo, o que houve.
+// Só conta a conta confirmada: um cadastro pendente com o mesmo e-mail sai
+// para o novo entrar (ver apagarCadastrosPendentes).
 async function camposRepetidos({ email }) {
-  const existente = await banco.usuario.findUnique({
-    where: { emailIndice: indiceEmail(email) },
+  const existente = await banco.usuario.findFirst({
+    where: { emailIndice: indiceEmail(email), ...CONTA_CONFIRMADA },
     select: { id: true },
   });
   return existente ? { email: "Já existe uma conta com este e-mail." } : {};
@@ -59,8 +62,12 @@ async function conferirConvite(req, codigo) {
       campos: { convite: MENSAGEM_CONVITE },
     });
   }
-  const crmvEmUso = await banco.veterinario.findUnique({
-    where: { crmv_ufCrmv: { crmv: convite.crmv, ufCrmv: convite.ufCrmv } },
+  const crmvEmUso = await banco.veterinario.findFirst({
+    where: {
+      crmv: convite.crmv,
+      ufCrmv: convite.ufCrmv,
+      usuario: CONTA_CONFIRMADA,
+    },
     select: { usuarioId: true },
   });
   if (crmvEmUso) {
@@ -70,10 +77,11 @@ async function conferirConvite(req, codigo) {
   return convite;
 }
 
-// POST /api/usuarios — cria a conta (F1), registra o aceite dos termos (F7)
-// e já deixa a pessoa logada. E-mail e telefone são gravados cifrados, o
-// e-mail com a impressão digital ao lado (NF1.5); a senha, como hash
-// (NF1.1).
+// POST /api/usuarios — cria a conta (F1) e registra o aceite dos termos
+// (F7). A conta nasce pendente: a pessoa só entra depois de abrir o link que
+// vai para o e-mail (NF1.9), e a resposta diz para onde ele foi e se saiu.
+// E-mail e telefone são gravados cifrados, o e-mail com a impressão digital
+// ao lado (NF1.5); a senha, como hash (NF1.1).
 export async function cadastrar(req, res) {
   const dados = esquemaCadastro.parse(req.body);
   const ehVeterinario = dados.papel === "VETERINARIO";
@@ -91,6 +99,10 @@ export async function cadastrar(req, res) {
   // Tudo ou nada: se qualquer passo falhar, nenhum dado fica gravado pela
   // metade (uma conta sem aceite, ou um convite gasto sem conta).
   const id = await banco.$transaction(async (tx) => {
+    await apagarCadastrosPendentes(tx, {
+      emailIndice: indiceEmail(dados.email),
+      crmv: convite && { crmv: convite.crmv, ufCrmv: convite.ufCrmv },
+    });
     const usuario = await tx.usuario.create({
       data: {
         codigo,
@@ -133,7 +145,9 @@ export async function cadastrar(req, res) {
   });
 
   registrar("conta_criada", { usuarioId: id, papel: dados.papel });
-  abrirSessao(res, id);
-  const usuario = await buscarUsuarioPorId(id);
-  res.status(201).json({ usuario: await dadosDaConta(usuario) });
+  const enviado = await mandarConfirmacao(
+    await buscarUsuarioPorId(id),
+    dados.email,
+  );
+  res.status(201).json({ email: dados.email, enviado });
 }

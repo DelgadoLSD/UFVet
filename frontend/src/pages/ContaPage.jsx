@@ -77,6 +77,31 @@ function Secao({ titulo, texto, children, rodape }) {
   );
 }
 
+// A troca de e-mail que espera a confirmação. Ocupa a largura das duas
+// colunas, logo abaixo do e-mail e do telefone.
+function AvisoEmailNovo({ atual, novo }) {
+  return (
+    <div
+      role="status"
+      className="sm:col-span-2 flex items-start gap-3 rounded-xl bg-[#f4efef] px-4 py-3.5 text-sm leading-relaxed text-[#1a1c1c]"
+    >
+      <span
+        aria-hidden="true"
+        className="material-symbols-outlined text-[20px] text-[#5f5e5e] shrink-0"
+      >
+        mark_email_unread
+      </span>
+      <p className="min-w-0">
+        <span className="font-semibold">Troca esperando confirmação.</span> Abra
+        o link que mandamos para{" "}
+        <span className="font-semibold break-all">{novo}</span>. Até lá, você
+        continua entrando com <span className="break-all">{atual}</span>. Não
+        chegou? Procure no spam ou no lixo eletrônico.
+      </p>
+    </div>
+  );
+}
+
 // Dado que a pessoa não muda sozinha: fica visível, com o motivo ao lado, em
 // vez de virar um campo desabilitado que parece defeito.
 function DadoFixo({ rotulo, valor, motivo }) {
@@ -179,19 +204,30 @@ function ContaPage() {
     setSalvando(true);
     setErroGeral("");
     try {
-      const atualizado = await salvarConta({
-        ...form,
-        ...(trocandoEmail && { senhaAtual: senhaParaEmail }),
+      // O e-mail só vai quando muda: a API manda um link a cada troca.
+      const { email, ...outros } = form;
+      const { usuario: atualizado, emailEnviado } = await salvarConta({
+        ...outros,
+        ...(trocandoEmail && { email, senhaAtual: senhaParaEmail }),
       });
       // O formulário passa a mostrar o que a API gravou (o nome sem espaços
-      // sobrando, o e-mail em minúsculas).
+      // sobrando). O e-mail continua o atual até a pessoa abrir o link
+      // mandado para o novo.
       setForm(dadosDoFormulario(atualizado));
       emailDigitado.current = atualizado.email;
       setSenhaParaEmail("");
-      confirmar(
-        "Alterações salvas",
-        trocandoEmail ? "Use o novo e-mail para entrar." : undefined,
-      );
+      if (!trocandoEmail) confirmar("Alterações salvas");
+      else if (emailEnviado) {
+        confirmar(
+          "Falta confirmar o e-mail novo",
+          `Abra o link que mandamos para ${atualizado.emailNovo}. Até lá, a conta continua com o e-mail atual.`,
+        );
+      } else {
+        confirmar(
+          "O link não saiu",
+          "Não conseguimos mandar o link para o e-mail novo agora. Tente trocar de novo daqui a alguns minutos.",
+        );
+      }
     } catch (falha) {
       // Problema num campo aparece embaixo dele; o resto, acima do botão.
       if (falha.campos) setErros(falha.campos);
@@ -310,6 +346,14 @@ function ContaPage() {
                     onBlur={() => sairDoCampo("telefone")}
                     erro={erros.telefone}
                   />
+                  {/* A troca de e-mail pedida, esperando a pessoa abrir o
+                      link mandado para o e-mail novo. */}
+                  {usuario.emailNovo && (
+                    <AvisoEmailNovo
+                      atual={usuario.email}
+                      novo={usuario.emailNovo}
+                    />
+                  )}
                   {/* O e-mail é o que a pessoa usa para entrar: trocá-lo pede
                       a senha, para ninguém tomar a conta num computador que
                       ficou com ela aberta. */}
