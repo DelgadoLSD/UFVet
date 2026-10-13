@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { CONTATO } from "../pages/termos/indice";
 
 // Rodapé das páginas públicas (início e busca): apresentação curta do UFVet,
 // atalhos de navegação e contato.
@@ -46,22 +47,34 @@ function Footer() {
             <p className="text-sm font-semibold">Contato</p>
             <ul className="mt-4 space-y-3 text-sm text-white/60">
               <li>Hospital Veterinário UFV</li>
-              <li className="text-white">contato@ufvet.org.br</li>
+              <li>
+                <a
+                  href={`mailto:${CONTATO}`}
+                  className="text-white hover:underline underline-offset-4"
+                >
+                  {CONTATO}
+                </a>
+              </li>
             </ul>
           </div>
         </div>
 
         <div className="mt-14 pt-8 border-t border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs text-white/55">
           <p>© 2026 UFVet. Parceria UFV e Hospital Veterinário da UFV.</p>
-          {/* Os termos de uso e a política de privacidade ainda não foram
-              escritos; os links ficam no lugar onde vão morar. */}
+          {/* Os dois ficam na mesma página; a privacidade é o item 9. */}
           <div className="flex gap-6">
-            <a href="#" className="py-1 hover:text-white transition-colors">
+            <Link
+              to="/termos"
+              className="py-1 hover:text-white transition-colors"
+            >
               Termos de uso
-            </a>
-            <a href="#" className="py-1 hover:text-white transition-colors">
+            </Link>
+            <Link
+              to="/termos#privacidade"
+              className="py-1 hover:text-white transition-colors"
+            >
               Política de privacidade
-            </a>
+            </Link>
           </div>
         </div>
       </div>

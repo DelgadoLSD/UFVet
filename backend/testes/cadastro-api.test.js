@@ -86,6 +86,8 @@ describe("cadastro de tutor", () => {
       "CIENCIA_RESPONSABILIDADE",
       "TERMOS_DE_USO",
     ]);
+    // A versão é a da página de termos (frontend/src/pages/termos/indice.js).
+    expect(usuario.aceites.map((a) => a.versao)).toEqual(["2", "2"]);
   });
 
   test("arruma o que foi digitado: espaços, maiúsculas e o formato do telefone", async () => {

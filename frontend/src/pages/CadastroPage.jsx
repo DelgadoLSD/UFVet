@@ -378,13 +378,27 @@ function EtapaSenha({ dados, erros, onMudar }) {
           checked={dados.aceiteTermos || false}
           onChange={(e) => onMudar("aceiteTermos", e.target.checked)}
         >
+          {/* Os termos abrem em outra aba: quem está no meio do cadastro
+              não perde o que já digitou. */}
           Li e aceito os{" "}
-          <a href="#" className="font-semibold text-[#9e0a24] hover:underline">
+          <a
+            href="/termos"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-[#9e0a24] hover:underline"
+          >
             Termos de uso
+            <span className="sr-only"> (abre em outra aba)</span>
           </a>{" "}
           e a{" "}
-          <a href="#" className="font-semibold text-[#9e0a24] hover:underline">
+          <a
+            href="/termos#privacidade"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-[#9e0a24] hover:underline"
+          >
             Política de privacidade
+            <span className="sr-only"> (abre em outra aba)</span>
           </a>
           .
         </Confirmacao>

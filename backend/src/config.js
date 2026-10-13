@@ -38,9 +38,9 @@ export const config = Object.freeze({
   jwtSegredo: lerSegredo("JWT_SEGREDO"),
 
   // Quantos intermediários (proxies) há entre a internet e a API. No
-  // computador, nenhum; publicada, a hospedagem costuma ter um ou dois. Sem
-  // este número, o limite de tentativas enxergaria todo mundo com o endereço
-  // do intermediário.
+  // computador, nenhum; publicada no Render, os que o render.yaml diz (lá
+  // está como o número foi conferido). Sem este número, o limite de
+  // tentativas enxergaria todo mundo com o endereço do intermediário.
   proxiesConfiaveis: Number(process.env.PROXIES_CONFIAVEIS ?? 0),
 
   // O site já montado (npm run build, no frontend), que a API entrega no

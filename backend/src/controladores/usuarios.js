@@ -15,8 +15,10 @@ import { esquemaCadastro, esquemaDisponibilidade } from "../validacao.js";
 // Controller (do MVC) das contas.
 
 // Versão dos termos de uso e da ciência sobre os custos, gravada junto com o
-// aceite (F7). Quando os textos mudarem, a versão muda aqui.
-const VERSAO_DOS_TERMOS = "1";
+// aceite (F7). É a mesma que a página de termos mostra
+// (frontend/src/pages/termos/indice.js): quando o texto mudar, as duas mudam
+// juntas. A versão 1 foi aceita antes de os termos estarem escritos.
+const VERSAO_DOS_TERMOS = "2";
 
 const MENSAGEM_CONVITE =
   "Convite inválido, já usado ou vencido. Peça um novo à direção do hospital.";

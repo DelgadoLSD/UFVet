@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
@@ -432,6 +432,23 @@ function ContaPage() {
               </Botao>
               <AvisoErro>{erroAparelhos}</AvisoErro>
             </div>
+          </Secao>
+
+          {/* Os termos ficam ao alcance de quem cuida dos próprios dados:
+              aqui, além do rodapé das páginas públicas e do cadastro. */}
+          <Secao
+            titulo="Termos de uso e privacidade"
+            texto="O que o UFVet guarda sobre você, quem vê cada informação e quais são os seus direitos."
+          >
+            <Botao
+              as={Link}
+              to="/termos"
+              variante="secundario"
+              icone="description"
+              className="max-sm:w-full max-sm:h-11"
+            >
+              Ler os termos
+            </Botao>
           </Secao>
 
           {/* Único bloco escuro da página: é o que não tem volta. */}

@@ -26,10 +26,16 @@ services:
         value: production
       - key: NODE_VERSION
         value: 24.21.0
-      # O Render põe um intermediário (proxy) na frente da API; sem isto, o
-      # limite de tentativas veria todo mundo com o endereço dele.
+      # Quantos intermediários (proxies) o pedido atravessa até a API: a
+      # Cloudflare, que o Render usa na frente, e os do próprio Render. Com
+      # menos, o limite de tentativas contava pelo endereço de um deles (que
+      # muda a cada conexão), e não pelo de quem fez o pedido; com mais,
+      # quem forjasse o cabeçalho X-Forwarded-For escaparia do limite. O
+      # Render não documenta esse número: ele foi conferido no site
+      # publicado, comparando a chave do limite (cabeçalho RateLimit-Policy)
+      # com o endereço de quem pediu.
       - key: PROXIES_CONFIAVEIS
-        value: "1"
+        value: "3"
       # Os segredos são colados no painel do Render ao criar o serviço, nunca
       # aqui: o repositório é público.
       - key: DATABASE_URL
