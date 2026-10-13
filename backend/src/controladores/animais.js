@@ -46,6 +46,11 @@ function dadosDoPedido(req) {
   }
 }
 
+// As fotos que vieram no pedido. Quem as monta é o multer
+// (middlewares/envio.js), sempre como lista; sem arquivos, a lista é vazia.
+// Nada que venha de outro jeito é tratado como lista de fotos.
+const fotosDoPedido = (req) => (Array.isArray(req.files) ? req.files : []);
+
 const fotosInvalidas = (mensagem) =>
   new ErroApi(400, mensagem, { campos: { fotos: mensagem } });
 
@@ -126,7 +131,7 @@ export async function listarAnimais(req, res) {
 // fotos, se vierem, na ordem do envio. Ele já nasce disponível para doação.
 export async function cadastrarAnimal(req, res) {
   const dados = esquemaAnimal.parse(dadosDoPedido(req));
-  const arquivos = await guardarFotos(req.files ?? []);
+  const arquivos = await guardarFotos(fotosDoPedido(req));
 
   let animal;
   try {
@@ -240,7 +245,7 @@ export async function editarAnimal(req, res) {
   // de preenchimento respondem.
   const animal = await animalDoUsuario(req);
   const dados = esquemaEdicaoAnimal.parse(dadosDoPedido(req));
-  const enviadas = req.files ?? [];
+  const enviadas = fotosDoPedido(req);
 
   // F21: o que conta é o valor mudar, não o campo vir no pedido. O peso e o
   // nascimento podem vir iguais aos de antes (o formulário manda tudo).

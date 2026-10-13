@@ -6,6 +6,7 @@ import { lerFoto } from "./armazenamento.js";
 import { config } from "./config.js";
 import { rotaInexistente, tratarErros } from "./erros.js";
 import { criarLimites } from "./middlewares/limites.js";
+import { exigirMesmaOrigem } from "./middlewares/origem.js";
 import { criarRotas } from "./rotas.js";
 
 // Monta a API: os passos por que todo pedido passa, nesta ordem, até chegar
@@ -66,6 +67,10 @@ export function criarApp({ pastaSite = config.pastaSite } = {}) {
   // maiores, chegam por outro caminho (middlewares/envio.js).
   app.use(express.json({ limit: "20kb" }));
   app.use(cookieParser());
+
+  // Pedido que muda alguma coisa só vale vindo do próprio site: a segunda
+  // trava contra CSRF, junto do cookie SameSite=Strict (middlewares/origem.js).
+  app.use("/api", exigirMesmaOrigem);
 
   app.use("/api", criarRotas(limites));
   if (pastaSite) entregarSite(app, pastaSite);
