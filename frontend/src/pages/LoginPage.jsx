@@ -9,9 +9,7 @@ import {
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
 import Campo from "../components/Campo";
-import LayoutAutenticacao, {
-  BotaoGoogle,
-} from "../components/LayoutAutenticacao";
+import LayoutAutenticacao from "../components/LayoutAutenticacao";
 import ReenvioDeConfirmacao from "../components/ReenvioDeConfirmacao";
 import { apagarAviso, entrar, useEstadoSessao } from "../servicos/sessao";
 import { destinoSeguro } from "../util/navegacao";
@@ -136,8 +134,6 @@ function LoginPage() {
           </Botao>
         </div>
       </form>
-
-      <BotaoGoogle>Entrar com Google</BotaoGoogle>
 
       {/* O fim do formulário, num grupo só: a conta nova e, logo abaixo,
           os termos, como nas telas de entrar de outros sites. Os termos

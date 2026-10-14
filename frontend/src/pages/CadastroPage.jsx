@@ -5,9 +5,7 @@ import Botao from "../components/Botao";
 import Campo from "../components/Campo";
 import CampoBairro from "../components/CampoBairro";
 import CampoCidade from "../components/CampoCidade";
-import LayoutAutenticacao, {
-  BotaoGoogle,
-} from "../components/LayoutAutenticacao";
+import LayoutAutenticacao from "../components/LayoutAutenticacao";
 import Segmentado from "../components/Segmentado";
 import {
   PREENCHA,
@@ -657,8 +655,6 @@ function CadastroPage() {
           </div>
         )}
       </form>
-
-      {etapa === 2 && <BotaoGoogle>Cadastrar com Google</BotaoGoogle>}
 
       <p className="mt-10 text-sm text-[#5f5e5e]">
         Já tem uma conta?{" "}
