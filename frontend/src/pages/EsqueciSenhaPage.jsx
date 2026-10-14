@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import AvisoDeSpam from "../components/AvisoDeSpam";
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
 import Campo from "../components/Campo";
 import LayoutAutenticacao from "../components/LayoutAutenticacao";
-import { EnderecoDeEmail, PreviaDoEmail } from "../components/PreviaDoEmail";
+import EnderecoDeEmail from "../components/EnderecoDeEmail";
 import { erroEmail } from "../regras/conta";
 import { VALIDADE_DO_LINK } from "../regras/link";
 import { pedirSenhaNova } from "../servicos/email";
@@ -59,18 +58,13 @@ function EsqueciSenhaPage() {
           <div role="status" className="mt-4 text-[#5b403f] leading-relaxed">
             <p>Se houver uma conta com</p>
             <EnderecoDeEmail email={enviadoPara} />
-            <p className="mt-1">
-              mandamos um link para criar uma senha nova. Ele vale por{" "}
-              {VALIDADE_DO_LINK.senha}.
-            </p>
+            <p className="mt-1">mandamos um link para criar uma senha nova.</p>
           </div>
-          <div className="mt-7">
-            <PreviaDoEmail tipo="senha" />
-          </div>
-          <div className="mt-10 pt-8 border-t border-[#eadede]">
-            <AvisoDeSpam />
-          </div>
-          <div className="mt-8 space-y-3">
+          <p className="mt-6 text-[#5b403f] leading-relaxed">
+            O link vale por {VALIDADE_DO_LINK.senha}. Se ele não estiver na
+            caixa de entrada, olhe no spam.
+          </p>
+          <div className="mt-8">
             <Botao
               as={Link}
               to="/login"
@@ -80,15 +74,17 @@ function EsqueciSenhaPage() {
             >
               Voltar para entrar
             </Botao>
-            <Botao
-              variante="secundario"
-              tamanho="lg"
-              className="w-full"
+          </div>
+          <p className="mt-10 text-sm leading-relaxed text-[#5f5e5e]">
+            Digitou outro e-mail?{" "}
+            <button
+              type="button"
               onClick={() => setEnviadoPara("")}
+              className="font-semibold text-[#9e0a24] hover:underline underline-offset-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]/40"
             >
               Usar outro e-mail
-            </Botao>
-          </div>
+            </button>
+          </p>
         </>
       ) : (
         <>

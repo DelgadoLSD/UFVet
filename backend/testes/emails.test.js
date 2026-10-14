@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { afterEach, describe, expect, test } from "vitest";
 import { conferirScript, enviarPeloScript } from "../src/carteiro.js";
@@ -43,24 +42,6 @@ describe("o texto dos e-mails", () => {
     expect(email.texto).toContain("24 horas");
     expect(email.html.split(LINK)).toHaveLength(4);
     expect(email.html).toContain("Confirmar meu e-mail");
-  });
-
-  test("a prévia do e-mail no site repete o assunto e o começo dos e-mails de verdade", () => {
-    // O site mostra como o e-mail aparece na caixa de entrada, para a pessoa
-    // saber o que procurar (frontend/src/components/PreviaDoEmail.jsx).
-    const previa = readFileSync(
-      new URL(
-        "../../frontend/src/components/PreviaDoEmail.jsx",
-        import.meta.url,
-      ),
-      "utf8",
-    ).replace(/\s+/g, " ");
-    const dados = { para: "a@example.com", nome: "Ana Souza", link: LINK };
-    for (const email of [emailDeConfirmacao(dados), emailDeSenhaNova(dados)]) {
-      const comeco = email.texto.split("\n\n")[1];
-      expect(previa).toContain(`"${email.assunto}"`);
-      expect(previa).toContain(`"${comeco}"`);
-    }
   });
 
   test("nada que veio de fora vira HTML", () => {

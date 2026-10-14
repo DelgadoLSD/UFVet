@@ -15,10 +15,13 @@ import Botao from "./Botao";
 // se há um cadastro (a pessoa digitou o e-mail aqui), a linha diz "se
 // houver", em vez de garantir um envio que pode não existir.
 //
+// `forma`: "botao" (um botão na largura do bloco) ou "linha" ("Não chegou?
+// Mandar de novo", no pé da tela, quando o reenvio é só um plano B).
 // `onEnviado(data)` avisa a página que o link saiu, com a hora.
 function ReenvioDeConfirmacao({
   email,
   seHouver = false,
+  forma = "botao",
   variante = "secundario",
   rotulo = "Mandar o link de novo",
   onEnviado,
@@ -55,15 +58,29 @@ function ReenvioDeConfirmacao({
 
   return (
     <div>
-      <Botao
-        variante={variante}
-        tamanho="lg"
-        className="w-full"
-        onClick={mandar}
-        disabled={fase === "enviando"}
-      >
-        {fase === "enviando" ? "Mandando…" : rotulo}
-      </Botao>
+      {forma === "linha" ? (
+        <p>
+          Não chegou?{" "}
+          <button
+            type="button"
+            onClick={mandar}
+            disabled={fase === "enviando"}
+            className="font-semibold text-[#9e0a24] hover:underline underline-offset-2 rounded disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]/40"
+          >
+            {fase === "enviando" ? "Mandando…" : "Mandar de novo"}
+          </button>
+        </p>
+      ) : (
+        <Botao
+          variante={variante}
+          tamanho="lg"
+          className="w-full"
+          onClick={mandar}
+          disabled={fase === "enviando"}
+        >
+          {fase === "enviando" ? "Mandando…" : rotulo}
+        </Botao>
+      )}
       {fase === "enviado" && (
         <p
           role="status"
@@ -79,7 +96,7 @@ function ReenvioDeConfirmacao({
             {seHouver
               ? "Se houver um cadastro esperando confirmação com esse e-mail, mandamos outro link."
               : `Mandamos outro link às ${hora}.`}{" "}
-            Use o do e-mail mais recente: os anteriores deixam de valer.
+            Use o do e-mail mais recente.
           </span>
         </p>
       )}

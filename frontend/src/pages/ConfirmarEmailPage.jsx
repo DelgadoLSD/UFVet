@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import AvisoDeSpam from "../components/AvisoDeSpam";
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
 import Campo from "../components/Campo";
 import LayoutAutenticacao from "../components/LayoutAutenticacao";
-import { EnderecoDeEmail, PreviaDoEmail } from "../components/PreviaDoEmail";
+import EnderecoDeEmail from "../components/EnderecoDeEmail";
 import ReenvioDeConfirmacao from "../components/ReenvioDeConfirmacao";
 import { erroEmail } from "../regras/conta";
 import { codigoDoLink, temCodigo } from "../regras/link";
@@ -17,9 +16,9 @@ import fotoGatoParede from "../assets/auth/gato-parede-vermelha.jpg";
 // A confirmação do e-mail (/confirmar-email). Sem ela, ninguém entra no
 // site: é o que garante que o e-mail da conta existe e é da pessoa. A
 // página tem dois usos:
-// - logo depois do cadastro, sem código: diz para onde o link foi, mostra o
-//   e-mail como ele aparece na caixa de entrada, explica o spam e manda o
-//   link de novo;
+// - logo depois do cadastro, sem código: diz para onde o link foi e o que
+//   fazer (abrir o e-mail, olhar no spam), e deixa mandar o link de novo ou
+//   corrigir o e-mail;
 // - aberta pelo link do e-mail, com o código depois do "#": confirma na API
 //   e diz o que fazer em seguida.
 
@@ -27,11 +26,13 @@ const TITULO =
   "text-[2rem] leading-[1.1] md:text-4xl font-extrabold tracking-tight text-[#1a1c1c]";
 const TEXTO = "text-[#5b403f] leading-relaxed";
 
-// Os caminhos do fim da tela, como na página de entrar. Sem o e-mail na
-// tela (a página aberta direto), corrigir é se cadastrar de novo.
-function Saidas({ email }) {
+// Os caminhos do fim da tela, como na página de entrar: mandar o link de
+// novo (`reenvio`) e entrar. Sem o e-mail na tela (a página aberta direto),
+// corrigir é se cadastrar de novo.
+function Saidas({ email, reenvio }) {
   return (
     <div className="mt-10 space-y-3 text-sm leading-relaxed text-[#5f5e5e]">
+      {reenvio}
       {!email && (
         <p>
           Digitou o e-mail errado?{" "}
@@ -155,12 +156,14 @@ function CorrecaoDoEmail({ atual, onCorrigido, onCancelar }) {
   );
 }
 
-// Logo depois do cadastro. `enviado` diz se o primeiro link saiu. Se não
-// saiu, a frase principal diz isso e o botão de tentar de novo vem primeiro;
-// quando um envio dá certo, a tela passa a ser a de um link mandado, com a
-// hora do envio. Logo abaixo do endereço, "Corrigir o e-mail" conserta um
-// e-mail digitado errado sem refazer o cadastro. Sem o e-mail (a página
-// aberta direto), pede o e-mail para mandar o link de novo.
+// Logo depois do cadastro, só o essencial: para onde o link foi e o que
+// fazer. `enviado` diz se o primeiro link saiu. Se não saiu, a frase
+// principal diz isso e o botão de tentar de novo é a ação da tela; quando um
+// envio dá certo, a tela passa a ser a de um link mandado. Logo abaixo do
+// endereço, "Corrigir o e-mail" conserta um e-mail digitado errado sem
+// refazer o cadastro. Mandar o link de novo fica no pé da tela, como plano
+// B. Sem o e-mail (a página aberta direto), pede o e-mail para mandar o
+// link de novo.
 function Espera({ email: emailDoCadastro, enviado }) {
   const navegar = useNavigate();
   const [email, setEmail] = useState(emailDoCadastro);
@@ -217,8 +220,7 @@ function Espera({ email: emailDoCadastro, enviado }) {
           <>
             {corrigido && (
               <Resultadinho>
-                E-mail corrigido. O link mandado para o e-mail errado não vale
-                mais.
+                E-mail corrigido. O link do e-mail errado não vale mais.
               </Resultadinho>
             )}
             <button
@@ -227,18 +229,17 @@ function Espera({ email: emailDoCadastro, enviado }) {
                 setCorrigindo(true);
                 setCorrigido(false);
               }}
-              className="mt-2 py-1 text-sm font-semibold text-[#9e0a24] hover:underline underline-offset-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]/40"
+              className="mt-1 py-1 text-sm font-semibold text-[#9e0a24] hover:underline underline-offset-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]/40"
             >
-              Digitou errado? Corrigir o e-mail
+              Corrigir o e-mail
             </button>
           </>
         ))}
 
       {falhou ? (
         <>
-          <p className={`mt-4 ${TEXTO}`}>
-            O envio falhou do nosso lado, não no seu e-mail. Tente de novo daqui
-            a alguns minutos.
+          <p className={`mt-6 ${TEXTO}`}>
+            O envio falhou do nosso lado. Tente de novo daqui a alguns minutos.
           </p>
           <div className="mt-8">
             <ReenvioDeConfirmacao
@@ -251,20 +252,12 @@ function Espera({ email: emailDoCadastro, enviado }) {
         </>
       ) : (
         <>
-          <div className="mt-7">
-            <PreviaDoEmail tipo="confirmacao" enviadoEm={enviadoEm} />
-          </div>
-          <p className={`mt-4 ${TEXTO}`}>
-            Procure por esse e-mail e toque em{" "}
-            <strong className="font-semibold text-[#1a1c1c] whitespace-nowrap">
-              Confirmar meu e-mail
-            </strong>
-            . Só depois disso dá para entrar no UFVet.
+          <p className={`mt-6 ${TEXTO}`}>
+            Abra o e-mail e toque no link. Se ele não estiver na caixa de
+            entrada, olhe no spam.
           </p>
-
-          <div className="mt-10 pt-8 border-t border-[#eadede] space-y-5">
-            <AvisoDeSpam />
-            {!email && (
+          {!email && (
+            <div className="mt-8 space-y-4">
               <Campo
                 id="email"
                 rotulo="E-mail do cadastro"
@@ -274,17 +267,24 @@ function Espera({ email: emailDoCadastro, enviado }) {
                 value={digitado}
                 onChange={(e) => setDigitado(e.target.value)}
               />
-            )}
-            <ReenvioDeConfirmacao
-              email={email ?? digitado}
-              seHouver={!email}
-              onEnviado={email ? enviou : undefined}
-            />
-          </div>
+              <ReenvioDeConfirmacao email={digitado} seHouver />
+            </div>
+          )}
         </>
       )}
 
-      <Saidas email={email} />
+      <Saidas
+        email={email}
+        reenvio={
+          email && !falhou ? (
+            <ReenvioDeConfirmacao
+              email={email}
+              forma="linha"
+              onEnviado={enviou}
+            />
+          ) : null
+        }
+      />
     </>
   );
 }

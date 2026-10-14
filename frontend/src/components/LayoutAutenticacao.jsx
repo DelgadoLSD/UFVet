@@ -78,8 +78,8 @@ function LayoutAutenticacao({
         {fotoAEsquerda && painelFoto}
         <section className="flex items-start md:items-center justify-center px-5 py-10 md:py-12 md:px-12 min-w-0">
           {/* min-w-0 aqui e na seção: a coluna encolhe até a largura da tela
-              mesmo com uma linha que não quebra (a prévia do e-mail, cortada
-              com "…"); sem isso, a coluna crescia e a página rolava de lado. */}
+              mesmo com uma linha que não quebra (um endereço de e-mail
+              longo); sem isso, a coluna crescia e a página rolava de lado. */}
           <div className="w-full max-w-[420px] min-w-0">{children}</div>
         </section>
         {!fotoAEsquerda && painelFoto}
