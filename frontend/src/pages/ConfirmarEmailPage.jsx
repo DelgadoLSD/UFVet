@@ -7,8 +7,9 @@ import Campo from "../components/Campo";
 import LayoutAutenticacao from "../components/LayoutAutenticacao";
 import { EnderecoDeEmail, PreviaDoEmail } from "../components/PreviaDoEmail";
 import ReenvioDeConfirmacao from "../components/ReenvioDeConfirmacao";
+import { erroEmail } from "../regras/conta";
 import { codigoDoLink, temCodigo } from "../regras/link";
-import { confirmarEmail } from "../servicos/email";
+import { confirmarEmail, corrigirEmailDoCadastro } from "../servicos/email";
 import { carregarSessao, useSessao } from "../servicos/sessao";
 // Foto de santosh verma (Unsplash, uso livre)
 import fotoGatoParede from "../assets/auth/gato-parede-vermelha.jpg";
@@ -26,21 +27,23 @@ const TITULO =
   "text-[2rem] leading-[1.1] md:text-4xl font-extrabold tracking-tight text-[#1a1c1c]";
 const TEXTO = "text-[#5b403f] leading-relaxed";
 
-// Os caminhos para quem errou o e-mail ou já confirmou, no fim da tela, como
-// na página de entrar.
+// Os caminhos do fim da tela, como na página de entrar. Sem o e-mail na
+// tela (a página aberta direto), corrigir é se cadastrar de novo.
 function Saidas({ email }) {
   return (
     <div className="mt-10 space-y-3 text-sm leading-relaxed text-[#5f5e5e]">
-      <p>
-        Digitou o e-mail errado?{" "}
-        <Link
-          to="/cadastrar"
-          className="font-semibold text-[#9e0a24] hover:underline"
-        >
-          Cadastre-se de novo
-        </Link>{" "}
-        com o e-mail certo.
-      </p>
+      {!email && (
+        <p>
+          Digitou o e-mail errado?{" "}
+          <Link
+            to="/cadastrar"
+            className="font-semibold text-[#9e0a24] hover:underline"
+          >
+            Cadastre-se de novo
+          </Link>{" "}
+          com o e-mail certo.
+        </p>
+      )}
       <p>
         Já confirmou?{" "}
         <Link
@@ -55,24 +58,139 @@ function Saidas({ email }) {
   );
 }
 
+// Linha de resultado, com ícone e texto (não só a cor), como a do reenvio.
+function Resultadinho({ erro = false, children }) {
+  return (
+    <p
+      role={erro ? "alert" : "status"}
+      className={`mt-3 flex items-start gap-2 text-sm leading-snug ${
+        erro ? "text-[#9e0a24]" : "text-[#17643a]"
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className="material-symbols-outlined text-[18px] shrink-0"
+      >
+        {erro ? "error" : "check_circle"}
+      </span>
+      <span>{children}</span>
+    </p>
+  );
+}
+
+// Corrigir o e-mail digitado errado, sem refazer o cadastro: o campo já vem
+// com o e-mail errado, para consertar só o que precisa. A API só aceita no
+// navegador em que o cadastro foi feito; fora dele, a mensagem leva a se
+// cadastrar de novo.
+function CorrecaoDoEmail({ atual, onCorrigido, onCancelar }) {
+  const [email, setEmail] = useState(atual);
+  const [erroDoCampo, setErroDoCampo] = useState("");
+  const [falha, setFalha] = useState(null);
+  const [enviando, setEnviando] = useState(false);
+
+  const enviar = async (e) => {
+    e.preventDefault();
+    const problema = erroEmail(email);
+    if (problema) {
+      setErroDoCampo(problema);
+      return;
+    }
+    setEnviando(true);
+    setErroDoCampo("");
+    setFalha(null);
+    try {
+      onCorrigido(await corrigirEmailDoCadastro(email.trim()));
+    } catch (erro) {
+      if (erro.campos?.email) setErroDoCampo(erro.campos.email);
+      else setFalha(erro);
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <form onSubmit={enviar} noValidate className="mt-5 space-y-4">
+      <Campo
+        id="email-certo"
+        rotulo="E-mail certo"
+        type="email"
+        autoComplete="email"
+        autoFocus
+        value={email}
+        onChange={(e) => {
+          setEmail(e.target.value);
+          setErroDoCampo("");
+        }}
+        erro={erroDoCampo}
+      />
+      <div className="flex gap-3">
+        <Botao
+          type="submit"
+          tamanho="lg"
+          className="flex-1"
+          disabled={enviando}
+        >
+          {enviando ? "Mandando…" : "Mandar para este e-mail"}
+        </Botao>
+        <Botao variante="secundario" tamanho="lg" onClick={onCancelar}>
+          Cancelar
+        </Botao>
+      </div>
+      {falha && (
+        <Resultadinho erro>
+          {falha.message}
+          {falha.codigo === "SEM_CADASTRO" && (
+            <>
+              {" "}
+              <Link
+                to="/cadastrar"
+                className="font-semibold underline underline-offset-2"
+              >
+                Cadastrar de novo
+              </Link>
+            </>
+          )}
+        </Resultadinho>
+      )}
+    </form>
+  );
+}
+
 // Logo depois do cadastro. `enviado` diz se o primeiro link saiu. Se não
 // saiu, a frase principal diz isso e o botão de tentar de novo vem primeiro;
 // quando um envio dá certo, a tela passa a ser a de um link mandado, com a
-// hora do envio. Sem o e-mail (a página aberta direto), pede o e-mail para
-// mandar o link de novo.
-function Espera({ email, enviado }) {
+// hora do envio. Logo abaixo do endereço, "Corrigir o e-mail" conserta um
+// e-mail digitado errado sem refazer o cadastro. Sem o e-mail (a página
+// aberta direto), pede o e-mail para mandar o link de novo.
+function Espera({ email: emailDoCadastro, enviado }) {
   const navegar = useNavigate();
+  const [email, setEmail] = useState(emailDoCadastro);
   const [enviadoEm, setEnviadoEm] = useState(() =>
-    email && enviado !== false ? new Date() : null,
+    emailDoCadastro && enviado !== false ? new Date() : null,
   );
   const [digitado, setDigitado] = useState("");
+  const [corrigindo, setCorrigindo] = useState(false);
+  const [corrigido, setCorrigido] = useState(false);
   const falhou = !!email && !enviadoEm;
 
-  // Um envio que deu certo fica guardado no histórico: recarregar a página
-  // mostra o link mandado, e não a falha de antes.
+  // O e-mail e o envio ficam guardados no histórico: recarregar a página
+  // mostra o link mandado (e para onde), e não a falha ou o e-mail de antes.
+  const guardar = (novoEmail, saiu) =>
+    navegar(".", {
+      replace: true,
+      state: { email: novoEmail, enviado: saiu },
+    });
+
   const enviou = (data) => {
     setEnviadoEm(data);
-    navegar(".", { replace: true, state: { email, enviado: true } });
+    guardar(email, true);
+  };
+
+  const corrigiu = ({ email: novoEmail, enviado: saiu }) => {
+    setEmail(novoEmail);
+    setEnviadoEm(saiu ? new Date() : null);
+    setCorrigindo(false);
+    setCorrigido(true);
+    guardar(novoEmail, saiu);
   };
 
   return (
@@ -88,6 +206,33 @@ function Espera({ email, enviado }) {
             : "Mandamos um link para"}
         {email && <EnderecoDeEmail email={email} />}
       </p>
+      {email &&
+        (corrigindo ? (
+          <CorrecaoDoEmail
+            atual={email}
+            onCorrigido={corrigiu}
+            onCancelar={() => setCorrigindo(false)}
+          />
+        ) : (
+          <>
+            {corrigido && (
+              <Resultadinho>
+                E-mail corrigido. O link mandado para o e-mail errado não vale
+                mais.
+              </Resultadinho>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setCorrigindo(true);
+                setCorrigido(false);
+              }}
+              className="mt-2 py-1 text-sm font-semibold text-[#9e0a24] hover:underline underline-offset-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]/40"
+            >
+              Digitou errado? Corrigir o e-mail
+            </button>
+          </>
+        ))}
 
       {falhou ? (
         <>

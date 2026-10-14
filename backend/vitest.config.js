@@ -7,6 +7,9 @@ dotenv.config({ quiet: true });
 // das chaves reais do .env, e as reais nunca são usadas aqui.
 const chaveDeTeste = (byte) => Buffer.alloc(32, byte).toString("base64");
 
+// Porta do script do Google de mentira (ver EMAIL_SCRIPT_URL abaixo).
+export const PORTA_DO_SCRIPT_DE_MENTIRA = 47811;
+
 export default defineConfig({
   test: {
     include: ["testes/**/*.test.js"],
@@ -21,6 +24,12 @@ export default defineConfig({
       // Os links dos e-mails apontam para cá; os e-mails não saem (ficam na
       // caixa de saída do carteiro, na memória).
       ENDERECO_DO_SITE: "http://ufvet.test",
+      // Um script de mentira, que só o teste do caminho da configuração liga
+      // (emails.test.js): a API publicada chama o carteiro sem dizer o
+      // endereço, e é este caminho que precisa estar testado. Também tira
+      // daqui um script de verdade que esteja no .env.
+      EMAIL_SCRIPT_URL: `http://127.0.0.1:${PORTA_DO_SCRIPT_DE_MENTIRA}/exec`,
+      EMAIL_SCRIPT_SEGREDO: "senha-do-script-de-mentira",
     },
     // Cria o banco de testes, se faltar, e aplica as migrações.
     globalSetup: ["./testes/preparar-banco.js"],

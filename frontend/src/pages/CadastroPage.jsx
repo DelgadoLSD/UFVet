@@ -30,31 +30,41 @@ import fotoGatoParede from "../assets/auth/gato-parede-vermelha.jpg";
 
 // Criação de conta em etapas (F1). O caminho depende do papel escolhido na
 // primeira:
-// - tutor: papel, dados, contato e localização, senha (4 etapas);
-// - veterinário: as mesmas, com o convite antes da senha (5).
+// - tutor: papel, nome e telefone, cidade e bairro, e-mail e senha (4
+//   etapas);
+// - veterinário: as mesmas, com o convite antes do e-mail e da senha (5).
+//
+// O e-mail fica na última etapa, junto da senha: são os dois com que a
+// pessoa entra, e é o último dado antes da tela que pede para abrir o
+// e-mail, onde ainda dá para corrigi-lo sem refazer nada.
 //
 // Cada etapa confere o básico antes de avançar. O e-mail, que não pode se
-// repetir, é conferido na API assim que a pessoa sai do campo e de novo ao
-// continuar. A conferência completa é da API, no fim: se ela apontar um
-// problema, a página volta para a etapa do campo e mostra a mensagem embaixo
-// dele.
+// repetir, é conferido na API assim que a pessoa sai do campo. A conferência
+// completa é da API, no fim: se ela apontar um problema, a página volta para
+// a etapa do campo e mostra a mensagem embaixo dele.
 
 // Título e explicação de cada etapa, pelo número dela. A etapa 4 (convite) só
 // existe para veterinários.
 const ETAPAS = {
   1: { titulo: "Como você vai usar o UFVet?" },
-  2: { titulo: "Seus dados" },
+  2: {
+    titulo: "Seus dados",
+    texto: "O telefone é como quem precisa de um doador fala com você.",
+  },
   3: {
-    titulo: "Contato e localização",
-    texto:
-      "Para que quem precisa de um doador consiga falar com você. Na busca, aparecem só a cidade e o bairro.",
+    titulo: "Onde você está",
+    texto: "Na busca, aparecem só a cidade e o bairro.",
   },
   4: {
     titulo: "Registro profissional",
     texto:
       "Use o código de convite que a direção do hospital enviou. É dele que vêm o seu CRMV e o local onde você atua.",
   },
-  5: { titulo: "Senha e termos" },
+  5: {
+    titulo: "E-mail e senha",
+    texto:
+      "É com eles que você entra no UFVet. Em seguida, mandamos um link para confirmar o e-mail.",
+  },
 };
 
 const ULTIMA_ETAPA = 5;
@@ -63,12 +73,12 @@ const ULTIMA_ETAPA = 5;
 // erro.
 const ETAPA_DO_CAMPO = {
   nomeCompleto: 2,
-  email: 2,
-  telefone: 3,
+  telefone: 2,
   cidade: 3,
   bairro: 3,
   convite: 4,
   tratamento: 4,
+  email: 5,
   senha: 5,
   aceiteTermos: 5,
   cienciaResponsabilidade: 5,
@@ -110,10 +120,9 @@ function errosDaEtapa(etapa, dados, convite) {
   const erros = {};
   if (etapa === 2) {
     erros.nomeCompleto = erroNome(dados.nomeCompleto);
-    erros.email = erroEmail(dados.email);
+    erros.telefone = erroTelefone(dados.telefone);
   }
   if (etapa === 3) {
-    erros.telefone = erroTelefone(dados.telefone);
     if (!dados.cidade) erros.cidade = "Escolha a cidade na lista.";
     if (!(dados.bairro ?? "").trim()) erros.bairro = PREENCHA;
   }
@@ -127,6 +136,7 @@ function errosDaEtapa(etapa, dados, convite) {
     if (!dados.tratamento) erros.tratamento = "Escolha Dr. ou Dra.";
   }
   if (etapa === 5) {
+    erros.email = erroEmail(dados.email);
     if ((dados.senha ?? "").length < TAMANHO_MINIMO_SENHA) {
       erros.senha = `A senha precisa ter pelo menos ${TAMANHO_MINIMO_SENHA} caracteres.`;
     }
@@ -197,26 +207,6 @@ function EtapaDados({ dados, erros, onMudar, onSair }) {
         erro={erros.nomeCompleto}
       />
       <Campo
-        id="email"
-        rotulo="E-mail"
-        type="email"
-        placeholder="seu@email.com"
-        autoComplete="email"
-        value={dados.email || ""}
-        onChange={(e) => onMudar("email", e.target.value)}
-        onBlur={() => onSair("email")}
-        erro={erros.email}
-      />
-    </div>
-  );
-}
-
-// Cidade e bairro vêm de listas, um embaixo do outro: o bairro depende da
-// cidade, e a lista aberta precisa da largura toda para nomes longos.
-function EtapaContato({ dados, erros, onMudar, onSair }) {
-  return (
-    <div className="space-y-5">
-      <Campo
         id="telefone"
         rotulo="Telefone"
         type="tel"
@@ -228,6 +218,15 @@ function EtapaContato({ dados, erros, onMudar, onSair }) {
         onBlur={() => onSair("telefone")}
         erro={erros.telefone}
       />
+    </div>
+  );
+}
+
+// Cidade e bairro vêm de listas, um embaixo do outro: o bairro depende da
+// cidade, e a lista aberta precisa da largura toda para nomes longos.
+function EtapaLocal({ dados, erros, onMudar }) {
+  return (
+    <div className="space-y-5">
       <div>
         <CampoCidade
           valor={dados.cidade || ""}
@@ -335,9 +334,20 @@ function Confirmacao({ id, checked, onChange, children }) {
 
 // Os dois aceites viram registros da tabela aceite no banco (TERMOS_DE_USO e
 // CIENCIA_RESPONSABILIDADE), com a versão do texto aceito (F7).
-function EtapaSenha({ dados, erros, onMudar }) {
+function EtapaSenha({ dados, erros, onMudar, onSair }) {
   return (
     <div className="space-y-5">
+      <Campo
+        id="email"
+        rotulo="E-mail"
+        type="email"
+        placeholder="seu@email.com"
+        autoComplete="email"
+        value={dados.email || ""}
+        onChange={(e) => onMudar("email", e.target.value)}
+        onBlur={() => onSair("email")}
+        erro={erros.email}
+      />
       <Campo
         id="senha"
         rotulo="Senha"
@@ -484,19 +494,6 @@ function CadastroPage() {
     }
   };
 
-  // Antes de sair da etapa 2, o e-mail de novo. Se a API não responder, a
-  // pessoa segue: o cadastro confere de novo no fim.
-  const conferirRepetidos = async () => {
-    setEnviando(true);
-    try {
-      return await conferirDisponibilidade({ email: dados.email });
-    } catch (falha) {
-      return falha.campos ?? {};
-    } finally {
-      setEnviando(false);
-    }
-  };
-
   const escolherPapel = (escolhido) => {
     setPapel(escolhido);
     setEtapa(2);
@@ -551,9 +548,6 @@ function CadastroPage() {
   const enviar = async (e) => {
     e.preventDefault();
     const problemas = errosDaEtapa(etapa, dados, convite);
-    if (etapa === 2 && Object.keys(problemas).length === 0) {
-      Object.assign(problemas, await conferirRepetidos());
-    }
     if (Object.keys(problemas).length > 0) {
       setErros(problemas);
       return;
@@ -611,12 +605,7 @@ function CadastroPage() {
           />
         )}
         {etapa === 3 && (
-          <EtapaContato
-            dados={dados}
-            erros={erros}
-            onMudar={mudar}
-            onSair={sairDoCampo}
-          />
+          <EtapaLocal dados={dados} erros={erros} onMudar={mudar} />
         )}
         {etapa === 4 && (
           <EtapaRegistro
@@ -628,7 +617,12 @@ function CadastroPage() {
           />
         )}
         {etapa === 5 && (
-          <EtapaSenha dados={dados} erros={erros} onMudar={mudar} />
+          <EtapaSenha
+            dados={dados}
+            erros={erros}
+            onMudar={mudar}
+            onSair={sairDoCampo}
+          />
         )}
 
         {erroGeral && (

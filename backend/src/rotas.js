@@ -28,6 +28,7 @@ import { buscarDoadores, listarLocais } from "./controladores/busca.js";
 import { consultarConvite } from "./controladores/convites.js";
 import {
   confirmarEmail,
+  corrigirEmail,
   criarSenhaNova,
   esqueciASenha,
   reenviarConfirmacao,
@@ -95,6 +96,12 @@ export function criarRotas(limites) {
   // Os links que vão por e-mail: confirmar o e-mail (sem isso a conta não
   // entra), pedir o link de novo e criar senha nova ("Esqueceu a senha?").
   rotas.post("/email/confirmacao", limites.usoDeLink, confirmarEmail);
+  rotas.post(
+    "/email/correcao",
+    limites.pedidosDeEmail,
+    limites.emailsPorEndereco,
+    corrigirEmail,
+  );
   rotas.post(
     "/email/reenvio",
     limites.pedidosDeEmail,

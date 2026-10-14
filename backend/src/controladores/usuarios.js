@@ -11,6 +11,7 @@ import {
 } from "../modelos/usuario.js";
 import { registrar } from "../registro.js";
 import { gerarHashSenha } from "../senha.js";
+import { marcarCadastroPendente } from "../token.js";
 import { esquemaCadastro, esquemaDisponibilidade } from "../validacao.js";
 
 // Controller (do MVC) das contas.
@@ -145,6 +146,9 @@ export async function cadastrar(req, res) {
   });
 
   registrar("conta_criada", { usuarioId: id, papel: dados.papel });
+  // Para corrigir o e-mail sem refazer o cadastro, se ele veio errado (ver
+  // corrigirEmail, em controladores/email.js).
+  marcarCadastroPendente(res, id);
   const enviado = await mandarConfirmacao(
     await buscarUsuarioPorId(id),
     dados.email,

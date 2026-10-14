@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { afterEach, describe, expect, test } from "vitest";
 import { conferirScript, enviarPeloScript } from "../src/carteiro.js";
+import { PORTA_DO_SCRIPT_DE_MENTIRA } from "../vitest.config.js";
 import {
   emailDeConfirmacao,
   emailDeSenhaNova,
@@ -204,5 +205,43 @@ describe("a conferência do script, ao ligar a API", () => {
 
     expect(motivo).toContain("não foi possível chamar o script");
     expect(motivo).toContain("EMAIL_SCRIPT_URL");
+  });
+
+  // O caminho da API publicada: o carteiro chamado sem endereço, com o que
+  // está na configuração (EMAIL_SCRIPT_URL e EMAIL_SCRIPT_SEGREDO, que nos
+  // testes apontam para um script de mentira; ver vitest.config.js). Um erro
+  // de nome entre a configuração e o carteiro já deixou a API chamando o
+  // script com o endereço vazio, e só este teste pegaria.
+  test("sem dizer o endereço, o carteiro usa o da configuração", async () => {
+    const recebidos = [];
+    servidor = createServer((req, res) => {
+      let corpo = "";
+      req.on("data", (pedaco) => (corpo += pedaco));
+      req.on("end", () => {
+        const pedido = JSON.parse(corpo);
+        recebidos.push(pedido);
+        const resposta =
+          pedido.segredo !== process.env.EMAIL_SCRIPT_SEGREDO
+            ? { ok: false, erro: "senha" }
+            : !pedido.para
+              ? { ok: false, erro: "pedido" }
+              : { ok: true };
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(resposta));
+      });
+    });
+    await new Promise((pronto) =>
+      servidor.listen(PORTA_DO_SCRIPT_DE_MENTIRA, "127.0.0.1", pronto),
+    );
+
+    expect(await conferirScript()).toBeNull();
+    await enviarPeloScript(
+      emailDeConfirmacao({ para: "ana@example.com", nome: "Ana", link: LINK }),
+    );
+
+    expect(recebidos.map((pedido) => pedido.para)).toEqual([
+      "",
+      "ana@example.com",
+    ]);
   });
 });

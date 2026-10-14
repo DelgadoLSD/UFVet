@@ -20,3 +20,10 @@ export const pedirSenhaNova = (email) =>
 // Devolve { email }, o da conta, para a página de entrar já trazê-lo.
 export const criarSenhaNova = (codigo, senha) =>
   chamarApi("/senha/nova", { metodo: "POST", corpo: { codigo, senha } });
+
+// Corrige o e-mail de um cadastro que ainda não foi confirmado, no navegador
+// em que ele foi feito (a API reconhece o cadastro por um cookie próprio).
+// Devolve { email, enviado }, como o cadastro. Fora desse navegador, ou
+// depois de 24 horas, o erro vem com o código "SEM_CADASTRO".
+export const corrigirEmailDoCadastro = (email) =>
+  chamarApi("/email/correcao", { metodo: "POST", corpo: { email } });

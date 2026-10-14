@@ -9,7 +9,7 @@ import { registrar } from "./registro.js";
 const servidor = criarApp().listen(config.porta, (erro) => {
   if (erro) throw erro;
   console.log(`API do UFVet no ar em http://localhost:${config.porta}/api`);
-  if (config.email.scriptUrl) conferirCarteiro();
+  if (config.email.url) conferirCarteiro();
 });
 
 // Confere, logo depois de ligar, se o script do Google aceita a senha, sem

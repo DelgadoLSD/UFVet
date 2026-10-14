@@ -236,6 +236,7 @@ npm run convite:producao -- --nome "Ana Souza" --crmv 12345 --uf MG
 | `POST /api/usuarios/disponibilidade`         | Diz, durante o cadastro, se o e-mail já tem conta                                                              |
 | `GET /api/convites/:codigo`                  | Confere um convite antes do fim do cadastro                                                                    |
 | `POST /api/email/confirmacao`                 | Confirma o e-mail com o código do link (no cadastro ou na troca de e-mail)                                     |
+| `POST /api/email/correcao`                    | Corrige o e-mail de um cadastro pendente, no navegador em que ele foi feito                                    |
 | `POST /api/email/reenvio`                     | Manda de novo o link de confirmação (diz se não saiu; não revela quem tem conta)                               |
 | `POST /api/senha/esqueci`                     | Manda o link de senha nova (responde igual tendo ou não conta)                                                 |
 | `POST /api/senha/nova`                        | Cria a senha nova com o código do link; todos os aparelhos saem                                                |
@@ -437,7 +438,10 @@ O que a API já faz:
   código sorteado de 32 bytes, guardado só como impressão digital, valem 24
   horas e 1 hora, uma vez só, e o mais novo tira a validade dos anteriores.
   O endereço dos links vem da configuração (`ENDERECO_DO_SITE`), nunca do
-  pedido. "Esqueceu a senha?" responde igual, e na mesma hora, tendo ou não
+  pedido. Quem digitou o e-mail errado corrige na própria tela, sem refazer
+  o cadastro: só no navegador em que o cadastro foi feito (um cookie que vale
+  24 horas e só para isso, sem abrir sessão), e o link do e-mail errado
+  deixa de valer. "Esqueceu a senha?" responde igual, e na mesma hora, tendo ou não
   conta. "Mandar o link de novo" responde igual para o e-mail sem conta e
   para a conta confirmada; para o cadastro pendente, espera o e-mail sair e
   diz se ele não saiu.

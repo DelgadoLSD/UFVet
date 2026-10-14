@@ -90,8 +90,8 @@ export const config = Object.freeze({
   // Gmail do projeto e a senha que só ele e a API conhecem. Sem o script,
   // os e-mails viram arquivos nesta pasta.
   email: Object.freeze({
-    scriptUrl: valorDoAmbiente("EMAIL_SCRIPT_URL"),
-    scriptSegredo: valorDoAmbiente("EMAIL_SCRIPT_SEGREDO"),
+    url: valorDoAmbiente("EMAIL_SCRIPT_URL"),
+    segredo: valorDoAmbiente("EMAIL_SCRIPT_SEGREDO"),
     pasta: path.resolve(
       process.env.PASTA_EMAILS ??
         fileURLToPath(new URL("../emails-locais", import.meta.url)),

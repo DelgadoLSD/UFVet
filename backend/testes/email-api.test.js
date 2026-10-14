@@ -538,3 +538,95 @@ describe("trocar o e-mail", () => {
     expect(contas.map((c) => c.nomeCompleto)).toEqual(["Beatriz dos Reis"]);
   });
 });
+
+describe("corrigir o e-mail do cadastro, sem refazer tudo", () => {
+  const ERRADO = "beatriz@gmial.com";
+  const corrigir = (navegador, email) =>
+    navegador.post("/api/email/correcao").send({ email });
+
+  // Cadastro com o e-mail digitado errado, no navegador que guarda o crachá
+  // de cadastro.
+  async function cadastroComErro() {
+    const navegador = request.agent(app);
+    await navegador
+      .post("/api/usuarios")
+      .send({ ...tutora, email: ERRADO })
+      .expect(201);
+    return navegador;
+  }
+
+  test("no mesmo navegador, troca o e-mail e manda o link para o certo; o do e-mail errado deixa de valer", async () => {
+    const navegador = await cadastroComErro();
+    const doErrado = await codigoDoUltimoEmail(ERRADO);
+
+    const resposta = await corrigir(navegador, tutora.email);
+
+    expect(resposta.status).toBe(200);
+    expect(resposta.body).toEqual({ email: tutora.email, enviado: true });
+    const contas = await banco.usuario.findMany();
+    expect(contas).toHaveLength(1);
+    expect(contas[0].nomeCompleto).toBe("Beatriz dos Reis");
+    expect((await confirmar(doErrado)).body.codigo).toBe(LINK_INVALIDO);
+    await confirmar(await codigoDoUltimoEmail(tutora.email)).expect(200);
+    expect((await entrar(tutora.email)).status).toBe(200);
+  });
+
+  test("em outro navegador (sem o crachá do cadastro), não corrige", async () => {
+    await cadastroComErro();
+
+    const resposta = await corrigir(request(app), tutora.email);
+
+    expect(resposta.status).toBe(401);
+    expect(resposta.body.codigo).toBe("SEM_CADASTRO");
+    expect(resposta.body.erro).toContain("Cadastre-se de novo");
+    expect((await banco.usuario.findFirstOrThrow()).emailIndice).toBeDefined();
+    await aguardarEnvios();
+    expect(caixaDeSaida.map((m) => m.para)).toEqual([ERRADO]);
+  });
+
+  test("o e-mail certo não pode ser de uma conta confirmada", async () => {
+    await criarTutor({ nome: "Outra Pessoa", email: tutora.email });
+    const navegador = await cadastroComErro();
+
+    const resposta = await corrigir(navegador, tutora.email);
+
+    expect(resposta.status).toBe(409);
+    expect(resposta.body.campos).toEqual({
+      email: "Já existe uma conta com este e-mail.",
+    });
+  });
+
+  test("depois de confirmado, o cadastro não é mais corrigido por aqui", async () => {
+    const navegador = await cadastroComErro();
+    // Confirmado em outro aparelho (o celular, pelo e-mail).
+    await confirmar(await codigoDoUltimoEmail(ERRADO)).expect(200);
+
+    const resposta = await corrigir(navegador, tutora.email);
+
+    expect(resposta.status).toBe(409);
+    expect(resposta.body.erro).toBe(
+      "Este cadastro já foi confirmado. É só entrar.",
+    );
+  });
+
+  test("o crachá do cadastro não serve como sessão", async () => {
+    const resposta = await request(app)
+      .post("/api/usuarios")
+      .send(tutora)
+      .expect(201);
+    const cookie = resposta.headers["set-cookie"].find((c) =>
+      c.startsWith("ufvet_cadastro="),
+    );
+    expect(cookie).toContain("HttpOnly");
+    expect(cookie).toContain("Path=/api/email");
+    // Confirmado o e-mail, nem assim o crachá do cadastro abre uma sessão.
+    await confirmar(await codigoDoUltimoEmail(tutora.email)).expect(200);
+    const valor = cookie.split(";")[0].split("=")[1];
+
+    const sessao = await request(app)
+      .get("/api/sessao")
+      .set("Cookie", `${NOME_COOKIE}=${valor}`);
+
+    expect(sessao.body.usuario).toBeNull();
+  });
+});

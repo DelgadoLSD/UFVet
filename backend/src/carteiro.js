@@ -126,7 +126,7 @@ function transporte() {
       caixaDeSaida.push(mensagem);
     };
   }
-  return config.email.scriptUrl ? enviarPeloScript : guardarNaPasta;
+  return config.email.url ? enviarPeloScript : guardarNaPasta;
 }
 
 // Manda um e-mail ({ tipo, para, assunto, texto, html }, de emails.js).

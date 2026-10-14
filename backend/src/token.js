@@ -34,6 +34,8 @@ export function lerToken(token) {
     const dados = jwt.verify(token, config.jwtSegredo, {
       algorithms: ["HS256"],
     });
+    // Um crachá de cadastro pendente (ver abaixo) não vale como sessão.
+    if (dados.aud) return null;
     return { usuarioId: dados.sub, emitidoEm: dados.emitidoEm };
   } catch {
     return null;
@@ -63,4 +65,47 @@ export function abrirSessao(res, usuarioId) {
 
 export function fecharSessao(res) {
   res.clearCookie(NOME_COOKIE, opcoesCookie);
+}
+
+// ─── Cadastro pendente ────────────────────────────────────────────────────────
+//
+// Depois do cadastro, o navegador em que ele foi feito recebe um segundo
+// crachá, que só serve para corrigir o e-mail do cadastro enquanto ele não é
+// confirmado (a pessoa digitou o e-mail errado e não precisa refazer tudo).
+// Não é sessão: a conta pendente não entra no site. Vale pelo mesmo tempo do
+// link de confirmação e só viaja para os endereços /api/email.
+
+export const NOME_COOKIE_CADASTRO = "ufvet_cadastro";
+const DURACAO_CADASTRO_HORAS = 24;
+const opcoesCookieCadastro = { ...opcoesCookie, path: "/api/email" };
+
+export function marcarCadastroPendente(res, usuarioId) {
+  const token = jwt.sign({}, config.jwtSegredo, {
+    subject: usuarioId,
+    audience: "cadastro",
+    expiresIn: `${DURACAO_CADASTRO_HORAS}h`,
+    algorithm: "HS256",
+  });
+  res.cookie(NOME_COOKIE_CADASTRO, token, {
+    ...opcoesCookieCadastro,
+    maxAge: DURACAO_CADASTRO_HORAS * 60 * 60 * 1000,
+  });
+}
+
+// O id da conta do cadastro feito neste navegador, ou null.
+export function lerCadastroPendente(req) {
+  const token = req.cookies?.[NOME_COOKIE_CADASTRO];
+  if (!token) return null;
+  try {
+    return jwt.verify(token, config.jwtSegredo, {
+      algorithms: ["HS256"],
+      audience: "cadastro",
+    }).sub;
+  } catch {
+    return null;
+  }
+}
+
+export function esquecerCadastroPendente(res) {
+  res.clearCookie(NOME_COOKIE_CADASTRO, opcoesCookieCadastro);
 }

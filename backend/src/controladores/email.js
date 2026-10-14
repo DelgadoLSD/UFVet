@@ -1,6 +1,6 @@
 import { banco } from "../banco.js";
 import { enviarEmSegundoPlano } from "../carteiro.js";
-import { decifrar } from "../cifra.js";
+import { cifrar, decifrar, indiceEmail } from "../cifra.js";
 import { mandarConfirmacao, mandarLinkDeSenha } from "../emails.js";
 import { ErroApi } from "../erros.js";
 import { acharLink, linkValeAgora, usarLink } from "../modelos/links.js";
@@ -8,9 +8,11 @@ import {
   CONTA_CONFIRMADA,
   apagarCadastrosPendentes,
   buscarUsuarioPorEmail,
+  buscarUsuarioPorId,
 } from "../modelos/usuario.js";
 import { registrar } from "../registro.js";
 import { gerarHashSenha } from "../senha.js";
+import { esquecerCadastroPendente, lerCadastroPendente } from "../token.js";
 import {
   codigoDoLink,
   esquemaNovaSenha,
@@ -92,7 +94,58 @@ export async function confirmarEmail(req, res) {
   registrar(troca ? "email_trocado" : "email_confirmado", {
     usuarioId: usuario.id,
   });
+  // Confirmado, o cadastro não tem mais o que corrigir neste navegador.
+  esquecerCadastroPendente(res);
   res.json({ email, troca, jaConfirmado: false });
+}
+
+// POST /api/email/correcao — corrige o e-mail de um cadastro que ainda não
+// foi confirmado, sem refazer o cadastro: a pessoa digitou o e-mail errado.
+// Só vale no navegador em que o cadastro foi feito, nas 24 horas seguintes
+// (o crachá de cadastro, ver token.js), e só para cadastro pendente. O
+// link mandado ao e-mail errado deixa de valer, e um link novo vai para o
+// certo. Responde como o cadastro: { email, enviado }.
+export async function corrigirEmail(req, res) {
+  const usuarioId = lerCadastroPendente(req);
+  const usuario = usuarioId && (await buscarUsuarioPorId(usuarioId));
+  if (!usuario) {
+    throw new ErroApi(
+      401,
+      "Não deu para corrigir o e-mail por aqui: o cadastro foi feito em outro navegador ou há mais de 24 horas. Cadastre-se de novo com o e-mail certo.",
+      { codigo: "SEM_CADASTRO" },
+    );
+  }
+  if (usuario.emailConfirmadoEm) {
+    throw new ErroApi(409, "Este cadastro já foi confirmado. É só entrar.");
+  }
+  const { email } = esquemaSoEmail.parse(req.body ?? {});
+  const emailIndice = indiceEmail(email);
+
+  if (emailIndice !== usuario.emailIndice) {
+    const dono = await banco.usuario.findFirst({
+      where: { emailIndice, ...CONTA_CONFIRMADA },
+      select: { id: true },
+    });
+    if (dono) {
+      const mensagem = "Já existe uma conta com este e-mail.";
+      throw new ErroApi(409, mensagem, { campos: { email: mensagem } });
+    }
+    await banco.$transaction(async (tx) => {
+      // Um outro cadastro pendente com o e-mail certo sai, como no cadastro.
+      await apagarCadastrosPendentes(tx, { emailIndice });
+      await tx.usuario.update({
+        where: { id: usuario.id },
+        data: { emailCifrado: cifrar(email), emailIndice },
+      });
+    });
+    registrar("email_do_cadastro_corrigido", { usuarioId: usuario.id });
+  }
+
+  const enviado = await mandarConfirmacao(
+    await buscarUsuarioPorId(usuario.id),
+    email,
+  );
+  res.json({ email, enviado });
 }
 
 // POST /api/email/reenvio — manda de novo o link de confirmação de um
