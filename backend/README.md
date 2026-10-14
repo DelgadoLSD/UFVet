@@ -183,6 +183,15 @@ no link. Com elas no `.env`, os e-mails saem de verdade, pelo script.
 Ao mudar o script, publique uma versão nova sem trocar o endereço:
 **Implantar → Gerenciar implantações → editar (lápis) → Versão: nova**.
 
+**Conferir se está funcionando.** Cada vez que liga, a API publicada manda ao
+script a senha num pedido sem destinatário (nenhum e-mail sai) e anota o
+resultado nos Logs do Render: `carteiro_pronto`, ou `carteiro_com_problema`
+com o `motivo`, que diz o que conferir. Um e-mail que não saiu aparece como
+`email_nao_enviado`, também com o motivo. Nenhum dos dois traz o endereço de
+ninguém. Os motivos mais comuns são a senha diferente entre o Render e a
+propriedade `SEGREDO` do script, e o endereço do script colado errado. Aspas
+e espaços nas pontas dos valores não atrapalham: a API os ignora.
+
 ### O que saber do plano grátis
 
 - **O site dorme.** Depois de 15 minutos sem visitas, o Render desliga o
@@ -227,7 +236,7 @@ npm run convite:producao -- --nome "Ana Souza" --crmv 12345 --uf MG
 | `POST /api/usuarios/disponibilidade`         | Diz, durante o cadastro, se o e-mail já tem conta                                                              |
 | `GET /api/convites/:codigo`                  | Confere um convite antes do fim do cadastro                                                                    |
 | `POST /api/email/confirmacao`                 | Confirma o e-mail com o código do link (no cadastro ou na troca de e-mail)                                     |
-| `POST /api/email/reenvio`                     | Manda de novo o link de confirmação (responde igual tendo ou não cadastro)                                     |
+| `POST /api/email/reenvio`                     | Manda de novo o link de confirmação (diz se não saiu; não revela quem tem conta)                               |
 | `POST /api/senha/esqueci`                     | Manda o link de senha nova (responde igual tendo ou não conta)                                                 |
 | `POST /api/senha/nova`                        | Cria a senha nova com o código do link; todos os aparelhos saem                                                |
 | `GET /api/sessao`                            | Diz quem está logado (`{ "usuario": null }` para o visitante)                                                  |
@@ -428,8 +437,10 @@ O que a API já faz:
   código sorteado de 32 bytes, guardado só como impressão digital, valem 24
   horas e 1 hora, uma vez só, e o mais novo tira a validade dos anteriores.
   O endereço dos links vem da configuração (`ENDERECO_DO_SITE`), nunca do
-  pedido. "Esqueceu a senha?" e "mandar o link de novo" respondem igual, e
-  na mesma hora, tendo ou não conta.
+  pedido. "Esqueceu a senha?" responde igual, e na mesma hora, tendo ou não
+  conta. "Mandar o link de novo" responde igual para o e-mail sem conta e
+  para a conta confirmada; para o cadastro pendente, espera o e-mail sair e
+  diz se ele não saiu.
 - **Limite de tentativas:** 20 logins errados a cada 15 minutos, 30 cadastros
   por hora, 60 conferências de e-mail a cada 15 minutos, 20 pedidos de
   e-mail por hora, 30 links que não valem a cada 15 minutos, 60 buscas e 60

@@ -4,8 +4,8 @@ import AvisoDeSpam from "../components/AvisoDeSpam";
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
 import Campo from "../components/Campo";
-import IconeDeEstado from "../components/IconeDeEstado";
 import LayoutAutenticacao from "../components/LayoutAutenticacao";
+import { EnderecoDeEmail, PreviaDoEmail } from "../components/PreviaDoEmail";
 import { erroEmail } from "../regras/conta";
 import { VALIDADE_DO_LINK } from "../regras/link";
 import { pedirSenhaNova } from "../servicos/email";
@@ -53,19 +53,21 @@ function EsqueciSenhaPage() {
     >
       {enviadoPara ? (
         <>
-          <IconeDeEstado nome="mark_email_unread" />
-          <h1 className="mt-6 text-3xl md:text-4xl font-extrabold tracking-tight text-[#1a1c1c]">
-            Confira seu e-mail
+          <h1 className="text-[2rem] leading-[1.1] md:text-4xl font-extrabold tracking-tight text-[#1a1c1c]">
+            Confira <span className="whitespace-nowrap">seu e-mail</span>
           </h1>
-          <p role="status" className="mt-3 text-[#5b403f] leading-relaxed">
-            Se houver uma conta com{" "}
-            <strong className="font-semibold text-[#1a1c1c] break-all">
-              {enviadoPara}
-            </strong>
-            , mandamos um link para criar uma senha nova. Ele vale por{" "}
-            {VALIDADE_DO_LINK.senha}.
-          </p>
-          <div className="mt-8">
+          <div role="status" className="mt-4 text-[#5b403f] leading-relaxed">
+            <p>Se houver uma conta com</p>
+            <EnderecoDeEmail email={enviadoPara} />
+            <p className="mt-1">
+              mandamos um link para criar uma senha nova. Ele vale por{" "}
+              {VALIDADE_DO_LINK.senha}.
+            </p>
+          </div>
+          <div className="mt-7">
+            <PreviaDoEmail tipo="senha" />
+          </div>
+          <div className="mt-10 pt-8 border-t border-[#eadede]">
             <AvisoDeSpam />
           </div>
           <div className="mt-8 space-y-3">

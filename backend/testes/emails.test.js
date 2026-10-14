@@ -1,6 +1,7 @@
+import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { afterEach, describe, expect, test } from "vitest";
-import { enviarPeloScript } from "../src/carteiro.js";
+import { conferirScript, enviarPeloScript } from "../src/carteiro.js";
 import {
   emailDeConfirmacao,
   emailDeSenhaNova,
@@ -41,6 +42,24 @@ describe("o texto dos e-mails", () => {
     expect(email.texto).toContain("24 horas");
     expect(email.html.split(LINK)).toHaveLength(4);
     expect(email.html).toContain("Confirmar meu e-mail");
+  });
+
+  test("a prévia do e-mail no site repete o assunto e o começo dos e-mails de verdade", () => {
+    // O site mostra como o e-mail aparece na caixa de entrada, para a pessoa
+    // saber o que procurar (frontend/src/components/PreviaDoEmail.jsx).
+    const previa = readFileSync(
+      new URL(
+        "../../frontend/src/components/PreviaDoEmail.jsx",
+        import.meta.url,
+      ),
+      "utf8",
+    ).replace(/\s+/g, " ");
+    const dados = { para: "a@example.com", nome: "Ana Souza", link: LINK };
+    for (const email of [emailDeConfirmacao(dados), emailDeSenhaNova(dados)]) {
+      const comeco = email.texto.split("\n\n")[1];
+      expect(previa).toContain(`"${email.assunto}"`);
+      expect(previa).toContain(`"${comeco}"`);
+    }
   });
 
   test("nada que veio de fora vira HTML", () => {
@@ -113,7 +132,7 @@ describe("o carteiro e o script do Google", () => {
     }).catch((erro) => erro);
 
     expect(falha).toBeInstanceOf(Error);
-    expect(falha.message).toContain("cota");
+    expect(falha.message).toContain("limite diário de e-mails do Gmail acabou");
     expect(falha.message).not.toContain("beatriz");
   });
 
@@ -127,6 +146,63 @@ describe("o carteiro e o script do Google", () => {
 
     await expect(
       enviarPeloScript(mensagem(), { url, segredo: "senha-do-script" }),
-    ).rejects.toThrow("o script respondeu 200");
+    ).rejects.toThrow("confira o EMAIL_SCRIPT_URL");
+  });
+});
+
+describe("a conferência do script, ao ligar a API", () => {
+  let servidor;
+  afterEach(() => servidor?.close());
+
+  // Um Google de mentira que confere a senha como o script de verdade.
+  async function scriptDeMentira(senhaDoScript) {
+    const recebidos = [];
+    servidor = createServer((req, res) => {
+      let corpo = "";
+      req.on("data", (pedaco) => (corpo += pedaco));
+      req.on("end", () => {
+        const pedido = JSON.parse(corpo);
+        recebidos.push(pedido);
+        const resposta =
+          pedido.segredo !== senhaDoScript
+            ? { ok: false, erro: "senha" }
+            : !pedido.para
+              ? { ok: false, erro: "pedido" }
+              : { ok: true };
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(resposta));
+      });
+    });
+    await new Promise((pronto) => servidor.listen(0, "127.0.0.1", pronto));
+    return {
+      url: `http://127.0.0.1:${servidor.address().port}/exec`,
+      recebidos,
+    };
+  }
+
+  test("com a senha certa, está tudo certo, e nenhum e-mail sai", async () => {
+    const { url, recebidos } = await scriptDeMentira("senha-certa");
+
+    expect(await conferirScript({ url, segredo: "senha-certa" })).toBeNull();
+    // O pedido vai sem destinatário: o script não tem para quem mandar.
+    expect(recebidos[0].para).toBe("");
+  });
+
+  test("com a senha diferente, o motivo diz qual variável conferir", async () => {
+    const { url } = await scriptDeMentira("senha-certa");
+
+    expect(await conferirScript({ url, segredo: "outra-senha" })).toContain(
+      "EMAIL_SCRIPT_SEGREDO não é igual à propriedade SEGREDO",
+    );
+  });
+
+  test("sem resposta do endereço, o motivo manda conferir o EMAIL_SCRIPT_URL", async () => {
+    const motivo = await conferirScript({
+      url: "http://127.0.0.1:9/exec",
+      segredo: "qualquer",
+    });
+
+    expect(motivo).toContain("não foi possível chamar o script");
+    expect(motivo).toContain("EMAIL_SCRIPT_URL");
   });
 });

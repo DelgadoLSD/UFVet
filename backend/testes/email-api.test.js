@@ -190,6 +190,18 @@ describe("o cadastro só vale com o e-mail confirmado", () => {
 });
 
 describe("mandar o link de novo", () => {
+  test("se o e-mail não sai, o reenvio diz que não saiu, em vez de fingir que mandou", async () => {
+    await cadastrar();
+    caixaDeSaida.foraDoAr = true;
+
+    const resposta = await reenviar(tutora.email);
+
+    expect(resposta.status).toBe(503);
+    expect(resposta.body.erro).toBe(
+      "Não conseguimos mandar o e-mail agora. Tente de novo daqui a alguns minutos.",
+    );
+  });
+
   test("a resposta é a mesma para cadastro pendente, conta confirmada e e-mail sem conta", async () => {
     await cadastrar();
     await criarTutor({ nome: "Pedro Alves", email: "pedro@example.com" });

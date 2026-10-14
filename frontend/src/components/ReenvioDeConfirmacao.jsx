@@ -1,80 +1,102 @@
 import { useState } from "react";
 import { erroEmail } from "../regras/conta";
 import { reenviarConfirmacao } from "../servicos/email";
-import AvisoErro from "./AvisoErro";
 import Botao from "./Botao";
 
 // "Mandar o link de novo": manda outro link de confirmação para `email`. Fica
 // na espera depois do cadastro e na página de entrar, quando a conta ainda
-// não confirmou o e-mail. A API limita quantos e-mails um endereço recebe
-// por hora, e a mensagem dela aparece aqui quando o limite chega.
+// não confirmou o e-mail. O resultado aparece numa linha logo abaixo do
+// botão, com ícone e texto (não só a cor): deu certo, ou o que deu errado. A
+// API diz quando o e-mail não saiu e quando o limite de e-mails por hora
+// chegou.
 //
-// A API responde igual tendo ou não um cadastro esperando com esse e-mail.
-// Quando a página não sabe se há um (a pessoa digitou o e-mail aqui), o
-// aviso diz "se houver", em vez de garantir um envio que pode não existir.
-function ReenvioDeConfirmacao({ email, seHouver = false }) {
+// Para o e-mail sem cadastro esperando confirmação, a API responde como se
+// tivesse mandado (ela não conta quem tem conta). Quando a página não sabe
+// se há um cadastro (a pessoa digitou o e-mail aqui), a linha diz "se
+// houver", em vez de garantir um envio que pode não existir.
+//
+// `onEnviado(data)` avisa a página que o link saiu, com a hora.
+function ReenvioDeConfirmacao({
+  email,
+  seHouver = false,
+  variante = "secundario",
+  rotulo = "Mandar o link de novo",
+  onEnviado,
+}) {
   const [fase, setFase] = useState("pronto");
   const [erro, setErro] = useState("");
-  const [enviadoPara, setEnviadoPara] = useState("");
+  const [enviadoEm, setEnviadoEm] = useState(null);
 
   const mandar = async () => {
     const problema = erroEmail(email);
     if (problema) {
       setErro(problema);
+      setFase("pronto");
       return;
     }
     setFase("enviando");
     setErro("");
     try {
       await reenviarConfirmacao(email.trim());
-      setEnviadoPara(email.trim());
+      const agora = new Date();
+      setEnviadoEm(agora);
       setFase("enviado");
+      onEnviado?.(agora);
     } catch (falha) {
       setErro(falha.campos?.email ?? falha.message);
       setFase("pronto");
     }
   };
 
+  const hora = enviadoEm?.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   return (
-    <div className="space-y-3">
+    <div>
+      <Botao
+        variante={variante}
+        tamanho="lg"
+        className="w-full"
+        onClick={mandar}
+        disabled={fase === "enviando"}
+      >
+        {fase === "enviando" ? "Mandando…" : rotulo}
+      </Botao>
       {fase === "enviado" && (
         <p
           role="status"
-          className="flex items-start gap-2 rounded-xl bg-[#e6f4ea] px-3.5 py-3 text-sm text-[#17643a] leading-snug"
+          className="mt-3 flex items-start gap-2 text-sm leading-snug text-[#17643a]"
         >
           <span
             aria-hidden="true"
             className="material-symbols-outlined text-[18px] shrink-0"
           >
-            forward_to_inbox
+            check_circle
           </span>
-          {seHouver ? (
-            <span>
-              Se houver um cadastro esperando confirmação com{" "}
-              <strong className="font-semibold break-all">{enviadoPara}</strong>
-              , mandamos outro link. Use o do e-mail mais recente: os anteriores
-              deixam de valer.
-            </span>
-          ) : (
-            <span>
-              Mandamos outro link para{" "}
-              <strong className="font-semibold break-all">{enviadoPara}</strong>
-              . Use o do e-mail mais recente: os anteriores deixam de valer.
-            </span>
-          )}
+          <span>
+            {seHouver
+              ? "Se houver um cadastro esperando confirmação com esse e-mail, mandamos outro link."
+              : `Mandamos outro link às ${hora}.`}{" "}
+            Use o do e-mail mais recente: os anteriores deixam de valer.
+          </span>
         </p>
       )}
-      <AvisoErro>{erro}</AvisoErro>
-      <Botao
-        variante="secundario"
-        tamanho="lg"
-        icone="forward_to_inbox"
-        className="w-full"
-        onClick={mandar}
-        disabled={fase === "enviando"}
-      >
-        {fase === "enviando" ? "Mandando…" : "Mandar o link de novo"}
-      </Botao>
+      {erro && (
+        <p
+          role="alert"
+          className="mt-3 flex items-start gap-2 text-sm leading-snug text-[#9e0a24]"
+        >
+          <span
+            aria-hidden="true"
+            className="material-symbols-outlined text-[18px] shrink-0"
+          >
+            error
+          </span>
+          <span>{erro}</span>
+        </p>
+      )}
     </div>
   );
 }

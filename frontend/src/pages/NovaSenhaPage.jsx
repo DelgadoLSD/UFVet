@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
 import Campo from "../components/Campo";
-import IconeDeEstado from "../components/IconeDeEstado";
 import LayoutAutenticacao from "../components/LayoutAutenticacao";
 import { TAMANHO_MINIMO_SENHA, soComProblema } from "../regras/conta";
 import { codigoDoLink, temCodigo } from "../regras/link";
@@ -17,8 +16,8 @@ import fotoCaoVermelho from "../assets/auth/cao-vermelho.jpg";
 // conta de todos os aparelhos, e a pessoa entra de novo com ela.
 
 const TITULO =
-  "text-3xl md:text-4xl font-extrabold tracking-tight text-[#1a1c1c]";
-const TEXTO = "mt-3 text-[#5b403f] leading-relaxed";
+  "text-[2rem] leading-[1.1] md:text-4xl font-extrabold tracking-tight text-[#1a1c1c]";
+const TEXTO = "mt-4 text-[#5b403f] leading-relaxed";
 
 // O que fazer quando não há como criar a senha por este link.
 const SEM_LINK = {
@@ -26,13 +25,11 @@ const SEM_LINK = {
     titulo: "Abra o link do e-mail",
     texto:
       "Para criar uma senha nova, peça o link em “Esqueceu a senha?” e abra o e-mail que chegar.",
-    icone: "mail",
   },
   incompleto: {
     titulo: "Este link está incompleto",
     texto:
       "Abra o link direto do e-mail, tocando em “Criar senha nova”. Se você copiou o endereço, confira se copiou até o fim.",
-    icone: "link_off",
   },
 };
 
@@ -105,8 +102,7 @@ function Conteudo({ hash }) {
   if (resultado?.fase === "criada") {
     conteudo = (
       <>
-        <IconeDeEstado nome="check_circle" tom="sucesso" />
-        <h1 className={`mt-6 ${TITULO}`}>Senha nova criada</h1>
+        <h1 className={TITULO}>Senha nova criada</h1>
         <p role="status" className={TEXTO}>
           Agora é só entrar com ela. Por segurança, a sua conta saiu de todos os
           aparelhos em que estava aberta.
@@ -130,13 +126,11 @@ function Conteudo({ hash }) {
         ? {
             titulo: "Este link não vale mais",
             texto: resultado.mensagem,
-            icone: "link_off",
           }
         : SEM_LINK[veioDoLink ? "incompleto" : "semLink"];
     conteudo = (
       <>
-        <IconeDeEstado nome={aviso.icone} tom="neutro" />
-        <h1 className={`mt-6 ${TITULO}`}>{aviso.titulo}</h1>
+        <h1 className={TITULO}>{aviso.titulo}</h1>
         <p className={TEXTO}>{aviso.texto}</p>
         <div className="mt-8">
           <Botao

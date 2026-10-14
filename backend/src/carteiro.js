@@ -24,24 +24,72 @@ import { registrar } from "./registro.js";
 export const caixaDeSaida = [];
 caixaDeSaida.foraDoAr = false;
 
-// Chama o script do Google. Ele responde { ok: true } quando mandou, ou
-// { ok: false, erro } com o motivo: "senha" (a senha não confere), "cota"
-// (o limite diário do Gmail acabou), "pedido" ou "envio". O Google responde
-// por um redirecionamento, que o fetch segue sozinho.
+// O que cada recusa do script quer dizer, para o registro explicar o que
+// conferir (o script responde só uma palavra; ver scripts/carteiro.gs).
+const MOTIVOS = {
+  senha:
+    "o script recusou a senha: EMAIL_SCRIPT_SEGREDO não é igual à propriedade SEGREDO do script",
+  cota: "o limite diário de e-mails do Gmail acabou; volta a valer em 24 horas",
+  pedido: "faltou o destinatário, o assunto ou o texto no pedido",
+  envio:
+    "o Gmail recusou o envio; o detalhe está nas execuções do script, no Apps Script",
+};
+
+// Manda um pedido ao script e devolve a resposta dele ({ ok, erro }). O
+// Google responde por um redirecionamento, que o fetch segue sozinho. Uma
+// resposta que não é a do script (uma página de erro ou de login do Google)
+// vira erro, com o que conferir.
+async function chamarScript(pedido, { url, segredo }) {
+  let resposta;
+  try {
+    resposta = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ segredo, ...pedido }),
+      signal: AbortSignal.timeout(20_000),
+    });
+  } catch (erro) {
+    throw new Error(
+      `não foi possível chamar o script (${erro.cause?.message ?? erro.message}); confira o EMAIL_SCRIPT_URL`,
+    );
+  }
+  const corpo = await resposta.json().catch(() => null);
+  if (typeof corpo?.ok !== "boolean") {
+    throw new Error(
+      `o script respondeu ${resposta.status} sem a resposta dele; confira o EMAIL_SCRIPT_URL e se a implantação é para "qualquer pessoa"`,
+    );
+  }
+  return corpo;
+}
+
+// Manda um e-mail pelo script. Recusado, o erro diz o motivo, sem o endereço
+// de ninguém.
 export async function enviarPeloScript(
   { para, assunto, texto, html },
-  { url, segredo } = config.email,
+  destino = config.email,
 ) {
-  const resposta = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ segredo, para, assunto, texto, html }),
-    signal: AbortSignal.timeout(20_000),
-  });
-  const corpo = await resposta.json().catch(() => null);
-  if (!resposta.ok || corpo?.ok !== true) {
-    const motivo = corpo?.erro ? ` (${corpo.erro})` : "";
-    throw new Error(`o script respondeu ${resposta.status}${motivo}`);
+  const corpo = await chamarScript({ para, assunto, texto, html }, destino);
+  if (!corpo.ok) {
+    throw new Error(MOTIVOS[corpo.erro] ?? `o script recusou (${corpo.erro})`);
+  }
+}
+
+// Confere o script sem mandar e-mail nenhum: um pedido com a senha e sem
+// destinatário. Com a senha certa, o script responde "pedido" (faltou o
+// destinatário) e não envia nada. Publicada, a API faz isso ao ligar e anota
+// o resultado no registro (ver servidor.js): um problema de configuração
+// aparece logo, e não só quando alguém tenta se cadastrar. Devolve null se
+// está tudo certo, ou o motivo.
+export async function conferirScript(destino = config.email) {
+  try {
+    const corpo = await chamarScript(
+      { para: "", assunto: "", texto: "" },
+      destino,
+    );
+    if (corpo.erro === "pedido") return null;
+    return MOTIVOS[corpo.erro] ?? `o script respondeu ${JSON.stringify(corpo)}`;
+  } catch (erro) {
+    return erro.message;
   }
 }
 

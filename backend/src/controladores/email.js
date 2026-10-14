@@ -96,15 +96,24 @@ export async function confirmarEmail(req, res) {
 }
 
 // POST /api/email/reenvio — manda de novo o link de confirmação de um
-// cadastro pendente. A resposta é sempre a mesma, e na mesma hora (o e-mail
-// sai depois): ela não diz se o e-mail tem cadastro, nem se ele já foi
-// confirmado.
+// cadastro pendente. Para o e-mail sem conta e para a conta já confirmada, a
+// resposta é a mesma de um envio que deu certo: ela não diz quem tem conta.
+// Para o cadastro pendente, a API espera o e-mail sair e diz a verdade se ele
+// não saiu, em vez de deixar a pessoa esperando um e-mail que não vem. Isso
+// revela, a quem tentar, que um e-mail tem um cadastro esperando
+// confirmação, o que não expõe a pessoa: esse cadastro não entra, não
+// aparece para ninguém e some em 7 dias.
 export async function reenviarConfirmacao(req, res) {
   const { email } = esquemaSoEmail.parse(req.body ?? {});
   const usuario = await buscarUsuarioPorEmail(email);
   if (usuario && !usuario.emailConfirmadoEm) {
     registrar("confirmacao_reenviada", { usuarioId: usuario.id });
-    enviarEmSegundoPlano(() => mandarConfirmacao(usuario, email));
+    if (!(await mandarConfirmacao(usuario, email))) {
+      throw new ErroApi(
+        503,
+        "Não conseguimos mandar o e-mail agora. Tente de novo daqui a alguns minutos.",
+      );
+    }
   }
   res.status(202).json({ ok: true });
 }

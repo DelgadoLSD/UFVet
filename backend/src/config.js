@@ -26,6 +26,16 @@ function lerSegredo(nome) {
 
 verificarChaves();
 
+// O valor de uma variável sem espaços nem aspas sobrando nas pontas. No
+// painel da hospedagem é fácil colar o valor como ele está no .env, entre
+// aspas; nenhum endereço ou senha daqui começa e termina com aspas.
+export function valorDoAmbiente(nome) {
+  const valor = process.env[nome]?.trim();
+  if (!valor) return null;
+  const entreAspas = valor.match(/^(["'])([\s\S]*)\1$/);
+  return (entreAspas ? entreAspas[2].trim() : valor) || null;
+}
+
 // Publicada, a API precisa mandar e-mails: sem eles, ninguém confirma o
 // e-mail e ninguém novo entra no site. No computador, sem o script, os
 // e-mails viram arquivos (ver carteiro.js).
@@ -35,11 +45,20 @@ if (ambiente === "production") {
     "EMAIL_SCRIPT_URL",
     "EMAIL_SCRIPT_SEGREDO",
   ]) {
-    if (!process.env[nome]) {
+    if (!valorDoAmbiente(nome)) {
       throw new Error(
         `${nome} não está definida. Sem ela, o UFVet não manda o e-mail de confirmação, e ninguém novo consegue entrar. Veja a seção "E-mails" do backend/README.md.`,
       );
     }
+  }
+  if (
+    !valorDoAmbiente("EMAIL_SCRIPT_URL").startsWith(
+      "https://script.google.com/",
+    )
+  ) {
+    throw new Error(
+      'EMAIL_SCRIPT_URL não é o endereço de um script do Google: ele começa com "https://script.google.com/" e termina com "/exec". Veja a seção "E-mails" do backend/README.md.',
+    );
   }
 }
 
@@ -64,15 +83,15 @@ export const config = Object.freeze({
   // pedido: um cabeçalho Host forjado faria o link de senha nova apontar
   // para o site de outra pessoa.
   enderecoDoSite: (
-    process.env.ENDERECO_DO_SITE ?? "http://localhost:5173"
+    valorDoAmbiente("ENDERECO_DO_SITE") ?? "http://localhost:5173"
   ).replace(/\/+$/, ""),
 
   // O carteiro dos e-mails (ver carteiro.js): o script do Google na conta
   // Gmail do projeto e a senha que só ele e a API conhecem. Sem o script,
   // os e-mails viram arquivos nesta pasta.
   email: Object.freeze({
-    scriptUrl: process.env.EMAIL_SCRIPT_URL || null,
-    scriptSegredo: process.env.EMAIL_SCRIPT_SEGREDO || null,
+    scriptUrl: valorDoAmbiente("EMAIL_SCRIPT_URL"),
+    scriptSegredo: valorDoAmbiente("EMAIL_SCRIPT_SEGREDO"),
     pasta: path.resolve(
       process.env.PASTA_EMAILS ??
         fileURLToPath(new URL("../emails-locais", import.meta.url)),
