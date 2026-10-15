@@ -71,6 +71,22 @@ const IDADE_FORA = `Informe a idade em anos, de 0 a ${IDADE_MAXIMA}.`;
 // começando de 2 a 8).
 const TELEFONE = /^[1-9]{2}(?:9\d{8}|[2-8]\d{7})$/;
 
+// Os números do telefone como se disca dentro do Brasil: DDD e número. Tira
+// o 0 da frente (DDD não começa com 0) e o 55 do Brasil, que o preenchimento
+// automático do navegador e do celular costuma pôr ("+55 31 99999-1234").
+// Como 55 também é DDD (Santa Maria, RS), ele só sai quando sobram números
+// demais para ser só DDD e número: 13, ou 12 com o "+" na frente. A mesma
+// regra do site (frontend/src/util/texto.js).
+function digitosDoTelefone(valor) {
+  if (typeof valor !== "string") return valor;
+  const digitos = valor.replace(/\D/g, "").replace(/^0+/, "");
+  const comCodigoDoPais =
+    digitos.startsWith("55") &&
+    (digitos.length > 12 ||
+      (digitos.length === 12 && valor.trim().startsWith("+")));
+  return comCodigoDoPais ? digitos.slice(2) : digitos;
+}
+
 // "31992047715" -> "(31) 99204-7715"
 export function formatarTelefone(digitos) {
   const ddd = digitos.slice(0, 2);
@@ -104,7 +120,7 @@ export const campos = {
   ),
 
   telefone: z.preprocess(
-    soDigitos,
+    digitosDoTelefone,
     z
       .string(obrigatorio)
       .min(1, PREENCHA)

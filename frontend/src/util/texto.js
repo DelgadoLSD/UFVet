@@ -11,16 +11,31 @@ export const maiuscula = (texto) =>
 // "32 kg", "4,5 kg"
 export const formatarPeso = (kg) => `${kg.toLocaleString("pt-BR")} kg`;
 
-// A mesma regra da API (backend/src/validacao.js): DDD sem zero, e depois um
-// celular (9 + 8 dígitos) ou um fixo (8 dígitos, começando de 2 a 8).
+// Os números do telefone como se disca dentro do Brasil: DDD e número. Tira
+// o 0 da frente (DDD não começa com 0) e o 55 do Brasil, que o preenchimento
+// automático do navegador e do celular costuma pôr ("+55 31 99999-1234").
+// Como 55 também é DDD (Santa Maria, RS), ele só sai quando sobram números
+// demais para ser só DDD e número: 13, ou 12 com o "+" na frente. A mesma
+// regra da API (backend/src/validacao.js).
+export function digitosDoTelefone(texto) {
+  const digitos = texto.replace(/\D/g, "").replace(/^0+/, "");
+  const comCodigoDoPais =
+    digitos.startsWith("55") &&
+    (digitos.length > 12 ||
+      (digitos.length === 12 && texto.trim().startsWith("+")));
+  return comCodigoDoPais ? digitos.slice(2) : digitos;
+}
+
+// A mesma regra da API: DDD sem zero, e depois um celular (9 + 8 dígitos) ou
+// um fixo (8 dígitos, começando de 2 a 8).
 export const telefoneValido = (texto) =>
-  /^[1-9]{2}(?:9\d{8}|[2-8]\d{7})$/.test(texto.replace(/\D/g, ""));
+  /^[1-9]{2}(?:9\d{8}|[2-8]\d{7})$/.test(digitosDoTelefone(texto));
 
 // Telefone formatado enquanto a pessoa digita: só números, DDD e no máximo
 // 11 dígitos. Fixo "(31) 3899-1234", celular "(31) 99999-1234"; o traço muda
 // de lugar quando entra o 11º dígito.
 export function formatarTelefone(texto) {
-  const digitos = texto.replace(/\D/g, "").slice(0, 11);
+  const digitos = digitosDoTelefone(texto).slice(0, 11);
   if (!digitos) return "";
   const ddd = digitos.slice(0, 2);
   const numero = digitos.slice(2);

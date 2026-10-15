@@ -332,13 +332,14 @@ function ContaPage() {
                     onBlur={() => sairDoCampo("email")}
                     erro={erros.email}
                   />
+                  {/* Como no cadastro: o número sem o +55, e sem maxLength
+                      para o navegador não cortar o que preenche. */}
                   <Campo
                     id="telefone"
                     rotulo="Telefone"
                     type="tel"
-                    autoComplete="tel"
+                    autoComplete="tel-national"
                     placeholder="(00) 00000-0000"
-                    maxLength={15}
                     value={form.telefone}
                     onChange={(e) =>
                       mudar("telefone", formatarTelefone(e.target.value))

@@ -34,6 +34,24 @@ describe("máscara do telefone", () => {
     expect(formatarTelefone("(3")).toBe("(3");
     expect(formatarTelefone("")).toBe("");
   });
+
+  // O preenchimento automático do navegador e do celular costuma trazer o
+  // número com o código do Brasil, cada um num formato.
+  test("o +55 e o 0 da frente saem, do jeito que o número chegar", () => {
+    expect(formatarTelefone("+55 31 99999-1234")).toBe("(31) 99999-1234");
+    expect(formatarTelefone("+5531999991234")).toBe("(31) 99999-1234");
+    expect(formatarTelefone("55 (31) 99999-1234")).toBe("(31) 99999-1234");
+    expect(formatarTelefone("+55 31 3899-1234")).toBe("(31) 3899-1234");
+    expect(formatarTelefone("031 99999-1234")).toBe("(31) 99999-1234");
+    expect(formatarTelefone("0055 31 99999-1234")).toBe("(31) 99999-1234");
+  });
+
+  test("o DDD 55 (Santa Maria, RS) fica", () => {
+    expect(formatarTelefone("55999991234")).toBe("(55) 99999-1234");
+    expect(formatarTelefone("+55 55 99999-1234")).toBe("(55) 99999-1234");
+    // Um número a mais digitado no fim não vira outro telefone.
+    expect(formatarTelefone("(55) 98765-43210")).toBe("(55) 98765-4321");
+  });
 });
 
 describe("telefone válido", () => {
@@ -41,6 +59,11 @@ describe("telefone válido", () => {
     expect(telefoneValido("(31) 99999-1234")).toBe(true);
     expect(telefoneValido("(31) 3899-1234")).toBe(true);
     expect(telefoneValido("31988714402")).toBe(true);
+  });
+
+  test("aceita o número com o +55 do preenchimento automático", () => {
+    expect(telefoneValido("+55 31 99999-1234")).toBe(true);
+    expect(telefoneValido("(55) 99999-1234")).toBe(true);
   });
 
   test("recusa DDD com zero, celular sem o 9 e fixo começando com 0, 1 ou 9", () => {

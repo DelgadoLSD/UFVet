@@ -1,5 +1,7 @@
+import { useContext } from "react";
 import Surgir from "../inicio/Surgir";
 import { numeroDo, tituloDo } from "./indice";
+import { NaJanela } from "./janela";
 
 // As peças com que os termos são escritos: a seção numerada, o parágrafo, a
 // lista, o aviso, o par "é / não é", os cartões e as linhas de "dado e para
@@ -9,6 +11,23 @@ import { numeroDo, tituloDo } from "./indice";
 // o título. `escura` faz dela um bloco preto, para a parte de um papel saltar
 // aos olhos de quem procura por ela.
 export function Secao({ id, escura = false, children }) {
+  const naJanela = useContext(NaJanela);
+  const conteudo = (
+    <>
+      <h2
+        id={`${id}-titulo`}
+        className={`flex items-start gap-4 text-3xl md:text-4xl font-extrabold tracking-tight leading-tight ${
+          escura ? "text-white" : "text-[#1a1c1c]"
+        }`}
+      >
+        <span className="shrink-0 mt-0.5 w-10 h-10 md:w-11 md:h-11 rounded-full bg-[#9e0a24] text-white text-lg md:text-xl flex items-center justify-center">
+          {numeroDo(id)}
+        </span>
+        <span>{tituloDo(id)}</span>
+      </h2>
+      <div className="mt-7 space-y-7">{children}</div>
+    </>
+  );
   return (
     <section
       id={id}
@@ -19,20 +38,7 @@ export function Secao({ id, escura = false, children }) {
           : ""
       }`}
     >
-      <Surgir>
-        <h2
-          id={`${id}-titulo`}
-          className={`flex items-start gap-4 text-3xl md:text-4xl font-extrabold tracking-tight leading-tight ${
-            escura ? "text-white" : "text-[#1a1c1c]"
-          }`}
-        >
-          <span className="shrink-0 mt-0.5 w-10 h-10 md:w-11 md:h-11 rounded-full bg-[#9e0a24] text-white text-lg md:text-xl flex items-center justify-center">
-            {numeroDo(id)}
-          </span>
-          <span>{tituloDo(id)}</span>
-        </h2>
-        <div className="mt-7 space-y-7">{children}</div>
-      </Surgir>
+      {naJanela ? conteudo : <Surgir>{conteudo}</Surgir>}
     </section>
   );
 }

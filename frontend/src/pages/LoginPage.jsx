@@ -13,6 +13,7 @@ import LayoutAutenticacao from "../components/LayoutAutenticacao";
 import ReenvioDeConfirmacao from "../components/ReenvioDeConfirmacao";
 import { apagarAviso, entrar, useEstadoSessao } from "../servicos/sessao";
 import { destinoSeguro } from "../util/navegacao";
+import { TermosEPrivacidade } from "./termos/ModalTermos";
 // "Shelter dog ready for adoption", foto de Michael G (Unsplash, uso livre)
 import fotoCaoVermelho from "../assets/auth/cao-vermelho.jpg";
 
@@ -137,7 +138,7 @@ function LoginPage() {
 
       {/* O fim do formulário, num grupo só: a conta nova e, logo abaixo,
           os termos, como nas telas de entrar de outros sites. Os termos
-          abrem em outra aba, para quem já começou a digitar. */}
+          abrem numa janela por cima desta página, sem sair dela. */}
       <div className="mt-10 space-y-3 text-sm leading-relaxed text-[#5f5e5e]">
         <p>
           Ainda não tem conta?{" "}
@@ -149,27 +150,8 @@ function LoginPage() {
           </Link>
         </p>
         <p>
-          Ao entrar, você concorda com os{" "}
-          <a
-            href="/termos"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-semibold text-[#9e0a24] hover:underline"
-          >
-            Termos de uso
-            <span className="sr-only"> (abre em outra aba)</span>
-          </a>{" "}
-          e a{" "}
-          <a
-            href="/termos#privacidade"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-semibold text-[#9e0a24] hover:underline"
-          >
-            Política de privacidade
-            <span className="sr-only"> (abre em outra aba)</span>
-          </a>
-          .
+          Ao entrar, você concorda com{" "}
+          <TermosEPrivacidade rotuloVoltar="Voltar para entrar" />.
         </p>
       </div>
     </LayoutAutenticacao>

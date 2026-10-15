@@ -119,6 +119,23 @@ describe("cadastro de tutor", () => {
     });
   });
 
+  // O preenchimento automático do navegador costuma mandar o número com o
+  // código do Brasil. 55 também é DDD (Santa Maria, RS), e esse fica.
+  test("tira o +55 do telefone, mas não o DDD 55", async () => {
+    const comCodigo = await cadastrarEEntrar(request.agent(app), {
+      ...tutora,
+      telefone: "+55 31 98871-4402",
+    });
+    const deSantaMaria = await cadastrarEEntrar(request.agent(app), {
+      ...tutora,
+      email: "clara@example.com",
+      telefone: "55 99999-1234",
+    });
+
+    expect(comCodigo.telefone).toBe("(31) 98871-4402");
+    expect(deSantaMaria.telefone).toBe("(55) 99999-1234");
+  });
+
   test("recusa e-mail de conta confirmada e diz qual campo repetiu", async () => {
     await cadastrarEEntrar(request.agent(app), tutora);
 

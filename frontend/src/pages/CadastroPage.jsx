@@ -23,6 +23,7 @@ import {
   useSessao,
 } from "../servicos/sessao";
 import { formatarTelefone } from "../util/texto";
+import { TermosEPrivacidade } from "./termos/ModalTermos";
 // Foto de santosh verma (Unsplash, uso livre)
 import fotoGatoParede from "../assets/auth/gato-parede-vermelha.jpg";
 
@@ -204,13 +205,15 @@ function EtapaDados({ dados, erros, onMudar, onSair }) {
         onChange={(e) => onMudar("nomeCompleto", e.target.value)}
         erro={erros.nomeCompleto}
       />
+      {/* "tel-national" pede ao preenchimento automático o número sem o +55.
+          Sem maxLength, o navegador não corta o número que preenche; se o 55
+          vier assim mesmo, formatarTelefone tira. */}
       <Campo
         id="telefone"
         rotulo="Telefone"
         type="tel"
         placeholder="(00) 00000-0000"
-        autoComplete="tel"
-        maxLength={15}
+        autoComplete="tel-national"
         value={dados.telefone || ""}
         onChange={(e) => onMudar("telefone", formatarTelefone(e.target.value))}
         onBlur={() => onSair("telefone")}
@@ -372,29 +375,9 @@ function EtapaSenha({ dados, erros, onMudar, onSair }) {
           checked={dados.aceiteTermos || false}
           onChange={(e) => onMudar("aceiteTermos", e.target.checked)}
         >
-          {/* Os termos abrem em outra aba: quem está no meio do cadastro
-              não perde o que já digitou. */}
-          Li e aceito os{" "}
-          <a
-            href="/termos"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-semibold text-[#9e0a24] hover:underline"
-          >
-            Termos de uso
-            <span className="sr-only"> (abre em outra aba)</span>
-          </a>{" "}
-          e a{" "}
-          <a
-            href="/termos#privacidade"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-semibold text-[#9e0a24] hover:underline"
-          >
-            Política de privacidade
-            <span className="sr-only"> (abre em outra aba)</span>
-          </a>
-          .
+          {/* Os termos abrem numa janela por cima do cadastro: o que já foi
+              digitado fica aqui atrás, e a volta é fechar a janela. */}
+          Li e aceito <TermosEPrivacidade rotuloVoltar="Voltar ao cadastro" />.
         </Confirmacao>
         <Confirmacao
           id="ciencia-responsabilidade"

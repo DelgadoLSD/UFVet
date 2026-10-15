@@ -1,3 +1,4 @@
+import { useContext } from "react";
 import { Link } from "react-router-dom";
 import QuemVe from "./QuemVe";
 import {
@@ -12,6 +13,7 @@ import {
   Texto,
 } from "./blocos";
 import { CONTATO, VERSAO } from "./indice";
+import { NaJanela } from "./janela";
 
 // O texto dos termos de uso e privacidade, item por item. Cada afirmação
 // aqui descreve o que o sistema faz de verdade; ao mudar uma regra do site
@@ -318,6 +320,10 @@ function Limites() {
 }
 
 function Privacidade() {
+  // Na janela por cima do cadastro (ModalTermos), "Minha conta" vai como
+  // texto: um link levaria a pessoa para fora do cadastro, que é justamente
+  // o que a janela evita.
+  const naJanela = useContext(NaJanela);
   return (
     <Secao id="privacidade">
       <Texto>
@@ -446,9 +452,13 @@ function Privacidade() {
       <Lista>
         <Item>
           <Forte>Corrigir os seus dados:</Forte> você mesmo faz isso, em{" "}
-          <Link to="/conta" className={LINK}>
-            Minha conta
-          </Link>
+          {naJanela ? (
+            <Forte>Minha conta</Forte>
+          ) : (
+            <Link to="/conta" className={LINK}>
+              Minha conta
+            </Link>
+          )}
           .
         </Item>
         <Item>
