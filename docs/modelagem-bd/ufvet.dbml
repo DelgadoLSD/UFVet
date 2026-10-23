@@ -51,6 +51,8 @@ Enum motivo_invalidacao {
   EDICAO_PESO
   EDICAO_NASCIMENTO
   NOVA_VALIDACAO
+  EXCLUSAO_SOROLOGIA
+  EXCLUSAO_VACINACAO
 }
 
 Enum status_pedido {

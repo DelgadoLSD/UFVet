@@ -2,6 +2,7 @@
 ' Só processos de negócio. É a versão que se mostra ao cliente.
 
 @startuml 01-casos-de-uso-concepcao
+skinparam dpi 300
 left to right direction
 skinparam packageStyle rectangle
 skinparam shadowing false

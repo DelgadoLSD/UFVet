@@ -537,7 +537,7 @@ equívocos comuns.
 | S5 | Proteção de dados pessoais | O tratamento dos dados deve observar a Lei nº 13.709/2018 (LGPD), incluindo o direito de eliminação, com as conservações admitidas pelo art. 16 para registros clínicos assinados. | Legal | ( ) | (x) |
 | S6 | Acessibilidade | Todos os controles devem ser operáveis por teclado, com indicação visível de foco, rótulos acessíveis em botões sem texto e respeito à preferência de movimento reduzido do sistema operacional. | Usabilidade | ( ) | (x) |
 | S7 | Ajuda contextual | Termos clínicos apresentados ao tutor devem ter explicação acessível no próprio ponto em que aparecem, por símbolo de ajuda padronizado. | Usabilidade | (x) | ( ) |
-| S8 | Critérios clínicos de referência | Os critérios de aptidão adotados seguem a Nota Técnica nº 3 (2024) da Associação Brasileira Veterinária de Hematologia e Medicina Transfusional, devendo ser confirmados com a equipe do Hospital Veterinário antes da implantação. | Legais | ( ) | ( ) |
+| S8 | Critérios clínicos de referência | Os critérios de aptidão adotados seguem a Nota Técnica nº 3 (2024) da Associação Brasileira Veterinária de Hematologia e Medicina Transfusional, menos o peso mínimo dos gatos, de 4,5 kg, que segue Helm e Knottenbelt (2010) e as diretrizes da ISFM (2021). Devem ser confirmados com a equipe do Hospital Veterinário antes da implantação. | Legais | ( ) | ( ) |
 | S9 | Camada de persistência | O acesso ao banco deve ser mediado por ORM, de modo que a troca do sistema gerenciador não exija reescrita das regras de negócio. | Persistência | (x) | ( ) |
 
 ---
