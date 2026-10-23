@@ -4,7 +4,12 @@ import Ajuda from "../../components/Ajuda";
 import AvisoErro from "../../components/AvisoErro";
 import Botao from "../../components/Botao";
 import Segmentado from "../../components/Segmentado";
-import { ESPECIES, REFERENCIA_DOADOR, SEXOS } from "../../regras/doacao";
+import {
+  ESPECIES,
+  REFERENCIA_DOADOR,
+  SEXOS,
+  pesoMinimo,
+} from "../../regras/doacao";
 import {
   MAXIMO_FOTOS,
   TAMANHO_MAXIMO_MB,
@@ -534,7 +539,7 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
             />
             <Erro id="erro-pesoKg">{erros.pesoKg}</Erro>
             <p className="text-[11px] text-[#5f5e5e] mt-1.5">
-              Peso mínimo para doar: {ref.pesoMin} kg.
+              Peso mínimo para doar: {pesoMinimo(ref)}.
             </p>
           </div>
         </div>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import Surgir from "./Surgir";
 import NotaFonte from "./NotaFonte";
 import { CONTAINER, TITULO_SECAO } from "./estilos";
-import { ESPECIES, REFERENCIA_DOADOR } from "../../regras/doacao";
+import { ESPECIES, REFERENCIA_DOADOR, pesoMinimo } from "../../regras/doacao";
 import fotoCao from "../../assets/dogs/dog1_1-image.jpg";
 import fotoGato from "../../assets/cats/cat7_0-image.jpg";
 
@@ -25,7 +25,7 @@ const POR_ESPECIE = {
         texto: "Adulto e saudável",
       },
       {
-        valor: `Mais de ${CAO.pesoMin} kg`,
+        valor: `Mais de ${pesoMinimo(CAO)}`,
         texto: "Para doar uma bolsa inteira com segurança",
       },
       { valor: "Vacinas em dia", texto: "Vermífugo também" },
@@ -44,7 +44,7 @@ const POR_ESPECIE = {
         texto: "Adulto e saudável",
       },
       {
-        valor: `Mais de ${GATO.pesoMin} kg`,
+        valor: `Mais de ${pesoMinimo(GATO)}`,
         texto: "Grande, mas sem obesidade",
       },
       { valor: "Só em casa", texto: "Sem acesso à rua" },
@@ -132,7 +132,7 @@ function SecaoPodeDoar() {
             </h2>
             <p className="text-lg text-[#5b403f] leading-relaxed">
               Raça não importa: vira-latas são muito bem-vindos.
-              <NotaFonte ids="abvhmt" />
+              <NotaFonte ids={["abvhmt", "isfm"]} />
             </p>
           </div>
 

@@ -1,6 +1,6 @@
 import Botao from "../../components/Botao";
 import PainelSecao from "./PainelSecao";
-import { REFERENCIA_DOADOR } from "../../regras/doacao";
+import { REFERENCIA_DOADOR, pesoMinimo } from "../../regras/doacao";
 import { MAXIMO_FOTOS } from "../../regras/fotos";
 
 // O que aparece embaixo do carrossel quando o cartão de cadastrar está no
@@ -77,8 +77,8 @@ function PainelNovoAnimal({ onCadastrar }) {
           {/* As divisões são o fundo branco nos vãos de 2px, como na faixa
               de dados do animal. */}
           <div className="grid grid-cols-2 gap-[2px] bg-white rounded-xl overflow-hidden">
-            <Criterio rotulo="Cães" valor={`${CAO.pesoMin} kg ou mais`} />
-            <Criterio rotulo="Gatos" valor={`${GATO.pesoMin} kg ou mais`} />
+            <Criterio rotulo="Cães" valor={`${pesoMinimo(CAO)} ou mais`} />
+            <Criterio rotulo="Gatos" valor={`${pesoMinimo(GATO)} ou mais`} />
             <div className="col-span-2">
               <Criterio
                 rotulo="Idade ideal"

@@ -4,6 +4,7 @@ import {
   ESPECIES,
   REFERENCIA_DOADOR,
   TIPOS_UNIVERSAIS,
+  pesoMinimo,
 } from "../../regras/doacao";
 import { formatarData, idadeEmAnos, textoIdade } from "../../util/datas";
 import { formatarPeso, maiuscula } from "../../util/texto";
@@ -145,8 +146,8 @@ function DadosDoAnimal({
         valor={formatarPeso(animal.pesoKg)}
         detalhe={
           pesoOk
-            ? `mínimo: ${ref.pesoMin} kg`
-            : `abaixo do mínimo (${ref.pesoMin} kg)`
+            ? `mínimo: ${pesoMinimo(ref)}`
+            : `abaixo do mínimo (${pesoMinimo(ref)})`
         }
         alerta={!pesoOk}
         ajuda={{
@@ -154,7 +155,7 @@ function DadosDoAnimal({
           texto: (
             <p>
               {maiuscula(ESPECIES[animal.especie].plural)} doam a partir de{" "}
-              {ref.pesoMin} kg: a quantidade de sangue coletada depende do
+              {pesoMinimo(ref)}: a quantidade de sangue coletada depende do
               tamanho, e o mínimo protege o doador.
             </p>
           ),

@@ -1,11 +1,14 @@
 import { hojeISO, paraData, somarAnos, somarDias } from "../util/datas";
+import { formatarPeso } from "../util/texto";
 
 // Regras de doação de sangue usadas pelas telas: quem pode doar, o que o
 // veterinário confere e quanto tempo vale cada coisa.
 //
 // Os valores seguem a Nota Técnica nº 3 (2024) da ABVHMT (Associação
-// Brasileira Veterinária de Hematologia e Medicina Transfusional) e precisam
-// ser confirmados com a equipe do Hospital Veterinário antes da produção.
+// Brasileira Veterinária de Hematologia e Medicina Transfusional), menos o
+// peso mínimo dos gatos: 4,5 kg, como Helm e Knottenbelt (2010) e as
+// diretrizes da ISFM (2021), mais cuidadoso com o doador que os 4,0 kg da
+// ABVHMT. Tudo precisa ser confirmado com a equipe do Hospital Veterinário.
 //
 // As chaves são as mesmas dos enums do banco (Especie, Sexo, CriterioDoacao,
 // TipoDocumento), para o site e a API falarem a mesma língua. Quando a API
@@ -31,13 +34,16 @@ export const REFERENCIA_DOADOR = {
     sorologias: "Babesia, Ehrlichia, Anaplasma e Leishmania",
   },
   GATO: {
-    pesoMin: 4,
+    pesoMin: 4.5,
     idadeMin: 1,
     idadeMax: 8,
     intervaloDias: 90,
     sorologias: "FeLV, FIV e Mycoplasma",
   },
 };
+
+// O peso mínimo escrito para as telas: "25 kg", "4,5 kg".
+export const pesoMinimo = (ref) => formatarPeso(ref.pesoMin);
 
 // O que o veterinário confere ao validar um doador. É um checklist do que
 // importa para doar sangue; o restante do histórico clínico do animal vive no
@@ -54,7 +60,7 @@ export const CRITERIOS_DOACAO = [
     curto: "Peso e idade",
     rotulo: "Peso e idade dentro dos critérios",
     descricao: (ref) =>
-      `Mínimo de ${ref.pesoMin} kg e idade entre ${ref.idadeMin} e ${ref.idadeMax} anos.`,
+      `Mínimo de ${pesoMinimo(ref)} e idade entre ${ref.idadeMin} e ${ref.idadeMax} anos.`,
   },
   {
     chave: "VACINACAO",

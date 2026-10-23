@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
+  CRITERIOS_DOACAO,
   REFERENCIA_DOADOR,
   criteriosEmVigor,
+  pesoMinimo,
   dataUltimaDoacao,
   avisoSemEfeito,
   criterioSemEfeito,
@@ -140,6 +142,27 @@ describe("situação da validação", () => {
     );
     // O registro assinado não muda.
     expect(sorologia.criterios.SOROLOGIAS).toBe(true);
+  });
+});
+
+describe("peso mínimo para doar", () => {
+  // Gatos: 4,5 kg, como Helm e Knottenbelt (2010) e as diretrizes da ISFM
+  // (2021), em vez dos 4,0 kg da ABVHMT. Cães: 25 kg nas três.
+  test("gatos a partir de 4,5 kg e cães a partir de 25 kg", () => {
+    expect(REFERENCIA_DOADOR.GATO.pesoMin).toBe(4.5);
+    expect(REFERENCIA_DOADOR.CAO.pesoMin).toBe(25);
+  });
+
+  test("o peso aparece escrito como no Brasil, com vírgula", () => {
+    expect(pesoMinimo(REFERENCIA_DOADOR.GATO)).toBe("4,5 kg");
+    expect(pesoMinimo(REFERENCIA_DOADOR.CAO)).toBe("25 kg");
+  });
+
+  test("o critério da validação mostra o mínimo da espécie", () => {
+    const pesoIdade = CRITERIOS_DOACAO.find((c) => c.chave === "PESO_IDADE");
+    expect(pesoIdade.descricao(REFERENCIA_DOADOR.GATO)).toBe(
+      "Mínimo de 4,5 kg e idade entre 1 e 8 anos.",
+    );
   });
 });
 

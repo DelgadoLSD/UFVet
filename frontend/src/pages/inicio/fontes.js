@@ -2,7 +2,8 @@
 //
 // Na ordem em que aparecem na página: o número de cada fonte é a posição dela
 // nesta lista, como nas notas de um texto acadêmico. Os critérios de doação
-// seguem a ABVHMT e podem variar um pouco entre hospitais.
+// seguem a ABVHMT, menos o peso mínimo dos gatos, que vem da ISFM, e podem
+// variar um pouco entre hospitais.
 export const FONTES = [
   {
     id: "msdBanco",
@@ -24,6 +25,13 @@ export const FONTES = [
     completa:
       "ABVHMT (Associação Brasileira Veterinária de Hematologia e Medicina Transfusional). Nota Técnica nº 3: Cães e gatos doadores de sangue, requisitos e cuidados. São Paulo, fev. 2024.",
     url: "https://abvhmt.org/wp-content/uploads/2024/02/Nota-Tecnica-ABVHMT-DOADORES-REQUISITOS-E-CUIDADOS.pdf",
+  },
+  {
+    id: "isfm",
+    curta: "Taylor et al., 2021",
+    completa:
+      "TAYLOR, S. et al. 2021 ISFM Consensus Guidelines on the Collection and Administration of Blood and Blood Products in Cats. Journal of Feline Medicine and Surgery, v. 23, n. 5, p. 410-432, 2021.",
+    url: "https://doi.org/10.1177/1098612X211007071",
   },
   {
     id: "ebc",
