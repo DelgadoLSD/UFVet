@@ -26,6 +26,7 @@ import {
   tempoRestante,
 } from "../../util/datas";
 import { primeiroNome } from "../../util/texto";
+import Carregando from "../../components/Carregando";
 
 // Painel do veterinário, no próprio perfil, para cuidar do acesso aos
 // contatos: pedidos que chegaram para ele e as liberações que ele deu. Tudo
@@ -56,8 +57,8 @@ function Prazo({ expiraEm }) {
 }
 
 // Pedidos ficam em vermelho dentro do bloco preto: é o que precisa de
-// resposta, e salta antes do resto. `ocupado` desliga os botões enquanto a
-// resposta vai para a API.
+// resposta, e salta antes do resto. `ocupado` é a ação da linha que está a
+// caminho da API: os botões ficam desligados, e o dessa ação gira.
 function Pedido({ pedido, ocupado, onLiberar, onRecusar }) {
   return (
     <li className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
@@ -77,7 +78,8 @@ function Pedido({ pedido, ocupado, onLiberar, onRecusar }) {
           variante="contornoClaro"
           tamanho="sm"
           className="!rounded-full"
-          disabled={ocupado}
+          disabled={!!ocupado}
+          carregando={ocupado === "recusar"}
           onClick={onRecusar}
         >
           Recusar
@@ -86,7 +88,8 @@ function Pedido({ pedido, ocupado, onLiberar, onRecusar }) {
           variante="tonal"
           tamanho="sm"
           icone="check"
-          disabled={ocupado}
+          disabled={!!ocupado}
+          carregando={ocupado === "liberar"}
           onClick={onLiberar}
         >
           Liberar {rotuloDuracao(DURACAO_PADRAO_HORAS)}
@@ -130,7 +133,8 @@ function MenuRenovar({ liberacao, ocupado, onRenovar }) {
         variante="secundario"
         tamanho="sm"
         className="max-sm:w-full max-sm:h-10"
-        disabled={ocupado}
+        disabled={!!ocupado}
+        carregando={ocupado === "renovar"}
         aria-expanded={aberto}
         aria-haspopup="menu"
         onClick={() => setAberto((agora) => !agora)}
@@ -223,7 +227,8 @@ function Liberacao({ liberacao, ocupado, onRenovar, onEncerrar }) {
             variante="perigo"
             tamanho="sm"
             className="max-sm:h-10"
-            disabled={ocupado}
+            disabled={!!ocupado}
+            carregando={ocupado === "encerrar"}
             onClick={onEncerrar}
           >
             Encerrar
@@ -242,7 +247,7 @@ function PainelAcessoContatos({ onComoFunciona }) {
   const [aberto, setAberto] = useState(false);
   const fechado = celular && !aberto;
   const idCorpo = useId();
-  // A linha (o id) cuja ação está a caminho da API, e o erro da última ação.
+  // A ação a caminho da API ({ id da linha, tipo }), e o erro da última ação.
   const [ocupado, setOcupado] = useState(null);
   const [erro, setErro] = useState("");
 
@@ -251,8 +256,8 @@ function PainelAcessoContatos({ onComoFunciona }) {
   // veterinário pode ter liberado o mesmo tutor antes, por exemplo) e então
   // confirma embaixo da tela ou diz o que deu errado em cima das listas.
   // `mensagem` pode ser uma função do que a API respondeu.
-  const agir = async (id, acao, mensagem) => {
-    setOcupado(id);
+  const agir = async (id, tipo, acao, mensagem) => {
+    setOcupado({ id, tipo });
     setErro("");
     try {
       const resultado = await acao();
@@ -272,6 +277,7 @@ function PainelAcessoContatos({ onComoFunciona }) {
   const liberarPedido = (pedido) =>
     agir(
       pedido.id,
+      "liberar",
       () =>
         liberarAcesso({
           pedido: pedido.id,
@@ -282,12 +288,14 @@ function PainelAcessoContatos({ onComoFunciona }) {
   const recusar = (pedido) =>
     agir(
       pedido.id,
+      "recusar",
       () => recusarPedido(pedido.id),
       `Pedido de ${primeiroNome(pedido.tutorNome)} recusado`,
     );
   const renovar = (liberacao, duracaoHoras) =>
     agir(
       liberacao.id,
+      "renovar",
       () => renovarAcesso(liberacao.id, duracaoHoras),
       (renovada) =>
         `Acesso de ${primeiroNome(liberacao.tutorNome)} renovado até ${diaEHora(renovada.expiraEm)}`,
@@ -295,6 +303,7 @@ function PainelAcessoContatos({ onComoFunciona }) {
   const encerrar = (liberacao) =>
     agir(
       liberacao.id,
+      "encerrar",
       () => encerrarAcesso(liberacao.id),
       `Acesso de ${primeiroNome(liberacao.tutorNome)} encerrado`,
     );
@@ -396,9 +405,11 @@ function PainelAcessoContatos({ onComoFunciona }) {
         <AvisoErro>{erro}</AvisoErro>
 
         {!painel.pronto ? (
-          <p role="status" className="py-6 text-center text-sm text-white/60">
-            Carregando os pedidos e as liberações…
-          </p>
+          <Carregando
+            texto="Carregando os pedidos e as liberações…"
+            claro
+            className="py-6"
+          />
         ) : painel.erro && pedidos.length === 0 && liberacoes.length === 0 ? (
           <div className="flex flex-col items-start gap-3">
             <AvisoErro>{painel.erro}</AvisoErro>
@@ -420,7 +431,7 @@ function PainelAcessoContatos({ onComoFunciona }) {
                     <Pedido
                       key={p.id}
                       pedido={p}
-                      ocupado={ocupado === p.id}
+                      ocupado={ocupado?.id === p.id ? ocupado.tipo : null}
                       onLiberar={() => liberarPedido(p)}
                       onRecusar={() => recusar(p)}
                     />
@@ -446,7 +457,7 @@ function PainelAcessoContatos({ onComoFunciona }) {
                   <Liberacao
                     key={l.id}
                     liberacao={l}
-                    ocupado={ocupado === l.id}
+                    ocupado={ocupado?.id === l.id ? ocupado.tipo : null}
                     onRenovar={(horas) => renovar(l, horas)}
                     onEncerrar={() => encerrar(l)}
                   />

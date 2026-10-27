@@ -112,7 +112,7 @@ function EsqueciSenhaPage() {
                 type="submit"
                 tamanho="lg"
                 className="w-full"
-                disabled={enviando}
+                carregando={enviando}
               >
                 {enviando ? "Mandando…" : "Mandar o link"}
               </Botao>

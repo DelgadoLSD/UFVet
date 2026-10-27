@@ -132,7 +132,7 @@ function SecaoObservacoes({ animal, observacoes, podeAdicionar, onAdicionar }) {
             <Botao variante="fantasma" tamanho="sm" onClick={cancelar}>
               Cancelar
             </Botao>
-            <Botao tamanho="sm" onClick={salvar} disabled={salvando}>
+            <Botao tamanho="sm" onClick={salvar} carregando={salvando}>
               {salvando ? "Salvando…" : "Salvar"}
             </Botao>
           </div>

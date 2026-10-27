@@ -627,7 +627,7 @@ function CadastroPage() {
               type="submit"
               tamanho="lg"
               className="flex-1"
-              disabled={enviando}
+              carregando={enviando}
             >
               {etapa < ULTIMA_ETAPA
                 ? "Continuar"

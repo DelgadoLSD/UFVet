@@ -284,7 +284,8 @@ function ContaPage() {
                 <div className="flex items-center gap-4 flex-wrap">
                   <Botao
                     type="submit"
-                    disabled={!alterado || !localizacaoCompleta || salvando}
+                    disabled={!alterado || !localizacaoCompleta}
+                    carregando={salvando}
                     className="max-sm:w-full max-sm:h-11"
                   >
                     {salvando ? "Salvando…" : "Salvar alterações"}
@@ -464,7 +465,7 @@ function ContaPage() {
                 icone="logout"
                 className="max-sm:h-11"
                 onClick={sairDeTodos}
-                disabled={saindo}
+                carregando={saindo}
               >
                 {saindo ? "Saindo…" : "Sair de todos os aparelhos"}
               </Botao>

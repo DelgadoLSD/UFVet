@@ -180,7 +180,7 @@ function ModalLiberarAcesso({ onFechar, onLiberado }) {
               <Botao variante="secundario" onClick={onFechar}>
                 Cancelar
               </Botao>
-              <Botao onClick={liberar} disabled={liberando}>
+              <Botao onClick={liberar} carregando={liberando}>
                 {liberando ? "Liberando…" : "Liberar acesso"}
               </Botao>
             </div>

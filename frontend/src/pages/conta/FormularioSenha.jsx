@@ -116,7 +116,7 @@ function FormularioSenha({ onSalvar, onCancelar }) {
       </p>
       <AvisoErro>{erroGeral}</AvisoErro>
       <div className="flex gap-2 max-sm:[&>*]:flex-1 max-sm:[&>*]:h-11">
-        <Botao type="submit" disabled={enviando}>
+        <Botao type="submit" carregando={enviando}>
           {enviando ? "Salvando…" : "Salvar senha"}
         </Botao>
         <Botao variante="secundario" onClick={onCancelar} disabled={enviando}>

@@ -13,6 +13,12 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "106acf230014cbb43ca34e6410371321b56ca742f9ee0442e8ec05bf02eb0384"
     },
+    "humanizar-es": {
+      "source": "ervin-mo/humanizar-es",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "5f4840d371b6bb9abdd490f2c2ffef7294a1fb515abcc675c4e8246555036bef"
+    },
     "impeccable": {
       "source": "pbakaus/impeccable",
       "sourceType": "github",

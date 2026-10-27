@@ -4,6 +4,7 @@ import AvisoErro from "../../components/AvisoErro";
 import { confirmar } from "../../hooks/confirmacoes";
 import { TIPOS_ACEITOS, erroDoArquivo } from "../../regras/fotos";
 import { removerFotoDePerfil, trocarFotoDePerfil } from "../../servicos/sessao";
+import { Girando } from "../../components/Carregando";
 
 // A foto de perfil na página da conta (F3). Trocar e remover gravam na hora,
 // sem esperar o "Salvar alterações": a foto não depende dos outros campos. A
@@ -14,8 +15,10 @@ import { removerFotoDePerfil, trocarFotoDePerfil } from "../../servicos/sessao";
 // No celular, o cartão fica no meio; na tela larga, à esquerda, alinhado
 // com os campos.
 
+// Enquanto a foto vai, "Trocar" vira "Enviando…" e gira, sem ficar apagado
+// como um botão desligado; só "Remover" fica apagado.
 const CLASSE_BOTAO =
-  "flex-1 h-11 flex items-center justify-center gap-1.5 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#9e0a24] disabled:opacity-50 disabled:pointer-events-none";
+  "flex-1 h-11 flex items-center justify-center gap-1.5 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#9e0a24] disabled:pointer-events-none";
 
 function FotoDePerfil({ usuario }) {
   const entrada = useRef(null);
@@ -61,9 +64,9 @@ function FotoDePerfil({ usuario }) {
           {enviando && (
             <span
               aria-hidden="true"
-              className="absolute inset-0 bg-[#1a1a1a]/75 flex items-center justify-center"
+              className="absolute inset-0 bg-white/75 flex items-center justify-center"
             >
-              <span className="w-8 h-8 rounded-full border-[3px] border-white border-t-transparent animate-spin motion-reduce:animate-none" />
+              <Girando className="w-10 h-10" />
             </span>
           )}
         </div>
@@ -78,12 +81,16 @@ function FotoDePerfil({ usuario }) {
             }
             className={`${CLASSE_BOTAO} text-[#1a1c1c] hover:bg-[#faf6f6]`}
           >
-            <span
-              aria-hidden="true"
-              className="material-symbols-outlined text-[18px] text-[#9e0a24]"
-            >
-              photo_camera
-            </span>
+            {enviando ? (
+              <Girando className="w-[18px] h-[18px]" />
+            ) : (
+              <span
+                aria-hidden="true"
+                className="material-symbols-outlined text-[18px] text-[#9e0a24]"
+              >
+                photo_camera
+              </span>
+            )}
             {enviando ? "Enviando…" : temFoto ? "Trocar" : "Adicionar foto"}
           </button>
           {temFoto && (
@@ -92,7 +99,7 @@ function FotoDePerfil({ usuario }) {
               disabled={enviando}
               onClick={() => executar(removerFotoDePerfil, "Foto removida")}
               aria-label="Remover foto de perfil"
-              className={`${CLASSE_BOTAO} text-[#5f5e5e] hover:bg-[#fdecee] hover:text-[#9e0a24]`}
+              className={`${CLASSE_BOTAO} disabled:opacity-50 text-[#5f5e5e] hover:bg-[#fdecee] hover:text-[#9e0a24]`}
             >
               <span
                 aria-hidden="true"

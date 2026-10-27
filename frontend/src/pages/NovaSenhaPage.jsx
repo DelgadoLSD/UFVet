@@ -181,7 +181,7 @@ function Conteudo({ hash }) {
               type="submit"
               tamanho="lg"
               className="w-full"
-              disabled={enviando}
+              carregando={enviando}
             >
               {enviando ? "Salvando…" : "Salvar senha nova"}
             </Botao>

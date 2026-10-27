@@ -323,7 +323,7 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
               type="submit"
               form="form-cadastro-animal"
               icone={editando ? undefined : "add"}
-              disabled={enviando}
+              carregando={enviando}
             >
               {enviando
                 ? "Salvando…"

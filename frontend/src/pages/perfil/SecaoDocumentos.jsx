@@ -13,6 +13,7 @@ import {
   erroDoExame,
 } from "../../regras/documentos";
 import { formatarData } from "../../util/datas";
+import Carregando from "../../components/Carregando";
 
 // Exames e documentos do animal: hemograma, sorologias e carteira de
 // vacinação (F14). O dono envia e atualiza. Um exame refeito não substitui o
@@ -66,15 +67,11 @@ function ArquivoDoExame({ versao, nome }) {
   if (arquivo.erro) return <AvisoErro>{arquivo.erro}</AvisoErro>;
   if (arquivo.carregando) {
     return (
-      <div className="h-[40vh] rounded-xl border border-[#eadede] flex items-center justify-center gap-2 text-sm text-[#5f5e5e]">
-        <span
-          aria-hidden="true"
-          className="material-symbols-outlined text-[18px] animate-spin"
-        >
-          progress_activity
-        </span>
-        Abrindo o arquivo…
-      </div>
+      <Carregando
+        texto="Abrindo o arquivo…"
+        linha
+        className="h-[40vh] rounded-xl border border-[#eadede]"
+      />
     );
   }
   if (versao.formato === "pdf") {
@@ -180,7 +177,7 @@ function ConfirmarApagar({
           tamanho="sm"
           icone="delete"
           onClick={onApagar}
-          disabled={apagando}
+          carregando={apagando}
         >
           {apagando ? "Apagando…" : "Apagar versão"}
         </Botao>
@@ -438,19 +435,11 @@ function LinhaDocumento({
               variante={ultima ? "secundario" : "primario"}
               tamanho="sm"
               className="max-sm:w-full max-sm:h-10"
-              icone={enviando ? undefined : "upload"}
-              disabled={enviando}
+              icone="upload"
+              carregando={enviando}
               aria-label={`${acao} ${nome.toLowerCase()}`}
               onClick={() => entrada.current.click()}
             >
-              {enviando && (
-                <span
-                  aria-hidden="true"
-                  className="material-symbols-outlined text-[16px] animate-spin"
-                >
-                  progress_activity
-                </span>
-              )}
               {acao}
             </Botao>
             <input

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { erroEmail } from "../regras/conta";
 import { reenviarConfirmacao } from "../servicos/email";
 import Botao from "./Botao";
+import { Girando } from "./Carregando";
 
 // "Mandar o link de novo": manda outro link de confirmação para `email`. Fica
 // na espera depois do cadastro e na página de entrar, quando a conta ainda
@@ -67,6 +68,9 @@ function ReenvioDeConfirmacao({
             disabled={fase === "enviando"}
             className="font-semibold text-[#9e0a24] hover:underline underline-offset-2 rounded disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24]/40"
           >
+            {fase === "enviando" && (
+              <Girando className="inline w-3.5 h-3.5 mr-1 -mt-0.5 align-middle" />
+            )}
             {fase === "enviando" ? "Mandando…" : "Mandar de novo"}
           </button>
         </p>
@@ -76,7 +80,7 @@ function ReenvioDeConfirmacao({
           tamanho="lg"
           className="w-full"
           onClick={mandar}
-          disabled={fase === "enviando"}
+          carregando={fase === "enviando"}
         >
           {fase === "enviando" ? "Mandando…" : rotulo}
         </Botao>

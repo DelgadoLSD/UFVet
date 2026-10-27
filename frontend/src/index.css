@@ -63,6 +63,23 @@ input::-ms-clear {
   }
 }
 
+/* O círculo de "carregando" (components/Carregando.jsx) gira sem parar.
+   Com movimento reduzido, gira devagar: parado, ele não diria que algo está
+   vindo. */
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.girando {
+  animation: girar 0.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .girando {
+    animation-duration: 2.4s;
+  }
+}
+
 /* Ícones do Material Symbols, sempre no traço vazado e no peso normal.
    Cada ícone é o nome dele escrito numa fonte ("expand_more" vira a
    setinha). Enquanto a fonte não chega, o nome fica invisível, mas ocupa a

@@ -33,6 +33,7 @@ import { finalDoGenero } from "../regras/doacao";
 import { listarAnimais } from "../servicos/animais";
 import { useAcessoContatos } from "../servicos/acessoContatos";
 import { ehVeterinario, nomeCurto, nomeProfissional } from "../util/texto";
+import Carregando from "../components/Carregando";
 
 // Página de perfil, em duas rotas:
 // - /meu-perfil: o perfil de quem está logado, com os próprios animais (e,
@@ -135,9 +136,9 @@ function EstadoDaLista({ erro, ehProprio, onTentarDeNovo }) {
     );
   }
   return (
-    <p role="status" className="text-sm text-[#5f5e5e] py-10 text-center">
-      {ehProprio ? "Carregando seus animais…" : "Carregando os animais…"}
-    </p>
+    <Carregando
+      texto={ehProprio ? "Carregando seus animais…" : "Carregando os animais…"}
+    />
   );
 }
 
@@ -192,9 +193,7 @@ function usePessoa(codigo, quemVe) {
 function EstadoDoPerfil({ codigo, pessoa }) {
   if (pessoa.carregando) {
     return (
-      <p role="status" className="text-sm text-[#5f5e5e] py-16 text-center">
-        Carregando o perfil…
-      </p>
+      <Carregando texto="Carregando o perfil…" className="py-16" />
     );
   }
   if (pessoa.erro?.status === 404) {

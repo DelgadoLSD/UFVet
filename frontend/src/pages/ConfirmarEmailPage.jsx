@@ -128,7 +128,7 @@ function CorrecaoDoEmail({ atual, onCorrigido, onCancelar }) {
           type="submit"
           tamanho="lg"
           className="flex-1"
-          disabled={enviando}
+          carregando={enviando}
         >
           {enviando ? "Mandando…" : "Mandar para este e-mail"}
         </Botao>

@@ -351,7 +351,7 @@ function ModalDoacoes({
                 >
                   Voltar
                 </Botao>
-                <Botao type="submit" form="form-doacao" disabled={salvando}>
+                <Botao type="submit" form="form-doacao" carregando={salvando}>
                   {salvando ? "Salvando…" : "Registrar doação"}
                 </Botao>
               </div>

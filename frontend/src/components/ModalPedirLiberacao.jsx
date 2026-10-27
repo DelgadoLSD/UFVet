@@ -18,6 +18,7 @@ import {
   nomeProfissionalCurto,
   tratamento,
 } from "../util/texto";
+import Carregando from "./Carregando";
 
 // Pedido de um tutor para ver os contatos dos doadores. O pedido vai para um
 // veterinário específico, que assume a responsabilidade se liberar: o tutor
@@ -242,7 +243,7 @@ function ModalPedirLiberacao({ onFechar }) {
               <Botao variante="secundario" onClick={onFechar}>
                 Cancelar
               </Botao>
-              <Botao onClick={enviar} disabled={enviando}>
+              <Botao onClick={enviar} carregando={enviando}>
                 {enviando ? "Enviando…" : "Enviar pedido"}
               </Botao>
             </div>
@@ -299,9 +300,11 @@ function ModalPedirLiberacao({ onFechar }) {
                   onEscolher={mudando(setCodigo)}
                 />
               ) : (
-                <p role="status" className="mt-3 text-sm text-[#5f5e5e]">
-                  Carregando os veterinários…
-                </p>
+                <Carregando
+                  texto="Carregando os veterinários…"
+                  linha
+                  className="mt-3 !justify-start"
+                />
               ))}
           </div>
         )}

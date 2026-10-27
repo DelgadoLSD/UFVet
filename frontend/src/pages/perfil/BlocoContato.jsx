@@ -103,7 +103,7 @@ function BlocoContato({
       <Botao
         icone="visibility"
         className="w-full"
-        disabled={abrindo}
+        carregando={abrindo}
         onClick={verContato}
       >
         {abrindo ? "Abrindo…" : "Ver contato"}

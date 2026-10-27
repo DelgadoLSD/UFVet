@@ -129,7 +129,7 @@ function LoginPage() {
             type="submit"
             tamanho="lg"
             className="w-full"
-            disabled={enviando}
+            carregando={enviando}
           >
             {enviando ? "Entrando…" : "Entrar"}
           </Botao>

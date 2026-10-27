@@ -32,6 +32,7 @@ import {
   textoCastracao,
 } from "../../regras/doacao";
 import { formatarData } from "../../util/datas";
+import { Girando } from "../../components/Carregando";
 
 // Cartão de um animal no perfil. O cabeçalho é vermelho, com as letras em
 // branco: nome, espécie, raça, código e a situação para doar, que o dono liga
@@ -193,10 +194,15 @@ function CartaoAnimal({ animal, ehDono, ehVet, onAlterado, onExcluido }) {
                 aria-pressed={escolhida}
                 onClick={() => !escolhida && mudarDisponibilidade(opcao.valor)}
                 disabled={mudandoDisponibilidade}
-                className={`relative h-9 rounded-full text-xs font-bold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24] focus-visible:ring-offset-1 disabled:cursor-wait ${
+                className={`relative h-9 flex items-center justify-center gap-1.5 rounded-full text-xs font-bold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0a24] focus-visible:ring-offset-1 disabled:cursor-wait ${
                   escolhida ? "text-white" : "text-[#9e0a24] hover:bg-[#fdecee]"
                 }`}
               >
+                {/* A opção para a qual o animal está mudando gira até a
+                    resposta chegar. */}
+                {mudandoDisponibilidade && !escolhida && (
+                  <Girando className="w-3.5 h-3.5" />
+                )}
                 {opcao.rotulo}
               </button>
             );

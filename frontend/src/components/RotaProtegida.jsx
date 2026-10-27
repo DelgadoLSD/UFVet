@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useEstadoSessao } from "../servicos/sessao";
+import Carregando from "./Carregando";
 
 // Página que exige login (o próprio perfil, a conta). Sem ninguém logado, a
 // pessoa vai para "Entrar" e, depois de entrar, volta para onde ia.
@@ -10,9 +11,10 @@ function RotaProtegida({ children }) {
   const { usuario, carregando } = useEstadoSessao();
   const local = useLocation();
 
-  // Ainda perguntando à API quem está logado: não mostra nada por um
-  // instante, em vez de mandar para "Entrar" quem já está logado.
-  if (carregando) return null;
+  // Ainda perguntando à API quem está logado: mostra o círculo de
+  // carregando por um instante, em vez de mandar para "Entrar" quem já
+  // está logado.
+  if (carregando) return <Carregando texto="Carregando…" className="py-24" />;
 
   if (!usuario) {
     const voltar = encodeURIComponent(local.pathname + local.search);

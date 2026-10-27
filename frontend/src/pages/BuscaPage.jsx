@@ -18,6 +18,7 @@ import {
 } from "./busca/filtros";
 import { buscarDoadores, listarLocais } from "../servicos/doadores";
 import { useAcessoContatos } from "../servicos/acessoContatos";
+import { Girando } from "../components/Carregando";
 
 // Busca de doadores, na largura do cabeçalho do site (as bordas da página
 // alinham com o logo e o menu). No computador, uma grade de 3 colunas iguais:
@@ -404,7 +405,10 @@ function BuscaPage() {
                 className="text-sm text-[#5b403f] max-sm:text-center"
               >
                 {carregando ? (
-                  "Buscando doadores…"
+                  <span className="inline-flex items-center gap-2">
+                    <Girando className="w-5 h-5" />
+                    Buscando doadores…
+                  </span>
                 ) : erro ? (
                   "A busca não foi concluída"
                 ) : total > 0 ? (
@@ -466,7 +470,7 @@ function BuscaPage() {
                     <Botao
                       variante="secundario"
                       icone="expand_more"
-                      disabled={resultado.mais.carregando}
+                      carregando={resultado.mais.carregando}
                       onClick={resultado.carregarMais}
                       className="px-6"
                     >

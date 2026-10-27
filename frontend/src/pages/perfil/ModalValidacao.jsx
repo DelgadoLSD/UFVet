@@ -155,7 +155,7 @@ function ModalValidacao({ animal, validacao, onSalvar, onFechar }) {
               <Botao variante="secundario" onClick={onFechar}>
                 Cancelar
               </Botao>
-              <Botao icone="check" disabled={salvando} onClick={salvar}>
+              <Botao icone="check" carregando={salvando} onClick={salvar}>
                 {salvando ? "Salvando…" : "Confirmar validação"}
               </Botao>
             </div>

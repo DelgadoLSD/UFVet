@@ -104,7 +104,7 @@ function ModalEncerrarConta({ usuario, onFechar, onEncerrada }) {
               type="submit"
               form="form-encerrar-conta"
               variante="perigoSolido"
-              disabled={enviando}
+              carregando={enviando}
             >
               {enviando ? "Encerrando…" : "Encerrar conta"}
             </Botao>

@@ -54,7 +54,7 @@ function ModalExcluirAnimal({
           <Botao variante="secundario" onClick={onFechar} disabled={excluindo}>
             Cancelar
           </Botao>
-          <Botao variante="perigoSolido" onClick={excluir} disabled={excluindo}>
+          <Botao variante="perigoSolido" onClick={excluir} carregando={excluindo}>
             {excluindo ? "Excluindo…" : `Excluir ${animal.nome}`}
           </Botao>
         </div>
