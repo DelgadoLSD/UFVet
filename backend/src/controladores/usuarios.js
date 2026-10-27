@@ -20,11 +20,13 @@ import { esquemaCadastro, esquemaDisponibilidade } from "../validacao.js";
 // aceite (F7). É a mesma que a página de termos mostra
 // (frontend/src/pages/termos/indice.js): quando o texto mudar, as duas mudam
 // juntas. A versão 1 foi aceita antes de os termos estarem escritos; a 2
-// ainda pedia o CPF; a 3 não dizia que os e-mails saem pelo Gmail.
-const VERSAO_DOS_TERMOS = "4";
+// ainda pedia o CPF; a 3 não dizia que os e-mails saem pelo Gmail; a 4
+// dava a entender uma parceria com o Hospital Veterinário da UFV, que não
+// existe no momento.
+const VERSAO_DOS_TERMOS = "5";
 
 const MENSAGEM_CONVITE =
-  "Convite inválido, já usado ou vencido. Peça um novo à direção do hospital.";
+  "Convite inválido, já usado ou vencido. Peça um novo a quem enviou o convite.";
 
 // O e-mail não pode se repetir entre contas (NF1.2). O banco também barra a
 // repetição; conferir antes serve para dizer, embaixo do campo, o que houve.

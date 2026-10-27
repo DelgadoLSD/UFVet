@@ -98,12 +98,12 @@ function QuemUsa() {
           {
             titulo: "Veterinário",
             texto:
-              "Só cria conta com um convite, pedido pela direção do hospital. Valida os doadores, registra as doações e as observações e libera o acesso aos contatos para quem precisa.",
+              "Só cria conta com um convite pessoal, gerado pelo suporte do UFVet com o nome e o CRMV. Valida os doadores, registra as doações e as observações e libera o acesso aos contatos para quem precisa.",
           },
           {
             titulo: "Hospital",
             texto:
-              "Não usa o site diretamente. A direção informa quem são os seus veterinários, e cada um recebe um convite pessoal.",
+              "No momento, o UFVet não tem parceria com o Hospital Veterinário da UFV: ele está em fase de testes. A ideia é que, no futuro, a direção de um hospital parceiro indique os seus veterinários, e cada um receba um convite pessoal.",
           },
         ]}
       />

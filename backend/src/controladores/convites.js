@@ -15,7 +15,7 @@ export async function consultarConvite(req, res) {
     registrar("convite_recusado", { ip: req.ip });
     throw new ErroApi(
       404,
-      "Convite inválido, já usado ou vencido. Peça um novo à direção do hospital.",
+      "Convite inválido, já usado ou vencido. Peça um novo a quem enviou o convite.",
     );
   }
   res.json({

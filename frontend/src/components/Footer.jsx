@@ -46,7 +46,6 @@ function Footer() {
           <div>
             <p className="text-sm font-semibold">Contato</p>
             <ul className="mt-4 space-y-3 text-sm text-white/60">
-              <li>Hospital Veterinário UFV</li>
               <li>
                 <a
                   href={`mailto:${CONTATO}`}
@@ -60,7 +59,10 @@ function Footer() {
         </div>
 
         <div className="mt-14 pt-8 border-t border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs text-white/55">
-          <p>© 2026 UFVet. Parceria UFV e Hospital Veterinário da UFV.</p>
+          <p>
+            © 2026 UFVet. Trabalho de Conclusão de Curso da UFV, em fase de
+            testes.
+          </p>
           {/* Os dois ficam na mesma página; a privacidade é o item 9. */}
           <div className="flex gap-6">
             <Link

@@ -57,7 +57,7 @@ const ETAPAS = {
   4: {
     titulo: "Registro profissional",
     texto:
-      "Use o código de convite que a direção do hospital enviou. É dele que vêm o seu CRMV e o local onde você atua.",
+      "Use o código de convite que você recebeu. É dele que vêm o seu CRMV e o local onde você atua.",
   },
   5: {
     titulo: "E-mail e senha",
@@ -96,7 +96,7 @@ const PAPEIS = [
     icone: "stethoscope",
     titulo: "Sou veterinário",
     texto:
-      "Quero validar os dados dos doadores. É preciso o convite enviado pelo hospital.",
+      "Quero validar os dados dos doadores. É preciso um código de convite.",
   },
 ];
 

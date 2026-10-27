@@ -421,7 +421,7 @@ function ContaPage() {
                   <DadoFixo
                     rotulo="Local de atuação"
                     valor={usuario.hospital}
-                    motivo="Veio do convite do hospital. Para mudar, fale com a direção do novo local."
+                    motivo="Veio do convite. Para mudar, fale com o suporte."
                   />
                 </div>
               )}
