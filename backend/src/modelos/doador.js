@@ -24,17 +24,29 @@ import {
 // veterinário avaliar e o tutor decidir.
 const DISPONIVEL = { disponivel: true };
 
-// Os pontos em que o animal está fora do ideal da espécie. A idade é em anos
-// completos, como o site mostra: 8 anos e 11 meses ainda é 8. No 90º dia depois
-// da coleta, o intervalo já está cumprido (F13).
-function pontosForaDoIdeal(animal, hoje) {
+// Peso e idade comparados com o ideal da espécie, os dois pontos que saem só do
+// cadastro do animal. A idade é em anos completos, como o site mostra: 8 anos e
+// 11 meses ainda é 8.
+function pesoEIdadeForaDoIdeal(animal, hoje) {
   const ideal = IDEAL_DO_DOADOR[animal.especie];
   const nascimento = deDataDoBanco(animal.dataNascimento);
-  const ultimaColeta = animal.doacoes[0];
   return [
     Number(animal.pesoKg) < ideal.pesoMin,
     nascimento > subtrairAnos(hoje, ideal.idadeMin) ||
       nascimento <= subtrairAnos(hoje, ideal.idadeMax + 1),
+  ];
+}
+
+// Se o peso ou a idade do cadastro estão fora do ideal (NF19.7).
+export const pesoOuIdadeForaDoIdeal = (animal, hoje) =>
+  pesoEIdadeForaDoIdeal(animal, hoje).some(Boolean);
+
+// Os pontos em que o animal está fora do ideal da espécie. No 90º dia depois da
+// coleta, o intervalo já está cumprido (F13).
+function pontosForaDoIdeal(animal, hoje) {
+  const ultimaColeta = animal.doacoes[0];
+  return [
+    ...pesoEIdadeForaDoIdeal(animal, hoje),
     !!ultimaColeta &&
       deDataDoBanco(ultimaColeta.dataColeta) >
         subtrairDias(hoje, INTERVALO_RECUPERACAO_DIAS),

@@ -8,6 +8,7 @@ import {
 } from "../datas.js";
 import { ErroApi } from "../erros.js";
 import { buscarComHistorico, dadosDoAnimal } from "../modelos/animal.js";
+import { pesoOuIdadeForaDoIdeal } from "../modelos/doador.js";
 import { assinaturaDe } from "../modelos/usuario.js";
 import { registrar } from "../registro.js";
 import {
@@ -72,8 +73,18 @@ export async function validarAnimal(req, res) {
     );
   }
 
-  const assinatura = assinaturaDe(req.usuario);
   const hoje = hojeISO();
+  // O critério afirma que peso e idade estão dentro do ideal, e o cadastro já
+  // responde isso. Marcado num animal fora do ideal, o perfil diria as duas
+  // coisas ao mesmo tempo (NF19.7).
+  if (dados.criterios.PESO_IDADE && pesoOuIdadeForaDoIdeal(animal, hoje)) {
+    throw campoInvalido(
+      "criterios",
+      "Pelo cadastro, este animal está fora do ideal de peso ou idade, então esse critério não pode ser marcado. Ele fica como pendência, o que não necessariamente impede a doação.",
+    );
+  }
+
+  const assinatura = assinaturaDe(req.usuario);
   await banco.$transaction(async (tx) => {
     await tx.validacao.updateMany({
       where: { animalId: animal.id, invalidadaEm: null },

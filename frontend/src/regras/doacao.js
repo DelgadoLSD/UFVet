@@ -245,6 +245,36 @@ export function foraDoIdeal(animal, ultimaDoacao) {
   ].filter(Boolean);
 }
 
+// O critério de peso e idade afirma que o animal está dentro do ideal, e o
+// cadastro já responde isso. Fora do ideal, ele não pode ser marcado, senão o
+// perfil diria as duas coisas ao mesmo tempo. Fica como pendência, o que não
+// impede a doação. A doação recente não entra: ela não muda o peso nem a idade.
+// A API confere o mesmo (NF19.7).
+export const podeMarcarCriterio = (chave, animal) =>
+  chave !== "PESO_IDADE" || foraDoIdeal(animal).length === 0;
+
+// Todos os critérios marcados ou desmarcados, menos os que este animal não pode
+// ter marcados.
+export const marcarCriterios = (valor, animal) =>
+  Object.fromEntries(
+    CRITERIOS_DOACAO.map((c) => [
+      c.chave,
+      valor && podeMarcarCriterio(c.chave, animal),
+    ]),
+  );
+
+// Como uma revisão começa: o que vale hoje na validação anterior, menos o que
+// este animal não pode ter marcado.
+export function criteriosParaRevisar(validacao, animal) {
+  const emVigor = criteriosEmVigor(validacao);
+  return Object.fromEntries(
+    CRITERIOS_DOACAO.map((c) => [
+      c.chave,
+      !!emVigor[c.chave] && podeMarcarCriterio(c.chave, animal),
+    ]),
+  );
+}
+
 // A situação numa frase curta, para caber numa linha do cartão. Com mais de um
 // ponto, o "?" do cartão diz quais são.
 export function resumoDoIdeal(fora, ultimaDoacao) {

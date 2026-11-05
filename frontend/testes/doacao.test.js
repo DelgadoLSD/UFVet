@@ -7,9 +7,12 @@ import {
   dataUltimaDoacao,
   avisoSemEfeito,
   criterioSemEfeito,
+  criteriosParaRevisar,
+  marcarCriterios,
   nomeRaca,
   detalhesForaDoIdeal,
   foraDoIdeal,
+  podeMarcarCriterio,
   resumoDoIdeal,
   situacaoRecuperacao,
   textoDoacaoRecente,
@@ -212,6 +215,69 @@ describe("situação da validação", () => {
     );
     // O registro assinado não muda.
     expect(sorologia.criterios.SOROLOGIAS).toBe(true);
+  });
+});
+
+describe("o que o veterinário pode marcar (NF19.7)", () => {
+  const dentro = { especie: "CAO", pesoKg: 32, dataNascimento: "2021-08-20" };
+  const leve = { ...dentro, pesoKg: 22 };
+  const velho = { ...dentro, dataNascimento: "2016-08-20" };
+  const filhote = { ...dentro, dataNascimento: "2026-08-20" };
+  const gatoLeve = { ...dentro, especie: "GATO", pesoKg: 4 };
+  const gatoNoLimite = { ...gatoLeve, pesoKg: 4.5 };
+
+  test("peso e idade só podem ser marcados dentro do ideal", () => {
+    expect(podeMarcarCriterio("PESO_IDADE", dentro)).toBe(true);
+    expect(podeMarcarCriterio("PESO_IDADE", gatoNoLimite)).toBe(true);
+    expect(podeMarcarCriterio("PESO_IDADE", leve)).toBe(false);
+    expect(podeMarcarCriterio("PESO_IDADE", velho)).toBe(false);
+    expect(podeMarcarCriterio("PESO_IDADE", filhote)).toBe(false);
+    expect(podeMarcarCriterio("PESO_IDADE", gatoLeve)).toBe(false);
+  });
+
+  test("os outros critérios valem para qualquer animal", () => {
+    for (const chave of [
+      "TIPAGEM",
+      "VACINACAO",
+      "SOROLOGIAS",
+      "SEM_TRANSFUSAO",
+    ]) {
+      expect(podeMarcarCriterio(chave, leve)).toBe(true);
+    }
+  });
+
+  test('"Marcar todos" pula peso e idade fora do ideal', () => {
+    expect(marcarCriterios(true, dentro)).toEqual(todosCriterios(true));
+    expect(marcarCriterios(true, leve)).toEqual({
+      ...todosCriterios(true),
+      PESO_IDADE: false,
+    });
+    expect(marcarCriterios(false, leve)).toEqual(todosCriterios(false));
+  });
+
+  test("a revisão desmarca peso e idade de quem hoje está fora do ideal", () => {
+    const anterior = {
+      criterios: { ...todosCriterios(true), VACINACAO: false },
+    };
+
+    expect(criteriosParaRevisar(anterior, leve)).toEqual({
+      ...todosCriterios(true),
+      VACINACAO: false,
+      PESO_IDADE: false,
+    });
+    expect(criteriosParaRevisar(anterior, dentro)).toEqual(anterior.criterios);
+  });
+
+  test("a revisão não traz de volta o critério que perdeu o efeito (F21)", () => {
+    const anterior = {
+      criterios: todosCriterios(true),
+      invalidacao: { em: "2026-09-01T12:00:00Z", motivo: "EXCLUSAO_SOROLOGIA" },
+    };
+
+    expect(criteriosParaRevisar(anterior, dentro)).toEqual({
+      ...todosCriterios(true),
+      SOROLOGIAS: false,
+    });
   });
 });
 

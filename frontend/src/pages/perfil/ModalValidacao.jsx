@@ -8,9 +8,11 @@ import {
   ESPECIES,
   REFERENCIA_DOADOR,
   TIPOS_SANGUINEOS,
-  criteriosEmVigor,
+  criteriosParaRevisar,
+  detalhesForaDoIdeal,
+  marcarCriterios,
+  podeMarcarCriterio,
   statusValidacao,
-  todosCriterios,
 } from "../../regras/doacao";
 import { idadeEmAnos, textoIdade } from "../../util/datas";
 import { formatarPeso, nomeProfissional } from "../../util/texto";
@@ -56,6 +58,37 @@ function OpcaoCriterio({ criterio, referencia, marcado, onAlternar }) {
   );
 }
 
+// O critério que o cadastro já responde, com o animal fora do ideal: não é um
+// botão, porque não há o que marcar. Em vez da caixa, um ✕, e o texto diz por
+// quê e o que fazer (NF19.7).
+function CriterioForaDoIdeal({ criterio, animal }) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-[#9e0a24] bg-[#fdecee] p-3">
+      <span
+        aria-hidden="true"
+        className="material-symbols-outlined text-[20px] text-[#9e0a24] mt-0.5 shrink-0"
+      >
+        cancel
+      </span>
+      <span>
+        <span className="block text-sm font-semibold text-[#1a1c1c]">
+          {criterio.rotulo}
+          <span className="sr-only">: não atendido</span>
+        </span>
+        {detalhesForaDoIdeal(animal).map((detalhe) => (
+          <span key={detalhe} className="block text-xs text-[#5b403f] mt-0.5">
+            {detalhe}
+          </span>
+        ))}
+        <span className="block text-xs text-[#5b403f] mt-1">
+          Fica como pendência, porque o cadastro está fora do ideal. Se o dado
+          estiver errado, o tutor pode corrigi-lo.
+        </span>
+      </span>
+    </div>
+  );
+}
+
 // `animal` traz o tipo sanguíneo e a validação atuais; `onSalvar` recebe
 // { criterios, tipoSanguineo, nota } e grava. Quem assina não vai junto: a
 // API usa a conta de quem está logado. Se a gravação falhar, o modal mostra o
@@ -70,8 +103,8 @@ function ModalValidacao({ animal, validacao, onSalvar, onFechar }) {
     !!validacao && statusValidacao(validacao) !== "vencida";
   const [criterios, setCriterios] = useState(() =>
     aproveitarAnterior
-      ? { ...criteriosEmVigor(validacao) }
-      : todosCriterios(false),
+      ? criteriosParaRevisar(validacao, animal)
+      : marcarCriterios(false, animal),
   );
   const [nota, setNota] = useState(aproveitarAnterior ? validacao.nota : "");
   // O perfil só ganha tipo sanguíneo aqui: marcar a tipagem obriga a dizer
@@ -82,6 +115,10 @@ function ModalValidacao({ animal, validacao, onSalvar, onFechar }) {
 
   const marcados = CRITERIOS_DOACAO.filter((c) => criterios[c.chave]).length;
   const completa = marcados === CRITERIOS_DOACAO.length;
+  // "Marcar todos" vale só para o que este animal pode ter marcado.
+  const todosMarcados = CRITERIOS_DOACAO.every(
+    (c) => criterios[c.chave] || !podeMarcarCriterio(c.chave, animal),
+  );
   // Tipagem conferida sem dizer o resultado deixaria o perfil com um selo e
   // nenhum tipo, o contrário do que a validação serve para resolver.
   const faltaTipo = criterios.TIPAGEM && !tipo;
@@ -183,25 +220,29 @@ function ModalValidacao({ animal, validacao, onSalvar, onFechar }) {
           <button
             type="button"
             onClick={() => {
-              setCriterios(todosCriterios(!completa));
+              setCriterios(marcarCriterios(!todosMarcados, animal));
               setErro("");
             }}
             className="relative toque:before:absolute toque:before:-inset-3 shrink-0 whitespace-nowrap text-xs font-semibold text-[#9e0a24] hover:underline underline-offset-2"
           >
-            {completa ? "Desmarcar todos" : "Marcar todos"}
+            {todosMarcados ? "Desmarcar todos" : "Marcar todos"}
           </button>
         </div>
 
         <div className="flex flex-col gap-2">
-          {CRITERIOS_DOACAO.map((c) => (
-            <OpcaoCriterio
-              key={c.chave}
-              criterio={c}
-              referencia={referencia}
-              marcado={criterios[c.chave]}
-              onAlternar={() => alternar(c.chave)}
-            />
-          ))}
+          {CRITERIOS_DOACAO.map((c) =>
+            podeMarcarCriterio(c.chave, animal) ? (
+              <OpcaoCriterio
+                key={c.chave}
+                criterio={c}
+                referencia={referencia}
+                marcado={criterios[c.chave]}
+                onAlternar={() => alternar(c.chave)}
+              />
+            ) : (
+              <CriterioForaDoIdeal key={c.chave} criterio={c} animal={animal} />
+            ),
+          )}
         </div>
 
         {criterios.TIPAGEM && (

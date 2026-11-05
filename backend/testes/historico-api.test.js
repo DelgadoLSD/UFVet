@@ -207,6 +207,106 @@ describe("validar um animal (F19 e F20)", () => {
     expect(resposta.body.animal.tipoSanguineo).toBeNull();
   });
 
+  test("peso abaixo do ideal: o critério de peso e idade não pode ser marcado (NF19.7)", async () => {
+    const { vet, codigo } = await cenario({ ...zeus, pesoKg: 22 });
+
+    const resposta = await validar(vet, codigo, {
+      criterios: todosAtendidos,
+      tipoSanguineo: "DEA 4",
+    });
+
+    expect(resposta.status).toBe(400);
+    expect(resposta.body.campos.criterios).toContain("não pode ser marcado");
+    expect(await banco.validacao.count()).toBe(0);
+  });
+
+  test("velho ou novo demais: o critério de peso e idade não pode ser marcado (NF19.7)", async () => {
+    const velho = await cenario({
+      ...zeus,
+      dataNascimento: subtrairAnos(hojeISO(), 9),
+    });
+    const respostaDoVelho = await validar(velho.vet, velho.codigo, {
+      criterios: todosAtendidos,
+      tipoSanguineo: "DEA 4",
+    });
+    expect(respostaDoVelho.status).toBe(400);
+
+    const filhote = await velho.tutor
+      .post("/api/animais")
+      .send({ ...zeus, nome: "Filhote", dataNascimento: hojeISO() })
+      .expect(201);
+    const respostaDoFilhote = await validar(
+      velho.vet,
+      filhote.body.animal.codigo,
+      { criterios: todosAtendidos, tipoSanguineo: "DEA 4" },
+    );
+    expect(respostaDoFilhote.status).toBe(400);
+    expect(await banco.validacao.count()).toBe(0);
+  });
+
+  test("no limite do ideal, o critério de peso e idade ainda pode ser marcado (NF19.7)", async () => {
+    const { vet, codigo } = await cenario({
+      ...zeus,
+      pesoKg: 25,
+      // Um dia antes de fazer 9 anos: pelo site, ainda tem 8.
+      dataNascimento: subtrairAnos(amanha(), 9),
+    });
+
+    const resposta = await validar(vet, codigo, {
+      criterios: todosAtendidos,
+      tipoSanguineo: "DEA 4",
+    });
+
+    expect(resposta.status).toBe(201);
+    expect(resposta.body.animal.validacoes[0].criterios.PESO_IDADE).toBe(true);
+  });
+
+  test("o peso ideal é o da espécie: gato com 5 kg pode, com 4 kg não (NF19.7)", async () => {
+    const gato = { ...zeus, especie: "GATO", raca: "Persa", pesoKg: 5 };
+    const { vet, codigo, tutor } = await cenario(gato);
+    const dentro = await validar(vet, codigo, {
+      criterios: todosAtendidos,
+      tipoSanguineo: "Tipo A",
+    });
+    expect(dentro.status).toBe(201);
+
+    const leve = await tutor
+      .post("/api/animais")
+      .send({ ...gato, nome: "Leve", pesoKg: 4 })
+      .expect(201);
+    const fora = await validar(vet, leve.body.animal.codigo, {
+      criterios: todosAtendidos,
+      tipoSanguineo: "Tipo A",
+    });
+    expect(fora.status).toBe(400);
+  });
+
+  test("fora do ideal, a validação sem esse critério é aceita, com pendência (NF19.7)", async () => {
+    const { vet, codigo } = await cenario({ ...zeus, pesoKg: 22 });
+    const criterios = { ...todosAtendidos, PESO_IDADE: false };
+
+    const resposta = await validar(vet, codigo, {
+      criterios,
+      tipoSanguineo: "DEA 4",
+    });
+
+    expect(resposta.status).toBe(201);
+    expect(resposta.body.animal.validacoes[0].criterios).toEqual(criterios);
+    expect(resposta.body.animal.tipoSanguineo).toBe("DEA 4");
+  });
+
+  test("uma doação recente não impede marcar peso e idade (NF19.7)", async () => {
+    const { vet, codigo } = await cenario();
+    await registrarDoacao(vet, codigo, doacaoDeHoje()).expect(201);
+
+    const resposta = await validar(vet, codigo, {
+      criterios: todosAtendidos,
+      tipoSanguineo: "DEA 4",
+    });
+
+    expect(resposta.status).toBe(201);
+  });
+
   test("com a tipagem conferida, o tipo do exame é obrigatório (NF20.1)", async () => {
     const { vet, codigo } = await cenario();
 

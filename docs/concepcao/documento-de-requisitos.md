@@ -361,6 +361,7 @@ e CRMV.
 | NF19.4 | Imutabilidade | Uma validação registrada não pode ser editada; a revisão gera uma nova validação. | Legal | ( ) | (x) |
 | NF19.5 | Validação parcial | É permitido registrar validação com parte dos critérios atendidos, situação exibida como pendência, com indicação de quais faltam. | Especificação | ( ) | ( ) |
 | NF19.6 | Renovação zerada | Ao renovar uma validação vencida, os critérios devem começar desmarcados, obrigando nova conferência. | Especificação | ( ) | (x) |
+| NF19.7 | Peso e idade fora do ideal | O critério de peso e idade não pode ser marcado quando o cadastro do animal está fora do ideal: ele fica como pendência, que não impede a doação. | Especificação | ( ) | ( ) |
 
 ---
 
