@@ -1,8 +1,23 @@
-import { hojeISO, paraData, somarAnos, somarDias } from "../util/datas";
+import {
+  diasDesde,
+  formatarData,
+  hojeISO,
+  idadeEmAnos,
+  paraData,
+  somarAnos,
+  somarDias,
+  textoIdade,
+} from "../util/datas";
 import { formatarPeso } from "../util/texto";
 
-// Regras de doação de sangue usadas pelas telas: quem pode doar, o que o
-// veterinário confere e quanto tempo vale cada coisa.
+// Regras de doação de sangue usadas pelas telas: o que é o ideal para doar, o
+// que o veterinário confere e quanto tempo vale cada coisa.
+//
+// Os critérios são o ideal, e não uma proibição. Na rotina dos hospitais, um
+// animal fora de algum deles ainda pode doar, conforme a urgência do caso: quem
+// atende a mais critérios tem preferência, o veterinário avalia e explica os
+// riscos, e a decisão é do tutor. Por isso nenhum critério tira um animal da
+// busca; só o tutor faz isso, marcando-o como indisponível.
 //
 // Os valores seguem a Nota Técnica nº 3 (2024) da ABVHMT (Associação
 // Brasileira Veterinária de Hematologia e Medicina Transfusional), menos o
@@ -11,8 +26,9 @@ import { formatarPeso } from "../util/texto";
 // ABVHMT. Tudo precisa ser confirmado com a equipe do Hospital Veterinário.
 //
 // As chaves são as mesmas dos enums do banco (Especie, Sexo, CriterioDoacao,
-// TipoDocumento), para o site e a API falarem a mesma língua. Quando a API
-// existir, ela aplica estas regras de verdade; aqui elas servem para exibir.
+// TipoDocumento), para o site e a API falarem a mesma língua. A API usa os
+// mesmos valores para ordenar a busca (IDEAL_DO_DOADOR, em
+// backend/src/validacao.js); aqui eles servem para exibir.
 
 export const ESPECIES = {
   CAO: { rotulo: "Cão", plural: "cães" },
@@ -24,7 +40,7 @@ export const SEXOS = {
   FEMEA: "Fêmea",
 };
 
-// Limites para doar, por espécie.
+// O ideal para doar, por espécie.
 export const REFERENCIA_DOADOR = {
   CAO: {
     pesoMin: 25,
@@ -42,7 +58,8 @@ export const REFERENCIA_DOADOR = {
   },
 };
 
-// O peso mínimo escrito para as telas: "25 kg", "4,5 kg".
+// O peso ideal escrito para as telas: "25 kg", "4,5 kg" (o menor peso dentro do
+// ideal).
 export const pesoMinimo = (ref) => formatarPeso(ref.pesoMin);
 
 // O que o veterinário confere ao validar um doador. É um checklist do que
@@ -58,9 +75,9 @@ export const CRITERIOS_DOACAO = [
   {
     chave: "PESO_IDADE",
     curto: "Peso e idade",
-    rotulo: "Peso e idade dentro dos critérios",
+    rotulo: "Peso e idade dentro do ideal",
     descricao: (ref) =>
-      `Mínimo de ${pesoMinimo(ref)} e idade entre ${ref.idadeMin} e ${ref.idadeMax} anos.`,
+      `A partir de ${pesoMinimo(ref)} e idade entre ${ref.idadeMin} e ${ref.idadeMax} anos.`,
   },
   {
     chave: "VACINACAO",
@@ -78,7 +95,8 @@ export const CRITERIOS_DOACAO = [
     chave: "SEM_TRANSFUSAO",
     curto: "Sem transfusão",
     rotulo: "Nunca recebeu transfusão",
-    descricao: () => "Animais já transfundidos não são aceitos como doadores.",
+    descricao: () =>
+      "O ideal é nunca ter recebido. Quem já recebeu pede uma avaliação mais rigorosa.",
   },
 ];
 
@@ -186,12 +204,73 @@ export const dataUltimaDoacao = (doacoes) =>
     null,
   );
 
-// Depois de uma coleta o animal precisa de um intervalo para se recuperar.
-// Devolve se ele já pode doar e, se não, a data ("AAAA-MM-DD") em que volta.
+// Depois de uma coleta, o ideal é um intervalo para o animal se recuperar.
+// Devolve se ele já passou e, se não, até quando ("AAAA-MM-DD") o ideal é
+// esperar. É só um aviso: o animal continua disponível, e quem decide é o tutor,
+// com o veterinário.
 export function situacaoRecuperacao(ultimaDoacao, ref) {
-  if (!ultimaDoacao) return { apto: true };
-  const liberadaEm = somarDias(ultimaDoacao, ref.intervaloDias);
-  return { apto: Date.now() >= paraData(liberadaEm), liberadaEm };
+  if (!ultimaDoacao) return { intervaloCumprido: true };
+  const idealEsperarAte = somarDias(ultimaDoacao, ref.intervaloDias);
+  return {
+    intervaloCumprido: Date.now() >= paraData(idealEsperarAte),
+    idealEsperarAte,
+  };
+}
+
+// "Doou hoje", "Doou ontem", "Doou há 32 dias".
+export function textoDoacaoRecente(ultimaDoacao) {
+  const dias = diasDesde(ultimaDoacao);
+  if (dias <= 0) return "Doou hoje";
+  if (dias === 1) return "Doou ontem";
+  return `Doou há ${dias} dias`;
+}
+
+// ─── O ideal ──────────────────────────────────────────────────────────────────
+
+// O que dizer de um animal fora do ideal, em todo lugar que fala disso.
+export const FORA_DO_IDEAL_PODE_DOAR =
+  "Isso não impede a doação: o veterinário avalia o caso e explica os riscos, e a decisão de doar é do tutor.";
+
+// Os pontos que o site consegue conferir sozinho, pelos dados do animal, em que
+// ele está fora do ideal: "peso", "idade" e "intervalo". Vacinas e exames são
+// conferidos pelo veterinário, na validação. A API usa a mesma conta para pôr
+// primeiro quem atende a mais critérios.
+export function foraDoIdeal(animal, ultimaDoacao) {
+  const ref = REFERENCIA_DOADOR[animal.especie];
+  const anos = idadeEmAnos(animal.dataNascimento);
+  return [
+    animal.pesoKg < ref.pesoMin && "peso",
+    (anos < ref.idadeMin || anos > ref.idadeMax) && "idade",
+    !situacaoRecuperacao(ultimaDoacao, ref).intervaloCumprido && "intervalo",
+  ].filter(Boolean);
+}
+
+// A situação numa frase curta, para caber numa linha do cartão. Com mais de um
+// ponto, o "?" do cartão diz quais são.
+export function resumoDoIdeal(fora, ultimaDoacao) {
+  if (fora.length === 0) return "Peso, idade e intervalo ideais";
+  if (fora.length > 1) return `Não atende a ${fora.length} critérios`;
+  if (fora[0] === "peso") return "Peso abaixo do ideal";
+  if (fora[0] === "idade") return "Fora da idade ideal";
+  return textoDoacaoRecente(ultimaDoacao);
+}
+
+// Cada ponto fora do ideal, com o valor do animal e o que seria o ideal.
+export function detalhesForaDoIdeal(animal, ultimaDoacao) {
+  const ref = REFERENCIA_DOADOR[animal.especie];
+  const idade = textoIdade(
+    idadeEmAnos(animal.dataNascimento),
+    animal.nascimentoAproximado,
+  ).toLowerCase();
+  const detalhes = {
+    peso: () =>
+      `Peso: ${formatarPeso(animal.pesoKg)}. O ideal é ${pesoMinimo(ref)} ou mais.`,
+    idade: () =>
+      `Idade: ${idade}. O ideal é de ${ref.idadeMin} a ${ref.idadeMax} anos.`,
+    intervalo: () =>
+      `Última doação: ${formatarData(ultimaDoacao)}. O ideal é esperar até ${formatarData(situacaoRecuperacao(ultimaDoacao, ref).idealEsperarAte)}.`,
+  };
+  return foraDoIdeal(animal, ultimaDoacao).map((ponto) => detalhes[ponto]());
 }
 
 // ─── Textos sobre o animal ────────────────────────────────────────────────────

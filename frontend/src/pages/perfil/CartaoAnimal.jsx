@@ -31,7 +31,6 @@ import {
   situacaoRecuperacao,
   textoCastracao,
 } from "../../regras/doacao";
-import { formatarData } from "../../util/datas";
 import { Girando } from "../../components/Carregando";
 
 // Cartão de um animal no perfil. O cabeçalho é vermelho, com as letras em
@@ -49,23 +48,6 @@ import { Girando } from "../../components/Carregando";
 //   disponibilidade e enviar documentos.
 // - `ehVet`: quem está logado é veterinário; pode validar, registrar doações
 //   e escrever observações, inclusive nos próprios animais.
-
-// Situação para doar, mostrada no cabeçalho. Fala só de disponibilidade; o
-// que a validação muda na prática está no painel de validação, logo abaixo.
-// O `tom` escolhe a cor do ponto: verde pode doar, preto está se recuperando
-// de uma doação e cinza foi pausado pelo tutor.
-function situacaoParaDoar(disponivel, recuperacao) {
-  if (!disponivel) {
-    return { texto: "Indisponível no momento", tom: "pausado" };
-  }
-  if (!recuperacao.apto) {
-    return {
-      texto: `Em recuperação até ${formatarData(recuperacao.liberadaEm)}`,
-      tom: "recuperacao",
-    };
-  }
-  return { texto: "Disponível para doação", tom: "disponivel" };
-}
 
 function CartaoAnimal({ animal, ehDono, ehVet, onAlterado, onExcluido }) {
   const disponivel = animal.disponivel;
@@ -90,18 +72,14 @@ function CartaoAnimal({ animal, ehDono, ehVet, onAlterado, onExcluido }) {
 
   // O animal com a validação que vale agora, para os modais.
   const animalAtual = { ...animal, validacao };
-  // A recuperação conta a partir da coleta mais recente registrada: registrar
-  // uma doação nova já muda a etiqueta do animal.
+  // O intervalo ideal conta a partir da coleta mais recente registrada: registrar
+  // uma doação nova já mostra o aviso. Ele não muda a disponibilidade, que é só
+  // o tutor quem marca.
   const ultimaDoacao = dataUltimaDoacao(doacoes);
   const recuperacao = situacaoRecuperacao(
     ultimaDoacao,
     REFERENCIA_DOADOR[animal.especie],
   );
-  const situacao = situacaoParaDoar(disponivel, recuperacao);
-  // Para quem visita, a etiqueta da situação é cheia, para ser lida de
-  // relance: verde quando o animal pode doar agora; preta quando não pode
-  // (pausado pelo tutor ou se recuperando de uma doação).
-  const podeDoarAgora = situacao.tom === "disponivel";
 
   // Tirar da busca ou devolver (F11).
   const mudarDisponibilidade = async (nova) => {
@@ -155,7 +133,8 @@ function CartaoAnimal({ animal, ehDono, ehVet, onAlterado, onExcluido }) {
   // sobre aquele animal, então fica junto dele. Para o dono, uma chave de
   // duas opções numa pílula branca: um fundo vermelho desliza para a opção
   // escolhida (letra branca), e a outra fica branca com a letra vermelha.
-  // Para quem visita, uma etiqueta com a situação.
+  // Para quem visita, uma etiqueta cheia, para ser lida de relance: verde quando
+  // o animal está disponível, preta quando o tutor o pausou.
   const disponibilidade = (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-center gap-1.5">
@@ -211,26 +190,21 @@ function CartaoAnimal({ animal, ehDono, ehVet, onAlterado, onExcluido }) {
       ) : (
         <p
           className={`flex items-center justify-center gap-2 h-11 px-4 rounded-full text-xs font-bold text-white whitespace-nowrap ${
-            podeDoarAgora ? "bg-emerald-700" : "bg-[#1a1c1c]"
+            disponivel ? "bg-emerald-700" : "bg-[#1a1c1c]"
           }`}
         >
           <span
             aria-hidden="true"
             className={`w-2 h-2 shrink-0 rounded-full ${
-              podeDoarAgora
+              disponivel
                 ? "bg-white animate-pulse motion-reduce:animate-none"
                 : "bg-white/50"
             }`}
           />
-          {situacao.texto}
+          {disponivel ? "Disponível para doação" : "Indisponível no momento"}
         </p>
       )}
 
-      {/* Para o dono, a chave diz só disponível ou não; a data da volta
-          depois de uma doação fica logo embaixo. */}
-      {ehDono && disponivel && !recuperacao.apto && (
-        <p className="text-xs text-[#5f5e5e] text-center">{situacao.texto}</p>
-      )}
       {erroDisponibilidade && (
         <p role="alert" className="text-xs font-semibold text-[#9e0a24]">
           {erroDisponibilidade}
@@ -306,6 +280,8 @@ function CartaoAnimal({ animal, ehDono, ehVet, onAlterado, onExcluido }) {
               tipoSanguineo={tipoSanguineo}
               totalDoacoes={doacoes.length}
               ultimaDoacao={ultimaDoacao}
+              recuperacao={recuperacao}
+              ehDono={ehDono}
               podeRegistrar={podeAtuarComoVet}
               onVerDoacoes={() => setModal("doacoes")}
               onRegistrarDoacao={() => setModal("registrarDoacao")}

@@ -1,19 +1,25 @@
 import { Link } from "react-router-dom";
 import Ajuda from "../../components/Ajuda";
 import { enderecoDoAnimal } from "../perfil/animalEscolhido";
-import { nomeRaca, partesDoTipo } from "../../regras/doacao";
+import {
+  FORA_DO_IDEAL_PODE_DOAR,
+  detalhesForaDoIdeal,
+  foraDoIdeal,
+  nomeRaca,
+  partesDoTipo,
+  resumoDoIdeal,
+} from "../../regras/doacao";
 import { idadeEmAnos } from "../../util/datas";
 import { formatarPeso } from "../../util/texto";
 
 // Cartão de um doador nos resultados da busca, no desenho do cartão do animal
 // no perfil, em tamanho menor: o cabeçalho vermelho com o nome e a raça, a
 // foto emoldurada, sem nada por cima, e a faixa de dados em células
-// encostadas: tipo sanguíneo, peso e idade, e embaixo, numa linha inteira, a
-// validação. O cartão inteiro leva ao perfil do tutor, já aberto neste
-// animal. Cada parte tem altura
-// fixa (o texto longo é cortado), para as linhas dos cartões lado a lado
-// ficarem alinhadas. Todo doador da busca pode doar agora: o pausado pelo
-// tutor e o que está se recuperando de uma coleta nem aparecem.
+// encostadas: tipo sanguíneo, peso e idade, e embaixo, em linhas inteiras, o
+// quanto ele se aproxima do ideal e a validação. O cartão inteiro leva ao
+// perfil do tutor, já aberto neste animal. Cada parte tem altura fixa (o texto
+// longo é cortado), para as linhas dos cartões lado a lado ficarem alinhadas.
+// Na busca, só não aparece o animal que o tutor marcou como indisponível.
 
 const SITUACAO_VALIDACAO = {
   validado: {
@@ -29,6 +35,51 @@ const SITUACAO_VALIDACAO = {
       "Pode doar, mas os exames ainda não foram conferidos. O hospital faz os exames antes, e os resultados levam alguns dias.",
   },
 };
+
+// O quanto o doador se aproxima do ideal, logo abaixo do peso e da idade. Dentro
+// do ideal: a linha clara, com o círculo cheio de confirmado. Fora: um tom mais
+// escuro, com o "i" vazado, sem cara de proibição, porque ele ainda pode doar. Os
+// dois diferem na claridade, no ícone e no texto, e não só na cor. O "?" diz
+// cada ponto e quem decide; fica acima do link que cobre o cartão.
+function LinhaIdeal({ doador }) {
+  const fora = foraDoIdeal(doador, doador.ultimaDoacao);
+  const dentro = fora.length === 0;
+  const resumo = resumoDoIdeal(fora, doador.ultimaDoacao);
+  return (
+    <div
+      className={`col-span-3 h-11 px-3 flex items-center gap-2 text-[#1a1c1c] ${
+        dentro ? "bg-[#fdecee]" : "bg-[#f8dce1]"
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`material-symbols-outlined text-[18px] shrink-0 ${
+          dentro ? "text-emerald-700" : "text-[#9e0a24]"
+        }`}
+        style={dentro ? { fontVariationSettings: "'FILL' 1" } : undefined}
+      >
+        {dentro ? "check_circle" : "info"}
+      </span>
+      <p className="flex-1 min-w-0 truncate text-sm font-semibold">{resumo}</p>
+      <Ajuda titulo={resumo} className="relative z-10">
+        {dentro ? (
+          <p>
+            Peso, idade e tempo desde a última doação estão dentro do ideal. Por
+            isso, {doador.nome} aparece antes na busca. Vacinas e exames ficam
+            na validação, logo abaixo.
+          </p>
+        ) : (
+          <>
+            {detalhesForaDoIdeal(doador, doador.ultimaDoacao).map((detalhe) => (
+              <p key={detalhe}>{detalhe}</p>
+            ))}
+            <p>{FORA_DO_IDEAL_PODE_DOAR}</p>
+          </>
+        )}
+      </Ajuda>
+    </div>
+  );
+}
 
 // A validação é um dado do doador como o tipo, o peso e a idade, então fica
 // na mesma faixa, numa linha inteira embaixo das células (como a linha das
@@ -152,6 +203,7 @@ function CartaoDoador({ doador }) {
             <img
               src={doador.foto}
               alt={doador.nome}
+              loading="lazy"
               className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
@@ -162,8 +214,8 @@ function CartaoDoador({ doador }) {
         </div>
 
         {/* As divisões são o fundo branco aparecendo nos vãos de 2px entre
-            as células. O tipo ganha a célula mais larga; a validação, a
-            linha inteira de baixo. */}
+            as células. O tipo ganha a célula mais larga; o ideal e a validação,
+            as linhas inteiras de baixo. */}
         <div className="grid grid-cols-[1.4fr_1fr_1fr] gap-[2px] rounded-xl overflow-hidden">
           {tipo ? (
             <Dado
@@ -195,6 +247,7 @@ function CartaoDoador({ doador }) {
             valor={idade.valor}
             tamanho="text-base xl:text-lg"
           />
+          <LinhaIdeal doador={doador} />
           <LinhaValidacao validado={doador.validado} />
         </div>
 

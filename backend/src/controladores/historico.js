@@ -116,9 +116,10 @@ export async function validarAnimal(req, res) {
 }
 
 // POST /api/animais/:codigo/doacoes — o veterinário registra uma coleta que
-// aconteceu (F24), assinada por ele. A disponibilidade e o intervalo de
-// recuperação saem da coleta mais recente, então o registro já vale na hora
-// (NF24.4). O total de doações não é guardado: sai da lista (F26).
+// aconteceu (F24), assinada por ele. O intervalo ideal de recuperação sai da
+// coleta mais recente, então o aviso já vale na hora (NF24.4). O registro não
+// muda a disponibilidade, que é só o tutor quem marca. O total de doações não é
+// guardado: sai da lista (F26).
 export async function registrarDoacao(req, res) {
   const animal = await animalPeloCodigo(req);
   const dados = esquemaDoacao.parse(req.body ?? {});

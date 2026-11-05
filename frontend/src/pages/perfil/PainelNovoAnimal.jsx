@@ -1,11 +1,14 @@
+import { useState } from "react";
 import Botao from "../../components/Botao";
+import BotaoAjuda from "../../components/BotaoAjuda";
+import ModalCriteriosDoacao from "../../components/ModalCriteriosDoacao";
 import PainelSecao from "./PainelSecao";
 import { REFERENCIA_DOADOR, pesoMinimo } from "../../regras/doacao";
 import { MAXIMO_FOTOS } from "../../regras/fotos";
 
 // O que aparece embaixo do carrossel quando o cartão de cadastrar está no
 // centro dele: no mesmo desenho do cartão completo de um animal (o cabeçalho
-// vermelho e os painéis), o que o cadastro pede e quem pode doar, para a
+// vermelho e os painéis), o que o cadastro pede e o ideal para doar, para a
 // pessoa chegar preparada. O botão do cabeçalho abre o cadastro.
 
 const O_QUE_PREENCHER = [
@@ -31,6 +34,8 @@ function Criterio({ rotulo, valor }) {
 }
 
 function PainelNovoAnimal({ onCadastrar }) {
+  const [explicacaoAberta, setExplicacaoAberta] = useState(false);
+
   return (
     <article
       aria-label="Cadastrar um novo animal"
@@ -73,7 +78,17 @@ function PainelNovoAnimal({ onCadastrar }) {
           </ul>
         </PainelSecao>
 
-        <PainelSecao titulo="Quem pode doar" nivel="h4">
+        <PainelSecao
+          titulo="O ideal para doar"
+          nivel="h4"
+          ajuda={
+            <BotaoAjuda
+              rotulo="Como funcionam os critérios de doação?"
+              onClick={() => setExplicacaoAberta(true)}
+              claro
+            />
+          }
+        >
           {/* As divisões são o fundo branco nos vãos de 2px, como na faixa
               de dados do animal. */}
           <div className="grid grid-cols-2 gap-[2px] bg-white rounded-xl overflow-hidden">
@@ -86,12 +101,21 @@ function PainelNovoAnimal({ onCadastrar }) {
               />
             </div>
           </div>
-          <p className="text-xs text-[#5f5e5e] leading-relaxed">
-            Dá para cadastrar mesmo fora disso: um veterinário confere os
-            critérios na validação.
+          <p className="text-xs text-[#5b403f] leading-relaxed">
+            <strong className="font-semibold text-[#1a1c1c]">
+              Seu pet não atende a tudo isso? Cadastre mesmo assim.
+            </strong>{" "}
+            Em uma emergência, ele ainda pode ser chamado para doar e ajudar a
+            salvar uma vida. Quanto mais critérios atende, maior a chance. O
+            veterinário avalia o caso e explica os riscos, e a decisão de doar é
+            sua.
           </p>
         </PainelSecao>
       </div>
+
+      {explicacaoAberta && (
+        <ModalCriteriosDoacao onFechar={() => setExplicacaoAberta(false)} />
+      )}
     </article>
   );
 }

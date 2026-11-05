@@ -1,5 +1,5 @@
 import { PREENCHA } from "../../regras/conta";
-import { CRITERIOS_DOACAO } from "../../regras/doacao";
+import { CRITERIOS_DOACAO, REFERENCIA_DOADOR } from "../../regras/doacao";
 import { hojeISO, idadeEmAnos, somarAnos } from "../../util/datas";
 
 // O formulário de cadastro e edição do animal (ModalAnimal.jsx): o que ele
@@ -82,6 +82,23 @@ export function errosDoFormulario(form) {
     erros.pesoKg = `Confira o peso: mais de ${PESO_MAXIMO} kg.`;
   }
   return erros;
+}
+
+// O que o tutor já preencheu e está fora do ideal da espécie ("peso", "idade"),
+// para o formulário avisar enquanto ele digita. Não é um erro: o cadastro segue
+// normalmente, e o animal aparece na busca. Campo vazio ou inválido não conta.
+export function pontosForaDoFormulario(form) {
+  const ref = REFERENCIA_DOADOR[form.especie];
+  const peso = numero(form.peso);
+  const anos = form.idadeConhecida
+    ? form.dataNascimento
+      ? idadeEmAnos(form.dataNascimento)
+      : NaN
+    : numero(form.idadeEstimada);
+  return [
+    peso < ref.pesoMin && "peso",
+    (anos < ref.idadeMin || anos > ref.idadeMax) && "idade",
+  ].filter(Boolean);
 }
 
 // O pedido para a API. No cadastro vai tudo; na edição, só o que mudou. A

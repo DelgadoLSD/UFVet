@@ -3,39 +3,57 @@ import NotaFonte from "./NotaFonte";
 import { CONTAINER, TITULO_SECAO } from "./estilos";
 
 // Como é a doação, do começo ao fim, em cinco etapas numeradas (é uma
-// sequência de verdade). No computador, as etapas ficam lado a lado, ligadas
-// por uma linha; no celular, uma embaixo da outra.
+// sequência de verdade). No computador, as etapas ficam lado a lado, ligadas por
+// uma linha; no celular, uma embaixo da outra. O tempo de cada etapa fica no meio
+// da frase, em negrito vermelho, para ser achado de relance. `depois` é o que vem
+// depois da nota da fonte: o que não foi dito por ela.
+
+const Tempo = ({ children }) => (
+  <strong className="font-bold text-[#9e0a24]">{children}</strong>
+);
 
 const ETAPAS = [
   {
     titulo: "Triagem",
-    texto: "Conversa sobre o histórico do animal e exame físico.",
-    destaque: "No hospital",
+    texto:
+      "O veterinário conversa sobre o histórico do animal e faz um exame físico.",
     fonte: "abvhmt",
   },
   {
     titulo: "Exame rápido",
     texto: "Uma amostra de sangue confirma que o doador está bem.",
-    destaque: "Antes de toda doação",
     fonte: "abvhmt",
   },
   {
     titulo: "Coleta",
-    texto: "Com material estéril. Cães ficam acordados.",
-    destaque: "Cerca de 15 min",
+    texto: (
+      <>
+        Dura <Tempo>cerca de 15&nbsp;minutos</Tempo>, com material estéril. Os
+        cães ficam acordados, e os gatos podem precisar de sedação.
+      </>
+    ),
     fonte: ["ebc", "abvhmt"],
   },
   {
     titulo: "Descanso",
-    texto: "Água, comida e carinho. Em casa, só passeios curtos.",
-    destaque: "24 horas",
+    texto: (
+      <>
+        O doador recebe água e comida. Nas <Tempo>24&nbsp;horas</Tempo>{" "}
+        seguintes, o ideal é evitar brincadeiras agitadas.
+      </>
+    ),
     fonte: "abvhmt",
   },
   {
     titulo: "Próxima doação",
-    texto: "Tempo para o corpo repor as reservas de ferro.",
-    destaque: "Depois de 90 dias",
+    texto: (
+      <>
+        O ideal é esperar <Tempo>90&nbsp;dias</Tempo>, tempo para o corpo repor
+        as reservas de ferro.
+      </>
+    ),
     fonte: "abvhmt",
+    depois: " Em uma urgência, o veterinário avalia.",
   },
 ];
 
@@ -69,15 +87,13 @@ function SecaoComoEADoacao() {
                   {i + 1}
                 </span>
                 <div className="md:mt-5">
-                  <span className="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-[#fdecee] text-[#9e0a24]">
-                    {e.destaque}
-                  </span>
-                  <h3 className="text-xl font-bold text-[#1a1c1c] mt-3">
+                  <h3 className="text-xl font-bold text-[#1a1c1c]">
                     {e.titulo}
                   </h3>
-                  <p className="text-[#5b403f] leading-relaxed mt-1">
+                  <p className="text-[#5b403f] leading-relaxed mt-2">
                     {e.texto}
                     <NotaFonte ids={e.fonte} />
+                    {e.depois}
                   </p>
                 </div>
               </Surgir>

@@ -484,8 +484,8 @@ model Observacao {
 ///
 /// O total de doações do animal e a data da última não são colunas guardadas:
 /// saem de COUNT e MAX sobre estas linhas. Assim não existe contador que possa
-/// discordar do histórico. O intervalo de recuperação de 90 dias conta a
-/// partir da dataColeta mais recente.
+/// discordar do histórico. O intervalo ideal de recuperação, de 90 dias, conta a
+/// partir da dataColeta mais recente; ele não muda a disponibilidade do animal.
 model Doacao {
   id                String   @id @default(uuid()) @db.Uuid
   animalId          String   @map("animal_id") @db.Uuid

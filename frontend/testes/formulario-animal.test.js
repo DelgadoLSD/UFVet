@@ -6,6 +6,7 @@ import {
   errosDoFormulario,
   formularioDoAnimal,
   pedidoDoFormulario,
+  pontosForaDoFormulario,
 } from "../src/pages/perfil/formularioAnimal";
 
 // O formulário de cadastro e edição do animal (pages/perfil/
@@ -175,5 +176,38 @@ describe("aviso sobre a validação (NF9.1)", () => {
     expect(
       criteriosAfetados({ ...form, peso: "30" }, { ...zeus, validacao: null }),
     ).toEqual([]);
+  });
+});
+
+describe("aviso de fora do ideal no formulário", () => {
+  const cao = { ...FORM_VAZIO, especie: "CAO", idadeConhecida: false };
+
+  test("não avisa enquanto o campo está vazio", () => {
+    expect(pontosForaDoFormulario(cao)).toEqual([]);
+  });
+
+  test("avisa do peso abaixo do ideal da espécie, com vírgula ou ponto", () => {
+    expect(pontosForaDoFormulario({ ...cao, peso: "24,9" })).toEqual(["peso"]);
+    expect(pontosForaDoFormulario({ ...cao, peso: "25" })).toEqual([]);
+    const gato = { ...cao, especie: "GATO" };
+    expect(pontosForaDoFormulario({ ...gato, peso: "4.4" })).toEqual(["peso"]);
+    expect(pontosForaDoFormulario({ ...gato, peso: "4,5" })).toEqual([]);
+  });
+
+  test("avisa da idade fora do ideal, pela idade estimada ou pela data", () => {
+    expect(pontosForaDoFormulario({ ...cao, idadeEstimada: "0" })).toEqual([
+      "idade",
+    ]);
+    expect(pontosForaDoFormulario({ ...cao, idadeEstimada: "8" })).toEqual([]);
+    expect(pontosForaDoFormulario({ ...cao, idadeEstimada: "9" })).toEqual([
+      "idade",
+    ]);
+    const comData = { ...cao, idadeConhecida: true };
+    expect(
+      pontosForaDoFormulario({ ...comData, dataNascimento: "2021-05-10" }),
+    ).toEqual([]);
+    expect(
+      pontosForaDoFormulario({ ...comData, dataNascimento: "2015-05-10" }),
+    ).toEqual(["idade"]);
   });
 });

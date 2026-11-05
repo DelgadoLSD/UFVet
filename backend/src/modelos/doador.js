@@ -3,12 +3,13 @@ import { banco } from "../banco.js";
 import {
   deDataDoBanco,
   hojeISO,
-  paraDataDoBanco,
+  subtrairAnos,
   subtrairDias,
 } from "../datas.js";
 import {
   CRITERIOS_DOACAO,
   DOADORES_POR_PAGINA,
+  IDEAL_DO_DOADOR,
   INTERVALO_RECUPERACAO_DIAS,
 } from "../validacao.js";
 
@@ -17,17 +18,27 @@ import {
 // que sai daqui identifica o tutor além do código e do bairro, e o contato
 // nunca vem junto.
 
-// Quem pode doar agora: o tutor não pausou o animal (F11) e ele não está se
-// recuperando de uma coleta (F13). Em recuperação é quem tem uma coleta mais
-// recente que (hoje - 90 dias); a partir do 90º dia, ele volta à busca.
-function podeDoarAgora(hoje) {
-  const limite = paraDataDoBanco(
-    subtrairDias(hoje, INTERVALO_RECUPERACAO_DIAS),
-  );
-  return {
-    disponivel: true,
-    doacoes: { none: { dataColeta: { gt: limite } } },
-  };
+// Quem aparece: todo animal que o tutor deixou disponível (F11). É só o tutor
+// quem tira um animal da busca. Peso, idade e uma doação recente mudam a ordem,
+// mas não escondem ninguém: fora do ideal, ele ainda pode doar, se o
+// veterinário avaliar e o tutor decidir.
+const DISPONIVEL = { disponivel: true };
+
+// Os pontos em que o animal está fora do ideal da espécie. A idade é em anos
+// completos, como o site mostra: 8 anos e 11 meses ainda é 8. No 90º dia depois
+// da coleta, o intervalo já está cumprido (F13).
+function pontosForaDoIdeal(animal, hoje) {
+  const ideal = IDEAL_DO_DOADOR[animal.especie];
+  const nascimento = deDataDoBanco(animal.dataNascimento);
+  const ultimaColeta = animal.doacoes[0];
+  return [
+    Number(animal.pesoKg) < ideal.pesoMin,
+    nascimento > subtrairAnos(hoje, ideal.idadeMin) ||
+      nascimento <= subtrairAnos(hoje, ideal.idadeMax + 1),
+    !!ultimaColeta &&
+      deDataDoBanco(ultimaColeta.dataColeta) >
+        subtrairDias(hoje, INTERVALO_RECUPERACAO_DIAS),
+  ].filter(Boolean).length;
 }
 
 // O texto da busca procura no nome, na raça, no código do animal e no bairro
@@ -69,8 +80,13 @@ const desempatar = (a, b) =>
   porNome.compare(a.animal.nome, b.animal.nome) ||
   (a.animal.codigo < b.animal.codigo ? -1 : 1);
 
+// A ordem padrão é a preferência: quem atende a mais critérios vem antes e,
+// entre iguais, quem já foi validado.
 const ORDENAR = {
-  validados: (a, b) => b.validado - a.validado || desempatar(a, b),
+  ideal: (a, b) =>
+    a.pontosFora - b.pontosFora || b.validado - a.validado || desempatar(a, b),
+  validados: (a, b) =>
+    b.validado - a.validado || a.pontosFora - b.pontosFora || desempatar(a, b),
   peso: (a, b) =>
     Number(b.animal.pesoKg) - Number(a.animal.pesoKg) || desempatar(a, b),
   nome: desempatar,
@@ -88,6 +104,9 @@ function dadosDoDoador({ animal, validado }) {
     nascimentoAproximado: animal.nascimentoAproximado,
     pesoKg: Number(animal.pesoKg),
     tipoSanguineo: animal.tipoSanguineo,
+    ultimaDoacao: animal.doacoes[0]
+      ? deDataDoBanco(animal.doacoes[0].dataColeta)
+      : null,
     validado,
     foto: enderecoDaFoto(animal.fotos[0]?.arquivoId),
     cidade: animal.tutor.cidade,
@@ -105,7 +124,7 @@ export async function buscarDoadores(filtros) {
   const animais = await banco.animal.findMany({
     where: {
       especie: filtros.especie,
-      ...podeDoarAgora(hoje),
+      ...DISPONIVEL,
       // Com filtro de tipo, só quem tem a tipagem confirmada (F18): o tipo só
       // é gravado por uma validação assinada, então quem não tem tipo fica
       // de fora sozinho.
@@ -144,12 +163,18 @@ export async function buscarDoadores(filtros) {
           criterios: { select: { criterio: true, atendido: true } },
         },
       },
+      doacoes: {
+        orderBy: { dataColeta: "desc" },
+        take: 1,
+        select: { dataColeta: true },
+      },
     },
   });
 
   let lista = animais.map((animal) => ({
     animal,
     validado: estaValidado(animal.validacoes[0], hoje),
+    pontosFora: pontosForaDoIdeal(animal, hoje),
   }));
   if (filtros.apenasValidados) lista = lista.filter((d) => d.validado);
   lista.sort(ORDENAR[filtros.ordem]);
@@ -163,13 +188,13 @@ export async function buscarDoadores(filtros) {
   };
 }
 
-// As cidades e os bairros onde há doadores da espécie que podem doar agora,
-// para os filtros de localização: a lista acompanha os lugares onde o UFVet
+// As cidades e os bairros onde há doadores disponíveis da espécie, para os
+// filtros de localização: a lista acompanha os lugares onde o UFVet
 // já tem gente, e o bairro vem dentro da cidade (NF16.2).
 export async function locaisDeDoadores(especie) {
   const lugares = await banco.usuario.findMany({
     where: {
-      animais: { some: { especie, ...podeDoarAgora(hojeISO()) } },
+      animais: { some: { especie, ...DISPONIVEL } },
     },
     select: { cidade: true, bairro: true },
     distinct: ["cidade", "bairro"],

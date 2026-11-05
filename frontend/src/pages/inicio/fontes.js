@@ -40,12 +40,6 @@ export const FONTES = [
       "Radioagência Nacional (EBC). Saiba o que é preciso para que seu pet seja um doador de sangue. Jun. 2021.",
     url: "https://agenciabrasil.ebc.com.br/radioagencia-nacional/geral/audio/2021-06/saiba-o-que-e-preciso-para-que-seu-pet-seja-um-doador-de-sangue",
   },
-  {
-    id: "msdGrupos",
-    curta: "MSD Veterinary Manual",
-    completa: "MSD Veterinary Manual. Blood Groups in Dogs and Cats.",
-    url: "https://www.msdvetmanual.com/circulatory-system/blood-groups-and-blood-transfusions-in-dogs-and-cats/blood-groups-in-dogs-and-cats",
-  },
 ];
 
 // Cada fonte pelo id, já com o número que aparece na página.

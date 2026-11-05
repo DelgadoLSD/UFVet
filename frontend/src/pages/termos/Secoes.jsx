@@ -166,9 +166,16 @@ function Doador() {
           qualquer pedido, a qualquer momento, sem precisar explicar o motivo.
         </Item>
         <Item>
-          Mantenha a disponibilidade do animal atualizada. Marque-o como
-          indisponível se ele adoecer, estiver em tratamento, gestante ou
-          viajando.
+          <Forte>Os critérios são uma recomendação, e não uma proibição.</Forte>{" "}
+          Seu animal aparece na busca e pode ser chamado para doar mesmo sem
+          atender a todos eles. Quem atende a mais critérios tem mais chance de
+          ser chamado, e o veterinário avalia o caso e alerta sobre os riscos.
+        </Item>
+        <Item>
+          Mantenha a disponibilidade do animal atualizada. Marcá-lo como
+          indisponível é a única forma de tirá-lo da busca: faça isso se não
+          quiser que ele seja procurado, como quando adoecer, estiver em
+          tratamento, gestante ou viajando.
         </Item>
         <Item>
           Informe o peso, a idade e a saúde do animal com verdade, e envie
@@ -181,8 +188,10 @@ function Doador() {
           protege o seu animal.
         </Item>
         <Item>
-          Depois de uma doação, o animal precisa descansar: a próxima só pode
-          acontecer depois de 90 dias.
+          Depois de uma doação, o ideal é esperar 90 dias até a próxima. Nesse
+          tempo, o animal continua na busca, com o aviso de quando doou. Você
+          decide com o veterinário se ele doa antes disso ou se fica
+          indisponível.
         </Item>
         <Item>
           A coleta é feita no hospital, depois da avaliação de um veterinário, e
@@ -207,6 +216,11 @@ function Receptor() {
           Para ver o e-mail e o telefone dos doadores, peça a liberação a um
           veterinário. Ela vale por 24 horas, 3 dias ou 7 dias. Use esses
           contatos apenas para o caso que motivou o pedido.
+        </Item>
+        <Item>
+          Nem todo doador atende a todos os critérios. A busca mostra primeiro
+          quem atende a mais critérios, mas os outros também podem doar, depois
+          da avaliação de um veterinário.
         </Item>
         <Item>
           O tutor do doador pode recusar o pedido. Respeite a resposta.
@@ -255,7 +269,7 @@ function Veterinarios() {
           {
             titulo: "A decisão clínica",
             texto:
-              "Coletar, transfundir ou recusar é sempre decisão do veterinário que está com o animal, seguindo os protocolos do hospital. As informações do site servem de apoio e não obrigam ninguém.",
+              "Coletar, transfundir ou recusar é sempre decisão do veterinário que está com o animal, seguindo os protocolos do hospital. Os critérios do site são uma referência e não obrigam ninguém: em cada caso, você considera a urgência e a situação do doador e alerta o tutor sobre os riscos.",
           },
           {
             titulo: "Os dados do tutor",
@@ -357,7 +371,7 @@ function Privacidade() {
           },
           {
             dado: "Animais e exames",
-            para: "Para saber se cada animal pode doar.",
+            para: "Para mostrar o quanto cada animal se aproxima do ideal para doar e ordenar a busca.",
           },
           {
             dado: "Registros dos veterinários",

@@ -33,19 +33,19 @@ const ESTILO_VALIDACAO = {
   pendencias: {
     titulo: "Validação com pendências",
     explicacao: (nome) =>
-      `Um veterinário conferiu os critérios de ${nome} e alguns itens abaixo ainda não foram atendidos. Eles precisarão ser verificados no hospital antes de uma coleta.`,
+      `Um veterinário conferiu os critérios de ${nome} e alguns itens abaixo não foram atendidos. Isso não impede a doação: antes da coleta, o veterinário avalia esses pontos e explica os riscos, e a decisão de doar é do tutor.`,
     selo: "bg-[#9e0a24] text-white",
   },
   vencida: {
     titulo: "Validação vencida",
     explicacao: (nome) =>
-      `A validação vale por 1 ano, porque os testes para doenças transmitidas pelo sangue precisam ser refeitos anualmente. ${nome} pode doar normalmente, mas esses exames serão refeitos no hospital antes da coleta.`,
+      `A validação vale por 1 ano, porque os testes para doenças transmitidas pelo sangue precisam ser refeitos anualmente. ${nome} ainda pode doar, mas esses exames serão refeitos no hospital antes da coleta.`,
     selo: "bg-[#1a1c1c] text-white",
   },
   pendente: {
     titulo: "Ainda não validado",
     explicacao: (nome) =>
-      `${nome} pode doar normalmente — só ainda não teve os exames conferidos por um veterinário aqui. Antes da coleta, o hospital fará os exames de triagem: os testes de doenças costumam levar alguns dias, e o sangue só pode ser usado depois dos resultados.`,
+      `${nome} pode doar, mas ainda não teve os exames conferidos por um veterinário no site. Antes da coleta, o hospital fará os exames de triagem: os testes de doenças costumam levar alguns dias, e o sangue só pode ser usado depois dos resultados.`,
     selo: "bg-[#5f5e5e] text-white",
   },
 };

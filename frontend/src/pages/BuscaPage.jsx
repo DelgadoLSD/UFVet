@@ -6,12 +6,15 @@ import Botao from "../components/Botao";
 import Selecao from "../components/Selecao";
 import ModalComoFuncionaValidacao from "../components/ModalComoFuncionaValidacao";
 import ModalComoFuncionaContato from "../components/ModalComoFuncionaContato";
+import ModalCriteriosDoacao from "../components/ModalCriteriosDoacao";
+import BotaoAjuda from "../components/BotaoAjuda";
 import ModalPedirLiberacao from "../components/ModalPedirLiberacao";
 import CartaoDoador from "./busca/CartaoDoador";
 import FaixaAcessoContatos from "./busca/FaixaAcessoContatos";
 import FiltrosBusca from "./busca/FiltrosBusca";
 import {
   FILTROS_INICIAIS,
+  ORDEM_PADRAO,
   ORDENACOES,
   TAMANHO_MAXIMO_BUSCA,
   consultaDaBusca,
@@ -29,9 +32,9 @@ import { Girando } from "../components/Carregando";
 // página ficam em pages/busca/.
 //
 // A busca é feita pela API (F16 a F18): a página manda os filtros e recebe
-// uma página de 6 doadores de cada vez, com o total. Só aparece quem pode
-// doar agora; o pausado pelo tutor e o que está se recuperando de uma coleta
-// ficam de fora.
+// uma página de 6 doadores de cada vez, com o total. Aparecem todos os animais
+// que o tutor deixou disponíveis, primeiro quem atende a mais critérios: estar
+// fora de um critério, ou ter doado há pouco, não tira ninguém da busca.
 
 function CampoBuscaTexto({ valor, onMudar }) {
   return (
@@ -72,9 +75,9 @@ function CampoBuscaTexto({ valor, onMudar }) {
   );
 }
 
-// A ordem dos resultados, num menu do tamanho do texto ("Ordenar por
-// Validados primeiro"), como nas lojas: as três opções, cada uma com uma
-// linha dizendo o que faz, aparecem ao abrir.
+// A ordem dos resultados, num menu do tamanho do texto ("Ordenar por Mais
+// critérios atendidos"), como nas lojas: as opções, cada uma com uma linha dizendo o que
+// faz, aparecem ao abrir.
 function OrdemDaBusca({ ordem, onOrdenar }) {
   return (
     <Selecao
@@ -86,6 +89,26 @@ function OrdemDaBusca({ ordem, onOrdenar }) {
       onEscolher={onOrdenar}
       limpavel={false}
     />
+  );
+}
+
+// O que a ordem e os cartões querem dizer, antes de a pessoa escolher com quem
+// falar: nem todo doador atende a todos os critérios, e isso não impede a doação.
+function AvisoCriterios({ onEntender }) {
+  return (
+    <div className="flex items-start gap-2 rounded-xl bg-[#fdecee] px-4 py-3">
+      <p className="flex-1 text-sm text-[#5b403f] leading-relaxed">
+        <strong className="font-semibold text-[#1a1c1c]">
+          Quem atende a mais critérios aparece primeiro.
+        </strong>{" "}
+        Quem não atende a todos também pode doar: o veterinário avalia cada
+        caso, e o tutor decide.
+      </p>
+      <BotaoAjuda
+        rotulo="Como funcionam os critérios de doação?"
+        onClick={onEntender}
+      />
+    </div>
   );
 }
 
@@ -104,8 +127,8 @@ function SemResultados({ onLimpar }) {
         Nenhum doador encontrado
       </h3>
       <p className="text-[#5f5e5e] text-sm max-w-xs leading-relaxed mb-8">
-        Nenhum animal que pode doar agora corresponde aos filtros ou à busca.
-        Tente ampliar os critérios.
+        Nenhum animal disponível corresponde aos filtros ou à busca. Tente
+        ampliar os filtros.
       </p>
       <Botao icone="filter_alt_off" onClick={onLimpar}>
         Limpar filtros
@@ -117,7 +140,7 @@ function SemResultados({ onLimpar }) {
 // A última busca da pessoa, enquanto a aba está aberta: voltando à busca
 // (de um perfil aberto por ela, por exemplo), os filtros e a ordem continuam
 // os mesmos.
-let ultimaBusca = { filtros: FILTROS_INICIAIS, ordem: "validados" };
+let ultimaBusca = { filtros: FILTROS_INICIAIS, ordem: ORDEM_PADRAO };
 
 // O que a busca já trouxe, por consulta (e as cidades, por espécie):
 // voltando a uma busca, os doadores aparecem na hora, sem "buscando", e a
@@ -151,7 +174,7 @@ function CartoesEsperando() {
           <div className="h-[68px] bg-[#f3e4e6]" />
           <div className="p-3 flex flex-col gap-3">
             <div className="aspect-[5/4] rounded-xl bg-[#f7f0f0]" />
-            <div className="h-[100px] rounded-xl bg-[#f7f0f0]" />
+            <div className="h-[152px] rounded-xl bg-[#f7f0f0]" />
             <div className="h-4 w-1/2 rounded-full bg-[#f7f0f0]" />
           </div>
         </div>
@@ -325,7 +348,7 @@ function BuscaPage() {
   useEffect(() => {
     ultimaBusca = { filtros, ordem };
   }, [filtros, ordem]);
-  // Modal aberto: "validacao", "contato", "pedido" ou null.
+  // Modal aberto: "validacao", "criterios", "contato", "pedido" ou null.
   // Fecha sozinho se a aba passar para outra conta.
   const [modal, setModal] = useModalDaConta();
   const fecharModal = () => setModal(null);
@@ -364,6 +387,7 @@ function BuscaPage() {
       {modal === "validacao" && (
         <ModalComoFuncionaValidacao onFechar={fecharModal} />
       )}
+      {modal === "criterios" && <ModalCriteriosDoacao onFechar={fecharModal} />}
       {modal === "contato" && (
         <ModalComoFuncionaContato onFechar={fecharModal} />
       )}
@@ -416,7 +440,7 @@ function BuscaPage() {
                     <strong className="font-bold text-[#1a1c1c]">
                       {total} {total === 1 ? "doador" : "doadores"}
                     </strong>{" "}
-                    {total === 1 ? "pode" : "podem"} doar agora com esses
+                    {total === 1 ? "disponível" : "disponíveis"} com esses
                     filtros
                   </>
                 ) : (
@@ -425,6 +449,10 @@ function BuscaPage() {
               </p>
               <OrdemDaBusca ordem={ordem} onOrdenar={setOrdem} />
             </div>
+
+            {!erro && (resultado.primeiraVez || total > 0) && (
+              <AvisoCriterios onEntender={() => setModal("criterios")} />
+            )}
 
             <FaixaAcessoContatos
               acesso={acesso}

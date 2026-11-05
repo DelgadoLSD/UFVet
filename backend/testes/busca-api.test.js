@@ -11,9 +11,9 @@ import {
 } from "../src/datas.js";
 import { cadastrarEEntrar, criarTutor, limparBanco } from "./apoio.js";
 
-// A busca de doadores pela API (F16 a F18): pública, só com quem pode doar
-// agora, com os filtros, a situação da validação, a ordem e as páginas, e
-// sem nenhum contato. Os animais são gravados direto no banco, com o
+// A busca de doadores pela API (F16 a F18): pública, com todos os animais que
+// o tutor deixou disponíveis, os filtros, a situação da validação, a ordem e
+// as páginas, e sem nenhum contato. Os animais são gravados direto no banco, com o
 // histórico escolhido em cada teste. Cada teste cria uma API nova (com os
 // limites de tentativas zerados) sobre um banco vazio.
 
@@ -141,31 +141,45 @@ describe("quem aparece na busca", () => {
     expect(nomes(await buscar())).toEqual(["Thor"]);
   });
 
-  test("quem doou há menos de 90 dias fica de fora; no 90º dia, volta (F13)", async () => {
+  test("só o tutor tira o animal da busca: peso, idade e doação recente não tiram ninguém (F11, F13)", async () => {
     const tutor = await tutorEm();
     await doar(
-      await doador(tutor, { nome: "Doou há 10 dias" }),
-      subtrairDias(hoje(), 10),
+      await doador(tutor, { nome: "Doou ontem" }),
+      subtrairDias(hoje(), 1),
     );
-    await doar(
-      await doador(tutor, { nome: "Doou há 89 dias" }),
-      subtrairDias(hoje(), 89),
-    );
-    await doar(
-      await doador(tutor, { nome: "Doou há 90 dias" }),
-      subtrairDias(hoje(), 90),
-    );
-    await doar(
-      await doador(tutor, { nome: "Doou há 2 anos" }),
-      subtrairAnos(hoje(), 2),
-    );
-    await doador(tutor, { nome: "Nunca doou" });
+    await doador(tutor, { nome: "Leve", pesoKg: 8 });
+    await doador(tutor, {
+      nome: "Idoso",
+      dataNascimento: subtrairAnos(hoje(), 12),
+    });
+    await doador(tutor, {
+      nome: "Filhote",
+      dataNascimento: subtrairDias(hoje(), 100),
+    });
+    // Pausado continua de fora, mesmo dentro do ideal ou validado.
+    await validar(await doador(tutor, { nome: "Pausado", disponivel: false }));
 
     expect(nomes(await buscar({ ordem: "nome" }))).toEqual([
-      "Doou há 2 anos",
-      "Doou há 90 dias",
-      "Nunca doou",
+      "Doou ontem",
+      "Filhote",
+      "Idoso",
+      "Leve",
     ]);
+  });
+
+  test("traz a coleta mais recente, ou nada se o animal nunca doou", async () => {
+    const tutor = await tutorEm();
+    const thor = await doador(tutor, { nome: "Thor" });
+    await doar(thor, subtrairDias(hoje(), 200));
+    await doar(thor, subtrairDias(hoje(), 10));
+    await doar(thor, subtrairDias(hoje(), 400));
+    await doador(tutor, { nome: "Max" });
+
+    const resposta = await buscar({ ordem: "nome" });
+    const ultima = Object.fromEntries(
+      resposta.body.doadores.map((d) => [d.nome, d.ultimaDoacao]),
+    );
+    expect(ultima).toEqual({ Max: null, Thor: subtrairDias(hoje(), 10) });
   });
 
   test("só a espécie pedida", async () => {
@@ -290,13 +304,97 @@ describe("validação na busca", () => {
 });
 
 describe("ordem e páginas", () => {
-  test("validados primeiro (padrão), depois pelo nome; maior peso; nome com acento no lugar certo (F17)", async () => {
+  test("mais perto do ideal primeiro (padrão): menos pontos fora vêm antes e, entre iguais, o validado (F17)", async () => {
+    const tutor = await tutorEm();
+    await doador(tutor, {
+      nome: "Dois fora",
+      pesoKg: 8,
+      dataNascimento: subtrairAnos(hoje(), 12),
+    });
+    await doar(
+      await doador(tutor, { nome: "Doou há pouco" }),
+      subtrairDias(hoje(), 10),
+    );
+    await validar(await doador(tutor, { nome: "Leve validado", pesoKg: 8 }));
+    await doador(tutor, { nome: "Sem validação" });
+    await validar(await doador(tutor, { nome: "Validado" }));
+
+    const esperado = [
+      "Validado",
+      "Sem validação",
+      "Leve validado",
+      "Doou há pouco",
+      "Dois fora",
+    ];
+    expect(nomes(await buscar())).toEqual(esperado);
+    expect(nomes(await buscar({ ordem: "ideal" }))).toEqual(esperado);
+    // Na ordem dos validados, a validação vem antes de tudo.
+    expect(nomes(await buscar({ ordem: "validados" }))).toEqual([
+      "Validado",
+      "Leve validado",
+      "Sem validação",
+      "Doou há pouco",
+      "Dois fora",
+    ]);
+  });
+
+  test("os limites do ideal: peso, idade e intervalo, em cães e gatos", async () => {
+    const tutor = await tutorEm();
+    // Em cada par, o nome de quem está fora vem antes no alfabeto: se os dois
+    // contassem como iguais, ele apareceria primeiro.
+    await doador(tutor, { nome: "A fora, 24,9 kg", pesoKg: 24.9 });
+    await doador(tutor, { nome: "Z dentro, 25 kg", pesoKg: 25 });
+    await doador(tutor, {
+      nome: "A fora, quase 1 ano",
+      dataNascimento: subtrairDias(subtrairAnos(hoje(), 1), -1),
+    });
+    await doador(tutor, {
+      nome: "Z dentro, faz 1 ano hoje",
+      dataNascimento: subtrairAnos(hoje(), 1),
+    });
+    await doador(tutor, {
+      nome: "A fora, faz 9 anos hoje",
+      dataNascimento: subtrairAnos(hoje(), 9),
+    });
+    await doador(tutor, {
+      nome: "Z dentro, quase 9 anos",
+      dataNascimento: subtrairDias(subtrairAnos(hoje(), 9), -1),
+    });
+    await doar(
+      await doador(tutor, { nome: "A fora, doou há 89 dias" }),
+      subtrairDias(hoje(), 89),
+    );
+    await doar(
+      await doador(tutor, { nome: "Z dentro, doou há 90 dias" }),
+      subtrairDias(hoje(), 90),
+    );
+
+    const caes = nomes(await buscar());
+    expect(caes.slice(0, 4).every((nome) => nome.startsWith("Z"))).toBe(true);
+    expect(caes.slice(4).every((nome) => nome.startsWith("A"))).toBe(true);
+
+    await doador(tutor, {
+      nome: "A fora, 4,4 kg",
+      especie: "GATO",
+      pesoKg: 4.4,
+    });
+    await doador(tutor, {
+      nome: "Z dentro, 4,5 kg",
+      especie: "GATO",
+      pesoKg: 4.5,
+    });
+    expect(nomes(await buscar({ especie: "GATO" }))).toEqual([
+      "Z dentro, 4,5 kg",
+      "A fora, 4,4 kg",
+    ]);
+  });
+
+  test("maior peso e nome com acento no lugar certo (F17)", async () => {
     const tutor = await tutorEm();
     await doador(tutor, { nome: "Bidu", pesoKg: 40 });
     await validar(await doador(tutor, { nome: "Zeca", pesoKg: 25 }));
     await validar(await doador(tutor, { nome: "Ágata", pesoKg: 32 }));
 
-    expect(nomes(await buscar())).toEqual(["Ágata", "Zeca", "Bidu"]);
     expect(nomes(await buscar({ ordem: "peso" }))).toEqual([
       "Bidu",
       "Ágata",
@@ -362,6 +460,7 @@ describe("o que sai de cada doador", () => {
       nascimentoAproximado: false,
       pesoKg: 32.5,
       tipoSanguineo: "DEA 1.1+",
+      ultimaDoacao: null,
       validado: true,
       foto: `/api/arquivos/${PRINCIPAL}.webp`,
       cidade: "Viçosa - MG",
@@ -426,18 +525,19 @@ describe("pedidos com problema", () => {
 });
 
 describe("cidades e bairros dos filtros", () => {
-  test("só onde há doadores da espécie que podem doar agora, cada cidade com os bairros", async () => {
+  test("só onde há doadores disponíveis da espécie, cada cidade com os bairros", async () => {
     await doador(await tutorEm("Viçosa - MG", "Ramos"));
     await doador(await tutorEm("Viçosa - MG", "Centro"));
     await doador(await tutorEm("Teixeiras - MG", "Centro"));
-    // Pausado, em recuperação ou de outra espécie: o lugar não entra.
-    await doador(await tutorEm("Viçosa - MG", "Silvestre"), {
-      disponivel: false,
-    });
+    // Quem doou há pouco continua disponível: o lugar entra.
     await doar(
       await doador(await tutorEm("Ubá - MG", "Centro")),
       subtrairDias(hoje(), 5),
     );
+    // Pausado ou de outra espécie: o lugar não entra.
+    await doador(await tutorEm("Viçosa - MG", "Silvestre"), {
+      disponivel: false,
+    });
     await doador(await tutorEm("Coimbra - MG", "Centro"), {
       especie: "GATO",
       pesoKg: 4,
@@ -448,6 +548,7 @@ describe("cidades e bairros dos filtros", () => {
       .expect(200);
     expect(resposta.body.cidades).toEqual([
       { nome: "Teixeiras - MG", bairros: ["Centro"] },
+      { nome: "Ubá - MG", bairros: ["Centro"] },
       { nome: "Viçosa - MG", bairros: ["Centro", "Ramos"] },
     ]);
   });

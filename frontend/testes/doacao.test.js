@@ -8,7 +8,11 @@ import {
   avisoSemEfeito,
   criterioSemEfeito,
   nomeRaca,
+  detalhesForaDoIdeal,
+  foraDoIdeal,
+  resumoDoIdeal,
   situacaoRecuperacao,
+  textoDoacaoRecente,
   statusValidacao,
   textoCastracao,
   todosCriterios,
@@ -25,8 +29,8 @@ afterEach(() => vi.useRealTimers());
 
 const CAO = REFERENCIA_DOADOR.CAO;
 
-describe("intervalo de recuperação (F13)", () => {
-  test("90 dias depois da coleta mais recente, o animal volta a ficar apto", () => {
+describe("intervalo ideal de recuperação (F13)", () => {
+  test("mostra até quando o ideal é esperar, contando da coleta mais recente", () => {
     const doacoes = [
       { dataColeta: "2026-03-10" },
       { dataColeta: "2026-09-05" },
@@ -37,15 +41,81 @@ describe("intervalo de recuperação (F13)", () => {
     const situacao = situacaoRecuperacao(ultima, CAO);
 
     expect(ultima).toBe("2026-09-05");
-    // A interface mostra o dia em que ele volta (NF13.2).
-    expect(situacao).toEqual({ apto: false, liberadaEm: "2026-12-04" });
+    // A interface mostra o dia em que o intervalo termina (NF13.2).
+    expect(situacao).toEqual({
+      intervaloCumprido: false,
+      idealEsperarAte: "2026-12-04",
+    });
   });
 
-  test("passados os 90 dias, ou sem nenhuma coleta, está apto", () => {
-    expect(situacaoRecuperacao("2026-07-09", CAO).apto).toBe(true);
+  test("passados os 90 dias, ou sem nenhuma coleta, o intervalo está cumprido", () => {
+    expect(situacaoRecuperacao("2026-07-09", CAO).intervaloCumprido).toBe(true);
     expect(situacaoRecuperacao(dataUltimaDoacao([]), CAO)).toEqual({
-      apto: true,
+      intervaloCumprido: true,
     });
+  });
+
+  test("diz há quanto tempo o animal doou", () => {
+    expect(textoDoacaoRecente("2026-10-07")).toBe("Doou hoje");
+    expect(textoDoacaoRecente("2026-10-06")).toBe("Doou ontem");
+    expect(textoDoacaoRecente("2026-09-05")).toBe("Doou há 32 dias");
+  });
+});
+
+describe("pontos fora do ideal", () => {
+  // Hoje é 07/10/2026: quem nasceu em 2021 tem 5 anos.
+  const animal = (dados = {}) => ({
+    especie: "CAO",
+    pesoKg: 30,
+    dataNascimento: "2021-05-10",
+    ...dados,
+  });
+
+  test("dentro do ideal em peso, idade e intervalo", () => {
+    expect(foraDoIdeal(animal(), null)).toEqual([]);
+    expect(resumoDoIdeal([], null)).toBe("Peso, idade e intervalo ideais");
+  });
+
+  test("os limites do peso, em cães e gatos", () => {
+    expect(foraDoIdeal(animal({ pesoKg: 25 }), null)).toEqual([]);
+    expect(foraDoIdeal(animal({ pesoKg: 24.9 }), null)).toEqual(["peso"]);
+    const gato = { especie: "GATO" };
+    expect(foraDoIdeal(animal({ ...gato, pesoKg: 4.5 }), null)).toEqual([]);
+    expect(foraDoIdeal(animal({ ...gato, pesoKg: 4.4 }), null)).toEqual([
+      "peso",
+    ]);
+  });
+
+  test("os limites da idade, em anos completos", () => {
+    const nasceu = (dataNascimento) =>
+      foraDoIdeal(animal({ dataNascimento }), null);
+    expect(nasceu("2025-10-07")).toEqual([]);
+    expect(nasceu("2025-10-08")).toEqual(["idade"]);
+    expect(nasceu("2017-10-08")).toEqual([]);
+    expect(nasceu("2017-10-07")).toEqual(["idade"]);
+  });
+
+  test("o limite do intervalo: 90 dias depois da coleta, já está cumprido", () => {
+    expect(foraDoIdeal(animal(), "2026-07-09")).toEqual([]);
+    expect(foraDoIdeal(animal(), "2026-07-10")).toEqual(["intervalo"]);
+  });
+
+  test("o resumo nomeia um ponto só e conta quando são vários", () => {
+    expect(resumoDoIdeal(["peso"], null)).toBe("Peso abaixo do ideal");
+    expect(resumoDoIdeal(["idade"], null)).toBe("Fora da idade ideal");
+    expect(resumoDoIdeal(["intervalo"], "2026-10-02")).toBe("Doou há 5 dias");
+    expect(resumoDoIdeal(["peso", "idade"], null)).toBe(
+      "Não atende a 2 critérios",
+    );
+  });
+
+  test("os detalhes dizem o valor de cada ponto e o que seria o ideal", () => {
+    const leve = animal({ pesoKg: 8, dataNascimento: "2015-01-01" });
+    expect(detalhesForaDoIdeal(leve, "2026-10-02")).toEqual([
+      "Peso: 8 kg. O ideal é 25 kg ou mais.",
+      "Idade: 11 anos. O ideal é de 1 a 8 anos.",
+      "Última doação: 02/10/2026. O ideal é esperar até 31/12/2026.",
+    ]);
   });
 });
 
@@ -145,7 +215,7 @@ describe("situação da validação", () => {
   });
 });
 
-describe("peso mínimo para doar", () => {
+describe("peso ideal para doar", () => {
   // Gatos: 4,5 kg, como Helm e Knottenbelt (2010) e as diretrizes da ISFM
   // (2021), em vez dos 4,0 kg da ABVHMT. Cães: 25 kg nas três.
   test("gatos a partir de 4,5 kg e cães a partir de 25 kg", () => {
@@ -158,10 +228,10 @@ describe("peso mínimo para doar", () => {
     expect(pesoMinimo(REFERENCIA_DOADOR.CAO)).toBe("25 kg");
   });
 
-  test("o critério da validação mostra o mínimo da espécie", () => {
+  test("o critério da validação mostra o ideal da espécie", () => {
     const pesoIdade = CRITERIOS_DOACAO.find((c) => c.chave === "PESO_IDADE");
     expect(pesoIdade.descricao(REFERENCIA_DOADOR.GATO)).toBe(
-      "Mínimo de 4,5 kg e idade entre 1 e 8 anos.",
+      "A partir de 4,5 kg e idade entre 1 e 8 anos.",
     );
   });
 });

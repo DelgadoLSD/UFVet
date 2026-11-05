@@ -22,8 +22,9 @@ import { esquemaCadastro, esquemaDisponibilidade } from "../validacao.js";
 // juntas. A versão 1 foi aceita antes de os termos estarem escritos; a 2
 // ainda pedia o CPF; a 3 não dizia que os e-mails saem pelo Gmail; a 4
 // dava a entender uma parceria com o Hospital Veterinário da UFV, que não
-// existe no momento.
-const VERSAO_DOS_TERMOS = "5";
+// existe no momento; a 5 tratava os critérios de doação e o intervalo entre
+// doações como regras fixas.
+const VERSAO_DOS_TERMOS = "6";
 
 const MENSAGEM_CONVITE =
   "Convite inválido, já usado ou vencido. Peça um novo a quem enviou o convite.";

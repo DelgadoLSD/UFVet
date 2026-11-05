@@ -16,7 +16,7 @@ import { nomeProfissional } from "../../util/texto";
 // Histórico de coletas do animal e, para o veterinário, o registro de uma
 // nova. A doação é um evento assinado, não um contador: cada linha guarda
 // quando, onde, quanto e quem acompanhou. É dessa lista que saem o total do
-// perfil e o intervalo de recuperação.
+// perfil e o intervalo ideal de recuperação.
 
 // Uma linha com ícone e texto, para "onde" e "quem" de cada coleta.
 function Detalhe({ icone, children }) {
@@ -76,7 +76,8 @@ function porAno(doacoes) {
 }
 
 // O que importa saber antes da lista: quando foi a última coleta e se o
-// animal ainda está se recuperando dela.
+// intervalo ideal depois dela já passou. É uma recomendação: o animal continua
+// disponível, e quem decide é o tutor, com o veterinário.
 function Resumo({ animal, ultimaDoacao, recuperacao }) {
   const { intervaloDias } = REFERENCIA_DOADOR[animal.especie];
   return (
@@ -84,15 +85,16 @@ function Resumo({ animal, ultimaDoacao, recuperacao }) {
       A última coleta foi em{" "}
       <strong className="text-[#1a1c1c]">{dataPorExtenso(ultimaDoacao)}</strong>
       .{" "}
-      {recuperacao.apto ? (
-        <>O descanso de {intervaloDias} dias depois dela já terminou.</>
+      {recuperacao.intervaloCumprido ? (
+        <>O intervalo ideal de {intervaloDias} dias depois dela já passou.</>
       ) : (
         <>
-          {animal.nome} fica em recuperação até{" "}
+          O ideal é esperar até{" "}
           <strong className="text-[#1a1c1c]">
-            {dataPorExtenso(recuperacao.liberadaEm)}
+            {dataPorExtenso(recuperacao.idealEsperarAte)}
           </strong>
-          : depois de cada coleta, são {intervaloDias} dias de descanso.
+          , {intervaloDias} dias depois da coleta. {animal.nome} continua na
+          busca, e o tutor decide com o veterinário se doa antes disso.
         </>
       )}
     </div>
@@ -405,7 +407,7 @@ function ModalDoacoes({
           </p>
           <p className="text-sm text-[#5f5e5e] mt-1 leading-relaxed max-w-sm mx-auto">
             {podeRegistrar
-              ? "Depois de uma coleta, registre aqui: o descanso de recuperação passa a contar dela."
+              ? "Depois de uma coleta, registre aqui: o intervalo ideal de recuperação passa a contar dela."
               : "Quando a primeira coleta acontecer, o veterinário registra aqui."}
           </p>
         </div>

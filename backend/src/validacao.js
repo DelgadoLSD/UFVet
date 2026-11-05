@@ -521,15 +521,27 @@ export const esquemaObservacao = z.object({
 
 // ─── Busca de doadores (F16 a F18) ────────────────────────────────────────────
 
-// Depois de uma coleta, o animal descansa 90 dias, cão ou gato (NF13.1).
+// Depois de uma coleta, o ideal é o animal descansar 90 dias, cão ou gato
+// (NF13.1). É uma recomendação: ele continua na busca, e quem decide é o tutor,
+// com o veterinário.
 export const INTERVALO_RECUPERACAO_DIAS = 90;
+
+// O ideal para um doador, por espécie (os mesmos valores de
+// frontend/src/regras/doacao.js). Não decide quem aparece na busca, só a ordem:
+// quem atende a mais critérios vem antes, mas um animal fora dele ainda pode
+// doar, se o veterinário avaliar e o tutor decidir.
+export const IDEAL_DO_DOADOR = {
+  CAO: { pesoMin: 25, idadeMin: 1, idadeMax: 8 },
+  GATO: { pesoMin: 4.5, idadeMin: 1, idadeMax: 8 },
+};
 
 // Quantos doadores vêm de cada vez; o site pede o próximo bloco quando a
 // pessoa clica em "Carregar mais" (NF16.3).
 export const DOADORES_POR_PAGINA = 6;
 
-// As ordens da busca (F17): validados primeiro, maior peso ou nome.
-export const ORDENS_DA_BUSCA = ["validados", "peso", "nome"];
+// As ordens da busca (F17): mais critérios atendidos, validados primeiro, maior peso
+// ou nome.
+export const ORDENS_DA_BUSCA = ["ideal", "validados", "peso", "nome"];
 
 const especieDaBusca = z.enum(["CAO", "GATO"], {
   error: "Escolha cão ou gato.",
@@ -566,7 +578,7 @@ export const esquemaBusca = z
     busca: textoDaBusca(60, "Busque com até 60 caracteres."),
     ordem: z
       .enum(ORDENS_DA_BUSCA, { error: "Escolha uma das ordens da lista." })
-      .default("validados"),
+      .default("ideal"),
     pagina: z.coerce
       .number({ error: "Página inválida." })
       .int("Página inválida.")

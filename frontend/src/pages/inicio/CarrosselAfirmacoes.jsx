@@ -5,7 +5,8 @@ import NotaFonte from "./NotaFonte";
 // verdades (cartão branco). Passa pelas setas, pelos pontos, pelas setas do
 // teclado ou arrastando o dedo no celular.
 //
-// `itens` é uma lista de { afirmacao, resposta, fonte }.
+// `itens` é uma lista de { afirmacao, resposta, fonte }; a fonte é opcional,
+// para o que fala de como o UFVet funciona, e não de um fato clínico.
 
 // Distância mínima, em pixels, para um arrasto contar como troca de cartão.
 const ARRASTO_MINIMO = 40;
@@ -109,7 +110,7 @@ function CarrosselAfirmacoes({ verdade = false, itens }) {
               </p>
               <p className={`mt-4 text-lg leading-relaxed ${cores.resposta}`}>
                 {item.resposta}
-                <NotaFonte ids={item.fonte} claro={!verdade} />
+                {item.fonte && <NotaFonte ids={item.fonte} claro={!verdade} />}
               </p>
             </div>
           ))}

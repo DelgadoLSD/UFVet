@@ -281,13 +281,14 @@ de congelar no ano do cadastro.
 ### F13 — Controlar o intervalo de recuperação · Oculto · Obrigatório
 
 **Descrição:** A partir da data da coleta mais recente, o sistema deve calcular
-o período de recuperação e apresentar o animal como indisponível até o fim
-desse prazo.
+o período ideal de recuperação e avisar até quando o ideal é esperar. O animal
+continua disponível nesse período: quem decide se ele doa antes é o tutor, com o
+veterinário, e só o tutor o tira da busca (F11).
 
 | Código | Nome | Restrição | Categoria | Desejável | Permanente |
 |---|---|---|---|---|---|
-| NF13.1 | Intervalo mínimo | O intervalo entre coletas é de 90 dias para cães e gatos. | Especificação | ( ) | ( ) |
-| NF13.2 | Informação do prazo | A interface deve exibir a data em que o animal volta a ficar apto. | Interface | (x) | ( ) |
+| NF13.1 | Intervalo ideal | O intervalo ideal entre coletas é de 90 dias para cães e gatos. | Especificação | ( ) | ( ) |
+| NF13.2 | Informação do prazo | A interface deve exibir a data até a qual o ideal é esperar. | Interface | (x) | ( ) |
 
 ---
 
@@ -331,7 +332,7 @@ textual por nome, raça, bairro ou código.
 
 ### F17 — Ordenar resultados da busca · Evidente · Desejável
 
-**Descrição:** O sistema deve permitir ordenar os resultados por situação de
+**Descrição:** O sistema deve permitir ordenar os resultados por critérios atendidos (a ordem padrão: quem atende a mais vem antes), por situação de
 validação, por peso ou por nome.
 
 ---
@@ -416,7 +417,7 @@ observação. O registro é assinado com nome e CRMV.
 | NF24.1 | Controle de acesso | A função só pode ser executada por usuário com perfil de veterinário. | Segurança | ( ) | (x) |
 | NF24.2 | Data não futura | Não é permitido registrar coleta com data posterior ao dia corrente. | Especificação | ( ) | (x) |
 | NF24.3 | Seleção de data | A escolha do dia deve usar componente de calendário do próprio sistema, e não o seletor nativo do navegador. | Interface | (x) | ( ) |
-| NF24.4 | Efeito imediato | O registro deve refletir de imediato na disponibilidade do animal, por acionar F13. | Especificação | ( ) | (x) |
+| NF24.4 | Efeito imediato | O registro deve refletir de imediato no aviso de intervalo do animal, por acionar F13, sem mudar a disponibilidade. | Especificação | ( ) | (x) |
 
 ---
 
@@ -537,7 +538,7 @@ equívocos comuns.
 | S5 | Proteção de dados pessoais | O tratamento dos dados deve observar a Lei nº 13.709/2018 (LGPD), incluindo o direito de eliminação, com as conservações admitidas pelo art. 16 para registros clínicos assinados. | Legal | ( ) | (x) |
 | S6 | Acessibilidade | Todos os controles devem ser operáveis por teclado, com indicação visível de foco, rótulos acessíveis em botões sem texto e respeito à preferência de movimento reduzido do sistema operacional. | Usabilidade | ( ) | (x) |
 | S7 | Ajuda contextual | Termos clínicos apresentados ao tutor devem ter explicação acessível no próprio ponto em que aparecem, por símbolo de ajuda padronizado. | Usabilidade | (x) | ( ) |
-| S8 | Critérios clínicos de referência | Os critérios de aptidão adotados seguem a Nota Técnica nº 3 (2024) da Associação Brasileira Veterinária de Hematologia e Medicina Transfusional, menos o peso mínimo dos gatos, de 4,5 kg, que segue Helm e Knottenbelt (2010) e as diretrizes da ISFM (2021). Devem ser confirmados com a equipe do Hospital Veterinário antes da implantação. | Legais | ( ) | ( ) |
+| S8 | Critérios clínicos de referência | Os critérios de aptidão adotados seguem a Nota Técnica nº 3 (2024) da Associação Brasileira Veterinária de Hematologia e Medicina Transfusional, menos o peso mínimo dos gatos, de 4,5 kg, que segue Helm e Knottenbelt (2010) e as diretrizes da ISFM (2021). São tratados como o ideal, e não como impedimento: um animal fora deles ainda pode doar, se o veterinário avaliar e o tutor decidir. Devem ser confirmados com a equipe do Hospital Veterinário antes da implantação. | Legais | ( ) | ( ) |
 | S9 | Camada de persistência | O acesso ao banco deve ser mediado por ORM, de modo que a troca do sistema gerenciador não exija reescrita das regras de negócio. | Persistência | (x) | ( ) |
 
 ---

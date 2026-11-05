@@ -54,6 +54,10 @@ function ModalComoFuncionaContato({ onFechar }) {
               <Item escuro>
                 O acesso vence sozinho: em 24 horas, 3 ou 7 dias.
               </Item>
+              <Item escuro>
+                A busca mostra primeiro quem atende a mais critérios. Comece por
+                eles.
+              </Item>
             </ul>
           </div>
 

@@ -43,8 +43,8 @@ export function subtrairAnos(dia, anos) {
 // "2025-08-10" mais 1 ano -> "2026-08-10" (o prazo de uma validação).
 export const somarAnos = (dia, anos) => subtrairAnos(dia, -anos);
 
-// "2026-10-09" menos 90 dias -> "2026-07-11": até onde vai, para trás, a
-// recuperação depois de uma coleta.
+// "2026-10-09" menos 90 dias -> "2026-07-11": até onde vai, para trás, o
+// intervalo ideal de recuperação depois de uma coleta.
 export function subtrairDias(dia, dias) {
   const data = paraDataDoBanco(dia);
   data.setUTCDate(data.getUTCDate() - dias);

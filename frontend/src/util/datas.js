@@ -85,6 +85,10 @@ export function somarAnos(valor, anos) {
   return paraISO(data);
 }
 
+// Quantos dias se passaram desde uma data: "hoje" é 0, "ontem" é 1.
+export const diasDesde = (valor) =>
+  Math.round((paraData(hojeISO()) - paraData(valor)) / DIA);
+
 // A idade nunca é guardada como número: sai da data de nascimento a cada
 // exibição, e por isso não fica desatualizada.
 export function idadeEmAnos(nascimento) {

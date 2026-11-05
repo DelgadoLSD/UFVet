@@ -20,8 +20,8 @@ function SecaoAbertura() {
             <span className="text-[#9e0a24] italic">salvar uma vida!</span>
           </h1>
           <p className="text-lg md:text-xl mb-12 max-w-xl leading-relaxed text-white">
-            Conectamos tutores de animais que precisam de transfusão a doadores
-            voluntários em uma rede de solidariedade técnica e segura.
+            Quando um cão ou gato precisa de sangue, cada minuto conta. O UFVet
+            conecta os tutores desses animais a doadores voluntários.
           </p>
           <div className="flex flex-col md:flex-row gap-4">
             <Pilula to="/buscar">Preciso de um doador</Pilula>

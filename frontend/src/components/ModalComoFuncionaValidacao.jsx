@@ -97,8 +97,9 @@ function ModalComoFuncionaValidacao({ onFechar }) {
 
         <p className="text-xs text-[#5f5e5e] border-t border-[#f0e6e6] pt-4">
           Enviar exames recentes ajuda o veterinário a validar sem refazê-los. A
-          validação vale 1 ano e leva o CRMV de quem assinou; a decisão final é
-          sempre da equipe do hospital.
+          validação vale 1 ano e leva o CRMV de quem assinou. Antes de qualquer
+          coleta, o veterinário avalia o animal e explica os riscos, e a decisão
+          de doar é do tutor.
         </p>
       </div>
     </Modal>

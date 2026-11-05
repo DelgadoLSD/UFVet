@@ -8,7 +8,7 @@ export const TAMANHO_MAXIMO_BUSCA = 60;
 export const FILTROS_INICIAIS = {
   busca: "",
   // Começa mostrando todos: doadores ainda não validados também podem doar,
-  // e a ordenação padrão já coloca os validados primeiro.
+  // e a ordem padrão já põe primeiro quem atende a mais critérios.
   apenasValidados: false,
   especie: "CAO",
   tipos: [],
@@ -16,7 +16,15 @@ export const FILTROS_INICIAIS = {
   bairro: "",
 };
 
+// A ordem de quem chega: primeiro quem atende a mais critérios.
+export const ORDEM_PADRAO = "ideal";
+
 export const ORDENACOES = [
+  {
+    valor: "ideal",
+    rotulo: "Mais critérios atendidos",
+    descricao: "Quem atende a mais critérios vem antes",
+  },
   {
     valor: "validados",
     rotulo: "Validados primeiro",

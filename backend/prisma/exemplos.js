@@ -471,7 +471,7 @@ const HISTORICO = {
   },
   // Os doadores validados da busca: uma validação completa cada, dentro do
   // prazo, e algumas doações antigas, de mais de 90 dias, para eles estarem
-  // fora da recuperação e aparecerem.
+  // dentro do ideal e aparecerem primeiro.
   ...Object.fromEntries(
     [
       ["H4R8T2", "DEA 1.1+", "2026-07-22", CAMILA, ["2026-02-14", PAULO]],

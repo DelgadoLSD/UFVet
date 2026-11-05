@@ -14,7 +14,7 @@ import { CONTATO, ITENS, VERSAO, numeroDo } from "./termos/indice";
 // item, com um índice que acompanha a leitura no computador. O texto em si
 // fica em pages/termos/Secoes.jsx.
 
-// As quatro ideias principais, para quem só vai ler o começo.
+// As ideias principais, para quem só vai ler o começo.
 const RESUMO = [
   {
     titulo: "O UFVet aproxima tutores",
@@ -25,6 +25,11 @@ const RESUMO = [
     titulo: "A doação é voluntária e gratuita",
     texto:
       "Ninguém é obrigado a doar, e ninguém pode cobrar pelo sangue. Os custos do hospital, como a bolsa de coleta e os exames, ficam com o tutor do animal que recebe.",
+  },
+  {
+    titulo: "Os critérios são uma recomendação",
+    texto:
+      "Um animal que não atende a todos ainda pode ser chamado para doar. Quem atende a mais critérios tem mais chance de ser chamado, o veterinário avalia cada caso e a decisão é do tutor.",
   },
   {
     titulo: "Seus contatos são protegidos",
@@ -43,10 +48,7 @@ function Abertura() {
     <section className={`${CONTAINER} pt-28 max-md:pt-24 pb-14 md:pb-20`}>
       <div className="grid md:grid-cols-[1.2fr_0.8fr] gap-10 md:gap-14 items-center">
         <Surgir>
-          <span className="inline-block text-sm font-bold px-3 py-1.5 rounded-full bg-[#fdecee] text-[#9e0a24]">
-            Para tutores, veterinários e visitantes
-          </span>
-          <h1 className="mt-5 text-[2.6rem] sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.04] text-[#1a1c1c]">
+          <h1 className="text-[2.6rem] sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.04] text-[#1a1c1c]">
             Termos de uso e privacidade
           </h1>
           <p className="mt-6 text-xl leading-relaxed text-[#5b403f] max-w-xl">
@@ -89,7 +91,7 @@ function Resumo() {
             Os pontos principais destes termos.
           </p>
         </Surgir>
-        <ul className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-10">
+        <ul className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10">
           {RESUMO.map(({ titulo, texto }, i) => (
             <li key={titulo}>
               <Surgir atraso={i * 90}>

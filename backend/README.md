@@ -69,9 +69,9 @@ hemograma em duas versões e a carteira de vacinação; Luna, as sorologias;
 Bela, os três; Nina, o hemograma e a carteira. Os outros animais começam sem
 exames, para testar o envio do zero.
 
-Na busca, aparecem os animais que podem doar agora: Zeus fica de fora
-enquanto se recupera da doação de setembro, e Max, Luna e Nina, porque os
-tutores os pausaram.
+Na busca, aparecem os animais disponíveis, primeiro quem atende a mais critérios:
+Zeus aparece depois dos outros enquanto não completa 90 dias da doação de
+setembro, e só Max, Luna e Nina ficam de fora, porque os tutores os pausaram.
 
 O comando grava também o acesso aos contatos: o Pedro está liberado pelo
 Victor (faltam 6 horas), a Camila está liberada pelo Paulo (3 dias) e o Lucas
@@ -292,10 +292,10 @@ validação em vigor perde o efeito se ela for apagada (`SOROLOGIAS`,
 A busca recebe os filtros no endereço: `especie` (`CAO` ou `GATO`,
 obrigatória), `tipos` (repetido, um por tipo), `cidade`, `bairro`
 (só junto com a cidade), `apenasValidados=true`, `busca` (nome, raça, código
-ou bairro), `ordem` (`validados`, `peso` ou `nome`) e `pagina`. Só aparecem
-os animais que podem doar agora: disponíveis e fora dos 90 dias de
-recuperação depois de uma coleta. Com filtro de tipo, só quem tem a tipagem
-confirmada por um veterinário.
+ou bairro), `ordem` (`ideal`, `validados`, `peso` ou `nome`) e `pagina`. Só
+fica de fora o animal que o tutor marcou como indisponível: peso, idade e uma
+doação recente mudam a ordem (`ideal`, a padrão, põe primeiro quem atende a mais critérios), mas não escondem ninguém. Com filtro de tipo, só quem tem a
+tipagem confirmada por um veterinário.
 
 Os erros vêm sempre no mesmo formato: `{ "erro": "mensagem" }`, com
 `"campos": { "email": "mensagem" }` quando o problema é num dado enviado.

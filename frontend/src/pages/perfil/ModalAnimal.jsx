@@ -28,6 +28,7 @@ import {
   errosDoFormulario,
   formularioDoAnimal,
   pedidoDoFormulario,
+  pontosForaDoFormulario,
 } from "./formularioAnimal";
 
 // Cadastro (F8) e edição (F9) de um animal pelo tutor.
@@ -51,6 +52,44 @@ const OPCOES_SEXO = Object.entries(SEXOS).map(([valor, rotulo]) => ({
   valor,
   rotulo,
 }));
+
+// Aparece enquanto o tutor preenche, se o peso ou a idade ficam fora do ideal.
+// Não é um erro, nem impede de salvar: é para ele saber, antes de cadastrar, que
+// o animal vai para a busca e pode ser chamado mesmo assim.
+const TITULO_FORA_DO_IDEAL = {
+  peso: "Peso abaixo do ideal para doar",
+  idade: "Idade fora do ideal para doar",
+};
+
+function AvisoForaDoIdeal({ pontos }) {
+  return (
+    <div aria-live="polite">
+      {pontos.length > 0 && (
+        <div className="flex gap-3 bg-[#f8dce1] rounded-xl p-4">
+          <span
+            aria-hidden="true"
+            className="material-symbols-outlined text-[#9e0a24] text-[22px] shrink-0"
+          >
+            info
+          </span>
+          <div className="text-xs text-[#5b403f] leading-relaxed">
+            <p className="text-sm font-bold text-[#1a1c1c]">
+              {pontos.length > 1
+                ? "Peso e idade fora do ideal para doar"
+                : TITULO_FORA_DO_IDEAL[pontos[0]]}
+            </p>
+            <p className="mt-0.5">
+              Pode salvar mesmo assim: em uma emergência, o animal ainda pode
+              ser chamado para doar e ajudar a salvar uma vida. Quanto mais
+              critérios ele atende, maior a chance. O veterinário avalia o caso
+              e explica os riscos, e a decisão de doar é sua.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Campo do formulário -> campo da API, onde caem as mensagens de erro.
 const CAMPO_DA_API = {
@@ -350,11 +389,12 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
               verified_user
             </span>
             <p className="text-xs text-[#5b403f] leading-relaxed">
-              Seu animal já pode aparecer como doador logo após o cadastro. O
-              tipo sanguíneo não é pedido aqui: ele sai do exame de tipagem, e
-              quem registra é o veterinário. Envie os exames depois no perfil —
-              com eles, um veterinário <strong>valida</strong> os critérios de
-              doação e o hospital não precisa refazer tudo no dia da coleta.
+              Seu animal já aparece como doador logo após o cadastro, mesmo sem
+              atender a todos os critérios. O tipo sanguíneo não é pedido aqui:
+              ele sai do exame de tipagem, e quem registra é o veterinário.
+              Envie os exames depois no perfil — com eles, um veterinário{" "}
+              <strong>valida</strong> os critérios de doação e o hospital não
+              precisa refazer tudo no dia da coleta.
             </p>
           </div>
         )}
@@ -366,7 +406,7 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
           <input
             id="animal-nome"
             type="text"
-            placeholder="Ex: Thor, Luna, Bolinha..."
+            placeholder="Ex.: Thor, Luna, Bolinha…"
             maxLength={LIMITES.nomeAnimal}
             value={form.nome}
             onChange={(e) => mudar("nome", e.target.value)}
@@ -440,9 +480,9 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
               <span className={CLASSE_TITULO}>Castrado(a)? *</span>
               <Ajuda titulo="Por que perguntamos?">
                 <p>
-                  Não precisa ser castrado para doar. Mas fêmeas não castradas
-                  não doam no cio, na gestação nem na amamentação, e depois da
-                  castração é preciso esperar 30 dias.
+                  Não precisa ser castrado para doar. Em fêmeas não castradas, o
+                  cio, a gestação e a amamentação costumam adiar a doação, e,
+                  depois da castração, o ideal é esperar 30 dias.
                 </p>
               </Ajuda>
             </div>
@@ -513,7 +553,7 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
               </>
             )}
             <p className="text-[11px] text-[#5f5e5e] mt-1.5">
-              Doadores têm entre {ref.idadeMin} e {ref.idadeMax} anos.
+              O ideal para doar: de {ref.idadeMin} a {ref.idadeMax} anos.
             </p>
           </div>
 
@@ -539,10 +579,12 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
             />
             <Erro id="erro-pesoKg">{erros.pesoKg}</Erro>
             <p className="text-[11px] text-[#5f5e5e] mt-1.5">
-              Peso mínimo para doar: {pesoMinimo(ref)}.
+              O ideal para doar: {pesoMinimo(ref)} ou mais.
             </p>
           </div>
         </div>
+
+        <AvisoForaDoIdeal pontos={pontosForaDoFormulario(form)} />
 
         {/* Só leitura, nos dois estados: quem preenche esse campo é o
             veterinário, no momento em que assina a tipagem. */}

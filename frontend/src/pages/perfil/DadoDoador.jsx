@@ -12,8 +12,7 @@ import Ajuda from "../../components/Ajuda";
 //   ainda não se sabe: "A confirmar" nunca quebra num "A" solto, que pareceria
 //   o tipo A de um gato. A altura da linha é a mesma do valor normal, para
 //   as células vizinhas continuarem alinhadas;
-// - `alerta` deixa o detalhe em vermelho, quando o valor está fora do
-//   critério;
+// - `alerta` deixa o detalhe em vermelho, quando o valor está fora do ideal;
 // - `ajuda` ({ titulo, texto }) põe um "?" no canto superior direito;
 // - `className` acerta o lugar da célula na grade (quantas colunas ocupa).
 //

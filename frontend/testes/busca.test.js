@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { FILTROS_INICIAIS, consultaDaBusca } from "../src/pages/busca/filtros";
+import {
+  FILTROS_INICIAIS,
+  ORDEM_PADRAO,
+  ORDENACOES,
+  consultaDaBusca,
+} from "../src/pages/busca/filtros";
 
 // A consulta da busca de doadores (pages/busca/filtros.js): os filtros da tela
 // viram o endereço que vai para a API. Só vai o que filtra de fato.
@@ -8,6 +13,11 @@ import { FILTROS_INICIAIS, consultaDaBusca } from "../src/pages/busca/filtros";
 const pares = (consulta) => [...new URLSearchParams(consulta)];
 
 describe("consulta da busca", () => {
+  test("a ordem padrão é a preferência: mais perto do ideal primeiro", () => {
+    expect(ORDENACOES[0].valor).toBe(ORDEM_PADRAO);
+    expect(ORDEM_PADRAO).toBe("ideal");
+  });
+
   test("os filtros iniciais pedem só a espécie e a ordem", () => {
     expect(consultaDaBusca(FILTROS_INICIAIS, "validados")).toBe(
       "especie=CAO&ordem=validados",
@@ -85,6 +95,9 @@ describe("partes do tipo sanguíneo", () => {
       sistema: "DEA 1.1",
       valor: "Universal",
     });
-    expect(partesDoTipo("Tipo AB")).toMatchObject({ sistema: "Tipo", valor: "AB" });
+    expect(partesDoTipo("Tipo AB")).toMatchObject({
+      sistema: "Tipo",
+      valor: "AB",
+    });
   });
 });

@@ -1,10 +1,11 @@
 import Ajuda from "../../components/Ajuda";
-import { pronomeAnimal } from "../../regras/doacao";
+import { finalDoGenero, pronomeAnimal } from "../../regras/doacao";
 import { maiuscula } from "../../util/texto";
 
 // O "?" ao lado da disponibilidade do animal, embaixo da foto. Para o dono,
 // explica como pausar as doações; para quem visita, o que a situação quer
-// dizer agora. `recuperacao` vem de situacaoRecuperacao() (regras/doacao).
+// dizer agora. Só o tutor muda a disponibilidade: uma doação recente não muda.
+// `recuperacao` vem de situacaoRecuperacao() (regras/doacao).
 // `claro` é a versão para fundos vermelhos.
 function AjudaDisponibilidade({
   animal,
@@ -19,18 +20,23 @@ function AjudaDisponibilidade({
     return (
       <Ajuda titulo="Disponibilidade para doação" claro={claro}>
         <p>
-          Marque Indisponível quando {animal.nome} não puder doar por um tempo,
-          como numa viagem. {maiuscula(pronomeAnimal(animal))} sai da busca até
-          você marcar Disponível de novo.
+          Marque Indisponível quando não quiser que {animal.nome} seja procurad
+          {finalDoGenero(animal)} por um tempo, como numa viagem.{" "}
+          {maiuscula(pronomeAnimal(animal))} sai da busca até você marcar
+          Disponível de novo.
         </p>
         {femeaNaoCastrada && (
           <p>
-            Fêmeas não castradas não doam no cio, na gestação nem na
-            amamentação.
+            Em fêmeas não castradas, o cio, a gestação e a amamentação costumam
+            adiar a doação.
           </p>
         )}
-        {!recuperacao.apto && (
-          <p>Depois de uma doação, são cerca de 3 meses de recuperação.</p>
+        {!recuperacao.intervaloCumprido && (
+          <p>
+            Depois de uma doação, o ideal é esperar cerca de 3 meses. Até lá,{" "}
+            {animal.nome} continua disponível, a menos que você marque o
+            contrário. A decisão é sua, junto com o veterinário.
+          </p>
         )}
       </Ajuda>
     );
@@ -42,13 +48,16 @@ function AjudaDisponibilidade({
         <p>
           O tutor pausou as doações por um tempo. Vale olhar de novo mais tarde.
         </p>
-      ) : !recuperacao.apto ? (
+      ) : !recuperacao.intervaloCumprido ? (
         <p>
-          {animal.nome} doou há pouco tempo e precisa de cerca de 3 meses para
-          se recuperar.
+          {animal.nome} doou há pouco tempo. O ideal é esperar cerca de 3 meses,
+          mas, em uma urgência, o tutor e o veterinário podem avaliar.
         </p>
       ) : (
-        <p>{animal.nome} pode doar agora, segundo o tutor.</p>
+        <p>
+          {animal.nome} está disponível, segundo o tutor. Antes de qualquer
+          coleta, o veterinário avalia.
+        </p>
       )}
     </Ajuda>
   );

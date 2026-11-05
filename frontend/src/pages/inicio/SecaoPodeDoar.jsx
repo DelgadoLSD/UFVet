@@ -1,13 +1,15 @@
 import { useState } from "react";
 import Surgir from "./Surgir";
 import NotaFonte from "./NotaFonte";
+import Pilula from "./Pilula";
 import { CONTAINER, TITULO_SECAO } from "./estilos";
 import { ESPECIES, REFERENCIA_DOADOR, pesoMinimo } from "../../regras/doacao";
 import fotoCao from "../../assets/dogs/dog1_1-image.jpg";
 import fotoGato from "../../assets/cats/cat7_0-image.jpg";
 
-// "Meu pet pode doar?": os critérios para doar, por espécie, e o que impede
-// ou adia uma doação.
+// "Meu pet pode doar?": o doador ideal, por espécie, o que costuma adiar uma
+// doação e, em destaque, o que mais importa: mesmo sem atender a todos os
+// critérios, vale cadastrar, porque o animal ainda pode ser chamado.
 
 const { CAO, GATO } = REFERENCIA_DOADOR;
 
@@ -17,15 +19,14 @@ const { CAO, GATO } = REFERENCIA_DOADOR;
 const POR_ESPECIE = {
   CAO: {
     foto: fotoCao,
-    legenda:
-      "Cães doam acordados, sem anestesia. Por isso, precisam ser calmos.",
+
     criterios: [
       {
         valor: `${CAO.idadeMin} a ${CAO.idadeMax} anos`,
-        texto: "Adulto e saudável",
+        texto: "Adulto, saudável e calmo",
       },
       {
-        valor: `Mais de ${pesoMinimo(CAO)}`,
+        valor: `${pesoMinimo(CAO)} ou mais`,
         texto: "Para doar uma bolsa inteira com segurança",
       },
       { valor: "Vacinas em dia", texto: "Vermífugo também" },
@@ -37,14 +38,14 @@ const POR_ESPECIE = {
   },
   GATO: {
     foto: fotoGato,
-    legenda: "Gatos precisam ser dóceis. Se for preciso, a equipe usa sedação.",
+
     criterios: [
       {
         valor: `${GATO.idadeMin} a ${GATO.idadeMax} anos`,
-        texto: "Adulto e saudável",
+        texto: "Adulto, saudável e dócil",
       },
       {
-        valor: `Mais de ${pesoMinimo(GATO)}`,
+        valor: `${pesoMinimo(GATO)} ou mais`,
         texto: "Grande, mas sem obesidade",
       },
       { valor: "Só em casa", texto: "Sem acesso à rua" },
@@ -53,19 +54,22 @@ const POR_ESPECIE = {
   },
 };
 
-// Situações que adiam a doação por um tempo.
-const PAUSAS = [
-  "Cio",
-  "Gestação",
-  "Amamentação",
-  "Castração recente",
-  "Vacina recente",
+// O que pode adiar uma doação e o que pede mais cuidado do veterinário.
+const PODE_ADIAR = [
+  "Cio, gestação ou amamentação",
+  "Castração ou vacina recente",
   "Uso de remédios",
-  "Doou há menos de 90 dias",
+  "Doação nos últimos 90 dias",
 ];
 
-// Situações que impedem a doação de vez.
-const IMPEDIMENTOS = ["Já recebeu transfusão", "Doença crônica"];
+const MAIS_CUIDADO = ["Transfusão anterior", "Doença crônica"];
+
+// O que quem tem um animal fora do ideal precisa saber.
+const MESMO_ASSIM = [
+  "Quanto mais critérios ele atende, maior a chance de ser chamado.",
+  "Um veterinário avalia o caso e explica os riscos para você.",
+  "A decisão de doar é sempre sua.",
+];
 
 // Escolha de espécie em pílulas com a foto do bicho.
 function EscolhaEspecie({ especie, onEscolher }) {
@@ -99,22 +103,21 @@ function EscolhaEspecie({ especie, onEscolher }) {
   );
 }
 
-// Lista de etiquetas em pílula (pausas e impedimentos).
-function Etiquetas({ titulo, itens, classe }) {
+// Uma lista de situações, com um título. A cor vem do cartão.
+function Situacoes({ titulo, itens, divisoria }) {
   return (
-    <div>
-      <p className="font-bold text-[#1a1c1c]">{titulo}</p>
-      <ul className="mt-3 flex flex-wrap gap-2">
+    <>
+      <h3 className="text-xl font-extrabold tracking-tight leading-snug">
+        {titulo}
+      </h3>
+      <ul className={`mt-3 flex flex-col divide-y ${divisoria}`}>
         {itens.map((item) => (
-          <li
-            key={item}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium ${classe}`}
-          >
+          <li key={item} className="py-2.5 font-medium leading-snug">
             {item}
           </li>
         ))}
       </ul>
-    </div>
+    </>
   );
 }
 
@@ -131,7 +134,8 @@ function SecaoPodeDoar() {
               Meu pet pode doar?
             </h2>
             <p className="text-lg text-[#5b403f] leading-relaxed">
-              Raça não importa: vira-latas são muito bem-vindos.
+              Este é o doador ideal. Raça não importa: vira-latas são muito
+              bem-vindos.
               <NotaFonte ids={["abvhmt", "isfm"]} />
             </p>
           </div>
@@ -158,9 +162,6 @@ function SecaoPodeDoar() {
                   }`}
                 />
               ))}
-              <p className="absolute left-4 right-4 bottom-4 rounded-2xl bg-white/95 px-4 py-3 text-[15px] font-semibold text-[#1a1c1c] leading-snug">
-                {atual.legenda}
-              </p>
             </div>
           </Surgir>
 
@@ -184,25 +185,60 @@ function SecaoPodeDoar() {
             </div>
 
             <Surgir className="flex-1">
-              <div className="h-full rounded-2xl border-2 border-dashed border-[#e9aab3] p-6 space-y-5">
-                <Etiquetas
-                  titulo="Precisa esperar um pouco"
-                  itens={PAUSAS}
-                  classe="bg-white text-[#1a1c1c]"
-                />
-                <Etiquetas
-                  titulo="Não pode doar"
-                  itens={IMPEDIMENTOS}
-                  classe="bg-[#1a1c1c] text-white"
-                />
-                <p className="text-sm text-[#5b403f]">
-                  Os critérios podem variar um pouco entre hospitais. Na dúvida,
-                  o veterinário confirma na triagem.
-                </p>
+              {/* Um par de contraste, em vermelho e preto, para não se confundir
+                  com os cartões brancos de cima. Fica nas mesmas colunas deles. */}
+              <div className="h-full grid sm:grid-cols-2 gap-5">
+                <div className="rounded-2xl bg-[#9e0a24] p-6 text-white">
+                  <Situacoes
+                    titulo="Pode adiar a doação"
+                    itens={PODE_ADIAR}
+                    divisoria="divide-white/25"
+                  />
+                </div>
+                <div className="rounded-2xl bg-[#1a1c1c] p-6 text-white flex flex-col">
+                  <Situacoes
+                    titulo="Pede uma avaliação mais cuidadosa"
+                    itens={MAIS_CUIDADO}
+                    divisoria="divide-white/25"
+                  />
+                  <p className="mt-auto pt-5 text-sm leading-relaxed text-white/75">
+                    Os critérios podem variar um pouco entre hospitais. Na
+                    dúvida, o veterinário confirma na triagem.
+                  </p>
+                </div>
               </div>
             </Surgir>
           </div>
         </div>
+
+        {/* O que esta seção mais precisa dizer: o bloco preto é o único da
+            seção, para ser lido mesmo por quem só passa os olhos. */}
+        <Surgir className="mt-12">
+          <div className="rounded-[2rem] bg-[#1a1c1c] text-white p-8 md:p-12 grid lg:grid-cols-[1.15fr_1fr] gap-8 lg:gap-14 items-center">
+            <div className="flex flex-col items-start">
+              <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-balance">
+                Não atende a todos os critérios? Cadastre mesmo assim.
+              </h3>
+              <p className="mt-4 mb-8 text-lg text-white/75 leading-relaxed max-w-xl">
+                Em uma emergência, seu pet ainda pode ser chamado para doar e
+                ajudar a salvar uma vida.
+              </p>
+              <Pilula to="/cadastrar" variante="branco">
+                Cadastrar meu animal
+              </Pilula>
+            </div>
+            <ul className="flex flex-col divide-y divide-white/15">
+              {MESMO_ASSIM.map((frase) => (
+                <li
+                  key={frase}
+                  className="py-4 first:pt-0 last:pb-0 text-lg leading-relaxed text-white/90"
+                >
+                  {frase}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Surgir>
       </div>
     </section>
   );
