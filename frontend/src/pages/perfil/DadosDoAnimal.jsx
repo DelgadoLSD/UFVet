@@ -21,9 +21,9 @@ import { formatarPeso } from "../../util/texto";
 // com o ideal da espécie, e o detalhe avisa quando estão fora. Estar fora não
 // impede a doação, e a linha do ideal diz isso.
 
-// Dentro do ideal: a linha clara, com o círculo cheio de confirmado. Fora: um
-// tom mais escuro, com o "i" vazado. Diferem na claridade, no ícone e no texto,
-// e não só na cor. Para o dono, a frase fala com ele, e deixa claro que o animal
+// Dentro do ideal: a linha verde, com o círculo cheio de confirmado. Fora: a
+// linha vermelha, com o "i" vazado. Sempre com letras brancas, como no cartão da
+// busca. Diferem no ícone e no texto, e não só na cor. Para o dono, a frase fala com ele, e deixa claro que o animal
 // continua na busca e pode ser procurado.
 function textoDoIdeal(animal, dentro, ehDono) {
   if (dentro) {
@@ -34,7 +34,7 @@ function textoDoIdeal(animal, dentro, ehDono) {
     "O veterinário avalia o caso e explica os riscos, e a decisão de doar é sua.";
   return animal.disponivel
     ? `${animal.nome} continua na busca e ainda pode ajudar a salvar uma vida: quem precisar pode entrar em contato com você. ${decisao}`
-    : `Isso não impede a doação. ${decisao}`;
+    : `Isso não necessariamente impede a doação. ${decisao}`;
 }
 
 function LinhaIdeal({ animal, ultimaDoacao, ehDono }) {
@@ -44,30 +44,27 @@ function LinhaIdeal({ animal, ultimaDoacao, ehDono }) {
 
   return (
     <div
-      className={`col-span-2 sm:col-span-3 px-4 py-3.5 flex items-start gap-3 ${
-        dentro ? "bg-[#fdecee]" : "bg-[#f8dce1]"
+      className={`col-span-2 sm:col-span-3 px-4 py-3.5 flex items-start gap-3 text-white ${
+        dentro ? "bg-emerald-700" : "bg-[#9e0a24]"
       }`}
     >
       <span
         aria-hidden="true"
-        className={`material-symbols-outlined text-[20px] mt-0.5 shrink-0 ${
-          dentro ? "text-emerald-700" : "text-[#9e0a24]"
-        }`}
+        className="material-symbols-outlined text-[20px] mt-0.5 shrink-0"
         style={dentro ? { fontVariationSettings: "'FILL' 1" } : undefined}
       >
         {dentro ? "check_circle" : "info"}
       </span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-[#1a1c1c]">
-          {resumoDoIdeal(fora, ultimaDoacao)}
-        </p>
-        <p className="mt-0.5 text-xs text-[#5b403f] leading-relaxed">
+        <p className="text-sm font-bold">{resumoDoIdeal(fora, ultimaDoacao)}</p>
+        <p className="mt-0.5 text-xs text-white/90 leading-relaxed">
           {textoDoIdeal(animal, dentro, ehDono)}
         </p>
       </div>
       <BotaoAjuda
         rotulo="Como funcionam os critérios de doação?"
         onClick={() => setExplicacaoAberta(true)}
+        claro
       />
       {explicacaoAberta && (
         <ModalCriteriosDoacao onFechar={() => setExplicacaoAberta(false)} />

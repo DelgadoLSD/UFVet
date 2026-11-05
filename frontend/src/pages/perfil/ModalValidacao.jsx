@@ -167,8 +167,9 @@ function ModalValidacao({ animal, validacao, onSalvar, onFechar }) {
         <p className="text-sm text-[#5b403f] leading-relaxed">
           Marque os critérios que você conferiu — no prontuário do hospital ou
           presencialmente. A validação fica visível aos tutores, assinada com
-          seu CRMV, e vale por 1 ano. Um critério não marcado não impede a
-          doação: ele aparece como pendência e é avaliado caso a caso.
+          seu CRMV, e vale por 1 ano. Um critério não marcado não
+          necessariamente impede a doação: ele aparece como pendência e é
+          avaliado caso a caso.
         </p>
 
         <div className="flex items-center justify-between">

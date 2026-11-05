@@ -33,7 +33,7 @@ const ESTILO_VALIDACAO = {
   pendencias: {
     titulo: "Validação com pendências",
     explicacao: (nome) =>
-      `Um veterinário conferiu os critérios de ${nome} e alguns itens abaixo não foram atendidos. Isso não impede a doação: antes da coleta, o veterinário avalia esses pontos e explica os riscos, e a decisão de doar é do tutor.`,
+      `Um veterinário conferiu os critérios de ${nome} e alguns itens abaixo não foram atendidos. Isso não necessariamente impede a doação: antes da coleta, o veterinário avalia esses pontos e explica os riscos, e a decisão de doar é do tutor.`,
     selo: "bg-[#9e0a24] text-white",
   },
   vencida: {

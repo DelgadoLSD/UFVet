@@ -36,32 +36,30 @@ const SITUACAO_VALIDACAO = {
   },
 };
 
-// O quanto o doador se aproxima do ideal, logo abaixo do peso e da idade. Dentro
-// do ideal: a linha clara, com o círculo cheio de confirmado. Fora: um tom mais
-// escuro, com o "i" vazado, sem cara de proibição, porque ele ainda pode doar. Os
-// dois diferem na claridade, no ícone e no texto, e não só na cor. O "?" diz
-// cada ponto e quem decide; fica acima do link que cobre o cartão.
+// Se o doador atende aos critérios, logo abaixo do peso e da idade: a linha
+// inteira verde quando está tudo dentro do ideal, e vermelha quando não, sempre
+// com letras brancas. Diferem também no ícone (círculo cheio com ✓ ou "i" vazado)
+// e no texto, e não só na cor. O "?" diz cada ponto e quem decide; fica acima do
+// link que cobre o cartão.
 function LinhaIdeal({ doador }) {
   const fora = foraDoIdeal(doador, doador.ultimaDoacao);
   const dentro = fora.length === 0;
   const resumo = resumoDoIdeal(fora, doador.ultimaDoacao);
   return (
     <div
-      className={`col-span-3 h-11 px-3 flex items-center gap-2 text-[#1a1c1c] ${
-        dentro ? "bg-[#fdecee]" : "bg-[#f8dce1]"
+      className={`col-span-3 h-11 px-3 flex items-center gap-2 text-white ${
+        dentro ? "bg-emerald-700" : "bg-[#9e0a24]"
       }`}
     >
       <span
         aria-hidden="true"
-        className={`material-symbols-outlined text-[18px] shrink-0 ${
-          dentro ? "text-emerald-700" : "text-[#9e0a24]"
-        }`}
+        className="material-symbols-outlined text-[18px] shrink-0"
         style={dentro ? { fontVariationSettings: "'FILL' 1" } : undefined}
       >
         {dentro ? "check_circle" : "info"}
       </span>
       <p className="flex-1 min-w-0 truncate text-sm font-semibold">{resumo}</p>
-      <Ajuda titulo={resumo} className="relative z-10">
+      <Ajuda titulo={resumo} claro className="relative z-10">
         {dentro ? (
           <p>
             Peso, idade e tempo desde a última doação estão dentro do ideal. Por
@@ -85,23 +83,25 @@ function LinhaIdeal({ doador }) {
 // na mesma faixa, numa linha inteira embaixo das células (como a linha das
 // doações no cartão do perfil). Validado: linha preta, o preto das
 // confirmações do site e da área do veterinário, com o selo de verificado
-// cheio. Não validado: linha rosada como as outras células, com um relógio.
-// Os dois diferem na claridade (preta contra rosada), no ícone e no texto, e
-// não só na cor. O "?" no fim da linha explica o que a situação muda no dia
+// cheio. Não validado: linha branca, com um relógio. Preto e branco para não se
+// confundir com o verde e o vermelho da linha de cima; diferem na claridade, no
+// ícone e no texto, e não só na cor. O "?" no fim da linha explica o que a situação muda no dia
 // da coleta; fica acima do link que cobre o cartão, para tocar nele abrir a
 // explicação, e não o perfil.
 function LinhaValidacao({ validado }) {
   const situacao = SITUACAO_VALIDACAO[validado ? "validado" : "naoValidado"];
   return (
     <div
-      className={`col-span-3 h-11 px-3 flex items-center gap-2 ${
-        validado ? "bg-[#1a1c1c] text-white" : "bg-[#fdecee] text-[#5f5e5e]"
+      className={`col-span-3 h-11 px-3 flex items-center gap-2 rounded-b-xl ${
+        validado
+          ? "bg-[#1a1c1c] text-white"
+          : "bg-white text-[#1a1c1c] ring-1 ring-inset ring-[#dccfcf]"
       }`}
     >
       <span
         aria-hidden="true"
         className={`material-symbols-outlined text-[18px] shrink-0 ${
-          validado ? "" : "text-[#8f6f6e]"
+          validado ? "" : "text-[#5f5e5e]"
         }`}
         style={validado ? { fontVariationSettings: "'FILL' 1" } : undefined}
       >

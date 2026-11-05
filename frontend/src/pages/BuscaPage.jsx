@@ -93,7 +93,8 @@ function OrdemDaBusca({ ordem, onOrdenar }) {
 }
 
 // O que a ordem e os cartões querem dizer, antes de a pessoa escolher com quem
-// falar: nem todo doador atende a todos os critérios, e isso não impede a doação.
+// falar: nem todo doador atende a todos os critérios, e isso não necessariamente
+// impede a doação.
 function AvisoCriterios({ onEntender }) {
   return (
     <div className="flex items-start gap-2 rounded-xl bg-[#fdecee] px-4 py-3">
@@ -101,8 +102,8 @@ function AvisoCriterios({ onEntender }) {
         <strong className="font-semibold text-[#1a1c1c]">
           Quem atende a mais critérios aparece primeiro.
         </strong>{" "}
-        Quem não atende a todos também pode doar: o veterinário avalia cada
-        caso, e o tutor decide.
+        Quem não atende a todos ainda pode ser chamado: o veterinário avalia
+        cada caso, e o tutor decide.
       </p>
       <BotaoAjuda
         rotulo="Como funcionam os critérios de doação?"

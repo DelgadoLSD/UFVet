@@ -65,15 +65,15 @@ function AvisoForaDoIdeal({ pontos }) {
   return (
     <div aria-live="polite">
       {pontos.length > 0 && (
-        <div className="flex gap-3 bg-[#f8dce1] rounded-xl p-4">
+        <div className="flex gap-3 bg-[#9e0a24] text-white rounded-xl p-4">
           <span
             aria-hidden="true"
-            className="material-symbols-outlined text-[#9e0a24] text-[22px] shrink-0"
+            className="material-symbols-outlined text-[22px] shrink-0"
           >
             info
           </span>
-          <div className="text-xs text-[#5b403f] leading-relaxed">
-            <p className="text-sm font-bold text-[#1a1c1c]">
+          <div className="text-xs text-white/90 leading-relaxed">
+            <p className="text-sm font-bold text-white">
               {pontos.length > 1
                 ? "Peso e idade fora do ideal para doar"
                 : TITULO_FORA_DO_IDEAL[pontos[0]]}

@@ -229,7 +229,7 @@ export function textoDoacaoRecente(ultimaDoacao) {
 
 // O que dizer de um animal fora do ideal, em todo lugar que fala disso.
 export const FORA_DO_IDEAL_PODE_DOAR =
-  "Isso não impede a doação: o veterinário avalia o caso e explica os riscos, e a decisão de doar é do tutor.";
+  "Isso não necessariamente impede a doação: o veterinário avalia o caso e explica os riscos, e o tutor decide se quer doar.";
 
 // Os pontos que o site consegue conferir sozinho, pelos dados do animal, em que
 // ele está fora do ideal: "peso", "idade" e "intervalo". Vacinas e exames são
