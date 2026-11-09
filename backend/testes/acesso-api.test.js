@@ -6,6 +6,7 @@ import {
   describe,
   expect,
   test,
+  vi,
 } from "vitest";
 import { criarApp } from "../src/app.js";
 import { banco } from "../src/banco.js";
@@ -220,6 +221,177 @@ describe("pedido de liberação (F27)", () => {
       .send({ veterinario: victor.codigo, caso: "Luna precisa de sangue" })
       .expect(401);
     await request(app).get("/api/acesso").expect(401);
+  });
+});
+
+describe("o tutor cancela o próprio pedido (NF27.5)", () => {
+  const cancelar = (navegador, id) => navegador.delete(`/api/pedidos/${id}`);
+
+  test("o pedido some do veterinário, e o tutor pode pedir a outro", async () => {
+    const pedido = await pedidoNoBanco(beatriz, victor);
+    const tutora = await comoBeatriz();
+
+    await cancelar(tutora, pedido.id).expect(204);
+
+    expect(
+      (await (await comoVictor()).get("/api/pedidos")).body.pedidos,
+    ).toEqual([]);
+    expect((await tutora.get("/api/acesso")).body.pedido).toBeNull();
+    const novo = await tutora
+      .post("/api/pedidos")
+      .send({ veterinario: paulo.codigo, caso: "Luna precisa de sangue" })
+      .expect(201);
+    expect(novo.body.pedido.veterinario.codigo).toBe(paulo.codigo);
+  });
+
+  test("com um pedido esperando, a recusa de pedir de novo diz como cancelar", async () => {
+    await pedidoNoBanco(beatriz, victor);
+    const { body } = await (
+      await comoBeatriz()
+    )
+      .post("/api/pedidos")
+      .send({ veterinario: paulo.codigo, caso: "Luna precisa de sangue" })
+      .expect(409);
+
+    expect(body.erro).toMatch(/cancele esse pedido antes/);
+  });
+
+  test("ninguém cancela o pedido de outra pessoa", async () => {
+    const pedido = await pedidoNoBanco(beatriz, victor);
+
+    await cancelar(await comoCamila(), pedido.id).expect(404);
+    // Nem o veterinário que recebeu: para ele, existe a recusa.
+    await cancelar(await comoVictor(), pedido.id).expect(404);
+
+    const gravado = await banco.pedidoLiberacao.findUnique({
+      where: { id: pedido.id },
+    });
+    expect(gravado.status).toBe("PENDENTE");
+  });
+
+  test("sem login não cancela, e um id inválido não é encontrado", async () => {
+    const pedido = await pedidoNoBanco(beatriz, victor);
+
+    await request(app).delete(`/api/pedidos/${pedido.id}`).expect(401);
+    await cancelar(await comoBeatriz(), "nao-e-um-id").expect(404);
+
+    expect(await banco.pedidoLiberacao.count()).toBe(1);
+  });
+
+  test("o pedido já recusado não é cancelado e continua guardado", async () => {
+    const pedido = await pedidoNoBanco(beatriz, victor);
+    await (
+      await comoVictor()
+    )
+      .post(`/api/pedidos/${pedido.id}/recusa`)
+      .expect(204);
+
+    const { body } = await cancelar(await comoBeatriz(), pedido.id).expect(409);
+
+    expect(body.erro).toBe("Esse pedido já foi recusado.");
+    expect(await banco.pedidoLiberacao.count()).toBe(1);
+  });
+
+  test("o pedido já atendido não é cancelado, e a liberação continua", async () => {
+    const pedido = await pedidoNoBanco(beatriz, victor);
+    await (
+      await comoVictor()
+    )
+      .post("/api/liberacoes")
+      .send({ pedido: pedido.id, duracaoHoras: 24 })
+      .expect(201);
+    const tutora = await comoBeatriz();
+
+    const { body } = await cancelar(tutora, pedido.id).expect(409);
+
+    expect(body.erro).toMatch(/já foi atendido/);
+    expect((await tutora.get("/api/acesso")).body.liberacao).not.toBeNull();
+  });
+
+  test("cancelar duas vezes: a segunda não acha mais o pedido", async () => {
+    const pedido = await pedidoNoBanco(beatriz, victor);
+    const tutora = await comoBeatriz();
+
+    await cancelar(tutora, pedido.id).expect(204);
+    const { body } = await cancelar(tutora, pedido.id).expect(404);
+
+    expect(body.erro).toMatch(/pode ter sido cancelado/);
+  });
+
+  test("o veterinário que tenta responder a um pedido cancelado fica sabendo", async () => {
+    const pedido = await pedidoNoBanco(beatriz, victor);
+    const vet = await comoVictor();
+    await cancelar(await comoBeatriz(), pedido.id).expect(204);
+
+    const aceite = await vet
+      .post("/api/liberacoes")
+      .send({ pedido: pedido.id, duracaoHoras: 24 })
+      .expect(404);
+    const recusa = await vet
+      .post(`/api/pedidos/${pedido.id}/recusa`)
+      .expect(404);
+
+    expect(aceite.body.erro).toMatch(/pode ter sido cancelado/);
+    expect(recusa.body.erro).toMatch(/pode ter sido cancelado/);
+    expect(await banco.liberacaoContato.count()).toBe(0);
+  });
+
+  test("cancelar e aceitar ao mesmo tempo: só um dos dois vale", async () => {
+    const pedido = await pedidoNoBanco(beatriz, victor);
+    const tutora = await comoBeatriz();
+    const vet = await comoVictor();
+
+    const [cancelamento, aceite] = await Promise.all([
+      cancelar(tutora, pedido.id),
+      vet.post("/api/liberacoes").send({ pedido: pedido.id, duracaoHoras: 24 }),
+    ]);
+
+    const liberacoes = await banco.liberacaoContato.count();
+    const pedidos = await banco.pedidoLiberacao.count();
+    if (cancelamento.status === 204) {
+      expect(aceite.status).toBe(404);
+      expect([liberacoes, pedidos]).toEqual([0, 0]);
+    } else {
+      expect(cancelamento.status).toBe(409);
+      expect(aceite.status).toBe(201);
+      expect([liberacoes, pedidos]).toEqual([1, 1]);
+    }
+  });
+
+  test("o tutor cancela entre a conferência e a gravação da liberação: 404, sem quebrar", async () => {
+    const pedido = await pedidoNoBanco(beatriz, victor);
+    const vet = await comoVictor();
+    // O cancelamento chega logo antes de a transação da liberação começar.
+    const original = banco.$transaction.bind(banco);
+    const espiao = vi
+      .spyOn(banco, "$transaction")
+      .mockImplementationOnce(async (...args) => {
+        await banco.pedidoLiberacao.delete({ where: { id: pedido.id } });
+        return original(...args);
+      });
+
+    const { body } = await vet
+      .post("/api/liberacoes")
+      .send({ pedido: pedido.id, duracaoHoras: 24 })
+      .expect(404);
+    espiao.mockRestore();
+
+    expect(body.erro).toMatch(/pode ter sido cancelado/);
+    expect(await banco.liberacaoContato.count()).toBe(0);
+  });
+
+  test("cancelar e recusar ao mesmo tempo: nenhum dos dois quebra", async () => {
+    const pedido = await pedidoNoBanco(beatriz, victor);
+    const tutora = await comoBeatriz();
+    const vet = await comoVictor();
+
+    const [cancelamento, recusa] = await Promise.all([
+      cancelar(tutora, pedido.id),
+      vet.post(`/api/pedidos/${pedido.id}/recusa`),
+    ]);
+
+    expect([204, 404, 409]).toContain(cancelamento.status);
+    expect([204, 404]).toContain(recusa.status);
   });
 });
 

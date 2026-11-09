@@ -91,6 +91,13 @@ export function mudancaDoAcesso(antes, depois) {
   return null;
 }
 
+// Os pedidos que a própria pessoa cancelou. Sem isto, um pedido que some da
+// resposta da API pareceria recusado pelo veterinário, e uma busca que já
+// estava a caminho traria de volta o pedido cancelado.
+const cancelados = new Set();
+const semCancelado = (s) =>
+  s.pedido && cancelados.has(s.pedido.id) ? { ...s, pedido: null } : s;
+
 // Pede a situação do tutor `codigo` à API. Uma busca de cada vez: se já há
 // uma a caminho, espera por ela. Se a API não responder, a situação de antes
 // continua (uma falha de rede passageira não tira o acesso da tela); sem
@@ -99,17 +106,23 @@ export function mudancaDoAcesso(antes, depois) {
 let buscando = null;
 export function recarregarAcesso(codigo) {
   buscando ??= (async () => {
+    let resposta = null;
+    try {
+      resposta = await chamarComLogin("/acesso");
+    } catch {
+      // Fica a situação de antes (ver acima).
+    }
+    // Lida só agora: um cancelamento pode ter acontecido durante a busca.
     const antes = situacao;
     let nova;
-    try {
-      const { liberacao, pedido } = await chamarComLogin("/acesso");
-      nova = {
+    if (resposta) {
+      nova = semCancelado({
         codigo,
         pronta: true,
-        liberacao: liberacao && paraLiberacao(liberacao),
-        pedido: pedido && paraPedido(pedido),
-      };
-    } catch {
+        liberacao: resposta.liberacao && paraLiberacao(resposta.liberacao),
+        pedido: resposta.pedido && paraPedido(resposta.pedido),
+      });
+    } else {
       nova =
         antes.pronta && antes.codigo === codigo
           ? antes
@@ -173,6 +186,25 @@ export async function pedirLiberacao({ usuario, veterinario, caso }) {
   });
   await recarregarAcesso(usuario.codigo);
   return paraPedido(pedido);
+}
+
+// O tutor desiste do pedido que espera resposta (NF27.5). A tela volta a
+// oferecer "Pedir liberação" na hora, sem dizer que o veterinário recusou. Se
+// a API recusar (o veterinário acabou de responder), a situação é recarregada,
+// para a tela mostrar o que aconteceu de fato.
+export async function cancelarPedido(codigo, pedido) {
+  try {
+    await chamarComLogin(`/pedidos/${encodeURIComponent(pedido.id)}`, {
+      metodo: "DELETE",
+    });
+  } catch (falha) {
+    await recarregarAcesso(codigo);
+    throw falha;
+  }
+  cancelados.add(pedido.id);
+  situacao = semCancelado(situacao);
+  ouvintes.forEach((aviso) => aviso());
+  await recarregarAcesso(codigo);
 }
 
 // ─── O painel do veterinário ──────────────────────────────────────────────────

@@ -132,20 +132,12 @@ export async function pedirLiberacao(req, res) {
     const pendente = await buscarPedido(resultado.pendenteId);
     throw new ErroApi(
       409,
-      `Você já tem um pedido esperando resposta de ${nomeDoVeterinario(pendente.veterinario)}. Espere a resposta antes de pedir de novo.`,
+      `Você já tem um pedido esperando resposta de ${nomeDoVeterinario(pendente.veterinario)}. Para pedir a outro veterinário, cancele esse pedido antes.`,
     );
   }
   const pedido = await buscarPedido(resultado.pedidoId);
   registrar("pedido_liberacao", { pedido: pedido.id });
   res.status(201).json({ pedido: dadosDoPedido(pedido) });
-}
-
-// GET /api/pedidos — os pedidos que esperam resposta do veterinário logado.
-// Cada um vê só os endereçados a ele.
-export async function listarPedidos(req, res) {
-  const pedidos = await pedidosPendentesPara(req.usuario.id);
-  res.set("Cache-Control", "no-store");
-  res.json({ pedidos: pedidos.map(dadosDoPedido) });
 }
 
 // Por que um pedido não pode mais ser respondido.
@@ -157,13 +149,53 @@ const pedidoJaRespondido = (status) =>
       : "Esse pedido já foi atendido: o tutor recebeu a liberação.",
   );
 
+// O pedido que não existe, que já foi cancelado ou que é de outra pessoa
+// recebem a mesma resposta: ninguém descobre pedidos alheios tentando ids.
+const pedidoNaoEncontrado = () =>
+  new ErroApi(404, "Pedido não encontrado: ele pode ter sido cancelado.");
+
+const ehId = (id) => /^[0-9a-f-]{36}$/i.test(id);
+
+// DELETE /api/pedidos/:id — o tutor desiste do pedido que ainda espera resposta
+// (NF27.5), para não ficar preso a um veterinário que não responde. O pedido é
+// apagado, porque ninguém chegou a decidir nada sobre ele; o que já foi
+// respondido fica como está.
+export async function cancelarPedido(req, res) {
+  const { id } = req.params;
+  const pedido = ehId(id) ? await buscarPedido(id) : null;
+  if (!pedido || pedido.tutorId !== req.usuario.id) throw pedidoNaoEncontrado();
+
+  // Sob a trava do tutor: o veterinário pode estar aceitando este pedido no
+  // mesmo instante, e a liberação precisa do pedido para ser gravada.
+  const { count } = await banco.$transaction(async (tx) => {
+    await travarAcessoDoTutor(tx, pedido.tutorId);
+    return tx.pedidoLiberacao.deleteMany({
+      where: { id, status: "PENDENTE" },
+    });
+  });
+  if (count === 0) {
+    const atual = await buscarPedido(id);
+    throw atual ? pedidoJaRespondido(atual.status) : pedidoNaoEncontrado();
+  }
+  registrar("pedido_cancelado", { pedido: id });
+  res.status(204).end();
+}
+
+// GET /api/pedidos — os pedidos que esperam resposta do veterinário logado.
+// Cada um vê só os endereçados a ele.
+export async function listarPedidos(req, res) {
+  const pedidos = await pedidosPendentesPara(req.usuario.id);
+  res.set("Cache-Control", "no-store");
+  res.json({ pedidos: pedidos.map(dadosDoPedido) });
+}
+
 // O pedido do endereço, se for deste veterinário e ainda esperar resposta.
 // O pedido de outro veterinário responde "não encontrado", como se não
-// existisse: ninguém descobre pedidos alheios tentando ids.
+// existisse.
 async function pedidoPendenteDoVeterinario(id, veterinario) {
-  const pedido = /^[0-9a-f-]{36}$/i.test(id) ? await buscarPedido(id) : null;
+  const pedido = ehId(id) ? await buscarPedido(id) : null;
   if (!pedido || pedido.veterinarioId !== veterinario.id) {
-    throw new ErroApi(404, "Pedido não encontrado.");
+    throw pedidoNaoEncontrado();
   }
   if (pedido.status !== "PENDENTE") throw pedidoJaRespondido(pedido.status);
   return pedido;
@@ -174,10 +206,12 @@ async function pedidoPendenteDoVeterinario(id, veterinario) {
 // novo, a este ou a outro veterinário.
 export async function recusarPedido(req, res) {
   const pedido = await pedidoPendenteDoVeterinario(req.params.id, req.usuario);
-  await banco.pedidoLiberacao.update({
-    where: { id: pedido.id },
+  // Só se ainda espera resposta: o tutor pode ter cancelado nesse instante.
+  const { count } = await banco.pedidoLiberacao.updateMany({
+    where: { id: pedido.id, status: "PENDENTE" },
     data: { status: "RECUSADO", respondidoEm: new Date() },
   });
+  if (count === 0) throw pedidoNaoEncontrado();
   registrar("pedido_recusado", { pedido: pedido.id });
   res.status(204).end();
 }
@@ -231,11 +265,15 @@ export async function liberarAcesso(req, res) {
     // Conferido de novo dentro da trava: o pedido pode ter sido respondido
     // um instante antes (um clique duplo, outra aba aberta).
     if (pedidoId) {
-      const { status } = await tx.pedidoLiberacao.findUnique({
+      const atual = await tx.pedidoLiberacao.findUnique({
         where: { id: pedidoId },
         select: { status: true },
       });
-      if (status !== "PENDENTE") return { pedidoRespondido: status };
+      // O tutor pode ter cancelado o pedido nesse mesmo instante (NF27.5).
+      if (!atual) return { pedidoCancelado: true };
+      if (atual.status !== "PENDENTE") {
+        return { pedidoRespondido: atual.status };
+      }
     }
     const ativaId = await idDaLiberacaoAtiva(tutorId, tx);
     if (ativaId) return { ativaId };
@@ -260,6 +298,7 @@ export async function liberarAcesso(req, res) {
     return { liberacaoId: criada.id };
   });
 
+  if (resultado.pedidoCancelado) throw pedidoNaoEncontrado();
   if (resultado.pedidoRespondido) {
     throw pedidoJaRespondido(resultado.pedidoRespondido);
   }

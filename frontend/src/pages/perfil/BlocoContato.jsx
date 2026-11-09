@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import AvisoErro from "../../components/AvisoErro";
 import Botao from "../../components/Botao";
 import BotaoAjuda from "../../components/BotaoAjuda";
+import BotaoCancelarPedido from "../../components/BotaoCancelarPedido";
 import { useCopiar } from "../../hooks/useCopiar";
 import PainelSecao, { CampoPainel } from "./PainelSecao";
 import { buscarContato } from "../../servicos/pessoas";
@@ -96,7 +97,9 @@ function BlocoContato({
 
   // O que fazer fica sempre no mesmo lugar, no fim do bloco, no botão
   // vermelho principal: ver o contato, pedir a liberação ou entrar na
-  // conta. Na largura do bloco, ele conversa com os dados acima.
+  // conta. Com um pedido esperando resposta, é o botão de cancelá-lo, branco,
+  // porque desistir não é a ação principal. Na largura do bloco, ele conversa
+  // com os dados acima.
   let acao = null;
   if (!ehProprio && acesso.pode && !revelado) {
     acao = (
@@ -120,11 +123,9 @@ function BlocoContato({
         Entrar
       </Botao>
     );
-  } else if (
-    semAcesso &&
-    acesso.motivo !== "pedido-enviado" &&
-    acesso.motivo !== "carregando"
-  ) {
+  } else if (acesso.motivo === "pedido-enviado") {
+    acao = <BotaoCancelarPedido pedido={acesso.pedido} className="w-full" />;
+  } else if (semAcesso && acesso.motivo !== "carregando") {
     acao = (
       <Botao icone="lock_open" className="w-full" onClick={onPedirLiberacao}>
         Pedir liberação

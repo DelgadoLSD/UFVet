@@ -449,6 +449,7 @@ lista do estabelecimento, descrevendo o caso que motiva o pedido.
 | NF27.2 | Escolha por estabelecimento | A lista de veterinários apresentada deve corresponder ao estabelecimento selecionado. | Interface | ( ) | ( ) |
 | NF27.3 | Pedido único | Cada tutor pode manter apenas um pedido pendente por vez. | Especificação | ( ) | ( ) |
 | NF27.4 | Justificativa obrigatória | A descrição do caso é obrigatória, por ser o que fundamenta a decisão do veterinário. | Especificação | ( ) | (x) |
+| NF27.5 | Cancelamento do pedido | O tutor pode cancelar o próprio pedido enquanto ele espera resposta e pedir de novo, ao mesmo ou a outro veterinário. | Especificação | ( ) | ( ) |
 
 ---
 

@@ -19,6 +19,7 @@ import {
   listarLiberacoes,
   listarPedidos,
   meuAcesso,
+  cancelarPedido,
   pedirLiberacao,
   recusarPedido,
   renovarLiberacao,
@@ -230,6 +231,12 @@ export function criarRotas(limites) {
   // mexe no que é dele (ver controladores/acesso.js).
   rotas.get("/acesso", exigirLogin, meuAcesso);
   rotas.post("/pedidos", exigirLogin, limites.pedidosLiberacao, pedirLiberacao);
+  rotas.delete(
+    "/pedidos/:id",
+    exigirLogin,
+    limites.pedidosLiberacao,
+    cancelarPedido,
+  );
   const veterinarioDoAcesso = [
     exigirLogin,
     exigirPapel("VETERINARIO"),

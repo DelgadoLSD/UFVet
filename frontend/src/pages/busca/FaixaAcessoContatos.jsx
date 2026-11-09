@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Botao from "../../components/Botao";
 import BotaoAjuda from "../../components/BotaoAjuda";
+import BotaoCancelarPedido from "../../components/BotaoCancelarPedido";
 import { TituloComAjuda } from "../perfil/PainelSecao";
 import { nomeProfissionalCurto, pronome } from "../../util/texto";
 import { tempoRestante } from "../../util/datas";
@@ -134,6 +135,13 @@ function FaixaAcessoContatos({ acesso, onPedirLiberacao, onComoFunciona }) {
         >
           Pedir liberação
         </Botao>
+      )}
+      {acesso.motivo === "pedido-enviado" && (
+        <BotaoCancelarPedido
+          pedido={acesso.pedido}
+          variante="contornoClaro"
+          className="w-full sm:w-auto shrink-0"
+        />
       )}
       {acesso.motivo === "visitante" && (
         <Botao
