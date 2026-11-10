@@ -1,0 +1,5 @@
+# O que os roteiros produzem a cada rodada: as fotos de cada passo e o
+# resultado de cada roteiro. Refaz sozinho; não vai para o repositório.
+capturas/
+saida-*.txt
+todos-resultado.txt

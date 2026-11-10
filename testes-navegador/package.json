@@ -1,0 +1,18 @@
+{
+  "name": "ufvet-testes-navegador",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Roteiros de navegador do UFVet: usam o site como uma pessoa faria, numa cópia isolada do sistema.",
+  "type": "module",
+  "scripts": {
+    "preparar": "node ambiente-e2e.mjs preparar",
+    "api": "node ambiente-e2e.mjs api",
+    "site": "node ambiente-e2e.mjs site",
+    "todos": "node ambiente-e2e.mjs rodar node rodar-todos.mjs",
+    "limpar": "node ambiente-e2e.mjs limpar"
+  },
+  "devDependencies": {
+    "axe-core": "^4.14.0",
+    "playwright-core": "^1.64.1"
+  }
+}
