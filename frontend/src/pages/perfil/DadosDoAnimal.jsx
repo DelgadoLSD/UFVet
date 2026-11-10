@@ -177,8 +177,9 @@ function DadosDoAnimal({
 }) {
   const ref = REFERENCIA_DOADOR[animal.especie];
   const anos = idadeEmAnos(animal.dataNascimento);
-  const pesoOk = animal.pesoKg >= ref.pesoMin;
-  const idadeOk = anos >= ref.idadeMin && anos <= ref.idadeMax;
+  const fora = foraDoIdeal(animal);
+  const pesoOk = !fora.includes("peso");
+  const idadeOk = !fora.includes("idade");
 
   return (
     // As divisões são o fundo branco aparecendo nos vãos de 2px entre as

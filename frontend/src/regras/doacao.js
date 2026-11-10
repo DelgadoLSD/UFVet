@@ -35,6 +35,12 @@ export const ESPECIES = {
   GATO: { rotulo: "Gato", plural: "gatos" },
 };
 
+// As espécies como opções de um campo de escolha.
+export const OPCOES_ESPECIE = Object.entries(ESPECIES).map(([valor, e]) => ({
+  valor,
+  rotulo: e.rotulo,
+}));
+
 export const SEXOS = {
   MACHO: "Macho",
   FEMEA: "Fêmea",

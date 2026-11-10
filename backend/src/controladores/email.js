@@ -2,13 +2,14 @@ import { banco } from "../banco.js";
 import { enviarEmSegundoPlano } from "../carteiro.js";
 import { cifrar, decifrar, indiceEmail } from "../cifra.js";
 import { mandarConfirmacao, mandarLinkDeSenha } from "../emails.js";
-import { ErroApi } from "../erros.js";
+import { ErroApi, erroDeCampo } from "../erros.js";
 import { acharLink, linkValeAgora, usarLink } from "../modelos/links.js";
 import {
-  CONTA_CONFIRMADA,
+  MENSAGEM_EMAIL_REPETIDO,
   apagarCadastrosPendentes,
   buscarUsuarioPorEmail,
   buscarUsuarioPorId,
+  emailTemConta,
 } from "../modelos/usuario.js";
 import { registrar } from "../registro.js";
 import { gerarHashSenha } from "../senha.js";
@@ -63,11 +64,7 @@ export async function confirmarEmail(req, res) {
   await banco.$transaction(async (tx) => {
     if (!(await usarLink(tx, link.id))) throw linkInvalido("confirmacao");
     if (troca) {
-      const dono = await tx.usuario.findFirst({
-        where: { emailIndice: link.emailIndice, ...CONTA_CONFIRMADA },
-        select: { id: true },
-      });
-      if (dono) {
+      if (await emailTemConta(link.emailIndice, tx)) {
         throw new ErroApi(
           409,
           "Este e-mail passou a ser de outra conta do UFVet. Na Minha conta, escolha outro.",
@@ -122,13 +119,8 @@ export async function corrigirEmail(req, res) {
   const emailIndice = indiceEmail(email);
 
   if (emailIndice !== usuario.emailIndice) {
-    const dono = await banco.usuario.findFirst({
-      where: { emailIndice, ...CONTA_CONFIRMADA },
-      select: { id: true },
-    });
-    if (dono) {
-      const mensagem = "Já existe uma conta com este e-mail.";
-      throw new ErroApi(409, mensagem, { campos: { email: mensagem } });
+    if (await emailTemConta(emailIndice)) {
+      throw erroDeCampo("email", MENSAGEM_EMAIL_REPETIDO, 409);
     }
     await banco.$transaction(async (tx) => {
       // Um outro cadastro pendente com o e-mail certo sai, como no cadastro.

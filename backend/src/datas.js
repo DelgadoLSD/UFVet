@@ -5,6 +5,9 @@
 // no site, elas viajam como texto "AAAA-MM-DD", sem fuso: o dia 20/08 é o dia
 // 20/08 em qualquer lugar.
 
+export const HORA = 60 * 60 * 1000;
+export const DIA = 24 * HORA;
+
 // O dia de um instante no horário de Brasília, mesmo com o servidor em outro
 // fuso: às 22h em Viçosa, em UTC já é o dia seguinte.
 export const diaEmBrasilia = (instante) =>

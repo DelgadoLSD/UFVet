@@ -14,7 +14,7 @@ import { nomeProfissionalCurto, primeiroNome, pronome } from "../../util/texto";
 // Para os outros, inclusive o visitante sem conta, os dados ficam mascarados
 // e um aviso diz o que fazer, em vez de só barrar (NF33.2).
 //
-// `acesso` é o resultado de acessoDe() (servicos/acessoContatos): se a pessoa
+// `acesso` é o resultado de acessoDe() (regras/acessoContatos): se a pessoa
 // pode ver e por quê. No perfil de outra pessoa, o contato não vem com o
 // perfil: "Ver contato" o pede à API, que confere de novo quem pode ver.
 

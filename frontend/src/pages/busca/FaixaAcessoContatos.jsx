@@ -16,7 +16,7 @@ import { tempoRestante } from "../../util/datas";
 // falta (entrar ou pedir a liberação). O ícone fica num círculo vermelho
 // quando falta fazer algo, e num círculo apagado quando não.
 //
-// `acesso` é o resultado de acessoDe() (servicos/acessoContatos).
+// `acesso` é o resultado de acessoDe() (regras/acessoContatos).
 
 function conteudoDaFaixa(acesso) {
   switch (acesso.motivo) {

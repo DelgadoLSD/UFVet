@@ -31,6 +31,16 @@ export function erroTelefone(telefone = "") {
   }
 }
 
+export function erroSenhaNova(senha = "") {
+  if (senha.length < TAMANHO_MINIMO_SENHA) {
+    return `A senha precisa ter pelo menos ${TAMANHO_MINIMO_SENHA} caracteres.`;
+  }
+}
+
+export function erroConfirmacaoSenha(senha, confirmacao) {
+  if (confirmacao !== senha) return "As duas senhas estão diferentes.";
+}
+
 // { campo: mensagem } só com os campos que têm problema.
 export const soComProblema = (erros) =>
   Object.fromEntries(Object.entries(erros).filter(([, mensagem]) => mensagem));

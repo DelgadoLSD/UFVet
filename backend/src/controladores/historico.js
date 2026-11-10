@@ -6,8 +6,8 @@ import {
   paraDataDoBanco,
   somarAnos,
 } from "../datas.js";
-import { ErroApi } from "../erros.js";
-import { buscarComHistorico, dadosDoAnimal } from "../modelos/animal.js";
+import { ErroApi, erroDeCampo } from "../erros.js";
+import { animalCompleto } from "../modelos/animal.js";
 import { pesoOuIdadeForaDoIdeal } from "../modelos/doador.js";
 import { assinaturaDe } from "../modelos/usuario.js";
 import { registrar } from "../registro.js";
@@ -40,17 +40,12 @@ async function animalPeloCodigo(req) {
   return animal;
 }
 
-const campoInvalido = (campo, mensagem) =>
-  new ErroApi(400, mensagem, { campos: { [campo]: mensagem } });
-
 // Responde com o animal inteiro, já com o registro novo: o site troca o
 // cartão de uma vez, sem montar o histórico por conta própria. Quem
 // registra é veterinário, e veterinários abrem os exames.
 async function responderComAnimal(res, animal) {
   res.status(201).json({
-    animal: dadosDoAnimal(await buscarComHistorico(animal.id), {
-      abreExames: true,
-    }),
+    animal: await animalCompleto(animal.id),
   });
 }
 
@@ -65,7 +60,7 @@ export async function validarAnimal(req, res) {
 
   const tipo = dados.criterios.TIPAGEM ? dados.tipoSanguineo : null;
   if (tipo && !TIPOS_SANGUINEOS[animal.especie].includes(tipo)) {
-    throw campoInvalido(
+    throw erroDeCampo(
       "tipoSanguineo",
       animal.especie === "CAO"
         ? "Escolha um tipo da classificação DEA, a dos cães."
@@ -78,7 +73,7 @@ export async function validarAnimal(req, res) {
   // responde isso. Marcado num animal fora do ideal, o perfil diria as duas
   // coisas ao mesmo tempo (NF19.7).
   if (dados.criterios.PESO_IDADE && pesoOuIdadeForaDoIdeal(animal, hoje)) {
-    throw campoInvalido(
+    throw erroDeCampo(
       "criterios",
       "Pelo cadastro, este animal está fora do ideal de peso ou idade, então esse critério não pode ser marcado. Ele fica como pendência, o que não necessariamente impede a doação.",
     );
@@ -136,7 +131,7 @@ export async function registrarDoacao(req, res) {
   const dados = esquemaDoacao.parse(req.body ?? {});
 
   if (dados.dataColeta < deDataDoBanco(animal.dataNascimento)) {
-    throw campoInvalido(
+    throw erroDeCampo(
       "dataColeta",
       "A data da coleta não pode ser antes do nascimento do animal.",
     );
@@ -146,10 +141,7 @@ export async function registrarDoacao(req, res) {
     select: { id: true },
   });
   if (!estabelecimento) {
-    throw campoInvalido(
-      "estabelecimentoId",
-      "Escolha onde a coleta foi feita.",
-    );
+    throw erroDeCampo("estabelecimentoId", "Escolha onde a coleta foi feita.");
   }
 
   const assinatura = assinaturaDe(req.usuario);

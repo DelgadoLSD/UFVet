@@ -1,5 +1,5 @@
 import sharp from "sharp";
-import { ErroApi } from "./erros.js";
+import { ErroApi, erroDeCampo } from "./erros.js";
 
 // O tratamento de toda imagem que chega à API (NF8.5), antes de ela ser
 // guardada: as fotos e os exames fotografados.
@@ -42,8 +42,7 @@ const EXAME = {
 // Devolve a imagem tratada, pronta para guardar. `campo` é o nome do campo
 // do formulário, para a mensagem de erro aparecer no lugar certo.
 async function regravar(conteudo, campo, perfil) {
-  const recusar = (mensagem) =>
-    new ErroApi(400, mensagem, { campos: { [campo]: mensagem } });
+  const recusar = (mensagem) => erroDeCampo(campo, mensagem);
 
   const imagem = sharp(conteudo, {
     limitInputPixels: PIXELS_MAXIMOS,

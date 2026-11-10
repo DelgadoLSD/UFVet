@@ -9,12 +9,13 @@ import CampoCodigo from "./CampoCodigo";
 import EtiquetaCodigo from "./EtiquetaCodigo";
 import { useSessao } from "../servicos/sessao";
 import { pedirLiberacao } from "../servicos/acessoContatos";
-import { listarEstabelecimentos } from "../servicos/animais";
+import { useEstabelecimentos } from "../hooks/useEstabelecimentos";
 import { buscarPerfil, veterinariosDe } from "../servicos/pessoas";
 import { confirmar } from "../hooks/confirmacoes";
 import { TAMANHO_MINIMO_CASO } from "../regras/acessoContatos";
 import {
   TAMANHO_CODIGO,
+  ehVeterinario,
   nomeProfissionalCurto,
   tratamento,
 } from "../util/texto";
@@ -106,7 +107,7 @@ function useVeterinarioDoCodigo(codigo) {
       (pessoa) =>
         valendo &&
         setAchado(
-          pessoa.papel === "VETERINARIO"
+          ehVeterinario(pessoa)
             ? { codigo, veterinario: pessoa }
             : {
                 codigo,
@@ -140,19 +141,8 @@ function useVeterinarioDoCodigo(codigo) {
 
 // Os hospitais e clínicas, e os veterinários do escolhido (NF27.2).
 function useHospitais(hospital) {
-  const [hospitais, setHospitais] = useState({ lista: [], erro: "" });
+  const { opcoes, erro } = useEstabelecimentos();
   const [equipe, setEquipe] = useState({ hospital: null, lista: [] });
-
-  useEffect(() => {
-    let valendo = true;
-    listarEstabelecimentos().then(
-      (lista) => valendo && setHospitais({ lista, erro: "" }),
-      (falha) => valendo && setHospitais({ lista: [], erro: falha.message }),
-    );
-    return () => {
-      valendo = false;
-    };
-  }, []);
 
   useEffect(() => {
     if (!hospital) return;
@@ -167,8 +157,8 @@ function useHospitais(hospital) {
   }, [hospital]);
 
   return {
-    hospitais: hospitais.lista,
-    erroHospitais: hospitais.erro,
+    opcoesHospitais: opcoes,
+    erroHospitais: erro,
     // null enquanto a lista do hospital escolhido não chega.
     veterinarios: equipe.hospital === hospital ? equipe.lista : null,
   };
@@ -183,7 +173,8 @@ function ModalPedirLiberacao({ onFechar }) {
   const [enviando, setEnviando] = useState(false);
 
   const { procurando, veterinario, motivo } = useVeterinarioDoCodigo(codigo);
-  const { hospitais, erroHospitais, veterinarios } = useHospitais(hospital);
+  const { opcoesHospitais, erroHospitais, veterinarios } =
+    useHospitais(hospital);
 
   // Mudar qualquer campo tira o aviso, que era sobre o que estava antes.
   const mudando = (definir) => (valor) => {
@@ -285,12 +276,7 @@ function ModalPedirLiberacao({ onFechar }) {
               onEscolher={mudando(setHospital)}
               placeholder="Selecione o hospital ou clínica"
               icone="local_hospital"
-              opcoes={hospitais.map((h) => ({
-                valor: h.id,
-                rotulo: h.nome,
-                descricao: `${h.cidade} - ${h.uf}`,
-                icone: "local_hospital",
-              }))}
+              opcoes={opcoesHospitais}
             />
             <AvisoErro>{erroHospitais}</AvisoErro>
             {hospital &&

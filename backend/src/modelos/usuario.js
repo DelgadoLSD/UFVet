@@ -2,7 +2,8 @@ import { enderecoDaFoto } from "../armazenamento.js";
 import { banco } from "../banco.js";
 import { decifrar, indiceEmail } from "../cifra.js";
 import { sortearCodigoLivre, sortearCodigoPublico } from "../codigos.js";
-import { LIBERACAO_ATIVA } from "./acesso.js";
+import { DIA } from "../datas.js";
+import { idDaLiberacaoAtiva } from "./acesso.js";
 import { emailNovoPendente } from "./links.js";
 
 // Model (do MVC) das contas: como achar uma conta no banco e o que dela pode
@@ -11,6 +12,18 @@ import { emailNovoPendente } from "./links.js";
 // Toda conta buscada já vem com o registro de veterinário, quando há, e o
 // estabelecimento onde ele atua.
 const COM_VETERINARIO = { veterinario: { include: { estabelecimento: true } } };
+
+// A mensagem de quando o e-mail já pertence a outra conta (NF1.2).
+export const MENSAGEM_EMAIL_REPETIDO = "Já existe uma conta com este e-mail.";
+
+// Se o e-mail já pertence a uma conta confirmada. Um cadastro pendente com o
+// mesmo e-mail não conta (ver apagarCadastrosPendentes). Dentro de uma
+// transação, `cliente` é ela.
+export const emailTemConta = async (emailIndice, cliente = banco) =>
+  !!(await cliente.usuario.findFirst({
+    where: { emailIndice, ...CONTA_CONFIRMADA },
+    select: { id: true },
+  }));
 
 // Filtro das contas com o e-mail confirmado. Um cadastro pendente não
 // aparece para ninguém: nem no perfil, nem na lista de veterinários de um
@@ -39,9 +52,7 @@ const DIAS_CADASTRO_PENDENTE = 7;
 // transação de quem chama (`tx`). Um cadastro pendente nunca entrou no site,
 // então não tem foto, animal nem nada além da própria linha.
 export async function apagarCadastrosPendentes(tx, { emailIndice, crmv }) {
-  const limite = new Date(
-    Date.now() - DIAS_CADASTRO_PENDENTE * 24 * 60 * 60 * 1000,
-  );
+  const limite = new Date(Date.now() - DIAS_CADASTRO_PENDENTE * DIA);
   const pendentes = await tx.usuario.findMany({
     where: {
       emailConfirmadoEm: null,
@@ -114,11 +125,7 @@ export async function dadosPublicos(usuario) {
 // chega aqui (a rota exige login).
 export async function podeVerContato(quem, dono) {
   if (quem.id === dono.id || quem.papel === "VETERINARIO") return true;
-  const liberacao = await banco.liberacaoContato.findFirst({
-    where: { tutorId: quem.id, ...LIBERACAO_ATIVA() },
-    select: { id: true },
-  });
-  return !!liberacao;
+  return !!(await idDaLiberacaoAtiva(quem.id, banco));
 }
 
 // O contato aberto, para quem passou por podeVerContato.
@@ -131,29 +138,21 @@ export const contatoDe = (usuario) => ({
 // conta). E-mail e telefone vão abertos, porque são dela. O hash da senha, os
 // índices e os textos cifrados nunca saem da API.
 export async function dadosDaConta(usuario) {
-  const { veterinario } = usuario;
+  const publicos = await dadosPublicos(usuario);
   return {
-    codigo: usuario.codigo,
-    papel: usuario.papel,
-    nomeCompleto: usuario.nomeCompleto,
+    ...publicos,
     email: decifrar(usuario.emailCifrado),
     telefone: decifrar(usuario.telefoneCifrado),
     // O e-mail de uma troca pedida e ainda não confirmada, para a Minha conta
     // avisar que ela está esperando a confirmação.
     emailNovo: await emailNovoPendente(usuario),
-    cidade: usuario.cidade,
-    bairro: usuario.bairro,
-    fotoUrl: enderecoDaFoto(usuario.fotoId),
-    membroDesde: usuario.criadoEm,
-    veterinario: veterinario && {
-      crmv: veterinario.crmv,
-      ufCrmv: veterinario.ufCrmv,
-      tratamento: veterinario.tratamento,
+    // Só a própria pessoa recebe o id do local onde atua.
+    veterinario: publicos.veterinario && {
+      ...publicos.veterinario,
       estabelecimento: {
-        id: veterinario.estabelecimento.id,
-        nome: veterinario.estabelecimento.nome,
+        id: usuario.veterinario.estabelecimento.id,
+        nome: usuario.veterinario.estabelecimento.nome,
       },
-      validacoesRealizadas: await validacoesAssinadas(usuario),
     },
   };
 }

@@ -6,12 +6,13 @@ import {
 import { banco } from "../banco.js";
 import { cifrar, decifrar, indiceEmail } from "../cifra.js";
 import { mandarConfirmacao } from "../emails.js";
-import { ErroApi } from "../erros.js";
+import { erroDeCampo } from "../erros.js";
 import { prepararFoto } from "../imagens.js";
 import {
-  CONTA_CONFIRMADA,
+  MENSAGEM_EMAIL_REPETIDO,
   buscarUsuarioPorId,
   dadosDaConta,
+  emailTemConta,
 } from "../modelos/usuario.js";
 import { registrar } from "../registro.js";
 import { conferirSenha, gerarHashSenha } from "../senha.js";
@@ -34,8 +35,7 @@ async function conferirSenhaAtual(req, res, senha) {
   if (await conferirSenha(senha, req.usuario.senhaHash)) return;
   res.locals.senhaRecusada = true;
   registrar("senha_recusada", { usuarioId: req.usuario.id, ip: req.ip });
-  const mensagem = "Senha incorreta.";
-  throw new ErroApi(400, mensagem, { campos: { senhaAtual: mensagem } });
+  throw erroDeCampo("senhaAtual", "Senha incorreta.");
 }
 
 // Trocar o e-mail é trocar o que se usa para entrar. Por isso pede a senha:
@@ -44,20 +44,14 @@ async function conferirSenhaAtual(req, res, senha) {
 // repetido, para este endereço não servir de consulta de quem tem conta.
 async function conferirTrocaDeEmail(req, res, senhaAtual, emailIndice) {
   if (senhaAtual === undefined) {
-    const mensagem = "Digite sua senha para trocar o e-mail.";
-    throw new ErroApi(400, mensagem, { campos: { senhaAtual: mensagem } });
+    throw erroDeCampo("senhaAtual", "Digite sua senha para trocar o e-mail.");
   }
   await conferirSenhaAtual(req, res, senhaAtual);
 
   // O e-mail novo não pode ser de outra conta (NF1.2). Um cadastro pendente
   // não conta: ele sai quando a troca for confirmada.
-  const dono = await banco.usuario.findFirst({
-    where: { emailIndice, ...CONTA_CONFIRMADA },
-    select: { id: true },
-  });
-  if (dono) {
-    const mensagem = "Já existe uma conta com este e-mail.";
-    throw new ErroApi(409, mensagem, { campos: { email: mensagem } });
+  if (await emailTemConta(emailIndice)) {
+    throw erroDeCampo("email", MENSAGEM_EMAIL_REPETIDO, 409);
   }
 }
 
@@ -147,8 +141,7 @@ async function mudarFoto(req, res, fotoId) {
 // animais: conferida, reduzida e sem a localização (imagens.js).
 export async function trocarFoto(req, res) {
   if (!req.file) {
-    const mensagem = "Escolha uma foto.";
-    throw new ErroApi(400, mensagem, { campos: { foto: mensagem } });
+    throw erroDeCampo("foto", "Escolha uma foto.");
   }
   const imagem = await prepararFoto(req.file.buffer, "foto");
   await mudarFoto(req, res, await guardarImagem(imagem));
@@ -169,8 +162,10 @@ export async function trocarSenha(req, res) {
 
   // A atual acabou de ser conferida, então basta comparar as duas.
   if (senhaNova === senhaAtual) {
-    const mensagem = "A nova senha precisa ser diferente da atual.";
-    throw new ErroApi(400, mensagem, { campos: { senhaNova: mensagem } });
+    throw erroDeCampo(
+      "senhaNova",
+      "A nova senha precisa ser diferente da atual.",
+    );
   }
 
   await banco.usuario.update({

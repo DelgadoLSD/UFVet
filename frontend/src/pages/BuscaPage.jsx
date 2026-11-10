@@ -3,6 +3,7 @@ import Header from "../components/Header";
 import { useModalDaConta } from "../hooks/useModalDaConta";
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
+import ErroComTentar from "../components/ErroComTentar";
 import Selecao from "../components/Selecao";
 import ModalComoFuncionaValidacao from "../components/ModalComoFuncionaValidacao";
 import ModalComoFuncionaContato from "../components/ModalComoFuncionaContato";
@@ -150,6 +151,9 @@ let ultimaBusca = { filtros: FILTROS_INICIAIS, ordem: ORDEM_PADRAO };
 // ("Carregar mais"), guardada há menos de um minuto, não é conferida: a
 // conferência traria só a primeira página, e a lista encolheria. A busca é
 // a mesma para todos (não traz contatos).
+// A busca antes de qualquer resposta da API.
+const SEM_RESULTADOS = { doadores: [], total: 0, pagina: 1, porPagina: 6 };
+
 const resultadosGuardados = new Map();
 const locaisGuardados = new Map();
 const FRESCO_MS = 60_000;
@@ -204,10 +208,7 @@ function useBusca(filtros, ordem) {
   const chave = `${consulta}#${tentativa}`;
   const [estado, setEstado] = useState({
     chave: null,
-    doadores: [],
-    total: 0,
-    pagina: 1,
-    porPagina: 6,
+    ...SEM_RESULTADOS,
     erro: "",
   });
   const [mais, setMais] = useState({ carregando: false, erro: "" });
@@ -234,10 +235,7 @@ function useBusca(filtros, ordem) {
         valendo &&
         setEstado({
           chave,
-          doadores: [],
-          total: 0,
-          pagina: 1,
-          porPagina: 6,
+          ...SEM_RESULTADOS,
           erro: falha.message,
         }),
     );
@@ -462,16 +460,11 @@ function BuscaPage() {
             />
 
             {erro && !carregando ? (
-              <div className="flex flex-col items-start gap-3 py-6">
-                <AvisoErro>{erro}</AvisoErro>
-                <Botao
-                  variante="secundario"
-                  icone="refresh"
-                  onClick={resultado.tentarDeNovo}
-                >
-                  Tentar de novo
-                </Botao>
-              </div>
+              <ErroComTentar
+                erro={erro}
+                onTentar={resultado.tentarDeNovo}
+                className="py-6"
+              />
             ) : resultado.primeiraVez ? (
               <CartoesEsperando />
             ) : total === 0 && !carregando ? (

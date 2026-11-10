@@ -1,15 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import Modal from "../../components/Modal";
 import AvisoErro from "../../components/AvisoErro";
 import Botao from "../../components/Botao";
 import Selecao from "../../components/Selecao";
 import AreaTexto from "../../components/AreaTexto";
+import ErroDoCampo from "../../components/ErroDoCampo";
 import Calendario from "../../components/Calendario";
 import { errosDaDoacao } from "./formularioDoacao";
 import { REFERENCIA_DOADOR } from "../../regras/doacao";
 import { useSessao } from "../../servicos/sessao";
-import { listarEstabelecimentos } from "../../servicos/animais";
+import { useEstabelecimentos } from "../../hooks/useEstabelecimentos";
 import { dataPorExtenso, formatarData, paraISO } from "../../util/datas";
 import { nomeProfissional } from "../../util/texto";
 
@@ -103,14 +104,7 @@ function Resumo({ animal, ultimaDoacao, recuperacao }) {
 
 // O problema de um campo, embaixo dele. O `data-erro` marca o aviso para o
 // formulário levar o primeiro deles para a vista.
-function Erro({ id, children }) {
-  if (!children) return null;
-  return (
-    <p id={id} data-erro className="text-xs text-[#9e0a24] mt-2">
-      {children}
-    </p>
-  );
-}
+const Erro = (props) => <ErroDoCampo data-erro {...props} />;
 
 // Formulário de uma coleta nova. O botão de enviar fica no rodapé do modal,
 // ligado a este formulário pelo id "form-doacao". Os locais são os
@@ -122,21 +116,13 @@ function FormularioDoacao({ animal, hospitalPadrao, onSalvar }) {
   const [volume, setVolume] = useState("");
   const [hospital, setHospital] = useState(hospitalPadrao || "");
   const [nota, setNota] = useState("");
-  const [locais, setLocais] = useState([]);
-  const [erroLocais, setErroLocais] = useState("");
+  const {
+    lista: locais,
+    erro: erroLocais,
+    opcoes: opcoesLocais,
+  } = useEstabelecimentos();
   const [erros, setErros] = useState({});
   const formRef = useRef(null);
-
-  useEffect(() => {
-    let valendo = true;
-    listarEstabelecimentos().then(
-      (lista) => valendo && setLocais(lista),
-      (falha) => valendo && setErroLocais(falha.message),
-    );
-    return () => {
-      valendo = false;
-    };
-  }, []);
 
   // Mudar um campo apaga o aviso dele.
   const mudar = (campo, definir) => (valor) => {
@@ -252,12 +238,7 @@ function FormularioDoacao({ animal, hospitalPadrao, onSalvar }) {
               onEscolher={mudar("estabelecimentoId", setHospital)}
               placeholder="Selecione o local"
               icone="local_hospital"
-              opcoes={locais.map((l) => ({
-                valor: l.id,
-                rotulo: l.nome,
-                descricao: `${l.cidade} - ${l.uf}`,
-                icone: "local_hospital",
-              }))}
+              opcoes={opcoesLocais}
             />
             {erroLocais && (
               <p className="text-xs font-semibold text-[#9e0a24] mt-2">

@@ -139,23 +139,22 @@ export function pedidoDoFormulario(form, animal) {
 // de verdade ao longo da vida, e a data de nascimento pode ter sido digitada
 // errada; nos dois casos o tutor corrige e a validação volta para a fila. No
 // banco, são os motivos EDICAO_PESO e EDICAO_NASCIMENTO da invalidação (F21).
-const CRITERIO_POR_CAMPO = {
-  peso: "PESO_IDADE",
-  idadeConhecida: "PESO_IDADE",
-  dataNascimento: "PESO_IDADE",
-  idadeEstimada: "PESO_IDADE",
-};
+const CAMPOS_DE_PESO_E_IDADE = [
+  "peso",
+  "idadeConhecida",
+  "dataNascimento",
+  "idadeEstimada",
+];
 
 // Os critérios validados que salvar o formulário desfaz (NF9.1).
 export function criteriosAfetados(form, animal) {
   if (!animal?.validacao) return [];
   const antes = formularioDoAnimal(animal);
-  const chaves = new Set(
-    Object.entries(CRITERIO_POR_CAMPO)
-      .filter(([campo]) => form[campo] !== antes[campo])
-      .map(([, criterio]) => criterio),
+  const mudou = CAMPOS_DE_PESO_E_IDADE.some(
+    (campo) => form[campo] !== antes[campo],
   );
   return CRITERIOS_DOACAO.filter(
-    (c) => chaves.has(c.chave) && animal.validacao.criterios[c.chave],
+    (c) =>
+      c.chave === "PESO_IDADE" && mudou && animal.validacao.criterios[c.chave],
   );
 }

@@ -124,10 +124,10 @@ export const MOTIVO_DA_EXCLUSAO = {
 // A validação que vale agora, entre as do animal (da mais recente para a mais
 // antiga, cada uma com os critérios): a mais recente, se não venceu nem
 // perdeu o efeito. As anteriores já foram substituídas.
-export function validacaoEmVigor(validacoes) {
+export function validacaoEmVigor(validacoes, hoje = hojeISO()) {
   const [maisRecente] = validacoes;
   if (!maisRecente || maisRecente.invalidadaEm) return null;
-  if (deDataDoBanco(maisRecente.validaAte) < hojeISO()) return null;
+  if (deDataDoBanco(maisRecente.validaAte) < hoje) return null;
   return maisRecente;
 }
 
@@ -188,6 +188,11 @@ const dadosDaObservacao = (observacao) => ({
 //
 // `abreExames` diz se quem pediu abre os arquivos dos exames (ver
 // podeAbrirExames acima). Sem ele, os exames vão sem os endereços.
+// O animal inteiro, com os exames abertos: o que as rotas devolvem a quem acabou
+// de mexer nele (o dono ou um veterinário).
+export const animalCompleto = async (id) =>
+  dadosDoAnimal(await buscarComHistorico(id), { abreExames: true });
+
 export function dadosDoAnimal(animal, { abreExames = false } = {}) {
   return {
     codigo: animal.codigo,

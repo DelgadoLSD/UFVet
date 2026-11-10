@@ -1,4 +1,4 @@
-import { enviarEmail } from "./carteiro.js";
+import { enviarEmail, escaparHtml } from "./carteiro.js";
 import { decifrar, indiceEmail } from "./cifra.js";
 import { config } from "./config.js";
 import { VALIDADE_HORAS, criarLink } from "./modelos/links.js";
@@ -20,13 +20,6 @@ export function saudacao(nomeCompleto) {
 }
 
 const prazo = (horas) => (horas === 1 ? "1 hora" : `${horas} horas`);
-
-const escaparHtml = (texto) =>
-  texto
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 
 // As mesmas cores do site: o vermelho dos botões e o preto dos textos. Os
 // estilos vão em cada elemento porque os leitores de e-mail ignoram folhas

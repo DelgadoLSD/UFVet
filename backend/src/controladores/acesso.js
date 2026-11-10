@@ -1,6 +1,7 @@
 import { banco } from "../banco.js";
 import { codigoDoEndereco } from "../codigos.js";
-import { ErroApi } from "../erros.js";
+import { HORA } from "../datas.js";
+import { ErroApi, erroDeCampo } from "../erros.js";
 import {
   buscarLiberacao,
   buscarPedido,
@@ -14,6 +15,7 @@ import {
   pedidoPendenteDe,
   pedidosPendentesPara,
   travarAcessoDoTutor,
+  ultimoPedidoRecusadoDe,
 } from "../modelos/acesso.js";
 import {
   CONTA_CONFIRMADA,
@@ -37,11 +39,6 @@ import {
 //
 // Todas as rotas exigem login; as do veterinário passam também por
 // exigirPapel("VETERINARIO") (NF28.1, ver rotas.js).
-
-const HORA = 60 * 60 * 1000;
-
-const campoInvalido = (campo, mensagem) =>
-  new ErroApi(400, mensagem, { campos: { [campo]: mensagem } });
 
 // "Dr. Victor", nas mensagens sobre quem liberou ou recebeu um pedido.
 const nomeDoVeterinario = (usuario) =>
@@ -76,6 +73,7 @@ export async function meuAcesso(req, res) {
     veterinario: false,
     liberacao: liberacao && dadosDaLiberacao(liberacao),
     pedido: pedido && dadosDoPedido(pedido),
+    pedidoRecusado: await ultimoPedidoRecusadoDe(usuario.id),
   });
 }
 
@@ -96,7 +94,7 @@ export async function pedirLiberacao(req, res) {
   const dados = esquemaPedido.parse(req.body ?? {});
   const veterinario = await buscarUsuarioPorCodigo(dados.veterinario);
   if (!veterinario || veterinario.papel !== "VETERINARIO") {
-    throw campoInvalido(
+    throw erroDeCampo(
       "veterinario",
       `Nenhum veterinário com o código #${dados.veterinario}. Confira o código ou procure pelo local do atendimento.`,
     );
@@ -154,7 +152,8 @@ const pedidoJaRespondido = (status) =>
 const pedidoNaoEncontrado = () =>
   new ErroApi(404, "Pedido não encontrado: ele pode ter sido cancelado.");
 
-const ehId = (id) => /^[0-9a-f-]{36}$/i.test(id);
+const ehId = (id) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
 // DELETE /api/pedidos/:id — o tutor desiste do pedido que ainda espera resposta
 // (NF27.5), para não ficar preso a um veterinário que não responde. O pedido é
@@ -230,13 +229,13 @@ export async function listarLiberacoes(req, res) {
 async function tutorPeloCodigo(codigo) {
   const tutor = await buscarUsuarioPorCodigo(codigo);
   if (!tutor) {
-    throw campoInvalido(
+    throw erroDeCampo(
       "tutor",
       `Nenhum tutor com o código #${codigo}. Confira o código com a pessoa.`,
     );
   }
   if (tutor.papel === "VETERINARIO") {
-    throw campoInvalido(
+    throw erroDeCampo(
       "tutor",
       `O código #${codigo} é de um veterinário, que já vê os contatos sem liberação.`,
     );
@@ -324,9 +323,7 @@ export async function liberarAcesso(req, res) {
 // A liberação do endereço, se foi este veterinário quem a concedeu (NF28.5)
 // e ela ainda vale. A de outro veterinário responde "não encontrada".
 async function liberacaoAtivaDoVeterinario(id, veterinario) {
-  const liberacao = /^[0-9a-f-]{36}$/i.test(id)
-    ? await buscarLiberacao(id)
-    : null;
+  const liberacao = ehId(id) ? await buscarLiberacao(id) : null;
   if (!liberacao || liberacao.veterinarioId !== veterinario.id) {
     throw new ErroApi(404, "Liberação não encontrada.");
   }
@@ -353,7 +350,7 @@ export async function renovarLiberacao(req, res) {
   const duracaoHoras = dados.duracaoHoras ?? liberacao.duracaoHoras;
   const expiraEm = new Date(Date.now() + duracaoHoras * HORA);
   if (expiraEm <= liberacao.expiraEm) {
-    throw campoInvalido(
+    throw erroDeCampo(
       "duracaoHoras",
       `Esse prazo terminaria antes do atual (${ate(liberacao.expiraEm)}). Escolha um prazo maior, ou encerre a liberação.`,
     );
@@ -410,7 +407,7 @@ export async function conferirTutor(req, res) {
 // código (NF27.2).
 export async function veterinariosDoEstabelecimento(req, res) {
   const id = req.params.id;
-  const veterinarios = /^[0-9a-f-]{36}$/i.test(id)
+  const veterinarios = ehId(id)
     ? await banco.usuario.findMany({
         where: { veterinario: { estabelecimentoId: id }, ...CONTA_CONFIRMADA },
         include: { veterinario: { include: { estabelecimento: true } } },

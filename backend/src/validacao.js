@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { normalizarConvite } from "./cifra.js";
 import { dataExiste, hojeISO, subtrairAnos } from "./datas.js";
+import { MAXIMO_FOTOS_POR_ANIMAL } from "./middlewares/envio.js";
 import { BYTES_MAXIMOS_SENHA } from "./senha.js";
 
 // Regras dos dados que chegam à API. A API nunca confia no que recebe: alguém
@@ -52,12 +53,21 @@ const obrigatorio = {
 
 const PREENCHA = "Preencha este campo.";
 
-// Tira os espaços das pontas e junta espaços repetidos.
-const limparEspacos = (valor) =>
-  typeof valor === "string" ? valor.trim().replace(/\s+/g, " ") : valor;
+// Texto obrigatório. Os limites de cada campo são encadeados depois.
+const preenchido = z.string(obrigatorio).min(1, PREENCHA);
 
-const soDigitos = (valor) =>
-  typeof valor === "string" ? valor.replace(/\D/g, "") : valor;
+// Aplica `transformar` só quando veio texto: outro tipo segue como veio, e a
+// regra do campo diz o que está errado.
+const seTexto = (transformar) => (valor) =>
+  typeof valor === "string" ? transformar(valor) : valor;
+
+// Tira os espaços das pontas e junta espaços repetidos.
+const limparEspacos = seTexto((valor) => valor.trim().replace(/\s+/g, " "));
+
+const soDigitos = seTexto((valor) => valor.replace(/\D/g, ""));
+
+// O e-mail como é guardado: sem espaços nas pontas e em minúsculas.
+const emailNormalizado = seTexto((valor) => valor.trim().toLowerCase());
 
 // Limites que nenhum cão ou gato passa: servem para pegar erro de digitação
 // ("320" no lugar de "32,0"), não para decidir quem pode doar.
@@ -100,18 +110,14 @@ export function formatarTelefone(digitos) {
 export const campos = {
   nomeCompleto: z.preprocess(
     limparEspacos,
-    z
-      .string(obrigatorio)
-      .min(1, PREENCHA)
+    preenchido
       .max(120, "O nome pode ter no máximo 120 caracteres.")
       .refine((nome) => nome.includes(" "), "Informe o nome e o sobrenome."),
   ),
 
   email: z.preprocess(
-    (valor) => (typeof valor === "string" ? valor.trim().toLowerCase() : valor),
-    z
-      .string(obrigatorio)
-      .min(1, PREENCHA)
+    emailNormalizado,
+    preenchido
       .max(254, "E-mail longo demais.")
       .refine(
         (email) => z.email().safeParse(email).success,
@@ -121,9 +127,7 @@ export const campos = {
 
   telefone: z.preprocess(
     digitosDoTelefone,
-    z
-      .string(obrigatorio)
-      .min(1, PREENCHA)
+    preenchido
       .refine(
         (t) => TELEFONE.test(t),
         "Telefone inválido. Use o DDD e o número.",
@@ -148,10 +152,7 @@ export const campos = {
 
   bairro: z.preprocess(
     limparEspacos,
-    z
-      .string(obrigatorio)
-      .min(1, PREENCHA)
-      .max(80, "O bairro pode ter no máximo 80 caracteres."),
+    preenchido.max(80, "O bairro pode ter no máximo 80 caracteres."),
   ),
 
   // Sem limpar espaços: eles podem fazer parte da senha.
@@ -165,25 +166,19 @@ export const campos = {
 
   // Código de convite: aceita com traço, sem traço e em minúsculas.
   convite: z.preprocess(
-    (valor) => (typeof valor === "string" ? normalizarConvite(valor) : valor),
-    z
-      .string(obrigatorio)
-      .min(1, PREENCHA)
-      .length(8, "O código do convite tem 8 letras e números."),
+    seTexto(normalizarConvite),
+    preenchido.length(8, "O código do convite tem 8 letras e números."),
   ),
 
   tratamento: z.enum(["DR", "DRA"], { error: "Escolha Dr. ou Dra." }),
 
   crmv: z.preprocess(
     soDigitos,
-    z
-      .string(obrigatorio)
-      .min(1, PREENCHA)
-      .max(12, "O CRMV pode ter no máximo 12 números."),
+    preenchido.max(12, "O CRMV pode ter no máximo 12 números."),
   ),
 
   uf: z.preprocess(
-    (valor) => (typeof valor === "string" ? valor.trim().toUpperCase() : valor),
+    seTexto((valor) => valor.trim().toUpperCase()),
     z.enum(UFS, { error: "UF inválida." }),
   ),
 
@@ -191,10 +186,7 @@ export const campos = {
 
   nomeAnimal: z.preprocess(
     limparEspacos,
-    z
-      .string(obrigatorio)
-      .min(1, PREENCHA)
-      .max(60, "O nome pode ter no máximo 60 caracteres."),
+    preenchido.max(60, "O nome pode ter no máximo 60 caracteres."),
   ),
 
   especie: z.enum(["CAO", "GATO"], { error: "Escolha cão ou gato." }),
@@ -203,8 +195,7 @@ export const campos = {
 
   // Vazio quer dizer SRD (sem raça definida), que o banco guarda como nulo.
   raca: z.preprocess(
-    (valor) =>
-      typeof valor === "string" ? limparEspacos(valor) || null : valor,
+    seTexto((valor) => limparEspacos(valor) || null),
     z
       .string(obrigatorio)
       .max(60, "A raça pode ter no máximo 60 caracteres.")
@@ -284,7 +275,6 @@ export const esquemaCadastro = z.discriminatedUnion(
 // Um e-mail só, com a mesma regra do cadastro: a conferência durante o
 // cadastro, o pedido do link de confirmação de novo e o "Esqueceu a senha?".
 export const esquemaSoEmail = z.object({ email: campos.email });
-export const esquemaDisponibilidade = esquemaSoEmail;
 
 // O código de um link mandado por e-mail: 32 bytes em base64url, 43
 // caracteres (ver modelos/links.js). Devolve o código, ou null quando o que
@@ -302,15 +292,12 @@ export const esquemaNovaSenha = z.object({ senha: campos.senha });
 // Senha digitada para entrar ou para confirmar uma mudança. O formato não é
 // conferido, só se ela bate com o hash guardado. O teto de 200 caracteres
 // evita gastar processamento com textos enormes.
-const senhaDigitada = z.string(obrigatorio).min(1, PREENCHA).max(200);
+const senhaDigitada = preenchido.max(200);
 
 // Login (F2). Aqui o formato do e-mail também não é conferido: e-mail mal
 // digitado e senha errada recebem a mesma resposta (NF2.2).
 export const esquemaLogin = z.object({
-  email: z.preprocess(
-    (valor) => (typeof valor === "string" ? valor.trim().toLowerCase() : valor),
-    z.string(obrigatorio).min(1, PREENCHA).max(254),
-  ),
+  email: z.preprocess(emailNormalizado, preenchido.max(254)),
   senha: senhaDigitada,
 });
 
@@ -319,13 +306,14 @@ export const esquemaLogin = z.object({
 // o que não faz parte é descartado: não há como mudá-los por aqui (NF3.1).
 export const esquemaConta = z
   .object({
-    nomeCompleto: campos.nomeCompleto.optional(),
-    email: campos.email.optional(),
-    telefone: campos.telefone.optional(),
-    cidade: campos.cidade.optional(),
-    bairro: campos.bairro.optional(),
-    senhaAtual: senhaDigitada.optional(),
+    nomeCompleto: campos.nomeCompleto,
+    email: campos.email,
+    telefone: campos.telefone,
+    cidade: campos.cidade,
+    bairro: campos.bairro,
+    senhaAtual: senhaDigitada,
   })
+  .partial()
   // O bairro é da cidade: trocar de cidade sem escolher o bairro deixaria a
   // conta com um bairro de outro lugar.
   .refine((dados) => dados.cidade === undefined || dados.bairro !== undefined, {
@@ -384,7 +372,10 @@ const ordemDasFotos = z
   .array(z.union([z.literal("nova"), z.uuid()]), {
     error: "Lista de fotos inválida.",
   })
-  .max(5, "Cada animal pode ter até 5 fotos.")
+  .max(
+    MAXIMO_FOTOS_POR_ANIMAL,
+    `Cada animal pode ter até ${MAXIMO_FOTOS_POR_ANIMAL} fotos.`,
+  )
   .refine(
     (lista) => {
       const ids = lista.filter((item) => item !== "nova");
@@ -397,15 +388,11 @@ const ordemDasFotos = z
 // fotos ficam como estão, e as enviadas entram no fim.
 export const esquemaEdicaoAnimal = z
   .object({
-    ...Object.fromEntries(
-      Object.entries(dadosDoAnimal).map(([campo, regra]) => [
-        campo,
-        regra.optional(),
-      ]),
-    ),
-    disponivel: campos.disponivel.optional(),
-    fotos: ordemDasFotos.optional(),
+    ...dadosDoAnimal,
+    disponivel: campos.disponivel,
+    fotos: ordemDasFotos,
   })
+  .partial()
   .refine(
     (dados) =>
       !informou(dados.dataNascimento) || !informou(dados.idadeAproximada),
@@ -543,10 +530,6 @@ export const DOADORES_POR_PAGINA = 6;
 // ou nome.
 export const ORDENS_DA_BUSCA = ["ideal", "validados", "peso", "nome"];
 
-const especieDaBusca = z.enum(["CAO", "GATO"], {
-  error: "Escolha cão ou gato.",
-});
-
 // Um texto da busca: espaços das pontas saem, e vazio é o mesmo que não
 // filtrar.
 const textoDaBusca = (maximo, mensagem) =>
@@ -562,7 +545,7 @@ const textoDaBusca = (maximo, mensagem) =>
 // ignorado, e o que está fora do esperado é recusado com o motivo.
 export const esquemaBusca = z
   .object({
-    especie: especieDaBusca,
+    especie: campos.especie,
     // Um tipo só chega como texto; vários, como lista (tipos=A&tipos=B).
     tipos: z.preprocess(
       (valor) =>
@@ -610,7 +593,7 @@ export const esquemaBusca = z
   });
 
 // Os lugares para os filtros de cidade e bairro, por espécie.
-export const esquemaLocais = z.object({ especie: especieDaBusca });
+export const esquemaLocais = z.object({ especie: campos.especie });
 
 // ─── Acesso aos contatos (F27 a F34) ──────────────────────────────────────────
 
@@ -629,10 +612,7 @@ const TAMANHO_MAXIMO_CASO_LIBERACAO = 160;
 // errado.
 const codigoDigitado = (mensagem) =>
   z.preprocess(
-    (valor) =>
-      typeof valor === "string"
-        ? valor.trim().replace(/^#/, "").toUpperCase()
-        : valor,
+    seTexto((valor) => valor.trim().replace(/^#/, "").toUpperCase()),
     z.string({ error: mensagem }).regex(/^[A-Z0-9]{6}$/, mensagem),
   );
 

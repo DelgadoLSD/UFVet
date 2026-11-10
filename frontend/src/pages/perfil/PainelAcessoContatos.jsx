@@ -3,7 +3,9 @@ import AvisoErro from "../../components/AvisoErro";
 import Botao from "../../components/Botao";
 import BotaoAjuda from "../../components/BotaoAjuda";
 import EtiquetaCodigo from "../../components/EtiquetaCodigo";
+import ErroComTentar from "../../components/ErroComTentar";
 import ModalLiberarAcesso from "./ModalLiberarAcesso";
+import { useFecharFora } from "../../hooks/useFecharFora";
 import { BotaoQueAbre, MostrarOcultar, TituloComAjuda } from "./PainelSecao";
 import { confirmar } from "../../hooks/confirmacoes";
 import { useCelular } from "../../hooks/useCelular";
@@ -108,20 +110,13 @@ function MenuRenovar({ liberacao, ocupado, onRenovar }) {
   const raizRef = useRef(null);
   const listaRef = useRef(null);
 
+  useFecharFora(aberto, raizRef, setAberto);
+
+  // O foco vai para a primeira opção que pode ser escolhida.
   useEffect(() => {
-    if (!aberto) return;
-    // O foco vai para a primeira opção que pode ser escolhida.
-    listaRef.current?.querySelector("button:not(:disabled)")?.focus();
-    const fecharFora = (e) => {
-      if (!raizRef.current?.contains(e.target)) setAberto(false);
-    };
-    const aoTeclar = (e) => e.key === "Escape" && setAberto(false);
-    document.addEventListener("pointerdown", fecharFora);
-    document.addEventListener("keydown", aoTeclar);
-    return () => {
-      document.removeEventListener("pointerdown", fecharFora);
-      document.removeEventListener("keydown", aoTeclar);
-    };
+    if (aberto) {
+      listaRef.current?.querySelector("button:not(:disabled)")?.focus();
+    }
   }, [aberto]);
 
   // As opções são calculadas ao abrir, com o relógio de agora.
@@ -411,12 +406,12 @@ function PainelAcessoContatos({ onComoFunciona }) {
             className="py-6"
           />
         ) : painel.erro && pedidos.length === 0 && liberacoes.length === 0 ? (
-          <div className="flex flex-col items-start gap-3">
-            <AvisoErro>{painel.erro}</AvisoErro>
-            <Botao tamanho="sm" icone="refresh" onClick={painel.recarregar}>
-              Tentar de novo
-            </Botao>
-          </div>
+          <ErroComTentar
+            erro={painel.erro}
+            onTentar={painel.recarregar}
+            variante="primario"
+            tamanho="sm"
+          />
         ) : (
           <>
             {pedidos.length > 0 && (

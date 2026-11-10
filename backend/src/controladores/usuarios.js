@@ -1,18 +1,24 @@
 import { banco } from "../banco.js";
 import { cifrar, indiceEmail } from "../cifra.js";
 import { mandarConfirmacao } from "../emails.js";
-import { ErroApi } from "../erros.js";
-import { acharConviteValido, usarConvite } from "../modelos/convite.js";
+import { ErroApi, erroDeCampo } from "../erros.js";
+import {
+  MENSAGEM_CONVITE,
+  acharConviteValido,
+  usarConvite,
+} from "../modelos/convite.js";
 import {
   CONTA_CONFIRMADA,
+  MENSAGEM_EMAIL_REPETIDO,
   apagarCadastrosPendentes,
   buscarUsuarioPorId,
   codigoPublicoLivre,
+  emailTemConta,
 } from "../modelos/usuario.js";
 import { registrar } from "../registro.js";
 import { gerarHashSenha } from "../senha.js";
 import { marcarCadastroPendente } from "../token.js";
-import { esquemaCadastro, esquemaDisponibilidade } from "../validacao.js";
+import { esquemaCadastro, esquemaSoEmail } from "../validacao.js";
 
 // Controller (do MVC) das contas.
 
@@ -26,19 +32,14 @@ import { esquemaCadastro, esquemaDisponibilidade } from "../validacao.js";
 // doações como regras fixas.
 const VERSAO_DOS_TERMOS = "6";
 
-const MENSAGEM_CONVITE =
-  "Convite inválido, já usado ou vencido. Peça um novo a quem enviou o convite.";
-
 // O e-mail não pode se repetir entre contas (NF1.2). O banco também barra a
 // repetição; conferir antes serve para dizer, embaixo do campo, o que houve.
 // Só conta a conta confirmada: um cadastro pendente com o mesmo e-mail sai
 // para o novo entrar (ver apagarCadastrosPendentes).
 async function camposRepetidos({ email }) {
-  const existente = await banco.usuario.findFirst({
-    where: { emailIndice: indiceEmail(email), ...CONTA_CONFIRMADA },
-    select: { id: true },
-  });
-  return existente ? { email: "Já existe uma conta com este e-mail." } : {};
+  return (await emailTemConta(indiceEmail(email)))
+    ? { email: MENSAGEM_EMAIL_REPETIDO }
+    : {};
 }
 
 async function conferirRepetidos(dados) {
@@ -53,7 +54,7 @@ async function conferirRepetidos(dados) {
 // { campos: {} } quando está livre. É POST para o e-mail não ir no endereço,
 // que fica nos registros de acesso.
 export async function conferirDisponibilidade(req, res) {
-  const dados = esquemaDisponibilidade.parse(req.body);
+  const dados = esquemaSoEmail.parse(req.body);
   res.json({ campos: await camposRepetidos(dados) });
 }
 
@@ -62,9 +63,7 @@ async function conferirConvite(req, codigo) {
   const convite = await acharConviteValido(codigo);
   if (!convite) {
     registrar("convite_recusado", { ip: req.ip });
-    throw new ErroApi(400, MENSAGEM_CONVITE, {
-      campos: { convite: MENSAGEM_CONVITE },
-    });
+    throw erroDeCampo("convite", MENSAGEM_CONVITE);
   }
   const crmvEmUso = await banco.veterinario.findFirst({
     where: {
@@ -75,8 +74,11 @@ async function conferirConvite(req, codigo) {
     select: { usuarioId: true },
   });
   if (crmvEmUso) {
-    const mensagem = "Já existe uma conta com o CRMV deste convite.";
-    throw new ErroApi(409, mensagem, { campos: { convite: mensagem } });
+    throw erroDeCampo(
+      "convite",
+      "Já existe uma conta com o CRMV deste convite.",
+      409,
+    );
   }
   return convite;
 }
@@ -141,9 +143,7 @@ export async function cadastrar(req, res) {
     });
 
     if (convite && !(await usarConvite(tx, convite.id, usuario.id))) {
-      throw new ErroApi(409, MENSAGEM_CONVITE, {
-        campos: { convite: MENSAGEM_CONVITE },
-      });
+      throw erroDeCampo("convite", MENSAGEM_CONVITE, 409);
     }
     return usuario.id;
   });

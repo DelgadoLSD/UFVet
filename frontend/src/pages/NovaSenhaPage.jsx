@@ -1,11 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
 import Campo from "../components/Campo";
 import LayoutAutenticacao from "../components/LayoutAutenticacao";
-import { TAMANHO_MINIMO_SENHA, soComProblema } from "../regras/conta";
-import { codigoDoLink, temCodigo } from "../regras/link";
+import {
+  TAMANHO_MINIMO_SENHA,
+  erroConfirmacaoSenha,
+  erroSenhaNova,
+  soComProblema,
+} from "../regras/conta";
+import { useCodigoDoLink } from "../hooks/useCodigoDoLink";
 import { criarSenhaNova } from "../servicos/email";
 import { carregarSessao } from "../servicos/sessao";
 // "Shelter dog ready for adoption", foto de Michael G (Unsplash, uso livre)
@@ -34,26 +39,13 @@ const SEM_LINK = {
 };
 
 function Conteudo({ hash }) {
-  // Lidos uma vez: logo em seguida o código sai da barra de endereço.
-  const [codigo] = useState(() => codigoDoLink(hash));
-  const [veioDoLink] = useState(() => temCodigo(hash));
+  const { codigo, veioDoLink } = useCodigoDoLink(hash);
   const [dados, setDados] = useState({ senha: "", confirmacao: "" });
   const [erros, setErros] = useState({});
   const [enviando, setEnviando] = useState(false);
   // { fase: "criada", email } ou { fase: "invalido", mensagem }, no lugar
   // do formulário.
   const [resultado, setResultado] = useState(null);
-
-  // O código sai da barra de endereço e do histórico assim que é lido.
-  useEffect(() => {
-    if (veioDoLink) {
-      window.history.replaceState(
-        window.history.state,
-        "",
-        window.location.pathname,
-      );
-    }
-  }, [veioDoLink]);
 
   const mudar = (campo, valor) => {
     setDados((prev) => ({ ...prev, [campo]: valor }));
@@ -63,14 +55,8 @@ function Conteudo({ hash }) {
   const enviar = async (e) => {
     e.preventDefault();
     const problemas = soComProblema({
-      senha:
-        dados.senha.length < TAMANHO_MINIMO_SENHA
-          ? `A senha precisa ter pelo menos ${TAMANHO_MINIMO_SENHA} caracteres.`
-          : undefined,
-      confirmacao:
-        dados.confirmacao !== dados.senha
-          ? "As duas senhas estão diferentes."
-          : undefined,
+      senha: erroSenhaNova(dados.senha),
+      confirmacao: erroConfirmacaoSenha(dados.senha, dados.confirmacao),
     });
     if (Object.keys(problemas).length > 0) {
       setErros(problemas);

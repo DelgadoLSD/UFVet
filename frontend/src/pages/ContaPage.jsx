@@ -6,6 +6,7 @@ import Botao from "../components/Botao";
 import Campo from "../components/Campo";
 import CampoBairro from "../components/CampoBairro";
 import CampoCidade from "../components/CampoCidade";
+import ErroDoCampo from "../components/ErroDoCampo";
 import FormularioSenha from "./conta/FormularioSenha";
 import FotoDePerfil from "./conta/FotoDePerfil";
 import ModalEncerrarConta from "./conta/ModalEncerrarConta";
@@ -121,12 +122,6 @@ function DadoFixo({ rotulo, valor, motivo }) {
       </div>
     </div>
   );
-}
-
-// Mensagem de erro embaixo de um campo que não é um Campo (cidade, bairro).
-function ErroDoCampo({ children }) {
-  if (!children) return null;
-  return <p className="text-xs text-[#9e0a24] mt-2">{children}</p>;
 }
 
 function ContaPage() {

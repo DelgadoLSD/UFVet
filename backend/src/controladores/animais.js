@@ -11,14 +11,14 @@ import {
   paraDataDoBanco,
   subtrairAnos,
 } from "../datas.js";
-import { ErroApi } from "../erros.js";
+import { ErroApi, erroDeCampo } from "../erros.js";
 import { prepararFoto } from "../imagens.js";
 import { MAXIMO_FOTOS_POR_ANIMAL } from "../middlewares/envio.js";
 import { CONTA_CONFIRMADA } from "../modelos/usuario.js";
 import {
   COM_FOTOS,
   COM_HISTORICO,
-  buscarComHistorico,
+  animalCompleto,
   codigoAnimalLivre,
   dadosDoAnimal,
   invalidarPesoIdade,
@@ -38,7 +38,7 @@ import { esquemaAnimal, esquemaEdicaoAnimal } from "../validacao.js";
 // Os dados de um pedido. Sem fotos, o corpo é JSON. Com fotos, é um
 // formulário com arquivos (multipart): os dados vêm num campo "dados", em
 // JSON, e as fotos no campo "fotos".
-function dadosDoPedido(req) {
+function corpoDoAnimal(req) {
   if (!req.is("multipart/form-data")) return req.body ?? {};
   try {
     return JSON.parse(req.body?.dados ?? "{}");
@@ -52,8 +52,7 @@ function dadosDoPedido(req) {
 // Nada que venha de outro jeito é tratado como lista de fotos.
 const fotosDoPedido = (req) => (Array.isArray(req.files) ? req.files : []);
 
-const fotosInvalidas = (mensagem) =>
-  new ErroApi(400, mensagem, { campos: { fotos: mensagem } });
+const fotosInvalidas = (mensagem) => erroDeCampo("fotos", mensagem);
 
 // Trata e guarda as fotos enviadas, na ordem do envio, e devolve os ids dos
 // arquivos. Todas são tratadas antes de a primeira ser guardada: com uma
@@ -131,7 +130,7 @@ export async function listarAnimais(req, res) {
 // POST /api/animais — cadastra um animal de quem está logado (F8), com as
 // fotos, se vierem, na ordem do envio. Ele já nasce disponível para doação.
 export async function cadastrarAnimal(req, res) {
-  const dados = esquemaAnimal.parse(dadosDoPedido(req));
+  const dados = esquemaAnimal.parse(corpoDoAnimal(req));
   const arquivos = await guardarFotos(fotosDoPedido(req));
 
   let animal;
@@ -166,10 +165,7 @@ export async function cadastrarAnimal(req, res) {
   // Gravar as fotos junto faz o Prisma abrir uma transação, e buscar o
   // histórico dentro dela mandaria várias consultas ao mesmo tempo pela mesma
   // conexão. Por isso o animal completo é buscado depois, como na edição.
-  const cadastrado = await buscarComHistorico(animal.id);
-  res
-    .status(201)
-    .json({ animal: dadosDoAnimal(cadastrado, { abreExames: true }) });
+  res.status(201).json({ animal: await animalCompleto(animal.id) });
 }
 
 // Confere a nova ordem das fotos (ver esquemaEdicaoAnimal) contra as fotos
@@ -245,7 +241,7 @@ export async function editarAnimal(req, res) {
   // Primeiro o dono, depois os dados: sobre o animal alheio, nem as regras
   // de preenchimento respondem.
   const animal = await animalDoUsuario(req);
-  const dados = esquemaEdicaoAnimal.parse(dadosDoPedido(req));
+  const dados = esquemaEdicaoAnimal.parse(corpoDoAnimal(req));
   const enviadas = fotosDoPedido(req);
 
   // F21: o que conta é o valor mudar, não o campo vir no pedido. O peso e o
@@ -270,8 +266,10 @@ export async function editarAnimal(req, res) {
     dados.especie !== animal.especie &&
     animal.tipoSanguineo
   ) {
-    const mensagem = "A espécie não muda depois da tipagem confirmada.";
-    throw new ErroApi(400, mensagem, { campos: { especie: mensagem } });
+    throw erroDeCampo(
+      "especie",
+      "A espécie não muda depois da tipagem confirmada.",
+    );
   }
 
   conferirOrdemDasFotos(animal.fotos, dados.fotos, enviadas.length);
@@ -312,7 +310,7 @@ export async function editarAnimal(req, res) {
   // Só depois de gravado: os arquivos das fotos que saíram.
   await apagarArquivos(removidas.map((foto) => foto.arquivoId));
 
-  const atualizado = await buscarComHistorico(animal.id);
+  const atualizado = await animalCompleto(animal.id);
   if (invalidou) {
     registrar("validacao_invalidada", {
       usuarioId: req.usuario.id,
@@ -327,7 +325,7 @@ export async function editarAnimal(req, res) {
       ? [...new Set([...Object.keys(dados), "fotos"])]
       : Object.keys(dados),
   });
-  res.json({ animal: dadosDoAnimal(atualizado, { abreExames: true }) });
+  res.json({ animal: atualizado });
 }
 
 // DELETE /api/animais/:codigo — exclui o animal (F10). O banco apaga junto

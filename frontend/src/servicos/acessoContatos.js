@@ -6,11 +6,11 @@ import {
   useSyncExternalStore,
 } from "react";
 import { chamarComLogin, useSessao } from "./sessao";
-import { paraVeterinario } from "./pessoas";
+import { paraVeterinario } from "./conversoes";
 import { confirmar } from "../hooks/confirmacoes";
 import { useAtualizacaoPeriodica } from "../hooks/useAtualizacaoPeriodica";
-import { expirou } from "../util/datas";
-import { ehVeterinario, nomeProfissionalCurto, pronome } from "../util/texto";
+import { acessoDe, mudancaDoAcesso } from "../regras/acessoContatos";
+import { ehVeterinario } from "../util/texto";
 
 // Acesso aos contatos: quem pode ver o telefone e o e-mail dos tutores (F27 a
 // F34), pela API. O tutor pede a liberação a um veterinário; o veterinário
@@ -60,40 +60,8 @@ const assinar = (aviso) => {
   return () => ouvintes.delete(aviso);
 };
 
-// O que mudou por ação de outra pessoa, entre a situação de antes e a nova,
-// dito no aviso embaixo da tela: a pessoa estava esperando, e a resposta
-// chegou sem ela precisar recarregar. Devolve null quando não há o que
-// avisar (a primeira busca, ou nada mudou).
-export function mudancaDoAcesso(antes, depois) {
-  if (!antes.pronta || antes.codigo !== depois.codigo) return null;
-  const ativa = (s) => s.liberacao && !expirou(s.liberacao.expiraEm);
-
-  if (!ativa(antes) && ativa(depois)) {
-    return {
-      texto: `${nomeProfissionalCurto(depois.liberacao.veterinario)} liberou seu acesso aos contatos`,
-      detalhe: "Os contatos já aparecem nos perfis dos doadores.",
-    };
-  }
-  if (antes.pedido && !depois.pedido && !ativa(depois)) {
-    const { veterinario } = antes.pedido;
-    return {
-      texto: `${nomeProfissionalCurto(veterinario)} recusou seu pedido`,
-      detalhe: `Você pode pedir de novo, a ${pronome(veterinario)} ou a outro veterinário.`,
-    };
-  }
-  if (ativa(antes) && !ativa(depois)) {
-    return {
-      texto: "Seu acesso aos contatos terminou",
-      detalhe:
-        "Se ainda precisar, peça uma nova liberação ao veterinário do caso.",
-    };
-  }
-  return null;
-}
-
-// Os pedidos que a própria pessoa cancelou. Sem isto, um pedido que some da
-// resposta da API pareceria recusado pelo veterinário, e uma busca que já
-// estava a caminho traria de volta o pedido cancelado.
+// Os pedidos que a própria pessoa cancelou. Sem isto, uma busca que já estava a
+// caminho traria de volta o pedido cancelado.
 const cancelados = new Set();
 const semCancelado = (s) =>
   s.pedido && cancelados.has(s.pedido.id) ? { ...s, pedido: null } : s;
@@ -121,6 +89,7 @@ export function recarregarAcesso(codigo) {
         pronta: true,
         liberacao: resposta.liberacao && paraLiberacao(resposta.liberacao),
         pedido: resposta.pedido && paraPedido(resposta.pedido),
+        pedidoRecusado: resposta.pedidoRecusado,
       });
     } else {
       nova =
@@ -136,25 +105,6 @@ export function recarregarAcesso(codigo) {
     buscando = null;
   });
   return buscando;
-}
-
-// Regra única de quem vê contato (F33), com o motivo, que decide o texto da
-// tela: o visitante, sem conta, nunca; o veterinário, sempre; o tutor, só
-// com liberação ativa. Enquanto a situação do tutor não chega, o motivo é
-// "carregando" e nenhum botão aparece. Uma liberação que vence com a página
-// aberta deixa de valer na hora (F32).
-export function acessoDe(usuario, situacaoAtual) {
-  if (!usuario) return { pode: false, motivo: "visitante" };
-  if (ehVeterinario(usuario)) return { pode: true, motivo: "veterinario" };
-  if (!situacaoAtual.pronta || situacaoAtual.codigo !== usuario.codigo) {
-    return { pode: false, motivo: "carregando" };
-  }
-  const { liberacao, pedido } = situacaoAtual;
-  if (liberacao && !expirou(liberacao.expiraEm)) {
-    return { pode: true, motivo: "liberacao", liberacao };
-  }
-  if (pedido) return { pode: false, motivo: "pedido-enviado", pedido };
-  return { pode: false, motivo: "sem-liberacao" };
 }
 
 // O acesso de quem está logado, para a tela: { pode, motivo, liberacao,

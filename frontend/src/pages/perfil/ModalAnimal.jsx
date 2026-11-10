@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import ErroDoCampo from "../../components/ErroDoCampo";
 import Modal from "../../components/Modal";
 import Ajuda from "../../components/Ajuda";
 import AvisoErro from "../../components/AvisoErro";
 import Botao from "../../components/Botao";
 import Segmentado from "../../components/Segmentado";
 import {
-  ESPECIES,
+  OPCOES_ESPECIE,
   REFERENCIA_DOADOR,
   SEXOS,
   pesoMinimo,
@@ -42,11 +43,6 @@ import {
 // O tipo sanguíneo não está aqui de propósito. É resultado de exame, e um
 // palpite de tutor exibido com a mesma cara de um dado conferido engana tanto
 // quem procura doador quanto o veterinário que dá a validação por feita.
-
-const OPCOES_ESPECIE = Object.entries(ESPECIES).map(([valor, e]) => ({
-  valor,
-  rotulo: e.rotulo,
-}));
 
 const OPCOES_SEXO = Object.entries(SEXOS).map(([valor, rotulo]) => ({
   valor,
@@ -103,7 +99,6 @@ const CAMPO_DA_API = {
   dataNascimento: ["dataNascimento"],
   idadeEstimada: ["idadeAproximada"],
   peso: ["pesoKg"],
-  fotos: ["fotos"],
 };
 
 const CLASSE_CAMPO =
@@ -113,14 +108,7 @@ const CLASSE_ROTULO = `block mb-1.5 ${CLASSE_TITULO}`;
 
 // Mensagem de erro embaixo de um campo; o id liga a mensagem ao campo, para
 // o leitor de tela ler as duas.
-function Erro({ id, children }) {
-  if (!children) return null;
-  return (
-    <p id={id} className="text-xs text-[#9e0a24] mt-1.5">
-      {children}
-    </p>
-  );
-}
+const Erro = (props) => <ErroDoCampo className="mt-1.5" {...props} />;
 
 // Botão redondo sobre a miniatura de uma foto.
 function BotaoMiniatura({ icone, rotulo, onClick, posicao }) {
@@ -231,7 +219,7 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
     return () => abertas.forEach((url) => URL.revokeObjectURL(url));
   }, []);
 
-  const ref = REFERENCIA_DOADOR[form.especie];
+  const referencia = REFERENCIA_DOADOR[form.especie];
   const afetados = criteriosAfetados(form, animal);
   const validacao = animal?.validacao;
   // Tipo sanguíneo não muda ao longo da vida: depois que o exame de tipagem
@@ -241,24 +229,23 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
   const tipagemConfirmada = !!validacao?.criterios.TIPAGEM;
 
   // Mudar um campo apaga o erro dele.
-  const mudar = (campo, valor) => {
-    setForm((prev) => ({ ...prev, [campo]: valor }));
+  const limparErros = (chaves) => {
     setErros((prev) => {
       const sem = { ...prev };
-      for (const chave of CAMPO_DA_API[campo]) delete sem[chave];
+      for (const chave of chaves) delete sem[chave];
       return sem;
     });
     setErroGeral("");
   };
 
+  const mudar = (campo, valor) => {
+    setForm((prev) => ({ ...prev, [campo]: valor }));
+    limparErros(CAMPO_DA_API[campo]);
+  };
+
   const mudarFotos = (novas) => {
     setFotos(novas);
-    setErros((prev) => {
-      const sem = { ...prev };
-      delete sem.fotos;
-      return sem;
-    });
-    setErroGeral("");
+    limparErros(["fotos"]);
   };
 
   // Entram as que cabem e passam na conferência; a primeira recusada diz por
@@ -553,7 +540,8 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
               </>
             )}
             <p className="text-[11px] text-[#5f5e5e] mt-1.5">
-              O ideal para doar: de {ref.idadeMin} a {ref.idadeMax} anos.
+              O ideal para doar: de {referencia.idadeMin} a{" "}
+              {referencia.idadeMax} anos.
             </p>
           </div>
 
@@ -579,7 +567,7 @@ function ModalAnimal({ animal, onFechar, onSalvo }) {
             />
             <Erro id="erro-pesoKg">{erros.pesoKg}</Erro>
             <p className="text-[11px] text-[#5f5e5e] mt-1.5">
-              O ideal para doar: {pesoMinimo(ref)} ou mais.
+              O ideal para doar: {pesoMinimo(referencia)} ou mais.
             </p>
           </div>
         </div>

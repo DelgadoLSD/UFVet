@@ -94,6 +94,7 @@ function EscolhaEspecie({ especie, onEscolher }) {
           <img
             src={e.foto}
             alt=""
+            loading="lazy"
             className="w-9 h-9 rounded-full object-cover"
           />
           {ESPECIES[chave].rotulo}
@@ -151,6 +152,7 @@ function SecaoPodeDoar() {
                 <img
                   key={chave}
                   src={e.foto}
+                  loading="lazy"
                   alt={
                     especie === chave
                       ? `Exemplo de ${ESPECIES[chave].rotulo.toLowerCase()} doador`

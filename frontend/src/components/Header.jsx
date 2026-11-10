@@ -4,6 +4,7 @@ import Avatar from "./Avatar";
 import { sair, useEstadoSessao } from "../servicos/sessao";
 import { metadeDoCaminho, secaoDoCaminho } from "../regras/secoes";
 import { pilulaDoTopo } from "./pilulaDoTopo";
+import { useFecharFora } from "../hooks/useFecharFora";
 import { nomeCurto, primeiroNome, rotuloPapel } from "../util/texto";
 
 // Barra do topo, presente em todas as páginas: um seletor das três seções do
@@ -82,19 +83,7 @@ function SecaoDaConta({ conta, destaque, naSecao, caminho }) {
   const raizRef = useRef(null);
   const navegar = useNavigate();
 
-  useEffect(() => {
-    if (!aberto) return;
-    const fecharFora = (e) => {
-      if (!raizRef.current?.contains(e.target)) setAberto(false);
-    };
-    const aoTeclar = (e) => e.key === "Escape" && setAberto(false);
-    document.addEventListener("pointerdown", fecharFora);
-    document.addEventListener("keydown", aoTeclar);
-    return () => {
-      document.removeEventListener("pointerdown", fecharFora);
-      document.removeEventListener("keydown", aoTeclar);
-    };
-  }, [aberto]);
+  useFecharFora(aberto, raizRef, setAberto);
 
   const fechar = () => setAberto(false);
 

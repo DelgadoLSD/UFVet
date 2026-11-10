@@ -5,7 +5,7 @@ import BotaoAjuda from "../../components/BotaoAjuda";
 import Segmentado from "../../components/Segmentado";
 import Selecao from "../../components/Selecao";
 import PainelSecao from "../perfil/PainelSecao";
-import { ESPECIES, partesDoTipo } from "../../regras/doacao";
+import { OPCOES_ESPECIE, partesDoTipo } from "../../regras/doacao";
 
 // Os filtros da busca, num painel com a faixa vermelha dos painéis do perfil.
 // No computador, ocupam a primeira coluna da grade da página (a largura de um
@@ -17,11 +17,6 @@ import { ESPECIES, partesDoTipo } from "../../regras/doacao";
 //
 // Não guarda os filtros: recebe os atuais e avisa a página do que mudou, por
 // `onFiltrar({ campo: valor })`.
-
-const OPCOES_ESPECIE = Object.entries(ESPECIES).map(([valor, e]) => ({
-  valor,
-  rotulo: e.rotulo,
-}));
 
 const OPCOES_VALIDACAO = [
   { valor: false, rotulo: "Todos" },
@@ -148,7 +143,7 @@ function Grupo({ rotulo, ajuda, children }) {
 }
 
 // O nome de um campo dentro de um filtro (Cidade, Bairro).
-function Campo({ rotulo, children }) {
+function RotuloDoFiltro({ rotulo, children }) {
   return (
     <div className="flex flex-col gap-1.5">
       <p className="text-xs font-semibold text-[#5b403f]">{rotulo}</p>
@@ -264,7 +259,7 @@ function FiltrosBusca({
               hospital melhor do que um raio em quilômetros, e ninguém precisa
               entregar o endereço exato de casa. O bairro espera a cidade. */}
           <Grupo rotulo="Onde o doador mora">
-            <Campo rotulo="Cidade">
+            <RotuloDoFiltro rotulo="Cidade">
               <Selecao
                 rotulo="Cidade"
                 valor={cidade}
@@ -272,8 +267,8 @@ function FiltrosBusca({
                 placeholder="Todas as cidades"
                 opcoes={cidades.map((c) => ({ valor: c, rotulo: c }))}
               />
-            </Campo>
-            <Campo rotulo="Bairro">
+            </RotuloDoFiltro>
+            <RotuloDoFiltro rotulo="Bairro">
               <Selecao
                 rotulo="Bairro"
                 valor={bairro}
@@ -282,7 +277,7 @@ function FiltrosBusca({
                 placeholder={cidade ? "Todos os bairros" : "Escolha a cidade"}
                 opcoes={bairros.map((b) => ({ valor: b, rotulo: b }))}
               />
-            </Campo>
+            </RotuloDoFiltro>
             {avisoLocais && (
               <p role="alert" className="text-xs text-[#9e0a24]">
                 {avisoLocais}

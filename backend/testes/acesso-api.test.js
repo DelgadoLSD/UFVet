@@ -380,6 +380,29 @@ describe("o tutor cancela o próprio pedido (NF27.5)", () => {
     expect(await banco.liberacaoContato.count()).toBe(0);
   });
 
+  test("a situação do tutor diz qual pedido foi recusado, e o cancelado não conta", async () => {
+    const pedido = await pedidoNoBanco(beatriz, victor);
+    const tutora = await comoBeatriz();
+    expect((await tutora.get("/api/acesso")).body.pedidoRecusado).toBeNull();
+
+    await cancelar(tutora, pedido.id).expect(204);
+    expect((await tutora.get("/api/acesso")).body.pedidoRecusado).toBeNull();
+
+    const outro = await pedidoNoBanco(beatriz, victor);
+    await (
+      await comoVictor()
+    )
+      .post(`/api/pedidos/${outro.id}/recusa`)
+      .expect(204);
+    expect((await tutora.get("/api/acesso")).body.pedidoRecusado).toBe(
+      outro.id,
+    );
+  });
+
+  test("um texto do tamanho de um id, mas que não é um id, não é encontrado", async () => {
+    await cancelar(await comoBeatriz(), "-".repeat(36)).expect(404);
+  });
+
   test("cancelar e recusar ao mesmo tempo: nenhum dos dois quebra", async () => {
     const pedido = await pedidoNoBanco(beatriz, victor);
     const tutora = await comoBeatriz();

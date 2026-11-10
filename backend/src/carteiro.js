@@ -111,7 +111,7 @@ async function guardarNaPasta({ tipo, para, assunto, html }) {
   console.log(`E-mail guardado em ${arquivo} (abra no navegador)`);
 }
 
-function escaparHtml(texto) {
+export function escaparHtml(texto) {
   return texto
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")

@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
+import { useFecharFora } from "../hooks/useFecharFora";
 
 // Campo de seleção próprio, no lugar do <select> nativo (cuja lista aberta
 // usa o visual do sistema operacional e não segue a identidade do site).
@@ -37,14 +38,8 @@ function Selecao({
 
   const selecionada = opcoes.find((o) => o.valor === valor);
 
-  useEffect(() => {
-    if (!aberto) return;
-    const fecharFora = (e) => {
-      if (!raizRef.current?.contains(e.target)) setAberto(false);
-    };
-    document.addEventListener("pointerdown", fecharFora);
-    return () => document.removeEventListener("pointerdown", fecharFora);
-  }, [aberto]);
+  // O Esc é tratado em aoTeclar, para o modal em volta não fechar junto.
+  useFecharFora(aberto, raizRef, setAberto, { esc: false });
 
   const abrir = () => {
     const i = opcoes.findIndex((o) => o.valor === valor);

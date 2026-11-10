@@ -1,16 +1,11 @@
-import { TAMANHO_MAXIMO_MB } from "./fotos";
+import { TAMANHO_MAXIMO_MB, TIPOS_ACEITOS } from "./fotos";
 
 // Regras dos exames e documentos no site, as mesmas da API
 // (backend/src/controladores/documentos.js). O site confere só para avisar
 // antes de enviar: a API abre o arquivo para conferir de novo, porque o tipo
 // que o navegador informa sai apenas do nome do arquivo.
 
-export const TIPOS_ACEITOS_EXAME = [
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-];
+export const TIPOS_ACEITOS_EXAME = ["application/pdf", ...TIPOS_ACEITOS];
 
 // A mensagem do problema de um arquivo escolhido, ou undefined se está certo.
 export function erroDoExame(arquivo) {

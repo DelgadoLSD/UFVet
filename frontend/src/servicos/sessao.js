@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { ErroApi, chamarApi, definirContaDaAba } from "./api";
+import { paraPerfil } from "./conversoes";
 import { confirmar } from "../hooks/confirmacoes";
 import { nomeCurto } from "../util/texto";
 
@@ -33,29 +34,17 @@ const definir = (novo) => {
   ouvintes.forEach((aviso) => aviso());
 };
 
-// A conta como a API manda -> a conta como as telas usam (os mesmos campos
-// dos dados de exemplo).
+// A conta como a API manda -> a conta como as telas usam.
 function paraUsuario(conta) {
   if (!conta) return null;
-  const { veterinario } = conta;
   return {
-    codigo: conta.codigo,
-    papel: conta.papel,
-    nomeCompleto: conta.nomeCompleto,
+    ...paraPerfil(conta),
     email: conta.email,
     // O e-mail de uma troca que ainda espera a confirmação, ou null.
     emailNovo: conta.emailNovo ?? null,
     telefone: conta.telefone,
-    cidade: conta.cidade,
-    bairro: conta.bairro,
-    membroDesde: conta.membroDesde,
-    foto: conta.fotoUrl,
-    ...(veterinario && {
-      tratamento: veterinario.tratamento,
-      crmv: `${veterinario.crmv}-${veterinario.ufCrmv}`,
-      hospitalId: veterinario.estabelecimento.id,
-      hospital: veterinario.estabelecimento.nome,
-      validacoesRealizadas: veterinario.validacoesRealizadas,
+    ...(conta.veterinario && {
+      hospitalId: conta.veterinario.estabelecimento.id,
     }),
   };
 }

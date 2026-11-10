@@ -100,6 +100,7 @@ function NoUFVet() {
         <img
           src={fotoDoador}
           alt=""
+          loading="lazy"
           className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover shrink-0"
         />
         <div className="min-w-0 flex-1 py-1">

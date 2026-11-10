@@ -55,6 +55,10 @@ export class ErroApi extends Error {
   }
 }
 
+// O erro de um campo só: a mensagem aparece embaixo dele, no formulário.
+export const erroDeCampo = (campo, mensagem, status = 400) =>
+  new ErroApi(status, mensagem, { campos: { [campo]: mensagem } });
+
 // As mensagens do Zod (validação), uma por campo: a primeira de cada um.
 function camposDoZod(erro) {
   const campos = {};

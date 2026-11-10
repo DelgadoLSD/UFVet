@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
 import Campo from "../components/Campo";
+import ErroDoCampo from "../components/ErroDoCampo";
 import CampoBairro from "../components/CampoBairro";
 import CampoCidade from "../components/CampoCidade";
 import LayoutAutenticacao from "../components/LayoutAutenticacao";
@@ -10,11 +11,19 @@ import Segmentado from "../components/Segmentado";
 import {
   PREENCHA,
   TAMANHO_MINIMO_SENHA,
+  erroConfirmacaoSenha,
   erroEmail,
   erroNome,
+  erroSenhaNova,
   erroTelefone,
   soComProblema,
 } from "../regras/conta";
+import {
+  etapaAnterior,
+  numeroDaEtapa,
+  proximaEtapa,
+  totalDeEtapas,
+} from "../regras/cadastro";
 import { LIMITES } from "../regras/limites";
 import {
   cadastrar,
@@ -22,7 +31,7 @@ import {
   consultarConvite,
   useSessao,
 } from "../servicos/sessao";
-import { formatarTelefone } from "../util/texto";
+import { formatarTelefone, limparCodigo } from "../util/texto";
 import { TermosEPrivacidade } from "./termos/ModalTermos";
 // Foto de santosh verma (Unsplash, uso livre)
 import fotoGatoParede from "../assets/auth/gato-parede-vermelha.jpg";
@@ -107,10 +116,7 @@ const OPCOES_TRATAMENTO = [
 
 // "7k3p9x" -> "7K3P-9X": maiúsculas, sem símbolos, com o traço no meio.
 function formatarConvite(texto) {
-  const limpo = texto
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 8);
+  const limpo = limparCodigo(texto, 8);
   return limpo.length > 4 ? `${limpo.slice(0, 4)}-${limpo.slice(4)}` : limpo;
 }
 
@@ -136,23 +142,16 @@ function errosDaEtapa(etapa, dados, convite) {
   }
   if (etapa === 5) {
     erros.email = erroEmail(dados.email);
-    if ((dados.senha ?? "").length < TAMANHO_MINIMO_SENHA) {
-      erros.senha = `A senha precisa ter pelo menos ${TAMANHO_MINIMO_SENHA} caracteres.`;
-    }
-    if (dados.confirmacaoSenha !== dados.senha) {
-      erros.confirmacaoSenha = "As duas senhas estão diferentes.";
-    }
+    erros.senha = erroSenhaNova(dados.senha);
+    erros.confirmacaoSenha = erroConfirmacaoSenha(
+      dados.senha,
+      dados.confirmacaoSenha,
+    );
     if (!dados.aceiteTermos || !dados.cienciaResponsabilidade) {
       erros.aceites = "É preciso aceitar os dois itens para criar a conta.";
     }
   }
   return soComProblema(erros);
-}
-
-// Mensagem de erro embaixo de um campo que não é um Campo (lista, botões).
-function ErroDoCampo({ children }) {
-  if (!children) return null;
-  return <p className="text-xs text-[#9e0a24] mt-2">{children}</p>;
 }
 
 // Etapa 1: escolher o papel já avança para a próxima.
@@ -313,7 +312,7 @@ function EtapaRegistro({ dados, erros, convite, onMudar, onCodigo }) {
 }
 
 // Caixa de seleção com o texto ao lado, clicável.
-function Confirmacao({ id, checked, onChange, children }) {
+function CaixaDeAceite({ id, checked, onChange, children }) {
   return (
     <div className="flex gap-3 items-start">
       <input
@@ -370,7 +369,7 @@ function EtapaSenha({ dados, erros, onMudar, onSair }) {
         erro={erros.confirmacaoSenha}
       />
       <div className="space-y-4 pt-2">
-        <Confirmacao
+        <CaixaDeAceite
           id="aceite-termos"
           checked={dados.aceiteTermos || false}
           onChange={(e) => onMudar("aceiteTermos", e.target.checked)}
@@ -378,8 +377,8 @@ function EtapaSenha({ dados, erros, onMudar, onSair }) {
           {/* Os termos abrem numa janela por cima do cadastro: o que já foi
               digitado fica aqui atrás, e a volta é fechar a janela. */}
           Li e aceito <TermosEPrivacidade rotuloVoltar="Voltar ao cadastro" />.
-        </Confirmacao>
-        <Confirmacao
+        </CaixaDeAceite>
+        <CaixaDeAceite
           id="ciencia-responsabilidade"
           checked={dados.cienciaResponsabilidade || false}
           onChange={(e) => onMudar("cienciaResponsabilidade", e.target.checked)}
@@ -387,7 +386,7 @@ function EtapaSenha({ dados, erros, onMudar, onSair }) {
           Estou ciente de que a doação é gratuita e assumo a responsabilidade
           financeira sobre os insumos hospitalares caso meu animal seja o
           receptor.
-        </Confirmacao>
+        </CaixaDeAceite>
         <ErroDoCampo>
           {erros.aceites ?? erros.aceiteTermos ?? erros.cienciaResponsabilidade}
         </ErroDoCampo>
@@ -480,13 +479,10 @@ function CadastroPage() {
     setEtapa(2);
   };
 
-  // O tutor não tem registro profissional: da etapa 3 vai direto para a 5, e
-  // volta da 5 direto para a 3.
-  const avancar = () =>
-    setEtapa((atual) => (atual === 3 && ehTutor ? 5 : atual + 1));
+  const avancar = () => setEtapa((atual) => proximaEtapa(papel, atual));
   const voltar = () => {
     setErroGeral("");
-    setEtapa((atual) => (atual === 5 && ehTutor ? 3 : atual - 1));
+    setEtapa((atual) => etapaAnterior(papel, atual));
   };
 
   const criarConta = async () => {
@@ -540,10 +536,8 @@ function CadastroPage() {
   // Quem já tem conta e está logado não precisa criar outra.
   if (usuario && !enviando) return <Navigate to="/meu-perfil" replace />;
 
-  // Para o tutor, a etapa 5 aparece como a 4ª (de 4). Antes de escolher o
-  // papel, a contagem é a do tutor.
-  const totalEtapas = papel === "VETERINARIO" ? 5 : 4;
-  const etapaVisual = etapa === 5 && ehTutor ? 4 : etapa;
+  const totalEtapas = totalDeEtapas(papel);
+  const etapaVisual = numeroDaEtapa(papel, etapa);
   const { titulo, texto } = ETAPAS[etapa];
 
   return (

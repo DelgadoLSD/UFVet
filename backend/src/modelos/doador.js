@@ -12,6 +12,7 @@ import {
   IDEAL_DO_DOADOR,
   INTERVALO_RECUPERACAO_DIAS,
 } from "../validacao.js";
+import { validacaoEmVigor } from "./animal.js";
 
 // Model (do MVC) da busca de doadores (F16 a F18): quem aparece, em que
 // ordem e o que de cada um sai da API. A busca é pública (NF16.4): nada do
@@ -76,11 +77,13 @@ function casaComTexto(busca) {
 // pendência: a mais recente, ainda no prazo de um ano e com os cinco
 // critérios atendidos. Se o tutor mudou o peso ou o nascimento depois dela
 // (F21), o critério de peso e idade perdeu o efeito, e ela deixa de contar.
-function estaValidado(validacao, hoje) {
-  if (!validacao || validacao.invalidadaEm) return false;
-  if (deDataDoBanco(validacao.validaAte) < hoje) return false;
-  return CRITERIOS_DOACAO.every((criterio) =>
-    validacao.criterios.some((c) => c.criterio === criterio && c.atendido),
+function estaValidado(validacoes, hoje) {
+  const vigente = validacaoEmVigor(validacoes, hoje);
+  return (
+    !!vigente &&
+    CRITERIOS_DOACAO.every((criterio) =>
+      vigente.criterios.some((c) => c.criterio === criterio && c.atendido),
+    )
   );
 }
 
@@ -185,7 +188,7 @@ export async function buscarDoadores(filtros) {
 
   let lista = animais.map((animal) => ({
     animal,
-    validado: estaValidado(animal.validacoes[0], hoje),
+    validado: estaValidado(animal.validacoes, hoje),
     pontosFora: pontosForaDoIdeal(animal, hoje),
   }));
   if (filtros.apenasValidados) lista = lista.filter((d) => d.validado);

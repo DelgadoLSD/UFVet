@@ -1,11 +1,10 @@
 import { randomBytes } from "node:crypto";
 import { banco } from "../banco.js";
 import { cifrar, decifrar, indiceEmail, indiceLink } from "../cifra.js";
+import { DIA, HORA } from "../datas.js";
 
 // Model (do MVC) dos links que o UFVet manda por e-mail (tabela link_email):
 // o de confirmar o e-mail e o de criar uma senha nova.
-
-const HORA = 60 * 60 * 1000;
 
 // Quanto tempo cada link vale. O de senha nova vale pouco, porque abre a
 // conta: quem pegar o e-mail de outra pessoa depois de uma hora não usa
@@ -28,7 +27,7 @@ export async function criarLink({ usuarioId, finalidade, email = null }) {
   await banco.$transaction([
     banco.linkEmail.deleteMany({
       where: {
-        criadoEm: { lt: new Date(agora - DIAS_GUARDADOS * 24 * HORA) },
+        criadoEm: { lt: new Date(agora - DIAS_GUARDADOS * DIA) },
       },
     }),
     banco.linkEmail.updateMany({

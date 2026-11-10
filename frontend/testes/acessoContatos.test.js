@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { acessoDe, mudancaDoAcesso } from "../src/servicos/acessoContatos";
+import { acessoDe, mudancaDoAcesso } from "../src/regras/acessoContatos";
 import { conferirTutor, resumoDosAnimais } from "../src/servicos/pessoas";
 import { opcoesDeRenovacao } from "../src/regras/acessoContatos";
 import { diaEHora } from "../src/util/datas";
@@ -196,11 +196,26 @@ describe("a resposta do veterinário chega sem recarregar a página", () => {
     );
   });
 
-  test("pedido esperando -> sem pedido e sem acesso: foi recusado", () => {
-    expect(mudancaDoAcesso(situacao({ pedido }), situacao({}))).toEqual({
+  test("pedido esperando -> recusado por um veterinário: avisa a recusa", () => {
+    expect(
+      mudancaDoAcesso(
+        situacao({ pedido }),
+        situacao({ pedidoRecusado: pedido.id }),
+      ),
+    ).toEqual({
       texto: "Dr. Victor recusou seu pedido",
       detalhe: "Você pode pedir de novo, a ele ou a outro veterinário.",
     });
+  });
+
+  test("pedido que sumiu sem ser recusado: não avisa recusa", () => {
+    expect(mudancaDoAcesso(situacao({ pedido }), situacao({}))).toBeNull();
+    expect(
+      mudancaDoAcesso(
+        situacao({ pedido }),
+        situacao({ pedidoRecusado: "outro-pedido" }),
+      ),
+    ).toBeNull();
   });
 
   test("liberado -> sem acesso: o acesso terminou", () => {

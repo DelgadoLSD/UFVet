@@ -1,5 +1,5 @@
 import { ErroApi } from "../erros.js";
-import { acharConviteValido } from "../modelos/convite.js";
+import { MENSAGEM_CONVITE, acharConviteValido } from "../modelos/convite.js";
 import { registrar } from "../registro.js";
 import { campos } from "../validacao.js";
 
@@ -13,10 +13,7 @@ export async function consultarConvite(req, res) {
   const convite = codigo.success ? await acharConviteValido(codigo.data) : null;
   if (!convite) {
     registrar("convite_recusado", { ip: req.ip });
-    throw new ErroApi(
-      404,
-      "Convite inválido, já usado ou vencido. Peça um novo a quem enviou o convite.",
-    );
+    throw new ErroApi(404, MENSAGEM_CONVITE);
   }
   res.json({
     convite: {

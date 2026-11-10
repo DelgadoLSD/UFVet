@@ -9,6 +9,7 @@ import {
   trocaAoSoltar,
 } from "../regras/secoes";
 import { useEstadoSessao } from "../servicos/sessao";
+import { movimentoReduzido } from "../util/movimento";
 import { pilulaDoTopo } from "./pilulaDoTopo";
 
 // O deslize do dedo entre as seções, no celular, como nas abas dos
@@ -32,7 +33,6 @@ import { pilulaDoTopo } from "./pilulaDoTopo";
 // Quem pediu menos movimento ao sistema troca de página sem as animações.
 
 const CELULAR = "(max-width: 767px)";
-const MENOS_MOVIMENTO = "(prefers-reduced-motion: reduce)";
 const BORDA = 24; // px
 // As páginas que são formulários: com algo digitado, o deslize não sai
 // delas, para não perder o que foi digitado.
@@ -142,7 +142,7 @@ function DeslizeEntreSecoes() {
       );
       const achar = (seletor) => barra?.querySelector(seletor) ?? null;
       gesto.direcao = "lado";
-      gesto.reduzir = matchMedia(MENOS_MOVIMENTO).matches;
+      gesto.reduzir = movimentoReduzido();
       gesto.main = document.querySelector("main");
       gesto.topo = document.querySelector("header");
       gesto.pilula = achar("[data-pilula]");

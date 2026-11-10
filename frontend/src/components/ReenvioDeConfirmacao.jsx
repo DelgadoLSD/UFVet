@@ -3,6 +3,8 @@ import { erroEmail } from "../regras/conta";
 import { reenviarConfirmacao } from "../servicos/email";
 import Botao from "./Botao";
 import { Girando } from "./Carregando";
+import LinhaDeResultado from "./LinhaDeResultado";
+import { formatarHora } from "../util/datas";
 
 // "Mandar o link de novo": manda outro link de confirmação para `email`. Fica
 // na espera depois do cadastro e na página de entrar, quando a conta ainda
@@ -52,10 +54,7 @@ function ReenvioDeConfirmacao({
     }
   };
 
-  const hora = enviadoEm?.toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const hora = enviadoEm && formatarHora(enviadoEm);
 
   return (
     <div>
@@ -86,38 +85,14 @@ function ReenvioDeConfirmacao({
         </Botao>
       )}
       {fase === "enviado" && (
-        <p
-          role="status"
-          className="mt-3 flex items-start gap-2 text-sm leading-snug text-[#17643a]"
-        >
-          <span
-            aria-hidden="true"
-            className="material-symbols-outlined text-[18px] shrink-0"
-          >
-            check_circle
-          </span>
-          <span>
-            {seHouver
-              ? "Se houver um cadastro esperando confirmação com esse e-mail, mandamos outro link."
-              : `Mandamos outro link às ${hora}.`}{" "}
-            Use o do e-mail mais recente.
-          </span>
-        </p>
+        <LinhaDeResultado>
+          {seHouver
+            ? "Se houver um cadastro esperando confirmação com esse e-mail, mandamos outro link."
+            : `Mandamos outro link às ${hora}.`}{" "}
+          Use o do e-mail mais recente.
+        </LinhaDeResultado>
       )}
-      {erro && (
-        <p
-          role="alert"
-          className="mt-3 flex items-start gap-2 text-sm leading-snug text-[#9e0a24]"
-        >
-          <span
-            aria-hidden="true"
-            className="material-symbols-outlined text-[18px] shrink-0"
-          >
-            error
-          </span>
-          <span>{erro}</span>
-        </p>
-      )}
+      {erro && <LinhaDeResultado erro>{erro}</LinhaDeResultado>}
     </div>
   );
 }

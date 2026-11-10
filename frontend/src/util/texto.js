@@ -95,8 +95,8 @@ export const TAMANHO_CODIGO = 6;
 
 // O código costuma ser copiado do perfil com "#" na frente; a limpeza faz
 // colar direto funcionar.
-export const limparCodigo = (texto) =>
+export const limparCodigo = (texto, tamanho = TAMANHO_CODIGO) =>
   texto
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
-    .slice(0, TAMANHO_CODIGO);
+    .slice(0, tamanho);

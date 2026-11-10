@@ -17,6 +17,7 @@ function LayoutAutenticacao({
       <img
         src={foto}
         alt=""
+        loading="lazy"
         style={{ objectPosition: fotoPosicao }}
         className="absolute inset-0 w-full h-full object-cover"
       />

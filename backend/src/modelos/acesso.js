@@ -42,6 +42,19 @@ export const pedidoPendenteDe = (tutorId) =>
     include: { ...COM_VETERINARIO, ...COM_TUTOR },
   });
 
+// O id do pedido mais recente que um veterinário recusou, ou null. O site
+// compara com o pedido que esperava resposta: um pedido também some quando o
+// tutor o cancela em outra aba ou quando o veterinário encerra a conta, e só a
+// recusa merece o aviso de recusa.
+export async function ultimoPedidoRecusadoDe(tutorId) {
+  const pedido = await banco.pedidoLiberacao.findFirst({
+    where: { tutorId, status: "RECUSADO" },
+    orderBy: { respondidoEm: "desc" },
+    select: { id: true },
+  });
+  return pedido?.id ?? null;
+}
+
 // Os pedidos que esperam resposta deste veterinário, do mais antigo para o
 // mais novo: quem pediu primeiro é atendido primeiro.
 export const pedidosPendentesPara = (veterinarioId) =>

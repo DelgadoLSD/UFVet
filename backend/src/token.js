@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { config } from "./config.js";
+import { HORA } from "./datas.js";
 
 // O crachá de sessão (NF2.1): um JWT, assinado pela API, guardado num cookie.
 //
@@ -59,7 +60,7 @@ const opcoesCookie = {
 export function abrirSessao(res, usuarioId) {
   res.cookie(NOME_COOKIE, emitirToken(usuarioId), {
     ...opcoesCookie,
-    maxAge: DURACAO_SESSAO_HORAS * 60 * 60 * 1000,
+    maxAge: DURACAO_SESSAO_HORAS * HORA,
   });
 }
 
@@ -88,7 +89,7 @@ export function marcarCadastroPendente(res, usuarioId) {
   });
   res.cookie(NOME_COOKIE_CADASTRO, token, {
     ...opcoesCookieCadastro,
-    maxAge: DURACAO_CADASTRO_HORAS * 60 * 60 * 1000,
+    maxAge: DURACAO_CADASTRO_HORAS * HORA,
   });
 }
 

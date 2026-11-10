@@ -6,7 +6,7 @@
 // completo, com hora e fuso. A formatação para a tela ("05/09/2026",
 // "hoje às 14:20") acontece só na hora de exibir, com as funções daqui.
 
-const HORA = 60 * 60 * 1000;
+export const HORA = 60 * 60 * 1000;
 const DIA = 24 * HORA;
 
 export const MESES = [
@@ -102,22 +102,19 @@ export function idadeEmAnos(nascimento) {
   return anos;
 }
 
+// "1 ano", "3 anos".
+export const anosEscritos = (anos) => `${anos} ano${anos > 1 ? "s" : ""}`;
+
 // "3 anos", "Menos de 1 ano". Quando a data de nascimento é uma estimativa
 // do tutor, "Cerca de 3 anos": a tela não sugere precisão que o dado não tem
 // (NF12.1).
 export function textoIdade(anos, aproximada = false) {
   if (anos <= 0) return "Menos de 1 ano";
-  const texto = `${anos} ano${anos > 1 ? "s" : ""}`;
+  const texto = anosEscritos(anos);
   return aproximada ? `Cerca de ${texto}` : texto;
 }
 
 // ─── Prazos em horas (acesso aos contatos) ────────────────────────────────────
-
-export const daquiAHoras = (horas) =>
-  new Date(Date.now() + horas * HORA).toISOString();
-
-export const horasAtras = (horas) =>
-  new Date(Date.now() - horas * HORA).toISOString();
 
 export const horasRestantes = (valor) => (paraData(valor) - Date.now()) / HORA;
 

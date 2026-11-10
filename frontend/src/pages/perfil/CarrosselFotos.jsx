@@ -49,6 +49,7 @@ function CarrosselFotos({ fotos, nome }) {
           key={foto}
           src={foto}
           alt={`${nome} — foto ${i + 1}`}
+          loading="lazy"
           className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500 ${
             i === atual ? "opacity-100" : "opacity-0"
           }`}

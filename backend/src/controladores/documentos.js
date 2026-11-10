@@ -1,13 +1,17 @@
-import { apagarExames, guardarExame, lerExame } from "../armazenamento.js";
+import {
+  apagarExames,
+  ehUuid,
+  guardarExame,
+  lerExame,
+} from "../armazenamento.js";
 import { banco } from "../banco.js";
 import { diaEmBrasilia } from "../datas.js";
-import { ErroApi } from "../erros.js";
+import { ErroApi, erroDeCampo } from "../erros.js";
 import { prepararImagemDeExame } from "../imagens.js";
 import {
   MOTIVO_DA_EXCLUSAO,
-  buscarComHistorico,
+  animalCompleto,
   criterioQueDependeDe,
-  dadosDoAnimal,
   podeAbrirExames,
   validacaoEmVigor,
 } from "../modelos/animal.js";
@@ -31,8 +35,7 @@ import { animalDoUsuario } from "./animais.js";
 //   modelos/animal.js). Que exames existem, e quando foram enviados, todos
 //   veem no perfil.
 
-const arquivoInvalido = (mensagem) =>
-  new ErroApi(400, mensagem, { campos: { arquivo: mensagem } });
+const arquivoInvalido = (mensagem) => erroDeCampo("arquivo", mensagem);
 
 // Todo PDF começa com "%PDF-". O tipo que o navegador declara sai só do nome
 // do arquivo; quem decide é o conteúdo.
@@ -103,19 +106,14 @@ export async function enviarDocumento(req, res) {
     tipo,
     formato: extensao,
   });
-  const atualizado = await buscarComHistorico(animal.id);
-  res.status(201).json({
-    animal: dadosDoAnimal(atualizado, { abreExames: true }),
-  });
+  res.status(201).json({ animal: await animalCompleto(animal.id) });
 }
 
 // ─── Abrir e apagar uma versão ────────────────────────────────────────────────
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-
 // A versão do endereço, com o documento e o animal dela, ou null.
 const versaoDoEndereco = (id) =>
-  UUID.test(id)
+  ehUuid(id)
     ? banco.documentoVersao.findUnique({
         where: { id },
         include: {
@@ -261,9 +259,8 @@ export async function apagarVersao(req, res) {
       motivo: MOTIVO_DA_EXCLUSAO[documento.tipo],
     });
   }
-  const atualizado = await buscarComHistorico(animal.id);
   res.json({
-    animal: dadosDoAnimal(atualizado, { abreExames: true }),
+    animal: await animalCompleto(animal.id),
     criterioInvalidado: criterio,
   });
 }

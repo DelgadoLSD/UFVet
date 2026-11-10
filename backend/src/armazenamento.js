@@ -19,6 +19,7 @@ export const CAMINHO_PUBLICO = "/api/arquivos";
 // Um id de arquivo (uuid). O banco recusaria com erro um texto que não é
 // uuid; conferido antes, o endereço errado vira só "não encontrado".
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export const ehUuid = (texto) => ID.test(texto);
 
 // Grava o conteúdo e devolve o id do arquivo. Só o id volta do banco, não o
 // arquivo inteiro.

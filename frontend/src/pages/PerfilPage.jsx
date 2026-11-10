@@ -6,7 +6,7 @@ import {
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import AvisoErro from "../components/AvisoErro";
+import ErroComTentar from "../components/ErroComTentar";
 import Botao from "../components/Botao";
 import Header from "../components/Header";
 import { useModalDaConta } from "../hooks/useModalDaConta";
@@ -60,59 +60,76 @@ import Carregando from "../components/Carregando";
 const pessoasGuardadas = new Map();
 const animaisGuardados = new Map();
 
-// Os animais de uma pessoa, e como a página atualiza a lista depois de
-// cadastrar, editar, excluir ou de um registro do veterinário. Cada resposta
-// é guardada com o código (e a tentativa) que a pediu: até chegar a de agora,
-// aparecem os animais guardados desse perfil (se houver) ou a lista está
-// carregando, e nunca mostra os animais de outro perfil.
-function useAnimais(codigo, quemVe) {
-  // Mudar este número faz a lista ser buscada de novo ("Tentar de novo").
+// O que a página busca sobre um perfil (a pessoa, os animais). Cada resposta é
+// guardada com o código (e a tentativa) que a pediu: até chegar a de agora,
+// aparece o que estiver guardado desse perfil (se houver), ou `carregando`, e
+// nunca o dado de outro perfil. Sem código (o próprio perfil), não busca nada.
+function useDadoGuardado(codigo, quemVe, buscar, guardados) {
+  // Mudar este número faz o dado ser buscado de novo ("Tentar de novo").
   const [tentativa, setTentativa] = useState(0);
   const chave = `${codigo}#${tentativa}`;
   const chaveGuardada = `${quemVe}|${codigo}`;
-  const [estado, setEstado] = useState({ chave: null, animais: [], erro: "" });
+  const [estado, setEstado] = useState({
+    chave: null,
+    dado: null,
+    falha: null,
+  });
 
   useEffect(() => {
     if (!codigo) return;
     // A resposta de uma busca antiga (de outro perfil, ou anterior a uma
     // nova tentativa) é ignorada.
     let valendo = true;
-    listarAnimais(codigo).then(
-      (animais) => {
+    buscar(codigo).then(
+      (dado) => {
         if (!valendo) return;
-        animaisGuardados.set(chaveGuardada, animais);
-        setEstado({ chave, animais, erro: "" });
+        guardados.set(chaveGuardada, dado);
+        setEstado({ chave, dado, falha: null });
       },
-      (falha) =>
-        valendo && setEstado({ chave, animais: [], erro: falha.message }),
+      (falha) => valendo && setEstado({ chave, dado: null, falha }),
     );
     return () => {
       valendo = false;
     };
-  }, [codigo, chave, chaveGuardada]);
+  }, [codigo, chave, chaveGuardada, buscar, guardados]);
 
-  const guardados = animaisGuardados.get(chaveGuardada);
+  const guardado = guardados.get(chaveGuardada);
   const vista =
     estado.chave === chave
       ? estado
-      : guardados && tentativa === 0
-        ? { chave, animais: guardados, erro: "" }
+      : guardado && tentativa === 0
+        ? { dado: guardado, falha: null }
         : null;
 
-  // Cadastrar, editar e excluir mudam a lista na tela e a guardada.
-  const mudarLista = (mudar) =>
+  // Muda o dado na tela e o guardado.
+  const definirDado = (mudar) =>
     setEstado((prev) => {
-      const atuais = prev.chave === chave ? prev.animais : (guardados ?? []);
-      const animais = mudar(atuais);
-      animaisGuardados.set(chaveGuardada, animais);
-      return { chave, animais, erro: "" };
+      const dado = mudar(prev.chave === chave ? prev.dado : guardado);
+      guardados.set(chaveGuardada, dado);
+      return { chave, dado, falha: null };
     });
 
   return {
-    animais: vista ? vista.animais : [],
-    erro: vista ? vista.erro : "",
+    dado: vista ? vista.dado : null,
+    falha: vista ? vista.falha : null,
     carregando: !vista,
     tentarDeNovo: () => setTentativa((n) => n + 1),
+    definirDado,
+  };
+}
+
+// Os animais de uma pessoa, e como a página atualiza a lista depois de
+// cadastrar, editar, excluir ou de um registro do veterinário.
+function useAnimais(codigo, quemVe) {
+  const { dado, falha, carregando, tentarDeNovo, definirDado } =
+    useDadoGuardado(codigo, quemVe, listarAnimais, animaisGuardados);
+  const mudarLista = (mudar) => definirDado((atuais) => mudar(atuais ?? []));
+
+  return {
+    animais: dado ?? [],
+    erro: falha?.message ?? "",
+    carregando,
+    tentarDeNovo,
     adicionar: (animal) => mudarLista((lista) => [...lista, animal]),
     substituir: (animal) =>
       mudarLista((lista) =>
@@ -126,14 +143,7 @@ function useAnimais(codigo, quemVe) {
 // Lugar dos cartões enquanto a lista não chega, ou quando ela não veio.
 function EstadoDaLista({ erro, ehProprio, onTentarDeNovo }) {
   if (erro) {
-    return (
-      <div className="flex flex-col items-start gap-3">
-        <AvisoErro>{erro}</AvisoErro>
-        <Botao variante="secundario" icone="refresh" onClick={onTentarDeNovo}>
-          Tentar de novo
-        </Botao>
-      </div>
-    );
+    return <ErroComTentar erro={erro} onTentar={onTentarDeNovo} />;
   }
   return (
     <Carregando
@@ -142,49 +152,15 @@ function EstadoDaLista({ erro, ehProprio, onTentarDeNovo }) {
   );
 }
 
-// A pessoa do perfil de outra pessoa, pela API, do mesmo jeito que os
-// animais: até chegar a resposta do código de agora, nada aparece. Sem
-// código (o próprio perfil), não busca nada.
+// A pessoa do perfil de outra pessoa, pela API.
 function usePessoa(codigo, quemVe) {
-  const [tentativa, setTentativa] = useState(0);
-  const chave = `${codigo}#${tentativa}`;
-  const chaveGuardada = `${quemVe}|${codigo}`;
-  const [estado, setEstado] = useState({
-    chave: null,
-    perfil: null,
-    erro: null,
-  });
-
-  useEffect(() => {
-    if (!codigo) return;
-    let valendo = true;
-    buscarPerfil(codigo).then(
-      (perfil) => {
-        if (!valendo) return;
-        pessoasGuardadas.set(chaveGuardada, perfil);
-        setEstado({ chave, perfil, erro: null });
-      },
-      (falha) => valendo && setEstado({ chave, perfil: null, erro: falha }),
-    );
-    return () => {
-      valendo = false;
-    };
-  }, [codigo, chave, chaveGuardada]);
-
-  // Até a resposta de agora chegar, a pessoa guardada (se houver).
-  const guardada = pessoasGuardadas.get(chaveGuardada);
-  const vista =
-    estado.chave === chave
-      ? estado
-      : guardada && tentativa === 0
-        ? { perfil: guardada, erro: null }
-        : null;
-  return {
-    perfil: vista ? vista.perfil : null,
-    erro: vista ? vista.erro : null,
-    carregando: !vista,
-    tentarDeNovo: () => setTentativa((n) => n + 1),
-  };
+  const { dado, falha, carregando, tentarDeNovo } = useDadoGuardado(
+    codigo,
+    quemVe,
+    buscarPerfil,
+    pessoasGuardadas,
+  );
+  return { perfil: dado, erro: falha, carregando, tentarDeNovo };
 }
 
 // O lugar do perfil de outra pessoa enquanto ele não chega, ou quando não
@@ -192,9 +168,7 @@ function usePessoa(codigo, quemVe) {
 // motivo e deixa tentar de novo.
 function EstadoDoPerfil({ codigo, pessoa }) {
   if (pessoa.carregando) {
-    return (
-      <Carregando texto="Carregando o perfil…" className="py-16" />
-    );
+    return <Carregando texto="Carregando o perfil…" className="py-16" />;
   }
   if (pessoa.erro?.status === 404) {
     return (
@@ -213,16 +187,11 @@ function EstadoDoPerfil({ codigo, pessoa }) {
     );
   }
   return (
-    <div className="flex flex-col items-start gap-3 py-10">
-      <AvisoErro>{pessoa.erro.message}</AvisoErro>
-      <Botao
-        variante="secundario"
-        icone="refresh"
-        onClick={pessoa.tentarDeNovo}
-      >
-        Tentar de novo
-      </Botao>
-    </div>
+    <ErroComTentar
+      erro={pessoa.erro.message}
+      onTentar={pessoa.tentarDeNovo}
+      className="py-10"
+    />
   );
 }
 

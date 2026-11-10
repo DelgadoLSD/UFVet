@@ -98,14 +98,23 @@ describe("depois de cancelar o pedido", () => {
     await buscaAntiga;
     await cancelamento;
 
-    // Se o pedido tivesse voltado, sumir agora pareceria uma recusa.
-    situacaoNaApi(SEM_PEDIDO);
+    // Se o pedido tivesse voltado, a tela o mostraria de novo, e aqui ele
+    // pareceria recusado.
+    situacaoNaApi({ ...SEM_PEDIDO, pedidoRecusado: "pedido-1" });
     await servico.recarregarAcesso(CODIGO);
     expect(textosDosAvisos()).toEqual([]);
   });
 
-  test("quando o veterinário recusa de verdade, o aviso continua", async () => {
+  test("cancelado em outra aba: o site não diz que foi recusado", async () => {
     situacaoNaApi(SEM_PEDIDO);
+
+    await servico.recarregarAcesso(CODIGO);
+
+    expect(textosDosAvisos()).toEqual([]);
+  });
+
+  test("quando o veterinário recusa de verdade, o aviso continua", async () => {
+    situacaoNaApi({ ...SEM_PEDIDO, pedidoRecusado: "pedido-1" });
 
     await servico.recarregarAcesso(CODIGO);
 

@@ -1,44 +1,11 @@
 import { ESPECIES } from "../regras/doacao";
 import { chamarApi } from "./api";
+import { paraPerfil, paraVeterinario } from "./conversoes";
 import { chamarComLogin } from "./sessao";
 
 // Consultas sobre pessoas e locais de atendimento, pela API: o perfil de
 // outra pessoa, o contato dela, os veterinários de cada hospital e a
 // conferência do tutor antes de liberar o acesso aos contatos.
-
-// O perfil público como a API manda -> a pessoa como as telas usam, com os
-// mesmos nomes da conta logada (ver servicos/sessao.js). Não tem e-mail nem
-// telefone: o contato vem à parte, só para quem pode ver (buscarContato).
-function paraPerfil(usuario) {
-  const { veterinario } = usuario;
-  return {
-    codigo: usuario.codigo,
-    papel: usuario.papel,
-    nomeCompleto: usuario.nomeCompleto,
-    cidade: usuario.cidade,
-    bairro: usuario.bairro,
-    membroDesde: usuario.membroDesde,
-    foto: usuario.fotoUrl,
-    ...(veterinario && {
-      tratamento: veterinario.tratamento,
-      crmv: `${veterinario.crmv}-${veterinario.ufCrmv}`,
-      hospital: veterinario.estabelecimento.nome,
-      validacoesRealizadas: veterinario.validacoesRealizadas,
-    }),
-  };
-}
-
-// Um veterinário como a API o resume (em quem liberou, a quem se pede) -> do
-// jeito que as telas usam.
-export const paraVeterinario = (veterinario) => ({
-  codigo: veterinario.codigo,
-  papel: "VETERINARIO",
-  nomeCompleto: veterinario.nomeCompleto,
-  tratamento: veterinario.tratamento,
-  crmv: `${veterinario.crmv}-${veterinario.ufCrmv}`,
-  hospital: veterinario.estabelecimento.nome,
-  foto: veterinario.fotoUrl,
-});
 
 // Os animais de um tutor numa frase: "Zeus (cão) e Luna (gato)".
 export function resumoDosAnimais(animais) {

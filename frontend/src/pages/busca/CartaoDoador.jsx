@@ -9,7 +9,7 @@ import {
   partesDoTipo,
   resumoDoIdeal,
 } from "../../regras/doacao";
-import { idadeEmAnos } from "../../util/datas";
+import { anosEscritos, idadeEmAnos } from "../../util/datas";
 import { formatarPeso } from "../../util/texto";
 
 // Cartão de um doador nos resultados da busca, no desenho do cartão do animal
@@ -166,7 +166,7 @@ function partesDaIdade(anos, aproximada) {
   if (anos <= 0) return { legenda: "Menos de", valor: "1 ano" };
   return {
     legenda: aproximada ? "Cerca de" : "Idade",
-    valor: `${anos} ano${anos > 1 ? "s" : ""}`,
+    valor: anosEscritos(anos),
   };
 }
 

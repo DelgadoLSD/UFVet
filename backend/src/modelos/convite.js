@@ -1,10 +1,14 @@
 import { banco } from "../banco.js";
 import { indiceConvite } from "../cifra.js";
 import { sortearCodigoConvite } from "../codigos.js";
+import { DIA } from "../datas.js";
 
 // Model (do MVC) dos convites de veterinário: criar, achar e usar.
 
 export const DIAS_VALIDADE_CONVITE = 7;
+
+export const MENSAGEM_CONVITE =
+  "Convite inválido, já usado ou vencido. Peça um novo a quem enviou o convite.";
 
 // Cria um convite e devolve o código. O código só existe neste momento: no
 // banco fica apenas a impressão digital dele, então quem perde o código pede
@@ -17,7 +21,7 @@ export async function criarConvite({
   dias = DIAS_VALIDADE_CONVITE,
 }) {
   const codigo = sortearCodigoConvite();
-  const expiraEm = new Date(Date.now() + dias * 24 * 60 * 60 * 1000);
+  const expiraEm = new Date(Date.now() + dias * DIA);
   await banco.conviteVeterinario.create({
     data: {
       codigoIndice: indiceConvite(codigo),

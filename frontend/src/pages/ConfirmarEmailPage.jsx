@@ -4,10 +4,11 @@ import AvisoErro from "../components/AvisoErro";
 import Botao from "../components/Botao";
 import Campo from "../components/Campo";
 import LayoutAutenticacao from "../components/LayoutAutenticacao";
+import LinhaDeResultado from "../components/LinhaDeResultado";
 import EnderecoDeEmail from "../components/EnderecoDeEmail";
 import ReenvioDeConfirmacao from "../components/ReenvioDeConfirmacao";
 import { erroEmail } from "../regras/conta";
-import { codigoDoLink, temCodigo } from "../regras/link";
+import { useCodigoDoLink } from "../hooks/useCodigoDoLink";
 import { confirmarEmail, corrigirEmailDoCadastro } from "../servicos/email";
 import { carregarSessao, useSessao } from "../servicos/sessao";
 // Foto de santosh verma (Unsplash, uso livre)
@@ -56,26 +57,6 @@ function Saidas({ email, reenvio }) {
         </Link>
       </p>
     </div>
-  );
-}
-
-// Linha de resultado, com ícone e texto (não só a cor), como a do reenvio.
-function Resultadinho({ erro = false, children }) {
-  return (
-    <p
-      role={erro ? "alert" : "status"}
-      className={`mt-3 flex items-start gap-2 text-sm leading-snug ${
-        erro ? "text-[#9e0a24]" : "text-[#17643a]"
-      }`}
-    >
-      <span
-        aria-hidden="true"
-        className="material-symbols-outlined text-[18px] shrink-0"
-      >
-        {erro ? "error" : "check_circle"}
-      </span>
-      <span>{children}</span>
-    </p>
   );
 }
 
@@ -137,7 +118,7 @@ function CorrecaoDoEmail({ atual, onCorrigido, onCancelar }) {
         </Botao>
       </div>
       {falha && (
-        <Resultadinho erro>
+        <LinhaDeResultado erro>
           {falha.message}
           {falha.codigo === "SEM_CADASTRO" && (
             <>
@@ -150,7 +131,7 @@ function CorrecaoDoEmail({ atual, onCorrigido, onCancelar }) {
               </Link>
             </>
           )}
-        </Resultadinho>
+        </LinhaDeResultado>
       )}
     </form>
   );
@@ -219,9 +200,9 @@ function Espera({ email: emailDoCadastro, enviado }) {
         ) : (
           <>
             {corrigido && (
-              <Resultadinho>
+              <LinhaDeResultado>
                 E-mail corrigido. O link do e-mail errado não vale mais.
-              </Resultadinho>
+              </LinhaDeResultado>
             )}
             <button
               type="button"
@@ -327,7 +308,7 @@ function Resultado({ titulo, children, acao, status = false }) {
 }
 
 // Aberta pelo link do e-mail: confirma assim que abre, uma vez só.
-function Confirmacao({ codigo }) {
+function ConfirmacaoDoLink({ codigo }) {
   const [estado, setEstado] = useState(
     codigo ? { fase: "confirmando" } : { fase: "incompleto" },
   );
@@ -460,21 +441,7 @@ function Confirmacao({ codigo }) {
 }
 
 function Conteudo({ hash, state }) {
-  // Lidos uma vez: logo em seguida o código sai da barra de endereço.
-  const [codigo] = useState(() => codigoDoLink(hash));
-  const [veioDoLink] = useState(() => temCodigo(hash));
-
-  // O código sai da barra de endereço e do histórico assim que é lido:
-  // quem olhar a tela, ou o histórico do navegador, não o copia.
-  useEffect(() => {
-    if (veioDoLink) {
-      window.history.replaceState(
-        window.history.state,
-        "",
-        window.location.pathname,
-      );
-    }
-  }, [veioDoLink]);
+  const { codigo, veioDoLink } = useCodigoDoLink(hash);
 
   return (
     <LayoutAutenticacao
@@ -484,7 +451,7 @@ function Conteudo({ hash, state }) {
       fotoAEsquerda
     >
       {veioDoLink ? (
-        <Confirmacao codigo={codigo} />
+        <ConfirmacaoDoLink codigo={codigo} />
       ) : (
         <Espera email={state?.email} enviado={state?.enviado} />
       )}
